@@ -62,12 +62,12 @@ window.NETPATH_CURRICULUM = [
       { id:"l2-01", t:"VLAN: perché dividere è la prima difesa", s:"Da una rete piatta a una rete progettata. Il concetto, non i comandi.", m:24, ready:true },
       { id:"l2-02", t:"802.1Q, trunk e native VLAN", s:"Il tag da 4 byte che cambia tutto, e l'errore di native VLAN che fa impazzire i tecnici.", m:26, ready:true },
       { id:"l2-03", t:"Inter-VLAN routing: router-on-a-stick e SVI", s:"Come far parlare due VLAN, con le tre architetture che incontri sul campo.", m:26, ready:true },
-      { id:"l2-04", t:"Progettare uno schema VLAN per un cliente", s:"Dallo studio del cliente alla tabella VLAN/subnet/nome. Con template riutilizzabile.", m:24, ready:false }
+      { id:"l2-04", t:"Progettare uno schema VLAN per un cliente", s:"Dallo studio del cliente alla tabella VLAN/subnet/nome. Con template riutilizzabile.", m:24, ready:true }
     ]},
     { title: "Resilienza di livello 2", lessons: [
-      { id:"l2-05", t:"Spanning Tree: perché la rete 'si impalla'", s:"Loop, broadcast storm, root bridge, e perché non devi mai collegare due switch a caso.", m:28, ready:false },
-      { id:"l2-06", t:"LACP e aggregazione di link", s:"Raddoppiare la banda (o quasi) e sopravvivere alla rottura di un cavo.", m:20, ready:false },
-      { id:"l2-07", t:"Port security, storm control, loop protection", s:"Le protezioni che accendi il primo giorno e che nessuno accende mai.", m:20, ready:false }
+      { id:"l2-05", t:"Spanning Tree: perché la rete 'si impalla'", s:"Loop, broadcast storm, root bridge, e perché non devi mai collegare due switch a caso.", m:28, ready:true },
+      { id:"l2-06", t:"LACP e aggregazione di link", s:"Raddoppiare la banda (o quasi) e sopravvivere alla rottura di un cavo.", m:20, ready:true },
+      { id:"l2-07", t:"Port security, storm control, loop protection", s:"Le protezioni che accendi il primo giorno e che nessuno accende mai.", m:20, ready:true }
     ]},
     { title: "Routing", lessons: [
       { id:"l2-08", t:"La tabella di routing in profondità", s:"Longest prefix match, route connesse, statiche, di default: come si legge una routing table vera.", m:26, ready:false },

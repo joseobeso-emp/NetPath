@@ -1,0 +1,344 @@
+#id: l2-05
+#title: Spanning Tree: perché la rete «si impalla»
+#min: 28
+#level: 2
+#chapter: Resilienza di livello 2
+#desc: Loop, broadcast storm, root bridge, e perché non devi mai collegare due switch a caso.
+#obj: Capire perché un anello di livello 2 distrugge una rete in pochi secondi
+#obj: Descrivere come lo Spanning Tree lo previene, con parole tue
+#obj: Scegliere e imporre il root bridge invece di lasciarlo al caso
+#obj: Riconoscere e diagnosticare una tempesta di broadcast in corso
+---
+<p class="lead">Questo è l'unico guasto di rete che può fermare un'azienda intera in trenta secondi, ed
+è causato da un gesto banale: qualcuno collega un cavo. Capire lo Spanning Tree significa saper
+prevenire il disastro più rapido del networking — e saperlo riconoscere quando è già in corso.</p>
+
+<h2>Il problema: il loop</h2>
+
+<p>Al livello 3, ogni pacchetto IP ha un <span class="term" data-term="ttl">TTL</span> che cala a ogni
+router: se gira in tondo, prima o poi muore. Al livello 2 <strong>questa protezione non esiste</strong>:
+il frame Ethernet non ha nessun contatore.</p>
+
+<p>La conseguenza è brutale. Se due switch sono collegati da due percorsi, un frame di broadcast
+gira all'infinito — e si moltiplica a ogni passaggio.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 320" role="img" aria-label="Un broadcast in un anello di switch si moltiplica esponenzialmente fino a saturare la rete">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Un solo broadcast, in un anello di tre switch</text>
+
+    <g stroke-width="1.8">
+      <rect x="290" y="40"  width="120" height="44" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="120" y="150" width="120" height="44" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="460" y="150" width="120" height="44" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+    </g>
+    <text x="350" y="67" text-anchor="middle" class="dg-mono-sm">SWITCH A</text>
+    <text x="180" y="177" text-anchor="middle" class="dg-mono-sm">SWITCH B</text>
+    <text x="520" y="177" text-anchor="middle" class="dg-mono-sm">SWITCH C</text>
+
+    <g stroke="var(--dg-3)" stroke-width="2.6" fill="none">
+      <path d="M292 76 L 224 148"/>
+      <path d="M240 180 L 456 180"/>
+      <path d="M576 148 L 408 76"/>
+    </g>
+    <g fill="var(--dg-3)">
+      <circle cx="258" cy="112" r="5"/><circle cx="348" cy="180" r="5"/><circle cx="492" cy="112" r="5"/>
+    </g>
+
+    <text x="350" y="234" text-anchor="middle" class="dg-label-sm">Ogni switch, ricevendo un broadcast, lo ripete su tutte le altre porte. Quindi:</text>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="130" y="264">1 frame</text>
+      <text x="250" y="264">→ 2</text>
+      <text x="340" y="264">→ 4</text>
+      <text x="420" y="264">→ 8</text>
+      <text x="500" y="264">→ 16</text>
+      <text x="600" y="264">→ milioni</text>
+    </g>
+    <rect x="100" y="278" width="500" height="28" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="350" y="297" text-anchor="middle" class="dg-label-sm">In pochi secondi: CPU al 100%, tabelle MAC impazzite, rete morta.</text>
+  </svg>
+  </div>
+  <figcaption>Si chiama <b>broadcast storm</b>. Non è un rallentamento: è un collasso totale. E siccome
+  gli switch non riescono più nemmeno a rispondere alla console, spesso l'unico modo per uscirne è
+  <b>staccare fisicamente i cavi</b>.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il microfono davanti alla cassa
+  </div>
+  <p>Hai presente quando in una sala qualcuno avvicina troppo il microfono all'altoparlante? Parte
+  quel fischio acutissimo che diventa insopportabile in un secondo.</p>
+  <p>Succede perché il suono esce dall'altoparlante, rientra nel microfono, viene amplificato, esce
+  più forte, rientra ancora più forte… <b>Un anello che si autoalimenta.</b> Nessuno sta urlando: basta
+  un piccolo rumore iniziale e il sistema lo amplifica all'infinito da solo.</p>
+  <p>Un loop di rete è esattamente quel fischio. Basta <b>un</b> broadcast — e ce ne sono decine al
+  secondo — e la rete si mette a urlare finché non muore.</p>
+  <p>Lo Spanning Tree è il tecnico del suono che, prima ancora che qualcuno parli, <b>spegne uno dei
+  due percorsi</b> in modo che il suono non possa rientrare. E lo tiene lì, pronto a riaccenderlo se
+  l'altro si guasta.</p>
+</div>
+
+<h2>La soluzione: un albero, non una ragnatela</h2>
+
+<p>Lo <span class="term" data-term="stp">Spanning Tree Protocol</span> fa una cosa sola, ma la fa bene:
+gli switch si parlano, scoprono che esistono percorsi ridondanti, e <strong>spengono logicamente quelli
+in eccesso</strong>, lasciando attivo un solo cammino tra ogni coppia di punti — un <em>albero</em>,
+che per definizione non ha anelli.</p>
+
+<p>Quando un collegamento attivo cade, STP se ne accorge e <strong>riaccende uno di quelli spenti</strong>.
+La ridondanza fisica resta; quella logica no.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Lo spanning tree elegge un root bridge e blocca una porta per eliminare l'anello">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Come STP scioglie l'anello</text>
+
+    <rect x="286" y="40" width="130" height="50" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="2.4"/>
+    <text x="351" y="62" text-anchor="middle" class="dg-mono-sm">SWITCH A</text>
+    <text x="351" y="79" text-anchor="middle" class="dg-label-sm">ROOT BRIDGE</text>
+
+    <rect x="100" y="160" width="130" height="50" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="165" y="190" text-anchor="middle" class="dg-mono-sm">SWITCH B</text>
+    <rect x="470" y="160" width="130" height="50" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="535" y="190" text-anchor="middle" class="dg-mono-sm">SWITCH C</text>
+
+    <path d="M290 84 L 208 158" stroke="var(--dg-5)" stroke-width="3"/>
+    <path d="M412 84 L 494 158" stroke="var(--dg-5)" stroke-width="3"/>
+    <text x="228" y="126" class="dg-mono-sm" fill="var(--dg-5)">attivo</text>
+    <text x="440" y="126" class="dg-mono-sm" fill="var(--dg-5)">attivo</text>
+
+    <path d="M230 186 L 470 186" stroke="var(--dg-3)" stroke-width="3" stroke-dasharray="7 5"/>
+    <circle cx="350" cy="186" r="15" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2"/>
+    <path d="M343 179l14 14M357 179l-14 14" stroke="var(--dg-3)" stroke-width="2.4"/>
+    <text x="350" y="222" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-3)">porta BLOCCATA</text>
+    <text x="350" y="238" text-anchor="middle" class="dg-label-sm">il cavo c'è ed è sano: semplicemente non passa traffico</text>
+
+    <rect x="120" y="258" width="460" height="30" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <text x="350" y="278" text-anchor="middle" class="dg-label-sm">Se cade un collegamento attivo, questa porta si riapre in pochi secondi.</text>
+  </svg>
+  </div>
+  <figcaption>Il cavo tra B e C <b>non viene staccato</b>: resta collegato e sano, ma lo switch non ci
+  fa passare traffico. È una riserva pronta all'uso. Questo è il senso della ridondanza: pagare un cavo
+  in più per non fermarsi quando uno si rompe.</figcaption>
+</figure>
+
+<h2>Come STP decide</h2>
+
+<p>Il meccanismo è un'elezione in tre atti, e ti serve conoscerlo perché <strong>quasi sempre i valori
+predefiniti portano alla scelta sbagliata</strong>.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Atto</th><th>Cosa decide</th><th>Con quale criterio</th></tr></thead>
+    <tbody>
+      <tr><td><b>1. Il root bridge</b></td>
+          <td>Chi è il centro dell'albero. Tutti i percorsi si calcolano rispetto a lui.</td>
+          <td>Vince la <b>priorità</b> più bassa (predefinita 32768). A parità, vince il <b>MAC address più basso</b>.</td></tr>
+      <tr><td><b>2. Le root port</b></td>
+          <td>Su ogni switch non-root, quale porta è la strada migliore verso il root.</td>
+          <td>Il <b>costo</b> complessivo più basso. Il costo dipende dalla velocità: più veloce, meno costoso.</td></tr>
+      <tr><td><b>3. Le designated port</b></td>
+          <td>Su ogni segmento, chi ha il diritto di trasmettere.</td>
+          <td>Chi ha il costo minore verso il root. <b>Tutte le porte rimaste diventano bloccate.</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il root bridge lasciato al caso: l'errore più diffuso in assoluto
+  </div>
+  <p>Se nessuno configura le priorità, tutti gli switch hanno 32768 e vince <b>il MAC address più
+  basso</b>. Il MAC più basso appartiene tipicamente all'apparato <b>più vecchio</b> della rete —
+  quello switch da otto porte comprato nel 2013 e nascosto sotto una scrivania.</p>
+  <p>Risultato: <b>tutto il traffico della rete viene calcolato in funzione di quel catorcio</b>.
+  Percorsi assurdi, collegamenti veloci bloccati mentre restano attivi quelli lenti, e una rete che
+  «va lenta senza motivo».</p>
+  <p><b>La regola:</b> il root bridge deve essere il tuo switch centrale, quello più potente e più
+  stabile. Si impone abbassandogli la priorità, e si dà al secondo switch la priorità subito successiva,
+  così se il primo muore subentra quello giusto e non un altro catorcio.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Imporre il root bridge</div>
+<pre><span class="c">═══ CISCO ═══════════════════════════════════════════</span>
+<span class="c"># sullo switch centrale (root primario)</span>
+<span class="p">spanning-tree vlan</span> <span class="n">1-100</span> <span class="p">priority</span> <span class="n">4096</span>
+<span class="c"># sul secondo switch (root di riserva)</span>
+<span class="p">spanning-tree vlan</span> <span class="n">1-100</span> <span class="p">priority</span> <span class="n">8192</span>
+<span class="c"># scorciatoia equivalente</span>
+<span class="p">spanning-tree vlan</span> <span class="n">1-100</span> <span class="p">root primary</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/interface bridge set br-lan protocol-mode=</span><span class="s">rstp</span> <span class="p">priority=</span><span class="n">0x1000</span>
+
+<span class="c">═══ VERIFICARE CHI È IL ROOT (fallo sempre) ═════════</span>
+<span class="p">show spanning-tree root</span>                <span class="c"># Cisco</span>
+<span class="p">show spanning-tree vlan 10</span>
+<span class="p">/interface bridge monitor br-lan</span>        <span class="c"># MikroTik: cerca root-bridge=yes</span>
+<span class="p">/interface bridge port print detail</span>     <span class="c"># stato di ogni porta</span>
+</pre>
+</div>
+
+<h2>STP, RSTP e MSTP</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Versione</th><th>Standard</th><th>Riconverge in</th><th>Quando usarla</th></tr></thead>
+    <tbody>
+      <tr><td><b>STP</b></td><td>802.1D</td><td>30–50 secondi</td><td>Mai, se puoi evitarlo. Mezzo minuto di rete ferma è inaccettabile oggi.</td></tr>
+      <tr><td><b>RSTP</b></td><td>802.1w</td><td>1–6 secondi</td><td><b>Lo standard minimo accettabile.</b> È quello che configurerai quasi sempre.</td></tr>
+      <tr><td><b>MSTP</b></td><td>802.1s</td><td>1–6 secondi</td><td>Reti grandi con molte VLAN: permette alberi diversi per gruppi di VLAN, bilanciando il carico.</td></tr>
+      <tr><td><b>PVST+ / RPVST+</b></td><td>Cisco</td><td>1–6 secondi</td><td>Un albero per ogni VLAN. Solo in ambienti tutti Cisco.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Le protezioni sulle porte degli utenti</h2>
+
+<p>Qui sta la parte che userai davvero ogni volta che configuri uno switch nuovo.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Funzione</th><th>Cosa fa</th><th>Dove si mette</th></tr></thead>
+    <tbody>
+      <tr><td><b>PortFast / Edge port</b></td>
+          <td>La porta va subito in trasmissione, senza i secondi di attesa di STP.</td>
+          <td>Su <b>tutte</b> le porte degli utenti. Senza, un PC che si accende aspetta fino a 30 secondi e spesso non riceve il DHCP in tempo.</td></tr>
+      <tr><td><b>BPDU Guard</b></td>
+          <td>Se su una porta utente arriva un messaggio di STP, significa che qualcuno ha attaccato uno switch dove non doveva: <b>la porta si spegne</b>.</td>
+          <td>Sempre insieme a PortFast. È la difesa contro lo switch portato da casa.</td></tr>
+      <tr><td><b>Root Guard</b></td>
+          <td>Impedisce che un apparato collegato lì possa diventare root bridge.</td>
+          <td>Sulle porte verso reparti o fornitori che non controlli.</td></tr>
+      <tr><td><b>Loop Guard / Loop Protect</b></td>
+          <td>Blocca la porta se rileva che un frame mandato da lì torna indietro da lei stessa.</td>
+          <td>L'ultima difesa contro il cavo collegato a due prese a muro.</td></tr>
+      <tr><td><b>Storm Control</b></td>
+          <td>Limita broadcast e multicast a una percentuale della banda della porta.</td>
+          <td>Su tutte le porte utente. Trasforma una tempesta in un rallentamento.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La configurazione standard di una porta utente</div>
+<pre><span class="c">═══ CISCO ═══════════════════════════════════════════</span>
+<span class="p">interface range Gi1/0/1-46</span>
+ <span class="p">switchport mode access</span>
+ <span class="p">switchport access vlan</span> <span class="n">10</span>
+ <span class="p">spanning-tree portfast</span>
+ <span class="p">spanning-tree bpduguard enable</span>
+ <span class="p">storm-control broadcast level</span> <span class="n">2.00</span>
+ <span class="p">storm-control action shutdown</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/interface bridge port</span>
+<span class="p">set [find interface=ether2] edge=</span><span class="s">yes</span> <span class="p">bpdu-guard=</span><span class="s">yes</span>
+
+<span class="c"># se una porta è stata spenta da BPDU Guard, dopo aver TOLTO lo switch abusivo:</span>
+<span class="p">interface Gi1/0/12</span>
+ <span class="p">shutdown</span>
+ <span class="p">no shutdown</span>
+</pre>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il ticket: «si è fermato tutto, di colpo»
+  </div>
+  <p>Nove volte su dieci, dietro questa frase c'è un loop. Ecco come si riconosce e come si esce:</p>
+  <p><b>I sintomi inconfondibili:</b></p>
+  <ul>
+    <li>Tutte le lucine degli switch lampeggiano <b>all'unisono</b>, freneticamente, anche di notte
+    quando non c'è nessuno.</li>
+    <li>Gli switch non rispondono più nemmeno al ping: la CPU è satura.</li>
+    <li>Nel log (se riesci a leggerlo) compaiono messaggi di <code>MAC flapping</code>: lo stesso MAC
+    visto rimbalzare tra porte diverse.</li>
+    <li>È iniziato <b>subito dopo che qualcuno ha toccato un cavo</b>.</li>
+  </ul>
+  <p><b>Cosa fare, in ordine:</b></p>
+  <ol style="margin-bottom:0">
+    <li><b>Non riavviare tutto.</b> Al riavvio il loop c'è ancora e riparte in tre secondi: avrai solo
+    perso tempo e cancellato i log.</li>
+    <li>Vai fisicamente all'armadio e <b>stacca i collegamenti tra switch uno alla volta</b>. Quando le
+    lucine si calmano, hai trovato l'anello.</li>
+    <li>Ricollega il cavo giusto e <b>attiva RSTP</b> prima di andartene, altrimenti riaccadrà.</li>
+    <li>Cerca la causa vera: quasi sempre è un utente che ha collegato un cavetto tra due prese a muro,
+    o uno switch da scrivania con due cavi verso la rete.</li>
+  </ol>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Attenzione al Wi-Fi e alle VM
+  </div>
+  <p>I loop non nascono solo dai cavi. Due sorgenti frequenti e difficili da individuare:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Access point in modalità bridge</b> collegati sia via cavo sia via radio a un altro AP:
+    creano un anello che passa per l'aria e che non vedi guardando il rack.</li>
+    <li><b>Switch virtuali negli hypervisor</b>: una VM con due schede virtuali sulla stessa rete, o un
+    vSwitch mal configurato, genera un loop perfettamente reale. E lì i cavi non c'entrano niente.</li>
+  </ul>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: Spanning Tree",
+  "questions": [
+    { "q": "Perché un loop al livello 2 è molto più grave di un loop al livello 3?",
+      "a": [ {"t":"Il frame Ethernet non ha un TTL, quindi gira all'infinito moltiplicandosi","ok":true},
+             {"t":"Perché il livello 2 è più veloce","ok":false},
+             {"t":"Perché gli switch hanno meno memoria dei router","ok":false},
+             {"t":"In realtà è meno grave","ok":false} ],
+      "e": "Il pacchetto IP ha il TTL che cala a ogni router e prima o poi muore. Il frame Ethernet non ha nessun contatore: un broadcast in un anello si duplica a ogni passaggio e in pochi secondi satura CPU e banda di tutti gli switch. È il guasto più rapido e più totale del networking." },
+
+    { "q": "Se nessuno configura le priorità, chi diventa root bridge?",
+      "a": [ {"t":"Lo switch con il MAC address più basso, cioè quasi sempre il più vecchio","ok":true},
+             {"t":"Lo switch più potente","ok":false},
+             {"t":"Il primo acceso","ok":false},
+             {"t":"Quello con più porte occupate","ok":false} ],
+      "e": "A parità di priorità (32768 di default su tutti) vince il MAC più basso, che tipicamente appartiene all'apparato più vecchio della rete. Tutti i percorsi vengono calcolati rispetto a quel catorcio, con collegamenti veloci bloccati e lenti attivi. Il root bridge va sempre imposto abbassando la priorità sullo switch centrale." },
+
+    { "q": "Cosa fa una porta «bloccata» dallo Spanning Tree?",
+      "a": [ {"t":"Resta collegata e pronta, ma non fa passare traffico dati","ok":true},
+             {"t":"Si spegne elettricamente","ok":false},
+             {"t":"Passa solo traffico a bassa priorità","ok":false},
+             {"t":"Viene rimossa dalla configurazione","ok":false} ],
+      "e": "Il cavo è sano e il link è attivo: lo switch semplicemente non ci inoltra traffico dati, ma continua a scambiare i messaggi di STP. È una riserva calda: se il percorso attivo cade, questa porta si riapre in pochi secondi. È esattamente il senso della ridondanza." },
+
+    { "q": "Perché si attiva PortFast (o edge port) sulle porte degli utenti?",
+      "a": [ {"t":"Altrimenti la porta aspetta decine di secondi prima di passare traffico e il PC non prende il DHCP","ok":true},
+             {"t":"Per aumentare la velocità della porta","ok":false},
+             {"t":"Per abilitare le VLAN su quella porta","ok":false},
+             {"t":"Per permettere il PoE","ok":false} ],
+      "e": "Senza PortFast la porta attraversa gli stati di ascolto e apprendimento di STP prima di inoltrare: fino a 30 secondi con STP classico. In quel tempo il PC ha già mandato le sue richieste DHCP e ha fallito, e l'utente vede un 169.254. Va sempre accompagnato da BPDU Guard, che spegne la porta se ci collegano uno switch." },
+
+    { "q": "La rete si è bloccata di colpo e le lucine di tutti gli switch lampeggiano all'unisono. Qual è la prima mossa?",
+      "a": [ {"t":"Andare all'armadio e staccare i collegamenti tra switch uno alla volta","ok":true},
+             {"t":"Riavviare tutti gli switch","ok":false},
+             {"t":"Riavviare il firewall","ok":false},
+             {"t":"Controllare le regole del firewall","ok":false} ],
+      "e": "Lampeggio sincrono su tutti gli apparati è la firma del broadcast storm. Riavviare non serve: il loop fisico c'è ancora e riparte in tre secondi, e nel frattempo hai cancellato i log che ti dicevano dove stava. Si isola staccando i collegamenti uno per volta finché le lucine non si calmano, e prima di andarsene si attiva RSTP." },
+
+    { "q": "A cosa serve BPDU Guard?",
+      "a": [ {"t":"Spegne la porta se vi arriva un messaggio di STP, cioè se ci hanno collegato uno switch","ok":true},
+             {"t":"Impedisce alla porta di diventare root bridge","ok":false},
+             {"t":"Limita il traffico broadcast a una percentuale della banda","ok":false},
+             {"t":"Accelera la convergenza dello spanning tree","ok":false} ],
+      "e": "Su una porta utente non dovrebbero mai arrivare messaggi di STP: se arrivano, qualcuno ha collegato uno switch dove non doveva, ed è il modo tipico in cui nascono i loop. La porta viene disattivata prima che il danno si propaghi. Impedire di diventare root è invece <b>Root Guard</b>; limitare i broadcast è <b>Storm Control</b>." },
+
+    { "q": "Quale versione di Spanning Tree è lo standard minimo accettabile oggi?",
+      "a": [ {"t":"RSTP (802.1w), che riconverge in pochi secondi","ok":true},
+             {"t":"STP classico (802.1D)","ok":false},
+             {"t":"Nessuna: basta evitare gli anelli","ok":false},
+             {"t":"MSTP, sempre e in ogni rete","ok":false} ],
+      "e": "STP classico impiega 30–50 secondi a riconvergere: mezzo minuto di rete ferma non è più accettabile. RSTP scende a pochi secondi ed è il minimo. MSTP serve in reti grandi con molte VLAN, ma è un sovrappiù nella PMI. E «evitare gli anelli» non è una strategia: gli anelli li crea un utente con un cavetto, non il progettista." }
+  ]
+}
+</script>

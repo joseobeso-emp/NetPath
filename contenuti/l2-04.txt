@@ -1,0 +1,345 @@
+#id: l2-04
+#title: Progettare uno schema VLAN per un cliente
+#min: 24
+#level: 2
+#chapter: Segmentare la rete
+#desc: Dal sopralluogo alla tabella VLAN/subnet/regole, con il modello riutilizzabile e il piano di migrazione senza fermi.
+#obj: Raccogliere le informazioni giuste prima di disegnare qualsiasi cosa
+#obj: Raggruppare i dispositivi per livello di fiducia invece che per reparto
+#obj: Compilare la matrice di comunicazione, che è il vero progetto
+#obj: Migrare una rete piatta esistente senza fermare l'azienda
+---
+<p class="lead">Saper configurare una VLAN è una competenza da tecnico. Saper <em>decidere quali VLAN
+servono</em> è una competenza da progettista, e vale molto di più — perché è la parte che il cliente non
+può fare da solo e che nessun manuale di vendor ti insegna. Questa lezione ti dà un metodo ripetibile
+e un modello che puoi riusare su ogni cliente.</p>
+
+<h2>Passo 1 — L'inventario: cosa c'è davvero in rete</h2>
+
+<p>Non puoi segmentare quello che non conosci. E quasi sempre scoprirai dispositivi di cui nessuno in
+azienda sapeva l'esistenza.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Scoprire cosa c'è collegato, senza chiedere a nessuno</div>
+<pre><span class="c"># la tabella ARP del router: tutto ciò che ha parlato di recente</span>
+<span class="p">/ip arp print</span>                        <span class="c"># MikroTik</span>
+<span class="p">get system arp</span>                       <span class="c"># FortiGate</span>
+
+<span class="c"># chi ha preso un indirizzo dal DHCP, con il nome che si è dichiarato</span>
+<span class="p">/ip dhcp-server lease print</span>
+<span class="p">Get-DhcpServerv4Lease -ComputerName srv01 -ScopeId 192.168.1.0</span>
+
+<span class="c"># scansione della rete (solo con autorizzazione scritta del cliente)</span>
+<span class="p">nmap -sn 192.168.1.0/24</span>             <span class="c"># solo chi è vivo, senza toccare le porte</span>
+<span class="p">nmap -O -sV 192.168.1.0/24</span>          <span class="c"># che sistema e che servizi — più invasivo</span>
+
+<span class="c"># i vicini che si annunciano da soli: switch, AP, telefoni</span>
+<span class="p">/ip neighbor print</span>
+</pre>
+</div>
+
+<p>Per ogni dispositivo trovato annota: <strong>indirizzo, MAC, produttore (dall'OUI), nome, a cosa
+serve, chi lo usa, e con chi deve parlare</strong>. Quest'ultima colonna è quella che conta davvero, ed
+è l'unica che devi chiedere alle persone.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le sorprese che troverai, e che valgono già il sopralluogo
+  </div>
+  <p>In quasi ogni inventario che farai salterà fuori almeno una di queste cose:</p>
+  <ul style="margin-bottom:0">
+    <li>Telecamere cinesi con firmware del 2017 che chiamano server in Cina.</li>
+    <li>Un vecchio NAS con SMBv1 attivo, invisibile a tutti da anni.</li>
+    <li>Un PLC o un macchinario di produzione collegato alla rete degli uffici, con un PC Windows 7
+    dedicato che <b>non si può aggiornare</b> perché lo vieta il fornitore del macchinario.</li>
+    <li>Un router Wi-Fi portato da casa da un dipendente, con il DHCP acceso.</li>
+    <li>Una stampante con l'interfaccia web esposta e senza password.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Ognuna di queste è <b>un ottimo argomento di vendita</b> per
+  il progetto di segmentazione: sono rischi concreti che il cliente capisce senza bisogno di spiegazioni
+  tecniche.</p>
+</div>
+
+<h2>Passo 2 — Raggruppare per fiducia, non per reparto</h2>
+
+<p>Qui sta l'errore concettuale più comune, e la cosa che distingue uno schema fatto bene da uno fatto
+per abitudine.</p>
+
+<p>L'istinto è creare una VLAN per la contabilità, una per il commerciale, una per la produzione.
+<strong>È quasi sempre sbagliato</strong>: quei reparti usano gli stessi PC, gli stessi server, gli
+stessi permessi, e hanno lo stesso identico profilo di rischio. Si ottengono cinque VLAN che devono
+parlare tutte con tutte — cioè la complessità della segmentazione senza nessuno dei benefici.</p>
+
+<p>Il criterio giusto è: <strong>quanto mi fido di questo dispositivo, e quanto danno fa se viene
+compromesso?</strong></p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Dispositivi raggruppati per livello di fiducia invece che per reparto aziendale">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Il criterio che funziona: livello di fiducia</text>
+
+    <g stroke-width="1.6">
+      <rect x="16" y="40"  width="668" height="48" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="16" y="96"  width="668" height="48" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="152" width="668" height="48" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="16" y="208" width="668" height="48" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2.2"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="34" y="62">GESTITI E AGGIORNATI</text>
+      <text x="34" y="80" fill="var(--dg-text-soft)">PC aziendali con antivirus e patch, server → si fidano tra loro</text>
+      <text x="34" y="118">GESTITI MA ESPOSTI</text>
+      <text x="34" y="136" fill="var(--dg-text-soft)">portatili che escono dall'azienda, Wi-Fi dipendenti → fiducia media</text>
+      <text x="34" y="174">NON AGGIORNABILI</text>
+      <text x="34" y="192" fill="var(--dg-text-soft)">telecamere, stampanti, badge, PLC, macchinari → nessuna fiducia, ma servono</text>
+      <text x="34" y="230">ESTRANEI</text>
+      <text x="34" y="248" fill="var(--dg-text-soft)">ospiti, dispositivi personali, fornitori in visita → zero fiducia, solo Internet</text>
+    </g>
+    <g class="dg-mono-sm" text-anchor="end">
+      <text x="666" y="70">VLAN 10 · 50</text>
+      <text x="666" y="126">VLAN 15</text>
+      <text x="666" y="182">VLAN 30 · 60</text>
+      <text x="666" y="238">VLAN 20</text>
+    </g>
+    <text x="350" y="286" text-anchor="middle" class="dg-label-sm">La domanda non è «di che reparto è?» ma «se lo bucano, cosa può raggiungere da qui?»</text>
+  </svg>
+  </div>
+  <figcaption>Raggruppando per fiducia, ogni VLAN ha regole <b>diverse</b> dalle altre — ed è questo che
+  giustifica la sua esistenza. Se due gruppi finirebbero con le stesse identiche regole, <b>non servono
+  due VLAN</b>: ne basta una.</figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La prova del nove
+  </div>
+  <p>Prima di creare una VLAN, chiediti: <b>«quali regole avrà, diverse da quelle della VLAN accanto?»</b></p>
+  <p>Se non sai rispondere, o se la risposta è «le stesse», quella VLAN non serve. Ogni VLAN in più è
+  complessità in più: va guadagnata, non aggiunta per simmetria.</p>
+  <p style="margin-bottom:0">Corollario utile: <b>meglio cinque VLAN con regole scritte bene che quindici
+  VLAN con una regola «tutto verso tutto».</b> Il cliente paga il risultato, non il numero di VLAN.</p>
+</div>
+
+<h2>Passo 3 — La matrice di comunicazione</h2>
+
+<p>Questo è il vero progetto. È una tabella che dice <strong>chi può iniziare una conversazione verso
+chi, e su cosa</strong>. Si compila con il cliente, si fa approvare, e diventa la specifica da cui
+nascono le regole del firewall.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Da ↓ &nbsp;&nbsp; verso →</th><th>Uffici</th><th>Server</th><th>Stampanti</th><th>Telecamere</th><th>Voce</th><th>Gestione</th><th>Internet</th></tr></thead>
+    <tbody>
+      <tr><td><b>Uffici</b> (10)</td><td>—</td><td>✅ porte del gestionale, file, stampa</td><td>✅ 9100, 631</td><td>✅ solo verso l'NVR, 80/443</td><td>❌</td><td>❌</td><td>✅ filtrato</td></tr>
+      <tr><td><b>Server</b> (50)</td><td>⚠️ solo aggiornamenti e backup</td><td>—</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>⚠️ solo aggiornamenti</td></tr>
+      <tr><td><b>Stampanti</b> (60)</td><td>❌</td><td>❌</td><td>—</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td><b>Telecamere</b> (30)</td><td>❌</td><td>❌</td><td>❌</td><td>—</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td><b>Voce</b> (40)</td><td>❌</td><td>✅ solo centralino</td><td>❌</td><td>❌</td><td>—</td><td>❌</td><td>✅ solo operatore SIP</td></tr>
+      <tr><td><b>Ospiti</b> (20)</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>✅ filtrato, con limite di banda</td></tr>
+      <tr><td><b>Gestione</b> (99)</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>—</td><td>⚠️ solo aggiornamenti firmware</td></tr>
+      <tr><td><b>Amministratori IT</b></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Leggi le righe orizzontalmente: «da Telecamere, verso qualsiasi cosa: no». Significa che una
+telecamera compromessa non può fare assolutamente niente — non può scansionare la rete, non può
+raggiungere i server, non può nemmeno chiamare casa su Internet. <strong>Risponde solo quando l'NVR o
+un PC autorizzato la interroga</strong>, grazie al firewall stateful.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché la matrice vale più della configurazione
+  </div>
+  <p>Tre motivi pratici, tutti e tre importanti:</p>
+  <ul style="margin-bottom:0">
+    <li><b>È la tua tutela.</b> Il cliente l'ha approvata. Quando tra sei mesi qualcuno chiederà
+    «perché la telecamera non raggiunge Internet?», la risposta è in un documento firmato, non nella
+    tua memoria.</li>
+    <li><b>È indipendente dal vendor.</b> La stessa matrice si traduce in policy FortiGate, regole
+    Sophos o ACL Cisco. Se il cliente cambia firewall, il progetto resta valido.</li>
+    <li><b>Fa emergere i requisiti nascosti.</b> Mentre la compili, salta fuori che «il fornitore del
+    macchinario si collega da remoto per l'assistenza», cosa che nessuno ti aveva detto e che avrebbe
+    fatto fallire il collaudo.</li>
+  </ul>
+</div>
+
+<h2>Passo 4 — Lo schema completo</h2>
+
+<p>Il documento che consegni al cliente. Esempio per un'azienda con 60 dipendenti, una sede:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>VLAN</th><th>Nome</th><th>Subnet</th><th>Gateway</th><th>DHCP</th><th>Dispositivi previsti</th></tr></thead>
+    <tbody>
+      <tr><td><b>10</b></td><td>Uffici</td><td>10.42.10.0/24</td><td>.1</td><td>.100–.200</td><td>~70 PC e portatili</td></tr>
+      <tr><td><b>20</b></td><td>Ospiti</td><td>10.42.20.0/24</td><td>.1</td><td>.50–.250</td><td>variabile, lease 2 ore</td></tr>
+      <tr><td><b>30</b></td><td>Videosorveglianza</td><td>10.42.30.0/24</td><td>.1</td><td>riservazioni</td><td>18 telecamere + NVR</td></tr>
+      <tr><td><b>40</b></td><td>Voce</td><td>10.42.40.0/24</td><td>.1</td><td>.100–.200</td><td>55 telefoni + centralino</td></tr>
+      <tr><td><b>50</b></td><td>Server</td><td>10.42.50.0/24</td><td>.1</td><td>statici</td><td>4 server, 1 NAS</td></tr>
+      <tr><td><b>60</b></td><td>Stampanti e IoT</td><td>10.42.60.0/24</td><td>.1</td><td>riservazioni</td><td>9 stampanti, allarme, badge</td></tr>
+      <tr><td><b>99</b></td><td>Gestione</td><td>10.42.99.0/24</td><td>.1</td><td>statici</td><td>switch, AP, firewall, UPS</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Dentro ogni subnet, la ripartizione degli indirizzi resta sempre la stessa — è la convenzione della
+lezione 1-19, e applicarla identica su tutti i clienti ti fa risparmiare tempo e errori:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Intervallo</th><th>A cosa è riservato</th></tr></thead>
+    <tbody>
+      <tr><td><code>.1 – .20</code></td><td>Gateway e apparati di rete, statici</td></tr>
+      <tr><td><code>.21 – .99</code></td><td>Riservazioni DHCP: stampanti, AP, telecamere</td></tr>
+      <tr><td><code>.100 – .250</code></td><td>Campo dinamico per gli utenti</td></tr>
+      <tr><td><code>.251 – .254</code></td><td>Liberi, per emergenze e collaudi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Passo 5 — Migrare senza fermare l'azienda</h2>
+
+<p>Il progetto è pronto. Adesso c'è una rete piatta in produzione con sessanta persone che lavorano, e
+va trasformata. <strong>Non si fa in un colpo solo.</strong></p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Migrazione da rete piatta a VLAN in cinque fasi progressive">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">La migrazione, un gruppo alla volta</text>
+    <g stroke-width="1.5">
+      <rect x="10"  y="46" width="126" height="60" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="148" y="46" width="126" height="60" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="286" y="46" width="126" height="60" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="424" y="46" width="126" height="60" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="562" y="46" width="128" height="60" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="73"  y="68">FASE 1</text><text x="211" y="68">FASE 2</text><text x="349" y="68">FASE 3</text>
+      <text x="487" y="68">FASE 4</text><text x="626" y="68">FASE 5</text>
+    </g>
+    <g class="dg-label-sm" text-anchor="middle">
+      <text x="73"  y="88">Gestione</text><text x="73"  y="101">(99)</text>
+      <text x="211" y="88">Ospiti</text><text x="211" y="101">(20)</text>
+      <text x="349" y="88">Telecamere</text><text x="349" y="101">Stampanti</text>
+      <text x="487" y="88">Voce</text><text x="487" y="101">(40)</text>
+      <text x="626" y="88">Uffici e Server</text><text x="626" y="101">(10, 50)</text>
+    </g>
+    <g class="dg-label-sm" text-anchor="middle" fill="var(--dg-text-soft)">
+      <text x="73"  y="132">nessun impatto</text><text x="73"  y="146">sugli utenti</text>
+      <text x="211" y="132">nessun impatto:</text><text x="211" y="146">rete nuova</text>
+      <text x="349" y="132">impatto basso,</text><text x="349" y="146">di sera</text>
+      <text x="487" y="132">delicato:</text><text x="487" y="146">serve finestra</text>
+      <text x="626" y="132">il più rischioso:</text><text x="626" y="146">per ultimo</text>
+    </g>
+    <path d="M10 176h680" stroke="var(--dg-line-soft)" stroke-width="1.4"/>
+    <g stroke="var(--dg-line)" stroke-width="1.2"><path d="M73 170v12"/><path d="M211 170v12"/><path d="M349 170v12"/><path d="M487 170v12"/><path d="M626 170v12"/></g>
+    <text x="350" y="208" text-anchor="middle" class="dg-label-sm">Si parte da ciò che non disturba nessuno e si finisce con ciò che ferma l'azienda se sbagli.</text>
+    <text x="350" y="230" text-anchor="middle" class="dg-label-sm">Tra una fase e l'altra: qualche giorno di esercizio reale, per far emergere i problemi con calma.</text>
+  </svg>
+  </div>
+  <figcaption>L'ordine non è casuale: si costruisce fiducia partendo dalle fasi reversibili e a basso
+  impatto. Se la fase 3 fa emergere un problema, lo risolvi con l'azienda che lavora normalmente.</figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Le quattro regole della migrazione
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Prima permissivo, poi restrittivo.</b> Sposta il gruppo nella VLAN nuova con regole larghe,
+    verifica che tutto funzioni per qualche giorno, <em>poi</em> stringi. Cambiare due cose insieme —
+    VLAN e regole — rende impossibile capire cosa si è rotto.</li>
+    <li><b>Una VLAN per volta, mai due nella stessa sera.</b></li>
+    <li><b>Piano di rientro scritto, prima di iniziare.</b> Come torni indietro in cinque minuti se alle
+    22:30 qualcosa non va? Se non sai rispondere, non iniziare.</li>
+    <li><b>Avvisa chi lavora.</b> Anche la fase «senza impatto» merita una mail il giorno prima: se
+    qualcosa va storto, la differenza tra un disguido e un disastro di reputazione è tutta lì.</li>
+  </ul>
+</div>
+
+<h2>Gli errori di progettazione più costosi</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Errore</th><th>Cosa comporta</th></tr></thead>
+    <tbody>
+      <tr><td><b>Subnet troppo strette</b></td><td>Un /26 «tanto sono 40 telecamere». Ne aggiungono 30 e devi rifare tutto. <b>Usa /24 e non pensarci più:</b> gli indirizzi privati sono gratis.</td></tr>
+      <tr><td><b>192.168.1.0/24 in azienda</b></td><td>Collide con le reti di casa dei dipendenti in VPN. Vedi lezione 1-16.</td></tr>
+      <tr><td><b>Una VLAN per reparto</b></td><td>Otto VLAN che devono parlare tutte con tutte: complessità senza benefici.</td></tr>
+      <tr><td><b>Nessuna VLAN di gestione</b></td><td>Le interfacce degli switch raggiungibili da qualsiasi PC. È il primo obiettivo di chi entra in rete.</td></tr>
+      <tr><td><b>Schema diverso su ogni sede</b></td><td>Rende impossibile riassumere le rotte e raddoppia il tempo di ogni intervento futuro.</td></tr>
+      <tr><td><b>Niente documentazione</b></td><td>Tra un anno nessuno — nemmeno tu — saprà perché una regola è lì, e nessuno oserà toccarla.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Esercizio con un cliente vero
+  </div>
+  <p>Prendi un cliente che segui e che oggi ha una rete piatta. Senza toccare niente:</p>
+  <ol style="margin-bottom:0">
+    <li>Fai l'inventario dalla tabella ARP e dai lease DHCP. Conta quanti dispositivi ci sono e quanti
+    <em>non sono PC</em>.</li>
+    <li>Raggruppali per livello di fiducia, non per reparto.</li>
+    <li>Compila la matrice di comunicazione.</li>
+    <li>Scrivi lo schema VLAN/subnet.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">Ci metti un'ora e ottieni due cose: l'esercizio più utile
+  di questo capitolo, e <b>un progetto vero da proporre</b>. Portalo a chi in azienda decide: nella
+  peggiore delle ipotesi hai fatto pratica; nella migliore hai portato un lavoro.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: progettare le VLAN",
+  "questions": [
+    { "q": "Qual è il criterio corretto per raggruppare i dispositivi in VLAN?",
+      "a": [ {"t":"Il livello di fiducia e il danno che farebbero se compromessi","ok":true},
+             {"t":"Il reparto aziendale di appartenenza","ok":false},
+             {"t":"La posizione fisica nell'edificio","ok":false},
+             {"t":"Il produttore dei dispositivi","ok":false} ],
+      "e": "Contabilità e commerciale usano gli stessi PC, gli stessi server e hanno lo stesso profilo di rischio: separarli crea VLAN che devono parlare tutte con tutte, cioè complessità senza benefici. Una telecamera non aggiornabile e un PC aziendale gestito meritano invece regole completamente diverse." },
+
+    { "q": "Prima di creare una nuova VLAN, quale domanda ti fa capire se serve davvero?",
+      "a": [ {"t":"«Quali regole avrà, diverse da quelle della VLAN accanto?»","ok":true},
+             {"t":"«Quanti dispositivi ci andranno dentro?»","ok":false},
+             {"t":"«Lo switch supporta abbastanza VLAN?»","ok":false},
+             {"t":"«Il cliente è disposto a pagare?»","ok":false} ],
+      "e": "Se due gruppi finirebbero con le stesse identiche regole, una VLAN sola basta. Ogni VLAN in più è complessità permanente da mantenere e documentare: va guadagnata con una differenza reale di trattamento, non aggiunta per simmetria o per far numero." },
+
+    { "q": "Cos'è la matrice di comunicazione?",
+      "a": [ {"t":"La tabella di chi può iniziare una conversazione verso chi, e su quali porte","ok":true},
+             {"t":"L'elenco degli indirizzi IP assegnati","ok":false},
+             {"t":"Lo schema fisico dei cavi","ok":false},
+             {"t":"Il registro dei log del firewall","ok":false} ],
+      "e": "È il vero progetto: si compila con il cliente, si fa approvare e diventa la specifica da cui nascono le regole del firewall. Ha tre vantaggi: ti tutela quando tra sei mesi qualcuno contesta una restrizione, è indipendente dal vendor, e fa emergere i requisiti che nessuno ti aveva detto." },
+
+    { "q": "In una migrazione da rete piatta a VLAN, da quale gruppo si comincia?",
+      "a": [ {"t":"Dalla VLAN di gestione e dagli ospiti: nessun impatto sugli utenti","ok":true},
+             {"t":"Dagli uffici, che sono il gruppo più numeroso","ok":false},
+             {"t":"Dai server, che sono i più importanti","ok":false},
+             {"t":"Da tutte insieme, in una sola notte","ok":false} ],
+      "e": "Si parte da ciò che non disturba nessuno e che è facilmente reversibile, per costruire fiducia e far emergere i problemi con calma. Uffici e server si spostano per ultimi perché sono quelli che fermano l'azienda se qualcosa va storto. Tutto in una notte è il modo migliore per non sapere cosa si è rotto." },
+
+    { "q": "Perché conviene assegnare un /24 intero anche a una VLAN con sole 18 telecamere?",
+      "a": [ {"t":"Gli indirizzi privati non costano nulla, mentre rifare l'indirizzamento costa moltissimo","ok":true},
+             {"t":"Perché le telecamere richiedono molti indirizzi ciascuna","ok":false},
+             {"t":"Perché con maschere più strette il DHCP non funziona","ok":false},
+             {"t":"Perché lo impone lo standard 802.1Q","ok":false} ],
+      "e": "Un /26 basterebbe oggi, ma il giorno che il cliente aggiunge trenta telecamere devi rifare subnet, DHCP, riservazioni, regole firewall, rotte e documentazione. Un /24 costa zero e regge per anni: è una delle poche scelte di progetto che si possono fare abbondanti senza alcun prezzo." },
+
+    { "q": "Durante la migrazione, perché non bisogna cambiare VLAN e regole contemporaneamente?",
+      "a": [ {"t":"Se qualcosa si rompe non sai se è la VLAN o la regola","ok":true},
+             {"t":"Perché gli switch non accettano due modifiche insieme","ok":false},
+             {"t":"Perché raddoppia il tempo di configurazione","ok":false},
+             {"t":"Perché il DHCP ha bisogno di tempo per aggiornarsi","ok":false} ],
+      "e": "È la stessa regola del troubleshooting: una modifica alla volta. Si sposta il gruppo nella VLAN nuova con regole larghe, si verifica per qualche giorno di lavoro reale, e solo dopo si stringe. Così ogni problema ha una causa sola e identificabile." }
+  ]
+}
+</script>

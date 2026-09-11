@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LACP e aggregazione di link — NetPath</title>
+<meta name="description" content="Raddoppiare la banda (o quasi) e sopravvivere alla rottura di un cavo — con l'avvertenza che nessuno dice mai.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-06">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Resilienza di livello 2</span>
+      </nav>
+      <h1 class="lesson-title">LACP e aggregazione di link</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 06</span>
+        <span class="chip">20 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire cosa l'aggregazione dà davvero e cosa non dà</li>
+        <li>Sapere perché una singola conversazione non va più veloce</li>
+        <li>Scegliere l'algoritmo di distribuzione giusto</li>
+        <li>Configurare e diagnosticare un aggregato senza creare loop</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">L'aggregazione di link è una di quelle tecnologie che sembrano magia — «unisco due cavi
+da 1 Gbps e ottengo 2 Gbps» — e che deludono chi non ha capito come funzionano davvero. Questa lezione
+ti mette in condizione di venderla bene e di non promettere quello che non può dare.</p>
+
+<h2>Il problema e la soluzione</h2>
+
+<p>Il collegamento tra due switch, o tra uno switch e un server, è un punto critico: ci passa il
+traffico di decine di dispositivi, e se quel cavo si rompe cade tutto quello che c'è dietro.</p>
+
+<p>L'<strong>aggregazione</strong> unisce più collegamenti fisici in <strong>un unico collegamento
+logico</strong>. Gli switch lo trattano come un cavo solo — il che, tra l'altro, evita che lo Spanning
+Tree ne blocchi uno considerandolo un anello.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 240" role="img" aria-label="Quattro cavi fisici uniti in un unico collegamento logico tra due switch">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Quattro cavi, un solo collegamento logico</text>
+
+    <rect x="40" y="70" width="150" height="80" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.8"/>
+    <text x="115" y="115" text-anchor="middle" class="dg-mono-sm">SWITCH A</text>
+    <rect x="510" y="70" width="150" height="80" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.8"/>
+    <text x="585" y="115" text-anchor="middle" class="dg-mono-sm">SWITCH B</text>
+
+    <g stroke="var(--dg-5)" stroke-width="2.4">
+      <path d="M192 88h316"/><path d="M192 102h316"/><path d="M192 118h316"/><path d="M192 132h316"/>
+    </g>
+    <rect x="280" y="76" width="140" height="68" rx="10" fill="none" stroke="var(--dg-1)" stroke-width="2.2" stroke-dasharray="6 4"/>
+    <text x="350" y="62" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-1)">bond0 · 4 Gbps aggregati</text>
+
+    <text x="350" y="178" text-anchor="middle" class="dg-label-sm">Per lo Spanning Tree è <tspan font-weight="700">un solo collegamento</tspan>: nessuna porta viene bloccata.</text>
+    <text x="350" y="200" text-anchor="middle" class="dg-label-sm">Se un cavo si rompe, restano 3 Gbps e nessuno se ne accorge.</text>
+    <text x="350" y="224" text-anchor="middle" class="dg-label-sm" fill="var(--dg-3)">Ma una <tspan font-weight="700">singola conversazione</tspan> resta a 1 Gbps. Vedi sotto: è il punto che conta.</text>
+  </svg>
+  </div>
+  <figcaption>Nomi diversi per la stessa cosa: <b>LACP</b>, <b>LAG</b>, <b>port channel</b>, <b>EtherChannel</b>
+  (Cisco), <b>bonding</b> (Linux), <b>teaming</b> (Windows), <b>bond</b> (MikroTik).</figcaption>
+</figure>
+
+<h2>L'avvertenza che nessuno dice</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due cavi da 1 Gbps NON fanno 2 Gbps per un singolo trasferimento
+  </div>
+  <p>L'aggregazione <b>non spezza una conversazione su più cavi</b>. Ogni singolo flusso viene assegnato
+  a <b>un solo</b> cavo fisico, scelto con un calcolo sugli indirizzi.</p>
+  <p>Motivo tecnico: se i pacchetti di una stessa conversazione viaggiassero su cavi diversi
+  arriverebbero <b>fuori ordine</b>, perché i cavi non hanno esattamente la stessa latenza. TCP
+  interpreterebbe il disordine come perdita, rallenterebbe, e il risultato sarebbe <em>peggiore</em>
+  di un cavo solo.</p>
+  <p><b>Conseguenza pratica:</b> se un cliente copia un file da un server, quel trasferimento andrà a
+  1 Gbps anche con quattro cavi aggregati. Ma se <b>cinquanta utenti</b> copiano contemporaneamente,
+  i loro flussi si distribuiscono sui quattro cavi e la banda complessiva è reale.</p>
+  <p><b>Come si dice a un cliente:</b> «l'aggregazione aumenta la capacità totale della rete e vi
+  protegge dalla rottura di un cavo, ma il singolo trasferimento resta alla velocità di un cavo.
+  Se vi serve più velocità <em>per una singola macchina</em>, la strada è passare a 10 Gbps.»
+  Detto prima, è un'informazione preziosa. Scoperto dopo, è una contestazione.</p>
+</div>
+
+<h2>Come viene scelto il cavo: l'algoritmo di distribuzione</h2>
+
+<p>Lo switch calcola un valore (<em>hash</em>) su alcuni campi del traffico e da lì decide quale cavo
+usare. Quali campi, lo scegli tu — ed è una scelta che fa la differenza.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Criterio</th><th>Distribuisce bene quando…</th><th>Distribuisce male quando…</th></tr></thead>
+    <tbody>
+      <tr><td><b>MAC sorgente/destinazione</b></td><td>Tanti dispositivi diversi sullo stesso segmento</td>
+          <td>Il traffico passa da un router: tutti i frame hanno lo stesso MAC, e finiscono su un cavo solo</td></tr>
+      <tr><td><b>IP sorgente/destinazione</b></td><td>Tanti client verso tanti server</td>
+          <td>Tanti client verso <b>un solo</b> server: l'IP di destinazione è sempre lo stesso</td></tr>
+      <tr><td><b>IP + porta (L3+L4)</b></td><td><b>Quasi sempre. È la scelta predefinita consigliata.</b></td>
+          <td>Un solo client con una sola connessione verso un solo server</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il sintomo dell'algoritmo sbagliato
+  </div>
+  <p>Hai aggregato quattro cavi verso il NAS e le prestazioni non migliorano. Guardi i contatori delle
+  quattro porte: <b>uno è al 95%, gli altri tre a zero</b>.</p>
+  <p>Significa che tutto il traffico calcola lo stesso hash. Tipicamente perché stai usando la
+  distribuzione per MAC e il traffico arriva tutto dal router (stesso MAC sorgente), oppure per IP e va
+  tutto allo stesso server. Cambiando in <b>IP+porta</b> il traffico si distribuisce, perché le porte
+  sorgente dei client sono tutte diverse.</p>
+  <p style="margin-bottom:0"><b>Verifica sempre i contatori per porta dopo aver creato un aggregato.</b>
+  È l'unico modo per sapere se sta davvero funzionando.</p>
+</div>
+
+<h2>LACP o statico?</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>LACP (802.3ad / 802.1AX)</th><th>Statico (on / manuale)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Come funziona</b></td><td>I due lati si parlano e concordano l'aggregato</td><td>Si dichiara a mano da entrambe le parti, senza verifica</td></tr>
+      <tr><td><b>Rileva errori di cablaggio</b></td><td><b>Sì:</b> se colleghi un cavo allo switch sbagliato, l'aggregato non si forma</td><td><b>No:</b> si forma comunque e <b>crea un loop</b></td></tr>
+      <tr><td><b>Rileva un cavo guasto in un senso solo</b></td><td>Sì, smette di usarlo</td><td>No, continua a mandarci traffico che si perde</td></tr>
+      <tr><td><b>Quando usarlo</b></td><td><b>Sempre</b></td><td>Solo se un apparato non supporta LACP</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>La differenza è tutta nella riga «rileva errori di cablaggio», e vale da sola la scelta: un aggregato
+statico cablato male è indistinguibile da un anello, e produce la tempesta di broadcast della lezione
+precedente.</p>
+
+<h2>Le condizioni perché funzioni</h2>
+
+<p>Le porte aggregate devono essere <strong>identiche sotto ogni aspetto</strong>: stessa velocità,
+stesso duplex, stesso elenco di VLAN consentite, stessa native VLAN, stesso tipo (tutte access o tutte
+trunk). Una sola differenza e l'aggregato non si forma — o, peggio, si forma male.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Creare un aggregato</div>
+<pre><span class="c">═══ CISCO — EtherChannel con LACP ═══════════════════</span>
+<span class="p">interface range Gi1/0/23-24</span>
+ <span class="p">channel-group</span> <span class="n">1</span> <span class="p">mode active</span>       <span class="c"># active = LACP. "on" = statico: evitalo</span>
+<span class="p">interface Port-channel1</span>
+ <span class="p">switchport mode trunk</span>
+ <span class="p">switchport trunk allowed vlan</span> <span class="n">10,20,30,99</span>
+<span class="p">port-channel load-balance src-dst-ip-port</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/interface bonding add name=</span><span class="s">bond1</span> <span class="p">slaves=</span><span class="s">ether3,ether4</span> <span class="p">\</span>
+<span class="p">    mode=</span><span class="s">802.3ad</span> <span class="p">transmit-hash-policy=</span><span class="s">layer-3-and-4</span> <span class="p">lacp-rate=</span><span class="s">1sec</span>
+<span class="p">/interface bridge port add bridge=</span><span class="s">br-lan</span> <span class="p">interface=</span><span class="s">bond1</span>
+
+<span class="c">═══ VERIFICARE ══════════════════════════════════════</span>
+<span class="p">show etherchannel summary</span>          <span class="c"># Cisco: cerca (P) = in uso</span>
+<span class="p">show interfaces port-channel 1</span>
+<span class="p">/interface bonding monitor bond1</span>    <span class="c"># MikroTik</span>
+<span class="p">/interface print stats</span>              <span class="c"># i contatori per porta: si distribuisce?</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'ordine giusto delle operazioni
+  </div>
+  <p>Quando crei un aggregato su una rete in produzione, <b>configura prima un lato e poi l'altro
+  rapidamente</b>, oppure — meglio — scollega fisicamente uno dei cavi mentre configuri.</p>
+  <p>Motivo: nel tempo che passa tra la configurazione del primo lato e quella del secondo, i due
+  switch hanno due cavi paralleli che <em>non</em> sono un aggregato. Se lo Spanning Tree non è attivo,
+  quello è un loop a tutti gli effetti, e la rete si ferma mentre stai ancora scrivendo.</p>
+  <p style="margin-bottom:0">Con RSTP attivo il rischio è basso, perché STP blocca il secondo cavo
+  finché l'aggregato non si forma. È un'altra buona ragione per averlo sempre acceso.</p>
+</div>
+
+<h2>Aggregare verso due switch diversi</h2>
+
+<p>Un limite ovvio: se aggreghi quattro cavi verso lo stesso switch e <em>quello switch</em> si guasta,
+non è servito a niente. Per proteggersi anche da questo servono tecnologie che fanno apparire due
+switch fisici come uno solo:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tecnologia</th><th>Chi la usa</th><th>Idea</th></tr></thead>
+    <tbody>
+      <tr><td><b>Stacking</b></td><td>Cisco, HPE, Aruba</td>
+          <td>Più switch collegati da cavi speciali diventano un unico apparato, con una sola configurazione. Il modo più semplice ed è quello che incontrerai più spesso.</td></tr>
+      <tr><td><b>MLAG / VPC</b></td><td>Cisco Nexus, Arista, Juniper</td>
+          <td>Due switch restano indipendenti ma presentano un aggregato comune. Più flessibile e più complesso.</td></tr>
+      <tr><td><b>CRS / bonding</b></td><td>MikroTik</td>
+          <td>Supporto più limitato: valutare caso per caso.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>In una PMI, la risposta quasi sempre corretta è: <strong>due switch in stack</strong>, con i server e
+i collegamenti critici aggregati con un cavo verso ciascuno dei due. Costa poco più di due switch
+separati e toglie di mezzo un intero punto singolo di guasto.</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: aggregazione di link",
+  "questions": [
+    { "q": "Un cliente aggrega due cavi da 1 Gbps verso il NAS e si aspetta 2 Gbps copiando un file. Cosa succede davvero?",
+      "a": [ {"t":"Il trasferimento resta a 1 Gbps: un singolo flusso usa un solo cavo","ok":true},
+             {"t":"Arriva a 2 Gbps come si aspetta","ok":false},
+             {"t":"Va più lento perché i pacchetti arrivano fuori ordine","ok":false},
+             {"t":"Dipende dal tipo di file","ok":false} ],
+      "e": "Ogni flusso viene assegnato a un solo cavo, per evitare che i pacchetti arrivino fuori ordine (cosa che TCP interpreterebbe come perdita, peggiorando tutto). Con molti utenti contemporanei la banda aggregata è reale; per un singolo trasferimento veloce serve passare a 10 Gbps. Va detto <b>prima</b> al cliente." },
+
+    { "q": "Perché LACP è preferibile a un aggregato statico?",
+      "a": [ {"t":"Verifica che i cavi vadano davvero dove devono: un errore di cablaggio non forma l'aggregato","ok":true},
+             {"t":"Perché è più veloce","ok":false},
+             {"t":"Perché supporta più cavi","ok":false},
+             {"t":"Perché non richiede configurazione","ok":false} ],
+      "e": "I due lati si parlano e concordano. Con un aggregato statico, un cavo collegato allo switch sbagliato viene considerato parte del gruppo lo stesso: il risultato è un anello, cioè una tempesta di broadcast. LACP rileva anche un cavo guasto in una sola direzione e smette di usarlo." },
+
+    { "q": "Hai aggregato quattro cavi ma i contatori mostrano una porta al 95% e tre a zero. Cosa cambi?",
+      "a": [ {"t":"L'algoritmo di distribuzione, passando a IP + porta","ok":true},
+             {"t":"La velocità delle porte","ok":false},
+             {"t":"Il numero di cavi","ok":false},
+             {"t":"La VLAN dell'aggregato","ok":false} ],
+      "e": "Tutto il traffico sta calcolando lo stesso hash: tipicamente distribuzione per MAC con traffico che arriva tutto dal router, o per IP con un solo server di destinazione. Con IP + porta anche flussi verso lo stesso server si distribuiscono, perché le porte sorgente dei client sono tutte diverse." },
+
+    { "q": "Quali condizioni devono rispettare le porte di un aggregato?",
+      "a": [ {"t":"Stessa velocità, duplex, elenco VLAN, native VLAN e modalità","ok":true},
+             {"t":"Solo la stessa velocità","ok":false},
+             {"t":"Devono stare su switch diversi","ok":false},
+             {"t":"Devono essere tutte porte in fibra","ok":false} ],
+      "e": "Devono essere identiche sotto ogni aspetto: una sola differenza e l'aggregato non si forma, oppure si forma in modo instabile. È il primo controllo da fare quando un port channel «non sale»." },
+
+    { "q": "Perché creare un aggregato su una rete in produzione richiede attenzione all'ordine?",
+      "a": [ {"t":"Tra la configurazione del primo e del secondo lato i due cavi sono un anello","ok":true},
+             {"t":"Perché gli switch vanno riavviati","ok":false},
+             {"t":"Perché si perdono le VLAN","ok":false},
+             {"t":"Perché il DHCP si azzera","ok":false} ],
+      "e": "Finché solo un lato è configurato, i due cavi sono semplicemente due collegamenti paralleli tra gli stessi switch — cioè un loop. Senza RSTP attivo la rete si ferma mentre stai ancora scrivendo. Si scollega fisicamente un cavo durante la configurazione, oppure si conta sullo spanning tree: un'altra buona ragione per averlo acceso." },
+
+    { "q": "Aggregare quattro cavi verso lo stesso switch protegge da quale guasto?",
+      "a": [ {"t":"Dalla rottura di un cavo o di una porta, ma non dal guasto dello switch","ok":true},
+             {"t":"Da qualsiasi guasto, incluso quello dello switch","ok":false},
+             {"t":"Solo dai problemi di banda","ok":false},
+             {"t":"Dai loop di livello 2","ok":false} ],
+      "e": "Lo switch resta un punto singolo di guasto. Per eliminarlo servono stacking o MLAG, che fanno apparire due switch fisici come uno solo: si aggrega un cavo verso ciascuno dei due e si sopravvive anche alla morte di un apparato. In una PMI la risposta quasi sempre corretta è due switch in stack." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

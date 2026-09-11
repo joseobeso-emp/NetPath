@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Port security, storm control, loop protection — NetPath</title>
+<meta name="description" content="Le protezioni che si accendono il primo giorno e che quasi nessuno accende mai.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-07">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Resilienza di livello 2</span>
+      </nav>
+      <h1 class="lesson-title">Port security, storm control, loop protection</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 07</span>
+        <span class="chip">20 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Conoscere le difese di livello 2 e da cosa proteggono ciascuna</li>
+        <li>Capire perché la rete locale è fiduciosa per progetto</li>
+        <li>Definire una configurazione standard da applicare a ogni switch nuovo</li>
+        <li>Evitare che una protezione si trasformi in un guasto autoinflitto</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Il livello 2 è stato progettato negli anni Ottanta, in un mondo in cui chi era dentro
+l'edificio era per definizione autorizzato. Il risultato è che <strong>ARP, DHCP e Spanning Tree non
+hanno nessuna autenticazione</strong>: chiunque può dire qualsiasi cosa e gli altri ci credono.
+Le protezioni di questa lezione servono a rimettere un minimo di verifica dove il progetto originale
+non ne prevedeva.</p>
+
+<h2>Le tre bugie che chiunque può raccontare</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Bugia</th><th>Attacco</th><th>Effetto</th><th>Difesa</th></tr></thead>
+    <tbody>
+      <tr><td>«Il gateway sono io»</td><td><b>ARP spoofing</b></td>
+          <td>Tutto il traffico della rete passa dall'attaccante, che può leggerlo e modificarlo</td>
+          <td>Dynamic ARP Inspection</td></tr>
+      <tr><td>«Il DHCP sono io»</td><td><b>Rogue DHCP</b></td>
+          <td>Distribuisce indirizzi con sé stesso come gateway e DNS: stesso risultato di sopra</td>
+          <td>DHCP Snooping</td></tr>
+      <tr><td>«Il root bridge sono io»</td><td><b>STP root takeover</b></td>
+          <td>Ridisegna i percorsi della rete per farsi passare il traffico attraverso</td>
+          <td>Root Guard, BPDU Guard</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il portalettere finto
+  </div>
+  <p>In un condominio senza portineria, tutti lasciano la posta in un cesto comune e si fidano.
+  Un giorno arriva uno sconosciuto con una pettorina e dice: <b>«da oggi la posta la raccolgo io»</b>.
+  Nessuno chiede un documento, perché non è mai stato necessario. Lui prende tutta la posta, la legge,
+  e poi la consegna davvero — così nessuno si accorge di niente.</p>
+  <p>Questo è l'ARP spoofing: nella rete locale nessuno verifica chi dice cosa, quindi basta dirlo con
+  convinzione. E siccome il traffico continua a funzionare, il furto è invisibile.</p>
+  <p>Le protezioni di questa lezione sono il portiere che controlla i documenti: <b>«tu non sei il
+  portalettere, e da questa porta non può uscire quella frase»</b>.</p>
+</div>
+
+<h2>Le difese, una per una</h2>
+
+<h3>Port security</h3>
+<p>Limita quanti MAC address possono comparire su una porta e, volendo, quali. Se ne compaiono di più,
+la porta si spegne o scarta il traffico in eccesso.</p>
+<p><b>Da cosa protegge:</b> dal MAC flooding (riempire la tabella MAC per far comportare lo switch come
+un hub) e dallo switch abusivo collegato a una presa.</p>
+<p><b>Attenzione:</b> non impostare il limite a 1. Un telefono VoIP con il PC collegato dietro presenta
+<em>due</em> MAC, e una macchina virtuale su un portatile pure. Un limite di <strong>2 o 3</strong> è
+realistico; 1 genera ticket a raffica.</p>
+
+<h3>DHCP snooping</h3>
+<p>Lo switch impara quali porte sono autorizzate a <strong>rispondere</strong> alle richieste DHCP —
+tipicamente solo quella verso il server — e scarta le risposte che arrivano da tutte le altre.</p>
+<p><b>Da cosa protegge:</b> dal router portato da casa e attaccato a una presa, che è la causa più
+frequente di «alcuni utenti prendono indirizzi strani». È una protezione che risolve un problema
+operativo quotidiano, non solo un attacco teorico.</p>
+<p>In più costruisce una tabella <em>MAC ↔ IP ↔ porta</em> che serve alla difesa successiva.</p>
+
+<h3>Dynamic ARP Inspection</h3>
+<p>Usa la tabella costruita dal DHCP snooping per verificare ogni messaggio ARP: se un dispositivo
+afferma di avere un IP che secondo il DHCP non è suo, il messaggio viene scartato.</p>
+<p><b>Da cosa protegge:</b> dall'ARP spoofing, cioè dal furto silenzioso del traffico.</p>
+<p><b>Prerequisito:</b> richiede DHCP snooping attivo. E per i dispositivi con IP statico serve una voce
+manuale nella tabella, altrimenti vengono bloccati: è la causa tipica di «dopo aver attivato DAI la
+stampante non risponde più».</p>
+
+<h3>Storm control</h3>
+<p>Limita broadcast, multicast e unicast sconosciuti a una percentuale della banda della porta. Superata
+la soglia, il traffico in eccesso viene scartato o la porta viene spenta.</p>
+<p><b>Da cosa protegge:</b> trasforma una tempesta di broadcast in un rallentamento localizzato invece
+che in un collasso totale. Non sostituisce lo Spanning Tree: è la rete di sicurezza sotto di lui.</p>
+<p><b>Soglia realistica:</b> 1–2% per il broadcast su una porta utente. Sembra pochissimo ed è già
+molto più del traffico normale.</p>
+
+<h3>Loop protection</h3>
+<p>Lo switch manda periodicamente un pacchetto speciale da ogni porta: se torna indietro dalla stessa
+porta, c'è un anello e la porta viene bloccata.</p>
+<p><b>Da cosa protegge:</b> dal cavetto collegato tra due prese a muro dallo stesso utente — il caso che
+lo Spanning Tree da solo non sempre intercetta, perché l'anello può essere fuori dalla sua visibilità
+(per esempio dentro uno switch da scrivania non gestito).</p>
+
+<h3>BPDU Guard e Root Guard</h3>
+<p>Visti nella lezione precedente. <b>BPDU Guard</b> spegne una porta utente da cui arrivano messaggi di
+Spanning Tree; <b>Root Guard</b> impedisce a un apparato collegato lì di diventare root bridge.</p>
+
+<h2>La configurazione standard di uno switch nuovo</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il tuo modello riutilizzabile
+  </div>
+  <p>Costruisciti un documento con questa configurazione di partenza e applicalo a ogni switch che
+  installi. Cinque minuti in più al momento dell'installazione, e ti risparmi una categoria intera di
+  ticket futuri.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Configurazione di base — porte utente</div>
+<pre><span class="c">═══ CISCO ═══════════════════════════════════════════</span>
+<span class="c"># --- globale ---</span>
+<span class="p">spanning-tree mode rapid-pvst</span>
+<span class="p">spanning-tree vlan</span> <span class="n">1-999</span> <span class="p">priority</span> <span class="n">4096</span>    <span class="c"># solo sullo switch centrale</span>
+<span class="p">ip dhcp snooping</span>
+<span class="p">ip dhcp snooping vlan</span> <span class="n">10,20,30,40,60</span>
+<span class="p">no ip dhcp snooping information option</span>       <span class="c"># evita problemi col relay</span>
+<span class="p">ip arp inspection vlan</span> <span class="n">10,20,30,40,60</span>
+
+<span class="c"># --- porta verso il server DHCP / il firewall: FIDATA ---</span>
+<span class="p">interface Gi1/0/24</span>
+ <span class="p">ip dhcp snooping trust</span>
+ <span class="p">ip arp inspection trust</span>
+
+<span class="c"># --- porte degli utenti ---</span>
+<span class="p">interface range Gi1/0/1-20</span>
+ <span class="p">switchport mode access</span>
+ <span class="p">switchport access vlan</span> <span class="n">10</span>
+ <span class="p">spanning-tree portfast</span>
+ <span class="p">spanning-tree bpduguard enable</span>
+ <span class="p">switchport port-security</span>
+ <span class="p">switchport port-security maximum</span> <span class="n">3</span>
+ <span class="p">switchport port-security violation restrict</span>   <span class="c"># restrict, non shutdown</span>
+ <span class="p">storm-control broadcast level</span> <span class="n">2.00</span>
+ <span class="p">storm-control action trap</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/interface bridge set br-lan protocol-mode=</span><span class="s">rstp</span>
+<span class="p">/interface bridge port set [find interface=ether2] \</span>
+<span class="p">    edge=</span><span class="s">yes</span> <span class="p">bpdu-guard=</span><span class="s">yes</span>
+<span class="c"># DHCP snooping (RouterOS 7)</span>
+<span class="p">/interface bridge set br-lan dhcp-snooping=</span><span class="s">yes</span>
+<span class="p">/interface bridge port set [find interface=ether1] trusted=</span><span class="s">yes</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Quando la protezione diventa il guasto
+  </div>
+  <p>Ogni difesa di questa lezione può fermare traffico legittimo se applicata senza pensare. I casi
+  che ti capiteranno davvero:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Port security con limite 1</b> → il telefono VoIP con il PC dietro non funziona. Metti 3.</li>
+    <li><b>Violation «shutdown»</b> → la porta resta spenta finché non ci va qualcuno fisicamente.
+    Su una sede remota significa un viaggio. Usa <b>restrict</b>, che scarta e segnala senza spegnere.</li>
+    <li><b>DAI senza voci statiche</b> → i dispositivi con IP fisso (stampanti, server, apparati) vengono
+    bloccati. Aggiungili alla tabella prima di attivare.</li>
+    <li><b>DHCP snooping senza porta fidata</b> → nessuno riceve più un indirizzo, perché anche il
+    server legittimo viene bloccato. <b>Configura prima la porta trusted</b>, poi attiva la funzione.</li>
+    <li><b>Storm control troppo aggressivo</b> → in reti con multicast (videosorveglianza, IPTV) si
+    scarta traffico buono. Limita solo il broadcast, o alza la soglia per il multicast.</li>
+  </ul>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Da dove cominciare, se il cliente non ha niente di tutto questo
+  </div>
+  <p>Non serve attivare tutto insieme. In ordine di rapporto tra beneficio e rischio:</p>
+  <ol style="margin-bottom:0">
+    <li><b>RSTP con root bridge imposto</b> — nessun rischio, previene il guasto peggiore.</li>
+    <li><b>PortFast + BPDU Guard</b> sulle porte utente — nessun rischio, risolve l'avvio lento dei PC
+    e blocca gli switch abusivi.</li>
+    <li><b>Storm control</b> al 2% sul broadcast — rischio bassissimo.</li>
+    <li><b>DHCP snooping</b> — rischio medio: va configurata prima la porta fidata. Risolve un problema
+    che il cliente ha davvero.</li>
+    <li><b>Dynamic ARP Inspection</b> — rischio più alto: serve censire gli IP statici. Da fare quando
+    i primi quattro sono stabili.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">I primi tre si possono attivare in qualsiasi momento senza
+  finestra di manutenzione, e da soli coprono la maggior parte dei problemi reali.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: protezioni di livello 2",
+  "questions": [
+    { "q": "Perché ARP e DHCP sono così facili da falsificare?",
+      "a": [ {"t":"Sono stati progettati senza autenticazione, presupponendo che chi è in rete sia fidato","ok":true},
+             {"t":"Perché usano UDP invece di TCP","ok":false},
+             {"t":"Perché non sono cifrati","ok":false},
+             {"t":"Perché gli switch moderni li gestiscono male","ok":false} ],
+      "e": "Nascono in un'epoca in cui l'accesso fisico all'edificio era la sicurezza. Nessuno verifica chi afferma cosa: basta dirlo. Le protezioni di questa lezione rimettono una verifica dove il progetto originale non la prevedeva, ed è per questo che sono tutte funzioni <em>aggiunte</em> dagli switch, non parte dei protocolli." },
+
+    { "q": "Qual è il prerequisito di Dynamic ARP Inspection?",
+      "a": [ {"t":"DHCP snooping attivo, perché DAI usa la sua tabella per verificare","ok":true},
+             {"t":"Lo Spanning Tree in modalità RSTP","ok":false},
+             {"t":"Le VLAN configurate","ok":false},
+             {"t":"Il port security","ok":false} ],
+      "e": "DAI confronta ogni messaggio ARP con la tabella MAC↔IP↔porta costruita dal DHCP snooping: senza quella, non ha niente con cui verificare. Conseguenza importante: i dispositivi con IP statico non compaiono in quella tabella e vanno inseriti a mano, altrimenti vengono bloccati." },
+
+    { "q": "Perché non conviene impostare il port security con limite di un solo MAC?",
+      "a": [ {"t":"Un telefono VoIP con il PC collegato dietro presenta due MAC","ok":true},
+             {"t":"Perché gli switch non supportano il limite a 1","ok":false},
+             {"t":"Perché rallenta la porta","ok":false},
+             {"t":"Perché impedisce il DHCP","ok":false} ],
+      "e": "Telefoni VoIP con PC a valle, macchine virtuali su un portatile e piccoli switch da scrivania legittimi presentano più MAC. Un limite di 2 o 3 protegge dal MAC flooding senza generare ticket a raffica. Anche la reazione conta: <b>restrict</b> scarta e segnala, <b>shutdown</b> spegne la porta e richiede un intervento fisico." },
+
+    { "q": "Un cliente si lamenta che ogni tanto alcuni utenti prendono indirizzi di una rete sconosciuta. Quale protezione risolve alla radice?",
+      "a": [ {"t":"DHCP snooping","ok":true},
+             {"t":"Storm control","ok":false},
+             {"t":"Root Guard","ok":false},
+             {"t":"Loop protection","ok":false} ],
+      "e": "È un DHCP abusivo, tipicamente un router portato da casa e attaccato a una presa. Il DHCP snooping fa passare le risposte DHCP solo dalle porte dichiarate fidate, e scarta quelle che arrivano dalle porte utente. Risolve un problema operativo quotidiano, non solo un attacco teorico." },
+
+    { "q": "Cosa succede se attivi DHCP snooping senza dichiarare fidata la porta verso il server DHCP?",
+      "a": [ {"t":"Nessuno riceve più un indirizzo: viene bloccato anche il server legittimo","ok":true},
+             {"t":"Funziona tutto normalmente","ok":false},
+             {"t":"Solo i nuovi dispositivi hanno problemi","ok":false},
+             {"t":"Lo switch si riavvia","ok":false} ],
+      "e": "Per impostazione predefinita tutte le porte sono non fidate, quindi le risposte DHCP vengono scartate ovunque — incluse quelle del server vero. È un blocco totale immediato, ed è il motivo per cui la porta fidata va configurata <b>prima</b> di attivare la funzione." },
+
+    { "q": "Quali protezioni si possono attivare senza finestra di manutenzione e con rischio quasi nullo?",
+      "a": [ {"t":"RSTP con root imposto, PortFast + BPDU Guard, storm control","ok":true},
+             {"t":"Dynamic ARP Inspection e port security con limite 1","ok":false},
+             {"t":"Nessuna: richiedono tutte un fermo","ok":false},
+             {"t":"Tutte quante, contemporaneamente","ok":false} ],
+      "e": "Queste tre non bloccano traffico legittimo e coprono già la maggior parte dei problemi reali: prevengono il guasto peggiore (il loop), risolvono l'avvio lento dei PC e limitano i danni di una tempesta. DAI e port security aggressivo richiedono invece un censimento preventivo dei dispositivi statici." },
+
+    { "q": "A cosa serve la loop protection, se c'è già lo Spanning Tree?",
+      "a": [ {"t":"Intercetta anelli che STP non vede, come quelli dentro uno switch non gestito collegato da un utente","ok":true},
+             {"t":"Sostituisce completamente lo Spanning Tree","ok":false},
+             {"t":"Serve solo sulle porte in fibra","ok":false},
+             {"t":"Aumenta la velocità di convergenza di STP","ok":false} ],
+      "e": "STP ragiona sui messaggi scambiati tra switch gestiti: se l'anello si chiude dentro un apparato che quei messaggi non li genera — uno switch da scrivania non gestito, o un cavetto tra due prese a muro passando per quello — può non accorgersene. La loop protection manda un pacchetto e verifica se torna indietro dalla stessa porta: è una prova diretta." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
