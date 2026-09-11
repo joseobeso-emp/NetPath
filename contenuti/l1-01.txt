@@ -1,0 +1,348 @@
+#id: l1-01
+#title: Che cos'è una rete: dal filo al pacchetto
+#min: 18
+#level: 1
+#chapter: Che cos'è una rete
+#desc: L'idea di base del networking spiegata dalle fondamenta: perché i dati viaggiano a pezzi e cosa serve davvero perché due macchine si parlino.
+#obj: Spiegare a chiunque cos'è una rete senza usare parole tecniche
+#obj: Capire perché i dati non viaggiano interi ma a pezzi, e perché è una genialata
+#obj: Riconoscere i tre ingredienti che servono sempre a due macchine per comunicare
+#obj: Sapere cosa c'è dentro un pacchetto, almeno a grandi linee
+---
+<p class="lead">Partiamo davvero da zero. Se sai già cos'è una rete, leggi lo stesso: quasi tutti hanno
+un'idea approssimativa di questo capitolo, e le idee approssimative qui sotto diventano confusione
+totale al livello 3. Dieci minuti adesso ti risparmiano mesi di nebbia.</p>
+
+<h2>Il problema da risolvere</h2>
+
+<p>Hai due computer in due stanze diverse. Su uno c'è una foto. La vuoi sull'altro.</p>
+
+<p>Sembra banale, ma fermati un secondo: <strong>cosa serve, concretamente?</strong> Serve qualcosa che
+colleghi fisicamente le due macchine — un filo, o delle onde radio. Serve che ognuna delle due sappia
+<em>come si chiama l'altra</em>, altrimenti non sa a chi sta parlando. E serve che entrambe abbiano
+concordato in anticipo <em>come</em> parlare: chi inizia, come si dice «ho finito», cosa fare se qualcosa
+si perde per strada.</p>
+
+<p>Questi tre ingredienti sono tutto il networking. Tutto. Le migliaia di sigle che ti spaventano
+— TCP, ARP, BGP, IPsec — sono solo modi diversi e sempre più raffinati di risolvere questi tre problemi:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Ingrediente</th><th>La domanda a cui risponde</th><th>Esempio concreto</th></tr></thead>
+    <tbody>
+      <tr><td><b>Il mezzo</b></td><td>Su cosa viaggia fisicamente il segnale?</td>
+          <td>Cavo di rame, fibra ottica, onde radio del Wi-Fi</td></tr>
+      <tr><td><b>L'indirizzo</b></td><td>Come si chiama chi parla e chi ascolta?</td>
+          <td>MAC address, indirizzo IP</td></tr>
+      <tr><td><b>Il protocollo</b></td><td>Quali sono le regole della conversazione?</td>
+          <td>Ethernet, IP, TCP, HTTP</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne
+  </div>
+  <p>Una rete è come due bambini che si parlano con due barattoli e uno spago.</p>
+  <p>Lo <b>spago</b> è il mezzo: senza, i suoni non arrivano. Il fatto che uno dica «Marco, mi senti?»
+  è l'<b>indirizzo</b>: serve a sapere a chi si sta parlando, soprattutto se i barattoli sono tre o quattro.
+  E il fatto che uno parli mentre l'altro ascolta, e che dica «passo» quando ha finito, è il <b>protocollo</b>:
+  una regola concordata prima, senza la quale parlerebbero sopra e non si capirebbe niente.</p>
+  <p>Cambia lo spago con un cavo di rete, i barattoli con due schede di rete e «passo» con un bit messo a 1
+  in un'intestazione, e hai Ethernet. Davvero: è la stessa identica cosa, solo più veloce.</p>
+</div>
+
+<h2>Perché i dati viaggiano a pezzi</h2>
+
+<p>Ecco il primo concetto che quasi nessuno spiega bene, ed è la chiave di tutto.</p>
+
+<p>Quando mandi una foto da 5 megabyte, <strong>non viaggia come un blocco unico</strong>. Viene spezzata in
+migliaia di pezzettini, ognuno dei quali parte per conto suo, e il computer di destinazione li rimette
+insieme in ordine. Ogni pezzettino si chiama <span class="term" data-term="packet">pacchetto</span>.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 680 230" role="img" aria-label="Una foto viene spezzata in pacchetti numerati che attraversano il cavo e vengono ricomposti a destinazione">
+    <!-- mittente -->
+    <rect x="14" y="62" width="126" height="106" rx="12" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="77" y="86" text-anchor="middle" class="dg-title">PC di Anna</text>
+    <rect x="34" y="98" width="86" height="52" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)"/>
+    <path d="M42 142l20-22 14 16 12-13 18 19z" fill="var(--dg-3)" opacity=".55"/>
+    <circle cx="58" cy="112" r="6" fill="var(--dg-3)" opacity=".7"/>
+    <text x="77" y="164" text-anchor="middle" class="dg-mono-sm">foto.jpg · 5 MB</text>
+
+    <!-- destinatario -->
+    <rect x="540" y="62" width="126" height="106" rx="12" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="603" y="86" text-anchor="middle" class="dg-title">PC di Bruno</text>
+    <rect x="560" y="98" width="86" height="52" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)"/>
+    <path d="M568 142l20-22 14 16 12-13 18 19z" fill="var(--dg-3)" opacity=".55"/>
+    <circle cx="584" cy="112" r="6" fill="var(--dg-3)" opacity=".7"/>
+    <text x="603" y="164" text-anchor="middle" class="dg-mono-sm">foto.jpg · ricomposta</text>
+
+    <!-- cavo -->
+    <line x1="140" y1="115" x2="540" y2="115" stroke="var(--dg-line-soft)" stroke-width="16" stroke-linecap="round"/>
+    <line x1="140" y1="115" x2="540" y2="115" stroke="var(--dg-surface)" stroke-width="11" stroke-linecap="round"/>
+
+    <!-- pacchetti -->
+    <g>
+      <rect x="168" y="100" width="52" height="30" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+      <text x="194" y="119" text-anchor="middle" class="dg-mono">#1</text>
+      <rect x="248" y="100" width="52" height="30" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+      <text x="274" y="119" text-anchor="middle" class="dg-mono">#2</text>
+      <rect x="328" y="100" width="52" height="30" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+      <text x="354" y="119" text-anchor="middle" class="dg-mono">#3</text>
+      <rect x="408" y="100" width="52" height="30" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+      <text x="434" y="119" text-anchor="middle" class="dg-mono">#4</text>
+      <rect x="488" y="100" width="36" height="30" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4" opacity=".45"/>
+    </g>
+    <path d="M470 82l18 0" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#arrHead)"/>
+    <defs>
+      <marker id="arrHead" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+        <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-line)"/>
+      </marker>
+    </defs>
+    <text x="340" y="62" text-anchor="middle" class="dg-label-sm">migliaia di pacchetti, uno dietro l'altro</text>
+    <text x="340" y="196" text-anchor="middle" class="dg-label-sm">ognuno porta scritto da dove viene, dove va e che numero è</text>
+  </svg>
+  </div>
+  <figcaption><b>Il file non attraversa il cavo: lo attraversano i suoi pezzi.</b> Ogni pacchetto è autonomo
+  e porta con sé le informazioni per essere consegnato e rimesso al posto giusto. Una foto da 5 MB diventa
+  circa 3.500 pacchetti.</figcaption>
+</figure>
+
+<p>Sembra complicato. Perché non mandare il file intero e basta?</p>
+
+<h3>Tre motivi, tutti ottimi</h3>
+
+<p><strong>1. Il cavo si può condividere.</strong> Se mandassi il file intero, per tutto il tempo del
+trasferimento il cavo sarebbe occupato da te e nessun altro potrebbe usarlo. Spezzando tutto in pacchetti,
+i tuoi pacchetti e quelli del collega si alternano sul filo e sembra che tutti stiano usando la rete
+contemporaneamente. È lo stesso motivo per cui in un'autostrada viaggiano mille automobili piccole e non
+un unico camion lungo quaranta chilometri.</p>
+
+<p><strong>2. Se qualcosa si rompe, si perde poco.</strong> Se durante il trasferimento c'è un disturbo
+elettrico, si corrompe un pacchetto, non tutto il file. Il destinatario dice «il numero 2.417 è arrivato
+sbagliato, rimandamelo» e si rispedisce solo quello. Senza pacchetti dovresti ricominciare da capo ogni volta.</p>
+
+<p><strong>3. I pacchetti possono prendere strade diverse.</strong> Su Internet, se una strada si interrompe,
+i pacchetti successivi passano da un'altra parte e arrivano lo stesso. Il destinatario li rimette in ordine
+usando i numeri. È il motivo per cui Internet non si spegne mai del tutto: fu progettata esattamente per
+questo.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Dove lo vedi nel lavoro
+  </div>
+  <p>Quando un cliente dice «la connessione va a scatti» o «le videochiamate si bloccano un secondo e poi
+  ripartono», quello che sta succedendo è che <b>alcuni pacchetti si perdono</b> (packet loss) oppure
+  arrivano con ritardi irregolari (jitter). Non è «la linea lenta»: la banda può essere abbondante.
+  È la differenza tra «il tubo è stretto» e «alcune gocce si perdono per strada», e sono due guasti
+  completamente diversi con cause e soluzioni diverse. Saperlo distinguere è già un passo avanti rispetto
+  a metà dei tecnici.</p>
+</div>
+
+<h2>Cosa c'è dentro un pacchetto</h2>
+
+<p>Un pacchetto è fatto di due parti, e questa struttura la ritroverai identica per il resto della tua vita
+professionale:</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 620 150" role="img" aria-label="Struttura di un pacchetto: intestazione con mittente, destinatario e numero, seguita dai dati">
+    <rect x="20" y="44" width="250" height="58" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <rect x="270" y="44" width="330" height="58" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="145" y="70" text-anchor="middle" class="dg-title">INTESTAZIONE</text>
+    <text x="145" y="88" text-anchor="middle" class="dg-label-sm">da chi · a chi · numero · controllo</text>
+    <text x="435" y="70" text-anchor="middle" class="dg-title">DATI</text>
+    <text x="435" y="88" text-anchor="middle" class="dg-label-sm">il pezzo vero di foto, pagina web, voce…</text>
+    <path d="M20 120h250" stroke="var(--dg-1)" stroke-width="1.2"/>
+    <path d="M20 116v8M270 116v8" stroke="var(--dg-1)" stroke-width="1.2"/>
+    <text x="145" y="138" text-anchor="middle" class="dg-mono-sm">la busta</text>
+    <path d="M270 120h330" stroke="var(--dg-3)" stroke-width="1.2"/>
+    <path d="M270 116v8M600 116v8" stroke="var(--dg-3)" stroke-width="1.2"/>
+    <text x="435" y="138" text-anchor="middle" class="dg-mono-sm">la lettera dentro</text>
+    <text x="310" y="28" text-anchor="middle" class="dg-label">Ogni pacchetto: una busta con dentro un pezzo di contenuto</text>
+  </svg>
+  </div>
+  <figcaption>L'<b>intestazione</b> (header) serve alla rete per far arrivare il pacchetto. I <b>dati</b>
+  (payload) sono ciò che interessa a te. La rete legge solo la busta e non le importa nulla di cosa c'è dentro:
+  è esattamente come le poste.</figcaption>
+</figure>
+
+<p>Nota una cosa importante: l'intestazione occupa spazio. Su un pacchetto Ethernet standard da 1.518 byte,
+circa 54 byte sono intestazioni. È il «costo» dell'organizzazione: circa il 3,5%. Te ne ricorderai quando
+studieremo le VPN, dove le intestazioni si moltiplicano e questo costo diventa un problema vero.</p>
+
+<h2>Come una rete cresce</h2>
+
+<p>Due computer e un cavo sono una rete. Ma appena ne aggiungi un terzo, nasce un problema nuovo: dove
+lo attacchi? Non puoi tirare un cavo da ognuno a ognuno — con 10 computer servirebbero 45 cavi, con 50
+ne servirebbero 1.225.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 680 300" role="img" aria-label="Tre fasi di crescita di una rete: due PC collegati, molti PC su uno switch, più reti collegate da router">
+    <!-- Fase 1 -->
+    <text x="105" y="24" text-anchor="middle" class="dg-title">1 · Due macchine</text>
+    <rect x="30" y="48" width="58" height="42" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <rect x="122" y="48" width="58" height="42" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <line x1="88" y1="69" x2="122" y2="69" stroke="var(--dg-line)" stroke-width="2.4"/>
+    <text x="105" y="112" text-anchor="middle" class="dg-label-sm">un cavo, e basta</text>
+
+    <!-- Fase 2 -->
+    <text x="340" y="24" text-anchor="middle" class="dg-title">2 · Molte macchine → serve uno switch</text>
+    <rect x="286" y="96" width="108" height="30" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="340" y="116" text-anchor="middle" class="dg-mono">SWITCH</text>
+    <g fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.3">
+      <rect x="236" y="44" width="48" height="34" rx="6"/>
+      <rect x="316" y="44" width="48" height="34" rx="6"/>
+      <rect x="396" y="44" width="48" height="34" rx="6"/>
+      <rect x="276" y="146" width="48" height="34" rx="6"/>
+      <rect x="356" y="146" width="48" height="34" rx="6"/>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.6" fill="none">
+      <path d="M260 78v10h50v8"/><path d="M340 78v18"/><path d="M420 78v10h-50v8"/>
+      <path d="M300 146v-10h20v-10"/><path d="M380 146v-10h-20v-10"/>
+    </g>
+    <text x="340" y="200" text-anchor="middle" class="dg-label-sm">un cavo per ciascuno verso un punto centrale</text>
+
+    <!-- Fase 3 -->
+    <text x="340" y="240" text-anchor="middle" class="dg-title">3 · Più reti → serve un router</text>
+    <rect x="150" y="256" width="110" height="30" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+    <text x="205" y="276" text-anchor="middle" class="dg-mono-sm">rete ufficio</text>
+    <rect x="420" y="256" width="110" height="30" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+    <text x="475" y="276" text-anchor="middle" class="dg-mono-sm">rete magazzino</text>
+    <rect x="300" y="254" width="80" height="34" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.8"/>
+    <text x="340" y="276" text-anchor="middle" class="dg-mono">ROUTER</text>
+    <line x1="260" y1="271" x2="300" y2="271" stroke="var(--dg-line)" stroke-width="2"/>
+    <line x1="380" y1="271" x2="420" y2="271" stroke="var(--dg-line)" stroke-width="2"/>
+  </svg>
+  </div>
+  <figcaption>Ogni apparato di rete nasce per risolvere un problema di scala. Lo <b>switch</b> risolve
+  «troppi cavi»; il <b>router</b> risolve «troppe macchine in una rete sola» e «reti diverse che devono
+  parlarsi». Internet è la stessa idea ripetuta milioni di volte.</figcaption>
+</figure>
+
+<p>Questa è, in una figura, l'intera architettura di qualunque rete aziendale tu vedrai. Un cliente con
+tre sedi e duecento dipendenti non ha niente di concettualmente diverso: ha solo più scatole della fase 2
+e della fase 3, messe in fila.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il modo giusto di guardare una rete
+  </div>
+  <p>Da adesso in poi, quando entri nel rack di un cliente, non vedere «un mucchio di scatole con dei led».
+  Chiediti per ognuna: <b>questa cosa a quale problema risponde?</b> Sta risolvendo «troppi cavi» (switch),
+  «reti diverse» (router), «chi può parlare con chi» (firewall), «niente cavi» (access point)?
+  Quattro domande, e il rack diventa leggibile.</p>
+</div>
+
+<h2>Le parole che hai appena imparato</h2>
+
+<ul class="clean">
+  <li><b>Rete</b>: due o più dispositivi che possono scambiarsi dati, grazie a un mezzo, a degli indirizzi
+  e a delle regole condivise.</li>
+  <li><b>Pacchetto</b>: il pezzetto in cui vengono spezzati tutti i dati per viaggiare. Composto da
+  intestazione (la busta) e dati (il contenuto).</li>
+  <li><b>Intestazione (header)</b>: le informazioni di servizio che permettono alla rete di consegnare il
+  pacchetto.</li>
+  <li><b>Banda</b>: quanti dati passano al secondo. È la larghezza del tubo.</li>
+  <li><b>Latenza</b>: quanto tempo ci mette un pacchetto ad arrivare. È la lunghezza del tubo.</li>
+  <li><b>Perdita di pacchetti (packet loss)</b>: quanti pacchetti spariscono per strada. È il tubo che perde.</li>
+</ul>
+
+<div class="callout">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
+    Banda, latenza e perdita non sono la stessa cosa
+  </div>
+  <p>Immagina di dover mandare 100 lettere a Roma.<br>
+  <b>Banda</b> = quante lettere entrano in ogni furgone.<br>
+  <b>Latenza</b> = quanto tempo impiega il furgone ad arrivare.<br>
+  <b>Perdita</b> = quante lettere cadono dal furgone per strada.<br>
+  Puoi avere un furgone enorme (banda alta) che però passa da Palermo (latenza alta). E puoi avere un
+  furgone piccolo e velocissimo che però perde metà del carico. Quando un cliente dice «va lento»,
+  il tuo primo lavoro è capire quale delle tre cose è andata storta — perché la soluzione è diversa in
+  ogni caso.</p>
+</div>
+
+<h2>Provalo adesso — due minuti</h2>
+
+<p>Apri il prompt dei comandi (Windows: tasto Windows, scrivi <code>cmd</code>) o il Terminale (Mac) e scrivi:</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Il tuo PC, adesso</div>
+<pre><span class="p">ping www.google.it</span>
+
+<span class="o">Risposta da 142.250.180.99: byte=32 durata=14ms TTL=117</span>
+<span class="o">Risposta da 142.250.180.99: byte=32 durata=13ms TTL=117</span>
+<span class="o">Risposta da 142.250.180.99: byte=32 durata=15ms TTL=117</span>
+<span class="o">Risposta da 142.250.180.99: byte=32 durata=13ms TTL=117</span>
+
+<span class="o">Statistiche Ping per 142.250.180.99:</span>
+<span class="o">    Pacchetti: Trasmessi = 4, Ricevuti = 4, Persi = 0 (0% persi)</span>
+</pre>
+</div>
+
+<p>Hai appena mandato quattro pacchetti dall'altra parte d'Italia e li hai visti tornare. Guarda i numeri:
+<code>byte=32</code> è la dimensione di ogni pacchetto, <code>durata=13ms</code> è la <b>latenza</b> (tredici
+millesimi di secondo per andare e tornare), <code>Persi = 0</code> è la <b>perdita</b>.</p>
+
+<p>Se ti sembra poco, considera questo: hai appena fatto la stessa identica misura che farai davanti a un
+cliente arrabbiato tra sei mesi, con la differenza che allora saprai anche interpretarla.</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: hai capito l'idea di fondo?",
+  "questions": [
+    { "q": "Quali sono i tre ingredienti che servono <em>sempre</em> perché due macchine comunichino?",
+      "a": [ {"t":"Un mezzo fisico, degli indirizzi e delle regole condivise","ok":true},
+             {"t":"Un cavo, un router e un indirizzo IP","ok":false},
+             {"t":"Un firewall, uno switch e un server DNS","ok":false},
+             {"t":"Una connessione Internet, un modem e una password","ok":false} ],
+      "e": "Mezzo, indirizzo, protocollo. Le altre risposte elencano <em>esempi</em> di questi tre (un cavo è un mezzo, un IP è un indirizzo), ma confondono l'ingrediente con una sua realizzazione concreta. Due PC collegati con un cavo, senza router e senza Internet, sono già una rete a tutti gli effetti." },
+
+    { "q": "Perché i dati vengono spezzati in pacchetti invece di viaggiare interi?",
+      "a": [ {"t":"Per condividere il mezzo, perdere poco in caso di errore e poter usare strade diverse","ok":true},
+             {"t":"Perché i cavi di rete non riescono a trasportare file grandi","ok":false},
+             {"t":"Per comprimere i dati e occupare meno spazio","ok":false},
+             {"t":"Perché lo impone il protocollo TCP e non si può fare altrimenti","ok":false} ],
+      "e": "Sono tre vantaggi pratici: il cavo resta condiviso tra tutti, un disturbo rovina un pacchetto e non il file intero, e i pacchetti possono aggirare un guasto. Non c'entra nulla la compressione, e i cavi trasporterebbero benissimo un flusso continuo: è una scelta di progetto, non un limite fisico." },
+
+    { "q": "Cosa contiene l'<b>intestazione</b> di un pacchetto?",
+      "a": [ {"t":"Le informazioni che servono alla rete per consegnarlo: mittente, destinatario, numero d'ordine","ok":true},
+             {"t":"Il contenuto vero del file che stai trasferendo","ok":false},
+             {"t":"La password dell'utente che ha avviato il trasferimento","ok":false},
+             {"t":"Un riassunto compresso di tutti i pacchetti successivi","ok":false} ],
+      "e": "L'intestazione è la busta, i dati sono la lettera. La rete legge solo la busta: non le interessa (e spesso non può nemmeno vedere, se c'è cifratura) cosa ci sia dentro." },
+
+    { "q": "Un cliente ha 200 Mbps di banda ma le videochiamate si interrompono a scatti. Cosa è più probabile?",
+      "a": [ {"t":"Perdita di pacchetti o latenza irregolare, non mancanza di banda","ok":true},
+             {"t":"La banda è insufficiente e va aumentata","ok":false},
+             {"t":"I pacchetti sono troppo grandi per il cavo","ok":false},
+             {"t":"Manca un router più potente","ok":false} ],
+      "e": "Una videochiamata consuma pochi Mbps: con 200 disponibili la banda non è il problema. Gli scatti sono il sintomo tipico di pacchetti persi o di ritardi che variano (jitter). Aumentare la banda in questi casi non cambia nulla — ed è esattamente l'errore che il cliente ti chiederà di fare." },
+
+    { "q": "A quale problema risponde uno <b>switch</b>?",
+      "a": [ {"t":"Collegare molti dispositivi senza tirare un cavo tra ognuno e ognuno","ok":true},
+             {"t":"Collegare tra loro reti diverse","ok":false},
+             {"t":"Decidere quale traffico è permesso e quale no","ok":false},
+             {"t":"Assegnare gli indirizzi ai dispositivi","ok":false} ],
+      "e": "Lo switch risolve il problema «troppi cavi»: ognuno si collega a un punto centrale. Collegare reti diverse è il compito del router; decidere cosa è permesso è il firewall; assegnare gli indirizzi è il DHCP. Ogni scatola risolve un problema preciso, e riconoscerlo rende leggibile qualsiasi rack." }
+  ]
+}
+</script>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Da fare prima della prossima lezione
+  </div>
+  <p>Guarda il rack (o il mobiletto, o l'angolo dietro la stampante) di un cliente o del tuo ufficio.
+  Per ogni scatola che vedi, prova a dire ad alta voce a quale problema risponde. Quelle che non sai
+  identificare, annotale: le riconoscerai entro tre lezioni.</p>
+</div>

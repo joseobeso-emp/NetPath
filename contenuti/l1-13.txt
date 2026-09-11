@@ -1,0 +1,301 @@
+#id: l1-13
+#title: Binario ed esadecimale senza panico
+#min: 22
+#level: 1
+#chapter: Indirizzamento IP
+#desc: La matematica minima indispensabile. Niente algebra: solo otto colonne e un trucco per farla a mente.
+#obj: Convertire un numero da decimale a binario e viceversa, a mente, in pochi secondi
+#obj: Riconoscere al volo i nove valori possibili di un ottetto di subnet mask
+#obj: Capire cos'è l'esadecimale e perché si usa per MAC address e IPv6
+#obj: Smettere di avere paura del binario, che è la chiave del subnetting
+---
+<p class="lead">Questa è l'unica lezione del percorso con dei calcoli dentro. Ti avviso subito di due
+cose: primo, è molto più facile di quanto sembra — si tratta di sommare otto numeri fissi. Secondo, se
+la salti ti blocchi al subnetting, e il subnetting sta sotto a tutto il resto. Venti minuti adesso,
+e sei a posto per anni.</p>
+
+<h2>Perché ci serve il binario</h2>
+
+<p>Nella lezione precedente hai visto che la subnet mask taglia l'indirizzo in due parti. Quel taglio
+avviene <strong>a livello di bit</strong>, non di numero decimale. Con <code>/24</code> il taglio cade
+esattamente su un punto e si vede bene; ma con <code>/26</code> cade <em>dentro</em> il quarto numero,
+e in decimale non si vede proprio.</p>
+
+<p>Ecco perché serve il binario: non per fare matematica, ma per <strong>vedere dove cade il taglio</strong>.</p>
+
+<h2>Le otto colonne, e non serve altro</h2>
+
+<p>Un ottetto (un numero da 0 a 255) è fatto di 8 bit. Ogni bit vale un numero fisso, e il valore
+dell'ottetto è semplicemente <strong>la somma delle colonne dove c'è 1</strong>.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 260" role="img" aria-label="Le otto colonne del binario con i loro valori: 128, 64, 32, 16, 8, 4, 2, 1">
+    <text x="330" y="22" text-anchor="middle" class="dg-title">Le otto colonne — imparale a memoria, è tutto qui</text>
+
+    <g stroke-width="1.6">
+      <rect x="30"  y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="108" y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="186" y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="264" y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="342" y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="420" y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="498" y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="576" y="40" width="72" height="46" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g class="dg-title" text-anchor="middle">
+      <text x="66"  y="70">128</text><text x="144" y="70">64</text>
+      <text x="222" y="70">32</text> <text x="300" y="70">16</text>
+      <text x="378" y="70">8</text>  <text x="456" y="70">4</text>
+      <text x="534" y="70">2</text>  <text x="612" y="70">1</text>
+    </g>
+    <text x="330" y="106" text-anchor="middle" class="dg-label-sm">ogni colonna vale la metà di quella a sinistra · la somma di tutte fa 255</text>
+
+    <!-- esempio 192 -->
+    <text x="30" y="146" class="dg-label">Esempio: 192</text>
+    <g class="dg-mono" text-anchor="middle">
+      <rect x="30"  y="156" width="72" height="34" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4"/>
+      <rect x="108" y="156" width="72" height="34" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4"/>
+      <rect x="186" y="156" width="72" height="34" rx="5" fill="none" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+      <rect x="264" y="156" width="72" height="34" rx="5" fill="none" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+      <rect x="342" y="156" width="72" height="34" rx="5" fill="none" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+      <rect x="420" y="156" width="72" height="34" rx="5" fill="none" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+      <rect x="498" y="156" width="72" height="34" rx="5" fill="none" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+      <rect x="576" y="156" width="72" height="34" rx="5" fill="none" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+      <text x="66" y="180">1</text><text x="144" y="180">1</text>
+      <text x="222" y="180">0</text><text x="300" y="180">0</text>
+      <text x="378" y="180">0</text><text x="456" y="180">0</text>
+      <text x="534" y="180">0</text><text x="612" y="180">0</text>
+    </g>
+    <text x="330" y="216" text-anchor="middle" class="dg-label">128 + 64 = <tspan font-weight="700">192</tspan></text>
+    <text x="330" y="242" text-anchor="middle" class="dg-label-sm">Tutta la matematica del networking è questa singola operazione. Sul serio.</text>
+  </svg>
+  </div>
+  <figcaption>Otto numeri da ricordare: <b>128, 64, 32, 16, 8, 4, 2, 1</b>. Ogni colonna è la metà della
+  precedente. Scrivili su un post-it e tienilo sulla scrivania per due settimane: dopo non ti servirà più.</figcaption>
+</figure>
+
+<h2>Da decimale a binario: il metodo della sottrazione</h2>
+
+<p>Si scorre da sinistra a destra e ci si fa una sola domanda a ogni colonna: <em>«ci sta?»</em>.
+Se ci sta, scrivi 1 e sottrai. Se non ci sta, scrivi 0 e vai avanti.</p>
+
+<h3>Esempio: convertiamo 168</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Colonna</th><th>Ci sta?</th><th>Bit</th><th>Resto</th></tr></thead>
+    <tbody>
+      <tr><td><b>128</b></td><td>128 sta in 168? Sì</td><td><b>1</b></td><td>168 − 128 = <b>40</b></td></tr>
+      <tr><td><b>64</b></td><td>64 sta in 40? No</td><td><b>0</b></td><td>40</td></tr>
+      <tr><td><b>32</b></td><td>32 sta in 40? Sì</td><td><b>1</b></td><td>40 − 32 = <b>8</b></td></tr>
+      <tr><td><b>16</b></td><td>16 sta in 8? No</td><td><b>0</b></td><td>8</td></tr>
+      <tr><td><b>8</b></td><td>8 sta in 8? Sì</td><td><b>1</b></td><td>8 − 8 = <b>0</b></td></tr>
+      <tr><td><b>4</b></td><td>No, è finito</td><td><b>0</b></td><td>0</td></tr>
+      <tr><td><b>2</b></td><td>No</td><td><b>0</b></td><td>0</td></tr>
+      <tr><td><b>1</b></td><td>No</td><td><b>0</b></td><td>0</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Risultato: <code>168 = 10101000</code>. Verifica: 128 + 32 + 8 = 168. ✓</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Da binario a decimale è ancora più facile
+  </div>
+  <p>Non c'è nessun metodo da imparare: <b>somma le colonne dove c'è 1</b>.</p>
+  <p><code>11000000</code> → 128 + 64 = <b>192</b><br>
+  <code>11111111</code> → 128+64+32+16+8+4+2+1 = <b>255</b><br>
+  <code>00001010</code> → 8 + 2 = <b>10</b><br>
+  <code>10101010</code> → 128 + 32 + 8 + 2 = <b>170</b></p>
+</div>
+
+<h2>La scorciatoia che ti fa risparmiare il 90% del lavoro</h2>
+
+<p>Ecco il regalo di questa lezione. Nelle subnet mask i bit a 1 <strong>sono sempre tutti attaccati a
+sinistra</strong>, senza buchi: è una regola dello standard. Questo significa che un ottetto di
+maschera può assumere <strong>solo nove valori</strong>. Nove. Non 256.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 300" role="img" aria-label="I nove valori possibili di un ottetto di subnet mask con il loro binario e il numero di bit">
+    <text x="330" y="22" text-anchor="middle" class="dg-title">I soli nove valori che può avere un ottetto di maschera</text>
+    <line x1="20" y1="34" x2="640" y2="34" stroke="var(--dg-line-soft)"/>
+    <text x="60"  y="52" class="dg-mono-sm">DECIMALE</text>
+    <text x="220" y="52" class="dg-mono-sm">BINARIO</text>
+    <text x="420" y="52" class="dg-mono-sm">BIT A 1</text>
+    <text x="530" y="52" class="dg-mono-sm">COME LO RICORDI</text>
+
+    <g class="dg-mono">
+      <text x="60" y="80">0</text>   <text x="220" y="80">00000000</text>   <text x="440" y="80">0</text>
+      <text x="60" y="106">128</text><text x="220" y="106">10000000</text> <text x="440" y="106">1</text>
+      <text x="60" y="132">192</text><text x="220" y="132">11000000</text> <text x="440" y="132">2</text>
+      <text x="60" y="158">224</text><text x="220" y="158">11100000</text> <text x="440" y="158">3</text>
+      <text x="60" y="184">240</text><text x="220" y="184">11110000</text> <text x="440" y="184">4</text>
+      <text x="60" y="210">248</text><text x="220" y="210">11111000</text> <text x="440" y="210">5</text>
+      <text x="60" y="236">252</text><text x="220" y="236">11111100</text> <text x="440" y="236">6</text>
+      <text x="60" y="262">254</text><text x="220" y="262">11111110</text> <text x="440" y="262">7</text>
+      <text x="60" y="288">255</text><text x="220" y="288">11111111</text> <text x="440" y="288">8</text>
+    </g>
+    <g class="dg-label-sm" fill="var(--dg-text-soft)">
+      <text x="530" y="80">—</text>
+      <text x="530" y="106">128</text>
+      <text x="530" y="132">+64</text>
+      <text x="530" y="158">+32</text>
+      <text x="530" y="184">+16</text>
+      <text x="530" y="210">+8</text>
+      <text x="530" y="236">+4</text>
+      <text x="530" y="262">+2</text>
+      <text x="530" y="288">+1</text>
+    </g>
+    <rect x="40" y="66" width="600" height="234" rx="6" fill="none" stroke="var(--dg-1)" stroke-width="1.3" opacity=".5"/>
+  </svg>
+  </div>
+  <figcaption>Ogni riga aggiunge un bit a 1 e somma la colonna successiva: 128, poi +64 = 192, poi +32 =
+  224, e così via fino a 255. <b>Se in una subnet mask vedi un numero che non è in questa lista, la
+  maschera è sbagliata.</b> Non «insolita»: proprio non valida.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Perché la maschera non può avere buchi, spiegato semplice
+  </div>
+  <p>La maschera serve a dire «da qui in poi tagliamo». È come una riga appoggiata su un foglio per
+  segnare una linea: la linea è <b>una sola</b>, quindi a sinistra c'è la rete e a destra l'host.</p>
+  <p>Una maschera con i buchi — tipo <code>11011000</code> — direbbe «questi bit sono rete, questi no,
+  questi di nuovo sì». Non è una linea, è un colabrodo: non ci sarebbe più un «confine» tra rete e host,
+  e tutti i calcoli perderebbero senso.</p>
+  <p>Ecco perché i valori possibili sono nove e non 256: sono tutte e sole le posizioni in cui puoi
+  appoggiare quella riga dentro un ottetto.</p>
+</div>
+
+<h2>L'esadecimale: contare con sedici dita</h2>
+
+<p>Nell'esadecimale (base 16) ogni cifra vale da 0 a 15. Siccome le nostre cifre arrivano solo a 9,
+dal 10 in poi si usano le lettere:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Dec</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th></tr></thead>
+    <tbody><tr><td><b>Hex</b></td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td><b>A</b></td><td><b>B</b></td><td><b>C</b></td><td><b>D</b></td><td><b>E</b></td><td><b>F</b></td></tr></tbody>
+  </table>
+</div>
+
+<h3>Perché si usa</h3>
+
+<p>Perché <strong>una cifra esadecimale corrisponde esattamente a 4 bit</strong>. È una coincidenza
+comodissima: due cifre hex = 8 bit = un byte, sempre, senza calcoli.</p>
+
+<p>Scrivere un MAC address in binario richiederebbe 48 caratteri: <code>10100100 10111011 …</code>.
+In esadecimale ne bastano 12: <code>A4:BB:6D:1F:0C:22</code>. Stessa informazione, un quarto dello spazio,
+e la conversione è meccanica.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Hex</th><th>Binario</th><th></th><th>Hex</th><th>Binario</th></tr></thead>
+    <tbody>
+      <tr><td><b>0</b></td><td><code>0000</code></td><td></td><td><b>8</b></td><td><code>1000</code></td></tr>
+      <tr><td><b>1</b></td><td><code>0001</code></td><td></td><td><b>9</b></td><td><code>1001</code></td></tr>
+      <tr><td><b>2</b></td><td><code>0010</code></td><td></td><td><b>A</b></td><td><code>1010</code></td></tr>
+      <tr><td><b>3</b></td><td><code>0011</code></td><td></td><td><b>B</b></td><td><code>1011</code></td></tr>
+      <tr><td><b>4</b></td><td><code>0100</code></td><td></td><td><b>C</b></td><td><code>1100</code></td></tr>
+      <tr><td><b>5</b></td><td><code>0101</code></td><td></td><td><b>D</b></td><td><code>1101</code></td></tr>
+      <tr><td><b>6</b></td><td><code>0110</code></td><td></td><td><b>E</b></td><td><code>1110</code></td></tr>
+      <tr><td><b>7</b></td><td><code>0111</code></td><td></td><td><b>F</b></td><td><code>1111</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Per convertire un byte: dividi gli 8 bit in due gruppi da 4 e converti ciascuno.
+<code>11000000</code> → <code>1100</code> e <code>0000</code> → <code>C</code> e <code>0</code> →
+<strong>C0</strong>. Che infatti è 192 in esadecimale.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Dove incontrerai l'esadecimale
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>MAC address</b>: <code>A4:BB:6D:1F:0C:22</code></li>
+    <li><b>Indirizzi IPv6</b>: <code>2001:0db8::1</code></li>
+    <li><b>Campo «tipo» dei frame</b>: <code>0x0800</code> = IPv4, <code>0x0806</code> = ARP</li>
+    <li><b>Colori</b> nelle interfacce web: <code>#0f7d8c</code></li>
+    <li><b>Chiavi e certificati</b>: impronte digitali, chiavi pre-condivise delle VPN</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Il prefisso <code>0x</code> è solo una convenzione per dire
+  «quello che segue è esadecimale», così <code>0x10</code> (che vale 16) non viene confuso con
+  il decimale 10.</p>
+</div>
+
+<h2>Esercitati adesso, per davvero</h2>
+
+<p>Prova a mente, poi verifica con il <a href="../strumenti.html">convertitore negli strumenti</a>:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Converti</th><th>Risposta</th></tr></thead>
+    <tbody>
+      <tr><td>10 in binario</td><td><code>00001010</code> &nbsp;<span style="color:var(--text-faint)">(8+2)</span></td></tr>
+      <tr><td>255 in binario</td><td><code>11111111</code> &nbsp;<span style="color:var(--text-faint)">(tutte le colonne)</span></td></tr>
+      <tr><td>224 in binario</td><td><code>11100000</code> &nbsp;<span style="color:var(--text-faint)">(128+64+32)</span></td></tr>
+      <tr><td><code>11110000</code> in decimale</td><td>240 &nbsp;<span style="color:var(--text-faint)">(128+64+32+16)</span></td></tr>
+      <tr><td><code>10000001</code> in decimale</td><td>129 &nbsp;<span style="color:var(--text-faint)">(128+1)</span></td></tr>
+      <tr><td>192 in esadecimale</td><td><code>C0</code> &nbsp;<span style="color:var(--text-faint)">(1100 0000)</span></td></tr>
+      <tr><td><code>FF</code> in decimale</td><td>255 &nbsp;<span style="color:var(--text-faint)">(1111 1111)</span></td></tr>
+      <tr><td><code>0A</code> in decimale</td><td>10 &nbsp;<span style="color:var(--text-faint)">(0000 1010)</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Cinque minuti al giorno per una settimana
+  </div>
+  <p>Non serve altro. Apri il <a href="../strumenti.html">convertitore</a>, pensa un numero da 0 a 255,
+  convertilo a mente, verifica. Dieci numeri al giorno per sette giorni.</p>
+  <p>Dopo una settimana lo farai senza accorgertene, e la lezione sul subnetting — che è il vero
+  scoglio — ti sembrerà facile invece che impossibile. È l'investimento con il rendimento più alto
+  di tutto il livello 1.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: binario ed esadecimale",
+  "questions": [
+    { "q": "Quanto vale <code>11000000</code> in decimale?",
+      "a": [ {"t":"192","ok":true}, {"t":"128","ok":false}, {"t":"224","ok":false}, {"t":"96","ok":false} ],
+      "e": "I due bit a 1 stanno nelle colonne 128 e 64: 128 + 64 = 192. 128 sarebbe <code>10000000</code>, 224 sarebbe <code>11100000</code>." },
+
+    { "q": "Quale di questi NON può essere un ottetto valido di subnet mask?",
+      "a": [ {"t":"200","ok":true}, {"t":"248","ok":false}, {"t":"192","ok":false}, {"t":"254","ok":false} ],
+      "e": "200 in binario è <code>11001000</code>: i bit a 1 non sono tutti attaccati a sinistra, c'è un buco. In una maschera i bit a 1 devono essere contigui, quindi i soli valori validi sono 0, 128, 192, 224, 240, 248, 252, 254, 255." },
+
+    { "q": "Qual è il binario di 240?",
+      "a": [ {"t":"11110000","ok":true}, {"t":"11100000","ok":false},
+             {"t":"11111000","ok":false}, {"t":"10101010","ok":false} ],
+      "e": "128 + 64 + 32 + 16 = 240, cioè i primi quattro bit a 1. <code>11100000</code> è 224 (tre bit), <code>11111000</code> è 248 (cinque bit)." },
+
+    { "q": "Perché si usa l'esadecimale per i MAC address?",
+      "a": [ {"t":"Perché una cifra hex corrisponde esattamente a 4 bit, quindi due cifre fanno un byte","ok":true},
+             {"t":"Perché l'esadecimale occupa meno memoria nel dispositivo","ok":false},
+             {"t":"Perché i MAC address contengono lettere nel loro codice originale","ok":false},
+             {"t":"Perché è più sicuro del decimale","ok":false} ],
+      "e": "La corrispondenza 1 cifra = 4 bit rende la conversione meccanica e senza calcoli: due cifre esadecimali sono sempre esattamente un byte. In memoria il MAC occupa 48 bit comunque: l'esadecimale è solo il modo di <em>scriverlo</em> per noi." },
+
+    { "q": "Quanto vale <code>0A</code> in decimale?",
+      "a": [ {"t":"10","ok":true}, {"t":"1","ok":false}, {"t":"11","ok":false}, {"t":"16","ok":false} ],
+      "e": "A in esadecimale vale 10, e lo zero davanti non aggiunge nulla. La sequenza dopo il 9 è A=10, B=11, C=12, D=13, E=14, F=15." },
+
+    { "q": "Perché la subnet mask non può avere bit a 1 alternati a bit a 0?",
+      "a": [ {"t":"Perché indica un unico confine tra parte rete e parte host: dev'essere una linea sola","ok":true},
+             {"t":"Perché i router non riuscirebbero a calcolarla abbastanza in fretta","ok":false},
+             {"t":"Perché occuperebbe più spazio nell'intestazione IP","ok":false},
+             {"t":"In realtà può averli, ma è sconsigliato","ok":false} ],
+      "e": "La maschera serve a dire «fin qui è rete, da qui è host»: è un taglio unico. Bit alternati non definirebbero nessun confine e tutti i calcoli di rete, broadcast e range perderebbero significato. Non è una convenzione: è una regola dello standard, e gli apparati rifiutano maschere non contigue." }
+  ]
+}
+</script>

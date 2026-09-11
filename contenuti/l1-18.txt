@@ -1,0 +1,245 @@
+#id: l1-18
+#title: Default gateway e tabella di routing
+#min: 24
+#level: 1
+#chapter: I servizi che tengono in piedi tutto
+#desc: Come un PC decide se parlare direttamente o passare dal router. La decisione più importante di ogni pacchetto.
+#obj: Descrivere la decisione locale/remoto che ogni dispositivo fa per ogni pacchetto
+#obj: Leggere una tabella di routing e capire quale riga verrà usata
+#obj: Applicare la regola del prefisso più specifico
+#obj: Diagnosticare i guasti tipici di routing sui PC
+---
+<p class="lead">Ogni singolo pacchetto che parte da un dispositivo passa da una decisione: «lo consegno
+io direttamente, o lo do al router?». Capire come si prende quella decisione — e come si legge la
+tabella che la governa — è il cuore del livello 3, e ti servirà identica su un PC, su un firewall
+FortiGate e dentro Azure.</p>
+
+<h2>La domanda che ogni pacchetto fa nascere</h2>
+
+<p>Quando un dispositivo deve mandare un pacchetto, confronta l'indirizzo di destinazione con la
+<strong>propria rete</strong>, che conosce grazie a indirizzo e maschera:</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 680 290" role="img" aria-label="Diagramma decisionale: la destinazione è nella mia rete? Se sì consegna diretta, se no passa dal gateway">
+    <rect x="230" y="30" width="220" height="46" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="340" y="50" text-anchor="middle" class="dg-label">Devo mandare un pacchetto</text>
+    <text x="340" y="68" text-anchor="middle" class="dg-mono-sm">destinazione: X</text>
+
+    <path d="M340 76v26" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#rt)"/>
+    <defs><marker id="rt" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+      <path d="M4 8L0 0h8z" fill="var(--dg-line)"/></marker></defs>
+
+    <path d="M340 106l150 34-150 34-150-34z" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.7"/>
+    <text x="340" y="136" text-anchor="middle" class="dg-label-sm">X è dentro la mia rete?</text>
+    <text x="340" y="152" text-anchor="middle" class="dg-mono-sm">(indirizzo AND maschera)</text>
+
+    <path d="M190 140H96v52" stroke="var(--dg-5)" stroke-width="1.6" fill="none" marker-end="url(#rt)"/>
+    <text x="140" y="132" text-anchor="middle" class="dg-mono-sm">SÌ</text>
+    <path d="M490 140h94v52" stroke="var(--dg-3)" stroke-width="1.6" fill="none" marker-end="url(#rt)"/>
+    <text x="540" y="132" text-anchor="middle" class="dg-mono-sm">NO</text>
+
+    <rect x="16" y="196" width="160" height="60" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="96" y="218" text-anchor="middle" class="dg-label-sm">Consegna diretta</text>
+    <text x="96" y="236" text-anchor="middle" class="dg-mono-sm">ARP per X</text>
+    <text x="96" y="250" text-anchor="middle" class="dg-mono-sm">frame → MAC di X</text>
+
+    <rect x="504" y="196" width="160" height="60" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="584" y="218" text-anchor="middle" class="dg-label-sm">Passa dal gateway</text>
+    <text x="584" y="236" text-anchor="middle" class="dg-mono-sm">ARP per il GATEWAY</text>
+    <text x="584" y="250" text-anchor="middle" class="dg-mono-sm">frame → MAC del router</text>
+
+    <text x="340" y="212" text-anchor="middle" class="dg-label-sm">In entrambi i casi l'IP di destinazione</text>
+    <text x="340" y="230" text-anchor="middle" class="dg-label-sm">nel pacchetto resta <tspan font-weight="700">X</tspan>.</text>
+    <text x="340" y="248" text-anchor="middle" class="dg-label-sm">Cambia solo il MAC del frame.</text>
+    <text x="340" y="280" text-anchor="middle" class="dg-label-sm">Questa decisione viene presa per OGNI pacchetto, milioni di volte al giorno.</text>
+  </svg>
+  </div>
+  <figcaption>Nota il punto essenziale, già visto nella lezione sull'incapsulamento: <b>l'indirizzo IP
+  di destinazione non cambia mai</b>. Quello che cambia è solo a chi consegni fisicamente il frame.</figcaption>
+</figure>
+
+<h2>Il default gateway</h2>
+
+<p>Il <span class="term" data-term="gateway">default gateway</span> è l'indirizzo a cui il dispositivo
+consegna tutto ciò che non è locale. È il cartello «per tutto il resto del mondo, di qua».</p>
+
+<p>Tre cose da sapere subito:</p>
+
+<ul class="clean">
+  <li><b>Deve stare nella stessa rete del dispositivo.</b> Un PC 192.168.10.25/24 non può avere come
+  gateway 192.168.20.1: non saprebbe come raggiungerlo, visto che per raggiungerlo servirebbe... un gateway.</li>
+  <li><b>Non è necessariamente il .1.</b> È una convenzione comodissima e quasi universale, ma è solo
+  una convenzione.</li>
+  <li><b>Senza gateway il dispositivo non è isolato:</b> parla benissimo con i vicini della sua rete.
+  Semplicemente non esce. È un sintomo preciso e molto riconoscibile.</li>
+</ul>
+
+<h2>La tabella di routing di un PC</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Windows · route print -4 (estratto)</div>
+<pre><span class="o">Destinazione rete    Maschera          Gateway         Interfaccia   Metrica</span>
+<span class="n">0.0.0.0</span>              <span class="n">0.0.0.0</span>           <span class="n">192.168.10.1</span>    192.168.10.25   25
+<span class="n">127.0.0.0</span>            <span class="n">255.0.0.0</span>         On-link         127.0.0.1      331
+<span class="n">192.168.10.0</span>         <span class="n">255.255.255.0</span>     On-link         192.168.10.25  281
+<span class="n">192.168.10.25</span>        <span class="n">255.255.255.255</span>   On-link         192.168.10.25  281
+<span class="n">192.168.10.255</span>       <span class="n">255.255.255.255</span>   On-link         192.168.10.25  281
+<span class="n">10.50.0.0</span>            <span class="n">255.255.0.0</span>       <span class="n">192.168.10.254</span>  192.168.10.25   26
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Riga</th><th>Cosa dice</th></tr></thead>
+    <tbody>
+      <tr><td><code>0.0.0.0 / 0.0.0.0</code></td>
+          <td><b>La rotta di default.</b> «Tutto quello che non corrisponde a nient'altro, mandalo a 192.168.10.1.»</td></tr>
+      <tr><td><code>127.0.0.0 / 255.0.0.0</code></td>
+          <td>Il loopback: me stesso.</td></tr>
+      <tr><td><code>192.168.10.0 / 255.255.255.0</code></td>
+          <td><b>La mia rete locale.</b> «On-link» significa: consegno direttamente, senza router.</td></tr>
+      <tr><td><code>192.168.10.25 / …255</code></td>
+          <td>Il mio indirizzo specifico.</td></tr>
+      <tr><td><code>192.168.10.255 / …255</code></td>
+          <td>Il broadcast della mia rete.</td></tr>
+      <tr><td><code>10.50.0.0 / 255.255.0.0</code></td>
+          <td><b>Una rotta statica aggiunta a mano:</b> «per la rete 10.50.x.x passa da 192.168.10.254».
+              Tipico di una VPN o di una seconda sede raggiungibile da un router diverso.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>La regola d'oro: vince il più specifico</h2>
+
+<p>Quando più righe corrispondono alla destinazione, il dispositivo sceglie sempre quella con il
+<strong>prefisso più lungo</strong>, cioè la più precisa. Si chiama <em>longest prefix match</em> ed è
+la regola più importante di tutto il routing.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: i cartelli stradali
+  </div>
+  <p>Sei a un incrocio e devi andare in <b>via Mazzini 14, a Brescia</b>. Vedi tre cartelli:</p>
+  <ul>
+    <li>«Tutte le direzioni» → a destra</li>
+    <li>«Brescia» → a sinistra</li>
+    <li>«Via Mazzini» → dritto</li>
+  </ul>
+  <p>Quale segui? <b>Quello più preciso: via Mazzini.</b> Gli altri due non sono sbagliati — ti
+  porterebbero comunque nella direzione giusta — ma sono più generici.</p>
+  <p>Un router ragiona identico. <code>0.0.0.0/0</code> è «tutte le direzioni»: la segue solo se non
+  c'è niente di più preciso. <code>10.50.0.0/16</code> è «Brescia». <code>10.50.3.7/32</code> è
+  «via Mazzini 14», e batte tutti gli altri.</p>
+</div>
+
+<h3>Esempio pratico</h3>
+<p>Con la tabella di sopra, dove va un pacchetto diretto a <code>10.50.3.7</code>?</p>
+<ul class="clean">
+  <li><code>0.0.0.0/0</code> → corrisponde (corrisponde sempre), lunghezza <b>0</b></li>
+  <li><code>10.50.0.0/16</code> → corrisponde, lunghezza <b>16</b></li>
+</ul>
+<p>Vince la seconda: il pacchetto va a <strong>192.168.10.254</strong>, non al gateway predefinito.</p>
+
+<h2>I quattro guasti di routing più comuni sui PC</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Guasto</th><th>Sintomo</th><th>Come lo verifichi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Gateway assente</b></td><td>Vede i colleghi, non esce su Internet</td>
+          <td><code>ipconfig</code>: riga gateway vuota</td></tr>
+      <tr><td><b>Gateway sbagliato</b></td><td>Uguale al precedente</td>
+          <td><code>ping</code> al gateway fallisce, e non compare in <code>arp -a</code></td></tr>
+      <tr><td><b>Maschera sbagliata</b></td><td>Alcune destinazioni sì, altre no, senza logica apparente</td>
+          <td>Confronta la maschera con quella degli altri PC funzionanti</td></tr>
+      <tr><td><b>Rotta statica residua</b></td><td>Una sola destinazione irraggiungibile, tutto il resto a posto</td>
+          <td><code>route print</code>: c'è una riga che non dovrebbe esserci</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le rotte statiche fatte a mano: bombe a orologeria
+  </div>
+  <p>Un tecnico, per risolvere un problema un pomeriggio, aggiunge una rotta statica su un PC con
+  <code>route add -p</code>. Funziona, il ticket si chiude, nessuno lo scrive da nessuna parte.</p>
+  <p>Due anni dopo cambia l'indirizzamento della sede e quel PC — <b>solo quello</b> — smette di
+  raggiungere una certa destinazione. Il tecnico che ci mette mano non ha idea di dove guardare, perché
+  «la configurazione è identica a quella degli altri».</p>
+  <p><b>Regola:</b> le rotte statiche vanno sui router, non sui PC. Se proprio devi metterne una su un
+  PC, scrivilo nel ticket e nella documentazione del cliente. Sempre.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Lo stesso ragionamento, su qualsiasi apparato
+  </div>
+  <p>Quello che hai imparato qui vale identico ovunque. Cambia solo il comando:</p>
+  <div class="code" style="margin:10px 0 0">
+    <div class="code__bar"><span class="dot"></span>Vedere la tabella di routing</div>
+<pre><span class="p">route print -4</span>                      <span class="c"># Windows</span>
+<span class="p">netstat -rn -f inet</span>                 <span class="c"># macOS</span>
+<span class="p">ip route show</span>                       <span class="c"># Linux</span>
+<span class="p">/ip route print</span>                     <span class="c"># MikroTik</span>
+<span class="p">get router info routing-table all</span>   <span class="c"># FortiGate</span>
+<span class="p">show ip route</span>                       <span class="c"># Cisco</span>
+</pre>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0">Su Azure la stessa cosa si chiama <b>route table</b> e le
+  rotte che scrivi a mano si chiamano <b>UDR</b>. Il concetto è identico: destinazione, prossimo salto,
+  e vince il prefisso più specifico. Imparato una volta, vale per tutto.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: gateway e routing",
+  "questions": [
+    { "q": "Un PC 192.168.10.25/24 deve raggiungere 192.168.10.80. Cosa fa?",
+      "a": [ {"t":"Consegna direttamente: fa ARP per .80 e gli manda il frame","ok":true},
+             {"t":"Manda il pacchetto al default gateway","ok":false},
+             {"t":"Interroga il DNS per trovare la strada","ok":false},
+             {"t":"Scarta il pacchetto perché serve una rotta statica","ok":false} ],
+      "e": "Con /24 la rete va da 192.168.10.0 a .255, quindi .80 è locale: consegna diretta, senza coinvolgere il router. Il gateway serve solo per le destinazioni <em>fuori</em> dalla propria rete." },
+
+    { "q": "Cosa significa la riga <code>0.0.0.0 0.0.0.0 192.168.1.1</code> in una tabella di routing?",
+      "a": [ {"t":"Tutto ciò che non corrisponde ad altre rotte va mandato a 192.168.1.1","ok":true},
+             {"t":"La rete è disabilitata","ok":false},
+             {"t":"Il PC non ha un indirizzo IP","ok":false},
+             {"t":"È una rotta verso il loopback","ok":false} ],
+      "e": "Prefisso zero corrisponde a qualunque destinazione, quindi è la rotta più generica possibile. Siccome vince sempre la corrispondenza più specifica, viene usata solo quando nessun'altra riga combacia: è la rotta di default." },
+
+    { "q": "In una tabella ci sono sia <code>0.0.0.0/0 → A</code> sia <code>10.50.0.0/16 → B</code>. Dove va un pacchetto per 10.50.3.7?",
+      "a": [ {"t":"A B, perché /16 è più specifico di /0","ok":true},
+             {"t":"Ad A, perché è la rotta di default","ok":false},
+             {"t":"A entrambi, in bilanciamento","ok":false},
+             {"t":"Viene scartato per ambiguità","ok":false} ],
+      "e": "Longest prefix match: tra due rotte che corrispondono entrambe, vince quella con il prefisso più lungo, cioè la più precisa. È esattamente come seguire il cartello «via Mazzini» invece di «tutte le direzioni»." },
+
+    { "q": "Un PC ha indirizzo 192.168.10.25/24 e gateway 192.168.20.1. Cosa succede?",
+      "a": [ {"t":"Non esce dalla sua rete: il gateway non è raggiungibile perché è in un'altra subnet","ok":true},
+             {"t":"Funziona, ma con latenza maggiore","ok":false},
+             {"t":"Il PC corregge automaticamente l'errore","ok":false},
+             {"t":"Funziona solo verso Internet, non verso le altre sedi","ok":false} ],
+      "e": "Per consegnare un pacchetto al gateway il PC deve poterlo raggiungere <b>direttamente</b>, quindi il gateway deve stare nella sua stessa subnet. 192.168.20.1 è fuori dalla rete /24 del PC: l'ARP non riceverebbe risposta. Il PC comunica benissimo con i vicini, ma non esce — ed è il sintomo classico." },
+
+    { "q": "Un solo PC di un ufficio non raggiunge una singola destinazione, mentre tutto il resto funziona perfettamente. Cosa controlli?",
+      "a": [ {"t":"La tabella di routing del PC, a caccia di una rotta statica residua","ok":true},
+             {"t":"Il firewall perimetrale","ok":false},
+             {"t":"Il DNS aziendale","ok":false},
+             {"t":"Il cavo di rete","ok":false} ],
+      "e": "Il guasto è specifico di <b>un PC</b> e di <b>una destinazione</b>: nessuna causa comune può spiegarlo. Il sospetto principale è qualcosa di locale a quella macchina, tipicamente una rotta statica aggiunta anni prima per risolvere un problema e mai documentata. <code>route print</code> la trova in dieci secondi." },
+
+    { "q": "Su quale apparato ha senso mettere una rotta statica?",
+      "a": [ {"t":"Sul router o sul firewall, e va documentata","ok":true},
+             {"t":"Sui PC degli utenti, così si risolve subito","ok":false},
+             {"t":"Sugli switch non gestiti","ok":false},
+             {"t":"Su nessuno: le rotte statiche sono sempre sbagliate","ok":false} ],
+      "e": "Il routing si governa dove si concentra: sul router o sul firewall, così vale per tutti e resta in un punto solo. Le rotte messe sui singoli PC diventano guasti invisibili che emergono anni dopo. Le rotte statiche in sé sono invece perfettamente legittime e nella maggior parte delle reti aziendali sono l'unico routing che serve." }
+  ]
+}
+</script>

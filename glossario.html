@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Glossario del networking — NetPath</title>
+<meta name="description" content="Ogni sigla e ogni termine del networking spiegato in due righe comprensibili.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="glossario" data-root="">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+
+<main class="wrap" style="padding-top:44px;padding-bottom:70px;max-width:920px">
+
+  <div class="kicker">Glossario</div>
+  <h1 style="font-size:clamp(1.9rem,1.4rem + 2.2vw,2.7rem);letter-spacing:-.03em;margin-bottom:14px">
+    Il dizionario del networking</h1>
+  <p class="lead" style="max-width:70ch;margin-bottom:28px">
+    Quando in un ticket compare una sigla che non conosci, cercala qui. Ogni voce è scritta per essere capita
+    da chi non sa già la risposta — niente definizioni circolari del tipo "il NAT è il Network Address Translation".
+    Premi <kbd class="key">⌘K</kbd> ovunque nel sito per cercare senza aprire questa pagina.</p>
+
+  <div class="gloss-controls">
+    <input type="text" class="gloss-search" id="g-search" placeholder="Cerca un termine, una sigla o un concetto…" autocomplete="off" spellcheck="false">
+    <select id="g-cat" style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-elev);color:var(--text);font-size:.9rem">
+      <option value="">Tutte le categorie</option>
+    </select>
+  </div>
+
+  <div class="alpha" id="g-alpha"></div>
+  <p id="g-count" style="font-size:.82rem;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:8px"></p>
+  <dl id="g-list" style="margin:0"></dl>
+
+</main>
+
+<footer id="np-footer"></footer>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/glossario-data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+window.NP_PAGE_INIT = function () {
+  var NP = window.NetPath, esc = NP.esc;
+  var all = window.NETPATH_GLOSSARY.slice().sort(function (a, b) {
+    return a.t.localeCompare(b.t, "it", { sensitivity: "base", numeric: true });
+  });
+  var letterOf = function (g) {
+    var c = g.t.replace(/^[^A-Za-z0-9]+/, "").charAt(0).toUpperCase();
+    return /[0-9]/.test(c) ? "0-9" : (c || "#");
+  };
+  var state = { q: "", letter: "", cat: "" };
+
+  // categorie
+  var cats = {};
+  all.forEach(function (g) { if (g.k) cats[g.k] = (cats[g.k] || 0) + 1; });
+  var sel = document.getElementById("g-cat");
+  Object.keys(cats).sort(function(a,b){return a.localeCompare(b,"it");}).forEach(function (c) {
+    var o = document.createElement("option");
+    o.value = c; o.textContent = c + " (" + cats[c] + ")";
+    sel.appendChild(o);
+  });
+
+  // alfabeto
+  var present = {};
+  all.forEach(function (g) { present[letterOf(g)] = true; });
+  var letters = ["0-9"].concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""));
+  document.getElementById("g-alpha").innerHTML =
+    '<button data-l="" class="on">Tutte</button>' +
+    letters.map(function (L) {
+      return '<button data-l="' + L + '"' + (present[L] ? "" : " disabled") + ">" + L + "</button>";
+    }).join("");
+
+  function render() {
+    var q = state.q.toLowerCase().trim();
+    var list = all.filter(function (g) {
+      if (state.letter && letterOf(g) !== state.letter) return false;
+      if (state.cat && g.k !== state.cat) return false;
+      if (!q) return true;
+      return (g.t + " " + (g.full || "") + " " + g.d).toLowerCase().indexOf(q) >= 0;
+    });
+
+    document.getElementById("g-count").textContent =
+      list.length + (list.length === 1 ? " termine" : " termini") + " su " + all.length;
+
+    if (!list.length) {
+      document.getElementById("g-list").innerHTML =
+        '<p style="padding:40px 0;text-align:center;color:var(--text-faint)">Nessun termine trovato. ' +
+        'Se ti serve una voce che non c\'è, aggiungila in <code>assets/js/glossario-data.js</code>.</p>';
+      return;
+    }
+
+    var out = "", cur = "";
+    list.forEach(function (g) {
+      var L = letterOf(g);
+      if (L !== cur && !q) { out += '<div class="gloss-letter" id="L-' + L + '">' + L + "</div>"; cur = L; }
+      out += '<div class="gloss-item" id="g-' + g.id + '">' +
+        "<dt>" + esc(g.t) +
+          (g.full ? '<span class="full">' + esc(g.full) + "</span>" : "") +
+          (g.k ? '<span class="chip" style="margin-left:auto">' + esc(g.k) + "</span>" : "") +
+        "</dt><dd>" + g.d + "</dd></div>";
+    });
+    document.getElementById("g-list").innerHTML = out;
+  }
+
+  document.getElementById("g-search").addEventListener("input", function () { state.q = this.value; render(); });
+  sel.addEventListener("change", function () { state.cat = this.value; render(); });
+  document.getElementById("g-alpha").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || b.disabled) return;
+    state.letter = b.getAttribute("data-l");
+    NP.$$("#g-alpha button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    render();
+  });
+
+  render();
+  if (location.hash && location.hash.indexOf("#g-") === 0) {
+    var t = document.querySelector(location.hash);
+    if (t) { t.scrollIntoView({ block: "center" }); t.style.background = "var(--accent-soft)"; }
+  }
+};
+</script>
+</body>
+</html>

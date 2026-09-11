@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Come uno switch impara: la tabella MAC — NetPath</title>
+<meta name="description" content="Il meccanismo più elegante del networking, spiegato in cinque passaggi che puoi verificare tu stesso.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-10">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Ethernet e switching</span>
+      </nav>
+      <h1 class="lesson-title">Come uno switch impara: la tabella MAC</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 10</span>
+        <span class="chip">20 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Descrivere passo per passo come uno switch costruisce la sua tabella MAC</li>
+        <li>Capire cosa succede quando la destinazione è sconosciuta</li>
+        <li>Leggere una tabella MAC reale e ricavarne informazioni diagnostiche</li>
+        <li>Riconoscere i sintomi di una tabella MAC in sofferenza</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Uno switch non viene configurato per sapere dove sta ogni dispositivo: lo impara da solo,
+guardando il traffico che passa. Il meccanismo sta in cinque righe ed è una delle idee più belle di
+tutto il networking. Capirlo ti regala un potere diagnostico che userai ogni settimana.</p>
+
+<h2>Il problema</h2>
+
+<p>Uno switch ha 24 porte. Arriva un frame sulla porta 3 diretto al MAC <code>A4:BB:6D:1F:0C:22</code>.
+Su quale delle altre 23 porte deve mandarlo? Nessuno gliel'ha detto. Non c'è nessun file di configurazione.</p>
+
+<h2>La soluzione, in tre regole</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la maestra nuova
+  </div>
+  <p>Immagina una maestra al primo giorno in una classe di venticinque bambini di cui non conosce nessuno.
+  Arriva un biglietto: «per Giulia».</p>
+  <p><b>Non sapendo chi sia Giulia, lo legge ad alta voce a tutta la classe.</b> Tutti lo sentono, ma solo
+  Giulia risponde: «sono io!». E in quel momento la maestra impara: <em>Giulia è quella seduta al terzo
+  banco</em>, e se lo scrive su un foglietto.</p>
+  <p>La volta dopo che arriva un biglietto per Giulia, la maestra non lo legge più a tutti: lo consegna
+  direttamente al terzo banco.</p>
+  <p>E quando Giulia risponde a qualcuno, la maestra impara pure chi è quell'altro. Nel giro di pochi
+  minuti ha imparato tutta la classe <b>senza che nessuno le abbia dato l'elenco</b>, solo ascoltando
+  chi parla e da dove.</p>
+  <p>Questo è esattamente uno switch. Il foglietto si chiama <b>tabella MAC</b>.</p>
+</div>
+
+<p>Formalmente, le tre regole sono:</p>
+
+<ol>
+  <li><strong>Impara dal mittente.</strong> Ogni volta che arriva un frame, lo switch guarda il MAC
+  <em>sorgente</em> e annota: «questo MAC si raggiunge da questa porta».</li>
+  <li><strong>Se conosce la destinazione, inoltra solo lì.</strong> Cerca il MAC di destinazione in
+  tabella; se lo trova, manda il frame solo su quella porta e nessun'altra.</li>
+  <li><strong>Se non la conosce, allaga.</strong> Manda il frame su <em>tutte</em> le porte tranne quella
+  da cui è arrivato. Si chiama <em>flooding</em>. Risponderà solo il destinatario giusto, e da quella
+  risposta lo switch imparerà dove sta.</li>
+</ol>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 420" role="img" aria-label="Sequenza in quattro passi con cui uno switch costruisce la tabella MAC">
+    <!-- PASSO 1 -->
+    <text x="16" y="20" class="dg-title">1 · Tabella vuota. Anna (porta 1) manda un frame a Bruno.</text>
+    <g stroke-width="1.4">
+      <rect x="270" y="32" width="150" height="34" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="40"  y="80" width="84" height="28" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="180" y="80" width="84" height="28" rx="5" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".55"/>
+      <rect x="320" y="80" width="84" height="28" rx="5" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".55"/>
+      <rect x="460" y="80" width="84" height="28" rx="5" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".55"/>
+    </g>
+    <text x="345" y="53" text-anchor="middle" class="dg-mono-sm">SWITCH · tabella vuota</text>
+    <text x="82"  y="99" text-anchor="middle" class="dg-mono-sm">Anna · p1</text>
+    <text x="222" y="99" text-anchor="middle" class="dg-mono-sm">Carlo · p2</text>
+    <text x="362" y="99" text-anchor="middle" class="dg-mono-sm">Bruno · p3</text>
+    <text x="502" y="99" text-anchor="middle" class="dg-mono-sm">Dina · p4</text>
+    <text x="576" y="52" class="dg-label-sm">nessuno è</text>
+    <text x="576" y="66" class="dg-label-sm">ancora noto</text>
+
+    <!-- PASSO 2 -->
+    <text x="16" y="140" class="dg-title">2 · Impara il mittente, ma non sa dov'è Bruno → allaga.</text>
+    <g stroke-width="1.4">
+      <rect x="270" y="152" width="150" height="34" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="40"  y="200" width="84" height="28" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="180" y="200" width="84" height="28" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="320" y="200" width="84" height="28" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="460" y="200" width="84" height="28" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <text x="345" y="173" text-anchor="middle" class="dg-mono-sm">Anna → porta 1  ✓</text>
+    <g stroke="var(--dg-3)" stroke-width="1.4" fill="none">
+      <path d="M300 186l-78 14"/><path d="M345 186v14"/><path d="M390 186l112 14"/>
+    </g>
+    <path d="M82 200l188-14" stroke="var(--dg-1)" stroke-width="1.6" fill="none"/>
+    <text x="576" y="180" class="dg-label-sm">il frame esce da</text>
+    <text x="576" y="194" class="dg-label-sm">tutte le altre porte</text>
+
+    <!-- PASSO 3 -->
+    <text x="16" y="262" class="dg-title">3 · Bruno risponde. Lo switch impara anche lui.</text>
+    <g stroke-width="1.4">
+      <rect x="270" y="274" width="150" height="34" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="40"  y="322" width="84" height="28" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="180" y="322" width="84" height="28" rx="5" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".55"/>
+      <rect x="320" y="322" width="84" height="28" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="460" y="322" width="84" height="28" rx="5" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".55"/>
+    </g>
+    <text x="345" y="295" text-anchor="middle" class="dg-mono-sm">Anna→p1 · Bruno→p3 ✓</text>
+    <path d="M362 322l-20 -14" stroke="var(--dg-5)" stroke-width="1.6" fill="none"/>
+    <path d="M300 308l-218 14" stroke="var(--dg-5)" stroke-width="1.6" fill="none"/>
+    <text x="576" y="302" class="dg-label-sm">la risposta va solo</text>
+    <text x="576" y="316" class="dg-label-sm">ad Anna: è nota</text>
+
+    <!-- PASSO 4 -->
+    <text x="16" y="382" class="dg-title">4 · Da qui in poi il traffico Anna↔Bruno non disturba più nessun altro.</text>
+    <text x="16" y="404" class="dg-label-sm">Carlo e Dina non vedono più un solo frame che non li riguardi. È tutto qui il vantaggio dello switch sull'hub.</text>
+  </svg>
+  </div>
+  <figcaption>Lo switch si autoconfigura in pochi millisecondi, senza che nessuno gli dica nulla.
+  Il «costo» di questa semplicità è il flooding iniziale — ed è esattamente il punto da cui nascono i
+  problemi che vedremo tra poco.</figcaption>
+</figure>
+
+<h2>Guardare una tabella MAC vera</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>MikroTik · la tabella MAC del bridge</div>
+<pre><span class="p">/interface bridge host print</span>
+
+<span class="o"># MAC-ADDRESS        ON-INTERFACE  BRIDGE   AGE</span>
+<span class="o">0 A4:BB:6D:1F:0C:22  ether2        br-lan   00:00:14</span>
+<span class="o">1 E8:DE:27:AA:31:04  ether1        br-lan   00:00:02</span>
+<span class="o">2 00:50:56:9A:11:07  ether3        br-lan   00:01:37</span>
+<span class="o">3 4C:5E:0C:00:11:22  ether3        br-lan   00:00:41</span>
+<span class="o">4 B8:27:EB:7C:2D:90  ether3        br-lan   00:03:02</span>
+</pre>
+</div>
+
+<p>Da queste cinque righe un tecnico esperto legge parecchie cose, e adesso puoi farlo anche tu:</p>
+
+<ul class="clean">
+  <li><b>Righe 2, 3 e 4 sono tutte su ether3.</b> Su una porta sola ci sono tre MAC: significa che lì
+  <em>non</em> c'è un PC, c'è un altro switch (o un apparato con più macchine virtuali dentro).
+  Sapere questo è utilissimo quando devi capire com'è cablato un impianto che non hai fatto tu.</li>
+  <li><b>Il MAC 00:50:56 è VMware</b>: su ether3 c'è un server di virtualizzazione.</li>
+  <li><b>L'AGE</b> è da quanto tempo quel MAC non parla. Se cresce oltre il tempo di invecchiamento
+  (tipicamente 5 minuti), la riga sparisce e quel dispositivo torna «sconosciuto».</li>
+</ul>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Gli stessi comandi sugli altri apparati</div>
+<pre><span class="c"># Cisco</span>
+<span class="p">show mac address-table</span>
+<span class="p">show mac address-table address</span> <span class="n">A4BB.6D1F.0C22</span>
+
+<span class="c"># FortiGate (switch interno o FortiSwitch)</span>
+<span class="p">diagnose netlink brctl name host</span> <span class="s">root.b</span>
+<span class="p">execute switch-controller get-conn-status</span>
+
+<span class="c"># HPE / Aruba</span>
+<span class="p">show mac-address</span>
+
+<span class="c"># MikroTik</span>
+<span class="p">/interface bridge host print where !local</span>
+</pre>
+</div>
+
+<h2>I problemi che nascono da qui</h2>
+
+<h3>Unknown unicast flooding</h3>
+<p>Se un dispositivo <strong>riceve</strong> molto e <strong>trasmette</strong> pochissimo, il suo MAC
+scade dalla tabella (per invecchiamento) mentre il traffico verso di lui continua. Risultato: lo switch
+non sa più dov'è e <strong>allaga ogni frame diretto a quel dispositivo su tutte le porte</strong>.</p>
+<p>Il sintomo è insidioso: la rete «va più lenta» in modo diffuso, senza un colpevole evidente, e in una
+cattura Wireshark vedi traffico che non dovrebbe passare da te. Succede tipicamente con server di
+backup e sistemi di storage.</p>
+
+<h3>Tabella MAC piena</h3>
+<p>Uno switch può memorizzare un numero finito di MAC — da 8.000 su un apparato economico a centinaia
+di migliaia su uno da data center. Se si riempie, lo switch inizia ad allagare tutto e le prestazioni
+crollano.</p>
+<p>Può succedere per dimensionamento sbagliato, oppure per un attacco deliberato chiamato
+<em>MAC flooding</em>: si generano migliaia di MAC falsi per riempire la tabella e costringere lo
+switch a comportarsi come un hub, così si può ascoltare il traffico altrui. La difesa si chiama
+<b>port security</b> e la vedremo nel capitolo 2.2.</p>
+
+<h3>MAC che rimbalza tra due porte</h3>
+<p>Se lo stesso MAC compare ora su una porta e un istante dopo su un'altra, in continuazione, hai
+quasi certamente un <strong>loop</strong>: il frame gira in tondo e torna allo switch da entrambi i lati.</p>
+<p>È una delle poche condizioni che possono fermare un'azienda intera in trenta secondi. Gli switch
+la registrano con messaggi espliciti tipo <code>MAC flapping detected</code>: quando li vedi nel log,
+smetti di cercare altrove.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Lo switch non divide i broadcast
+  </div>
+  <p>Tutto questo bel meccanismo funziona per il traffico <b>unicast</b>, cioè da uno a uno. Ma i frame
+  di <b>broadcast</b> (destinazione FF:FF:FF:FF:FF:FF) vengono sempre e comunque replicati su tutte le
+  porte: non c'è niente da imparare, perché sono destinati a tutti per definizione.</p>
+  <p>Conseguenza: <b>collegare più switch tra loro non riduce il traffico di broadcast, lo somma.</b>
+  Cento dispositivi in una rete piatta significa cento sorgenti di broadcast che raggiungono tutti gli
+  altri novantanove. È il limite strutturale dello switching, ed è esattamente il problema che risolvono
+  le VLAN — l'argomento della prossima lezione e di tutto il capitolo 2.1.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Verificalo tu stesso in due minuti
+  </div>
+  <p>Sul tuo MikroTik (o su qualsiasi switch gestito): svuota la tabella MAC, guarda che sia vuota,
+  fai un ping da un PC a un altro, e riguarda la tabella. Vedrai comparire esattamente i due MAC, con
+  le loro porte.</p>
+  <p>È una verifica banale, ma vedere con i tuoi occhi una tabella che si popola da sola mentre fai
+  ping trasforma questa lezione da «cosa che ho letto» a «cosa che ho visto». Sono cose diverse per
+  la memoria.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la tabella MAC",
+  "questions": [
+    { "q": "Da quale campo del frame uno switch impara dove si trova un dispositivo?",
+      "a": [ {"t":"Dal MAC sorgente","ok":true},
+             {"t":"Dal MAC di destinazione","ok":false},
+             {"t":"Dall'indirizzo IP sorgente","ok":false},
+             {"t":"Dal campo tipo","ok":false} ],
+      "e": "Il MAC <b>sorgente</b> dice «chi ha mandato questo frame», e la porta da cui è arrivato dice dove si trova: mettendo insieme le due cose lo switch impara. Il MAC di destinazione serve invece a decidere dove inoltrare, non a imparare. Gli indirizzi IP uno switch di livello 2 non li guarda nemmeno." },
+
+    { "q": "Cosa fa uno switch quando riceve un frame per un MAC che non conosce?",
+      "a": [ {"t":"Lo manda su tutte le porte tranne quella da cui è arrivato","ok":true},
+             {"t":"Lo scarta e segnala un errore","ok":false},
+             {"t":"Lo tiene in memoria finché non impara dov'è il destinatario","ok":false},
+             {"t":"Lo manda al router perché se ne occupi lui","ok":false} ],
+      "e": "Si chiama <em>flooding</em>: nel dubbio lo manda a tutti, e risponderà solo chi di dovere. Da quella risposta imparerà. È una soluzione «brutale» ma efficace, e spiega perché uno switch funziona senza nessuna configurazione." },
+
+    { "q": "Nella tabella MAC di uno switch, cinque MAC diversi risultano tutti sulla porta 8. Cosa significa?",
+      "a": [ {"t":"Su quella porta c'è un altro switch o un apparato con più macchine virtuali","ok":true},
+             {"t":"La tabella è corrotta e va svuotata","ok":false},
+             {"t":"C'è un attacco in corso","ok":false},
+             {"t":"Quel dispositivo ha cinque schede di rete","ok":false} ],
+      "e": "Una porta può raggiungere molti MAC se dietro c'è un'altra infrastruttura: un secondo switch, un host di virtualizzazione, un telefono VoIP con il PC collegato dietro. È un'informazione utilissima per ricostruire la topologia di un impianto che non hai documentato tu." },
+
+    { "q": "Lo stesso MAC compare in continuazione ora su una porta, ora su un'altra. Cosa sospetti?",
+      "a": [ {"t":"Un loop di rete","ok":true},
+             {"t":"Un cavo difettoso","ok":false},
+             {"t":"Un indirizzo IP duplicato","ok":false},
+             {"t":"Il DHCP che riassegna gli indirizzi","ok":false} ],
+      "e": "Si chiama <em>MAC flapping</em> e la causa tipica è un anello: il frame gira e torna allo switch da due lati diversi, quindi lo switch «vede» lo stesso dispositivo da entrambe le parti. È una situazione che può saturare la rete in pochi secondi. Un IP duplicato produce invece due <em>MAC diversi</em> per lo stesso IP: sintomo simile, causa opposta." },
+
+    { "q": "Perché collegare più switch non riduce il traffico di broadcast?",
+      "a": [ {"t":"Perché i broadcast vengono replicati su tutte le porte, per definizione","ok":true},
+             {"t":"Perché gli switch non hanno abbastanza memoria","ok":false},
+             {"t":"Perché i broadcast viaggiano solo su cavo e non su fibra","ok":false},
+             {"t":"Perché serve prima configurare lo spanning tree","ok":false} ],
+      "e": "Sul broadcast non c'è niente da imparare: è destinato a tutti. Aggiungere switch aggiunge dispositivi allo stesso dominio di broadcast, quindi la quantità di broadcast <em>cresce</em>. Per dividerlo serve un router o, più praticamente, le VLAN — che è esattamente il motivo per cui esistono." },
+
+    { "q": "Un server di backup riceve moltissimo traffico ma trasmette pochissimo. Che problema può crearsi?",
+      "a": [ {"t":"Il suo MAC scade dalla tabella e lo switch allaga tutto il traffico a lui diretto","ok":true},
+             {"t":"Il server perde l'indirizzo IP","ok":false},
+             {"t":"Lo switch disattiva la porta per inattività","ok":false},
+             {"t":"Il traffico viene automaticamente rallentato","ok":false} ],
+      "e": "Si chiama <em>unknown unicast flooding</em>. Lo switch impara solo da chi <b>trasmette</b>; se un dispositivo tace troppo a lungo, la sua riga invecchia e scade, e da quel momento tutto ciò che gli è destinato viene replicato su tutte le porte. Il sintomo è una lentezza diffusa e senza colpevole apparente, tipica proprio degli ambienti di backup e storage." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+#id: l1-19
+#title: DHCP: come un dispositivo ottiene un indirizzo
+#min: 22
+#level: 1
+#chapter: I servizi che tengono in piedi tutto
+#desc: DORA passo passo, lease, riservazioni, e cosa significa davvero quando vedi un 169.254.x.x.
+#obj: Descrivere i quattro passaggi DORA e cosa contiene ciascuno
+#obj: Capire cos'è un lease e perché la sua durata conta
+#obj: Riconoscere e risolvere i guasti tipici del DHCP
+#obj: Sapere quando usare una riservazione e quando un indirizzo statico
+---
+<p class="lead">Il DHCP è il servizio che fa funzionare le reti senza che nessuno configuri niente a mano.
+Quando funziona è invisibile; quando si rompe, un'azienda intera si ferma in pochi minuti. È anche il
+servizio che produce il sintomo più riconoscibile di tutto il networking.</p>
+
+<h2>Cosa consegna il DHCP</h2>
+
+<p>Non solo l'indirizzo. Un dispositivo che arriva in rete non sa nulla, e il DHCP gli dà tutto il
+necessario per funzionare:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parametro</th><th>A cosa serve</th><th>Obbligatorio?</th></tr></thead>
+    <tbody>
+      <tr><td><b>Indirizzo IP</b></td><td>Chi sono</td><td>Sì</td></tr>
+      <tr><td><b>Subnet mask</b></td><td>Dove finisce la mia rete</td><td>Sì</td></tr>
+      <tr><td><b>Default gateway</b></td><td>Come esco dalla mia rete</td><td>Di fatto sì</td></tr>
+      <tr><td><b>Server DNS</b></td><td>Chi traduce i nomi</td><td>Di fatto sì</td></tr>
+      <tr><td><b>Durata del lease</b></td><td>Per quanto tempo l'indirizzo è mio</td><td>Sì</td></tr>
+      <tr><td><b>Suffisso DNS</b></td><td>Il dominio da aggiungere ai nomi brevi</td><td>No, ma serve con Active Directory</td></tr>
+      <tr><td><b>Server NTP</b></td><td>Da chi prendo l'ora</td><td>No, ma importante</td></tr>
+      <tr><td><b>Opzioni particolari</b></td><td>Controller Wi-Fi, server TFTP dei telefoni, PXE…</td><td>No</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>DORA: i quattro passaggi</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 350" role="img" aria-label="La sequenza DHCP Discover Offer Request Acknowledge tra client e server">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">D · O · R · A</text>
+
+    <rect x="30" y="40" width="140" height="40" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="100" y="65" text-anchor="middle" class="dg-label-sm">CLIENT (nuovo PC)</text>
+    <rect x="530" y="40" width="140" height="40" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="600" y="65" text-anchor="middle" class="dg-label-sm">SERVER DHCP</text>
+    <line x1="100" y1="80" x2="100" y2="324" stroke="var(--dg-line-soft)" stroke-width="1.4" stroke-dasharray="4 4"/>
+    <line x1="600" y1="80" x2="600" y2="324" stroke="var(--dg-line-soft)" stroke-width="1.4" stroke-dasharray="4 4"/>
+
+    <defs><marker id="dh" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-3)"/></marker>
+      <marker id="dh2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-5)"/></marker></defs>
+
+    <!-- D -->
+    <path d="M104 110h490" stroke="var(--dg-3)" stroke-width="1.8" marker-end="url(#dh)"/>
+    <text x="350" y="104" text-anchor="middle" class="dg-mono-sm">1 · DISCOVER</text>
+    <text x="350" y="128" text-anchor="middle" class="dg-label-sm">«C'è un server DHCP? Sono il MAC A4:BB:…, non ho indirizzo» — broadcast</text>
+
+    <!-- O -->
+    <path d="M596 166H106" stroke="var(--dg-5)" stroke-width="1.8" marker-end="url(#dh2)"/>
+    <text x="350" y="160" text-anchor="middle" class="dg-mono-sm">2 · OFFER</text>
+    <text x="350" y="184" text-anchor="middle" class="dg-label-sm">«Ti propongo 192.168.10.37, mask /24, gw .1, dns .5, per 8 ore»</text>
+
+    <!-- R -->
+    <path d="M104 222h490" stroke="var(--dg-3)" stroke-width="1.8" marker-end="url(#dh)"/>
+    <text x="350" y="216" text-anchor="middle" class="dg-mono-sm">3 · REQUEST</text>
+    <text x="350" y="240" text-anchor="middle" class="dg-label-sm">«Accetto quella. Lo dico in broadcast così gli altri server ritirano la loro offerta»</text>
+
+    <!-- A -->
+    <path d="M596 278H106" stroke="var(--dg-5)" stroke-width="1.8" marker-end="url(#dh2)"/>
+    <text x="350" y="272" text-anchor="middle" class="dg-mono-sm">4 · ACKNOWLEDGE</text>
+    <text x="350" y="296" text-anchor="middle" class="dg-label-sm">«Confermato, è tuo fino alle 17:42. Ecco di nuovo tutti i parametri»</text>
+
+    <text x="350" y="332" text-anchor="middle" class="dg-label-sm">Porte: il client usa la 68, il server la 67. Tutto su UDP.</text>
+  </svg>
+  </div>
+  <figcaption>Discover, Offer, Request, Acknowledge. Il passaggio 3 sembra ridondante — se c'è un solo
+  server, perché «accettare» una proposta unica? — ma serve proprio al caso in cui i server sono due:
+  il client dichiara pubblicamente quale ha scelto e l'altro libera l'indirizzo che aveva messo da parte.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'hotel
+  </div>
+  <p>Arrivi in un hotel senza prenotazione.</p>
+  <p><b>D</b> — Entri e chiedi a voce alta: «avete una camera?» (non sai nemmeno chi sia il receptionist,
+  quindi lo chiedi a tutta la hall).<br>
+  <b>O</b> — Il receptionist risponde: «le offro la 237, seconda stanza, colazione alle 7, per due notti».<br>
+  <b>R</b> — Tu dici ad alta voce: «va bene, prendo la 237 del receptionist di sinistra». Lo dici forte
+  così l'altro receptionist, che ti stava tenendo da parte la 108, la rimette a disposizione.<br>
+  <b>A</b> — Lui conferma, ti dà la chiave e ti ricorda tutte le informazioni.</p>
+  <p>E <b>il lease</b> è il fatto che la camera è tua per due notti: dopo, se vuoi restare, devi passare
+  a rinnovare. Non lo fai? La camera torna libera per qualcun altro.</p>
+</div>
+
+<h2>Il lease: cosa succede quando scade</h2>
+
+<p>Il lease non è «l'indirizzo per sempre»: è un affitto a tempo. Il client non aspetta la scadenza per
+rinnovare:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Momento</th><th>Cosa fa il client</th></tr></thead>
+    <tbody>
+      <tr><td><b>Al 50% del lease</b> (T1)</td><td>Chiede il rinnovo direttamente al server che glielo ha dato (unicast). Di solito basta questo.</td></tr>
+      <tr><td><b>All'87,5%</b> (T2)</td><td>Se il primo non ha risposto, chiede in broadcast: «qualcuno mi rinnova questo indirizzo?»</td></tr>
+      <tr><td><b>Alla scadenza</b></td><td>Abbandona l'indirizzo e ricomincia da DISCOVER. Se nessuno risponde → <b>169.254.x.x</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Come scegliere la durata del lease
+  </div>
+  <div class="table-wrap" style="margin:8px 0 0">
+    <table>
+      <thead><tr><th>Ambiente</th><th>Lease consigliato</th><th>Perché</th></tr></thead>
+      <tbody>
+        <tr><td>Ufficio con postazioni fisse</td><td>8 giorni</td><td>I dispositivi sono sempre gli stessi: pochi rinnovi, meno traffico</td></tr>
+        <tr><td>Wi-Fi aziendale</td><td>8–24 ore</td><td>Portatili che vanno e vengono</td></tr>
+        <tr><td>Wi-Fi ospiti, sale d'attesa</td><td>1–4 ore</td><td>Gli indirizzi vanno riciclati in fretta</td></tr>
+        <tr><td>Fiere, eventi, negozi</td><td>15–30 minuti</td><td>Altissimo ricambio: con un lease lungo il pool si esaurisce in un'ora</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0"><b>Il sintomo del lease troppo lungo:</b> «da un certo
+  momento in poi nessuno riesce più a collegarsi al Wi-Fi ospiti». Il pool è pieno di indirizzi
+  assegnati a telefoni che sono usciti dall'edificio tre giorni fa.</p>
+</div>
+
+<h2>Riservazioni, statici e pool: quando usare cosa</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Metodo</th><th>Come funziona</th><th>Quando usarlo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Pool dinamico</b></td><td>Il server assegna un indirizzo qualsiasi del campo libero</td>
+          <td>PC, portatili, telefoni degli utenti. Il 90% dei dispositivi.</td></tr>
+      <tr><td><b>Riservazione DHCP</b></td><td>«Questo MAC riceve sempre questo indirizzo»</td>
+          <td><b>La scelta migliore</b> per stampanti, access point, telecamere, NAS. Indirizzo fisso ma gestito da un punto solo.</td></tr>
+      <tr><td><b>IP statico sul dispositivo</b></td><td>Configurato a mano sul dispositivo stesso</td>
+          <td>Solo per: server DHCP, gateway, apparati di rete, e macchine che devono funzionare anche a DHCP spento.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La regola che evita il 90% dei conflitti IP
+  </div>
+  <p>Il campo distribuito dal DHCP e gli indirizzi statici <b>non devono mai sovrapporsi</b>.
+  Una divisione che funziona sempre, in una rete /24:</p>
+  <ul style="margin-bottom:0">
+    <li><code>.1 – .20</code> → apparati di rete e server, statici</li>
+    <li><code>.21 – .99</code> → riservazioni DHCP (stampanti, AP, telecamere)</li>
+    <li><code>.100 – .250</code> → pool dinamico per gli utenti</li>
+    <li><code>.251 – .254</code> → liberi, per emergenze e collaudi</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Scrivila nella documentazione del cliente e falla rispettare.
+  È una convenzione che costa zero e previene una delle cause più frequenti di guasti intermittenti.</p>
+</div>
+
+<h2>I guasti del DHCP</h2>
+
+<h3>1. Nessuna risposta → 169.254.x.x</h3>
+<p>Il sintomo più riconoscibile che esista. Cause in ordine di probabilità:</p>
+<ol>
+  <li>Il servizio DHCP è fermo o il server è spento.</li>
+  <li><b>Il pool è esaurito</b> — il caso più insidioso, perché il server è acceso e sembra funzionare.</li>
+  <li>La porta dello switch è nella VLAN sbagliata: il broadcast non raggiunge nessun server.</li>
+  <li>Manca il <b>DHCP relay</b>: il client è in una VLAN diversa da quella del server, e siccome i
+  broadcast non attraversano i router, la richiesta non arriva.</li>
+  <li>Il cavo non va dove pensi che vada.</li>
+</ol>
+
+<h3>2. DHCP abusivo (rogue)</h3>
+<p>Qualcuno attacca alla rete un router portato da casa, senza spegnerne il DHCP. Quel router inizia a
+distribuire indirizzi della <em>sua</em> rete, con sé stesso come gateway.</p>
+<p><strong>Sintomo:</strong> <em>alcuni</em> utenti non navigano e hanno indirizzi strani —
+tipicamente 192.168.1.x quando l'azienda usa tutt'altro. Chi arriva prima vince, quindi il problema
+sembra casuale. <strong>Verifica immediata:</strong> guarda la riga «Server DHCP» di
+<code>ipconfig /all</code> su un PC guasto: ti dice l'IP del colpevole.
+<strong>Difesa definitiva:</strong> il <b>DHCP snooping</b> sugli switch, che fa passare le risposte
+DHCP solo dalle porte autorizzate — lo vedremo nel capitolo 2.2.</p>
+
+<h3>3. Conflitto di indirizzi</h3>
+<p>Il DHCP assegna un indirizzo già usato da un dispositivo statico. Sintomo: connessioni intermittenti
+per entrambi. Prevenzione: la divisione del campo descritta sopra.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Comandi utili</div>
+<pre><span class="c"># Windows — rilascia e richiedi</span>
+<span class="p">ipconfig /release</span>
+<span class="p">ipconfig /renew</span>
+<span class="p">ipconfig /all</span>                     <span class="c"># guarda "Server DHCP" e "Scadenza lease"</span>
+
+<span class="c"># macOS — vedere la risposta DHCP completa: bellissimo da leggere</span>
+<span class="p">ipconfig getpacket en0</span>
+
+<span class="c"># MikroTik — chi ha preso quale indirizzo</span>
+<span class="p">/ip dhcp-server lease print</span>
+
+<span class="c"># FortiGate</span>
+<span class="p">execute dhcp lease-list</span>
+
+<span class="c"># Windows Server — stato dei pool</span>
+<span class="p">Get-DhcpServerv4ScopeStatistics</span>
+</pre>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il ticket «da stamattina nessuno riesce a collegarsi»
+  </div>
+  <p>Vai in ordine, e non ti serve più di così:</p>
+  <ol style="margin-bottom:0">
+    <li><code>ipconfig /all</code> su un PC guasto. <b>169.254?</b> → è DHCP. Altro indirizzo inatteso?
+    → è un DHCP abusivo, e la riga «Server DHCP» ti dice chi.</li>
+    <li>Il servizio DHCP è avviato? Il server è raggiungibile con un ping?</li>
+    <li><b>Quanti indirizzi liberi restano nel pool?</b> È la domanda che nessuno fa e che risolve il
+    caso più spesso di quanto pensi — soprattutto se di recente sono stati aggiunti dispositivi o è
+    stato attivato un Wi-Fi ospiti.</li>
+    <li>Chi funziona e chi no? Se una VLAN sola è guasta, guarda il relay di quella VLAN.</li>
+    <li>Una cattura con filtro <code>dhcp</code> ti dice esattamente a quale dei quattro passaggi si
+    ferma tutto.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: DHCP",
+  "questions": [
+    { "q": "Qual è l'ordine corretto dei quattro passaggi DHCP?",
+      "a": [ {"t":"Discover, Offer, Request, Acknowledge","ok":true},
+             {"t":"Discover, Request, Offer, Acknowledge","ok":false},
+             {"t":"Request, Offer, Discover, Acknowledge","ok":false},
+             {"t":"Offer, Request, Discover, Acknowledge","ok":false} ],
+      "e": "DORA. Il client cerca (Discover), il server propone (Offer), il client accetta dichiarandolo pubblicamente (Request), il server conferma (Acknowledge)." },
+
+    { "q": "Perché il client manda il REQUEST in broadcast anche se ha già ricevuto l'offerta da un server preciso?",
+      "a": [ {"t":"Per far sapere agli altri server quale offerta ha accettato, così liberano la loro","ok":true},
+             {"t":"Perché non conosce ancora l'indirizzo del server","ok":false},
+             {"t":"Per velocizzare la procedura","ok":false},
+             {"t":"Per motivi di sicurezza","ok":false} ],
+      "e": "Con più server DHCP nella stessa rete, ognuno mette da parte un indirizzo. Il broadcast del Request dice pubblicamente quale è stato scelto, e gli altri rimettono in circolo il proprio. Con un solo server il passaggio sembra inutile, ma il protocollo deve funzionare in entrambi i casi." },
+
+    { "q": "Diversi utenti hanno indirizzi <code>192.168.1.x</code> mentre l'azienda usa <code>10.10.10.0/24</code>. Cosa è successo?",
+      "a": [ {"t":"C'è un DHCP abusivo: qualcuno ha attaccato un router da casa","ok":true},
+             {"t":"Il server DHCP aziendale ha esaurito il pool","ok":false},
+             {"t":"I PC hanno preso un indirizzo APIPA","ok":false},
+             {"t":"Il gateway è stato riconfigurato","ok":false} ],
+      "e": "Indirizzi di una rete che non esiste in azienda significa che <b>un altro</b> server DHCP sta rispondendo: quasi sempre un router domestico attaccato a una presa. La riga «Server DHCP» di <code>ipconfig /all</code> rivela subito il suo indirizzo. Un pool esaurito darebbe invece 169.254, non indirizzi di un'altra rete." },
+
+    { "q": "Perché serve un DHCP relay?",
+      "a": [ {"t":"Perché le richieste DHCP viaggiano in broadcast e i router non le inoltrano","ok":true},
+             {"t":"Per bilanciare il carico tra più server DHCP","ok":false},
+             {"t":"Per cifrare le richieste DHCP","ok":false},
+             {"t":"Per aumentare la durata dei lease","ok":false} ],
+      "e": "Un DISCOVER è un broadcast e si ferma al confine del dominio di broadcast. Se il server sta in un'altra VLAN, non lo riceve mai. Il relay (chiamato anche «IP helper») prende la richiesta e la inoltra in unicast al server, permettendo a un solo server di servire decine di VLAN." },
+
+    { "q": "Per una stampante di rete, cosa conviene?",
+      "a": [ {"t":"Una riservazione DHCP legata al suo MAC","ok":true},
+             {"t":"Un indirizzo statico configurato sulla stampante","ok":false},
+             {"t":"Lasciarla nel pool dinamico","ok":false},
+             {"t":"Assegnarle un indirizzo fuori dalla subnet","ok":false} ],
+      "e": "La riservazione dà un indirizzo sempre uguale, ma gestito da un punto solo: se un giorno cambi l'indirizzamento, modifichi il server e non devi girare per gli uffici a riconfigurare stampanti. L'indirizzo statico sul dispositivo si giustifica solo per ciò che deve funzionare anche a DHCP spento — server DHCP, gateway, apparati di rete." },
+
+    { "q": "In un negozio, il Wi-Fi ospiti smette di funzionare nel pomeriggio dei giorni di punta. Cosa sospetti per primo?",
+      "a": [ {"t":"Pool DHCP esaurito per via di lease troppo lunghi","ok":true},
+             {"t":"L'access point si surriscalda","ok":false},
+             {"t":"L'operatore limita la banda","ok":false},
+             {"t":"Troppi dispositivi per il canale radio","ok":false} ],
+      "e": "Con lease lunghi, ogni telefono che è passato di lì tiene occupato un indirizzo per ore o giorni anche dopo essere uscito. Nei momenti di punta il pool si esaurisce e i nuovi arrivati prendono 169.254. La cura è doppia: lease brevi (15–30 minuti) e pool più ampio. Il fatto che il guasto sia legato all'<em>affluenza</em> e non all'orario è la firma di questo problema." }
+  ]
+}
+</script>

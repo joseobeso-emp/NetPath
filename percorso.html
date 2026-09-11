@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Il percorso completo — NetPath</title>
+<meta name="description" content="Tutte le 90 lezioni del percorso, organizzate in 4 livelli e 24 capitoli, con i tuoi progressi.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<style>
+  .lv-block { margin-bottom: 54px; scroll-margin-top: 80px; }
+  .lv-head {
+    position: relative; padding: 24px 24px 22px; border-radius: var(--r-xl);
+    border: 1px solid var(--border); background: var(--bg-elev); overflow: hidden; margin-bottom: 22px;
+  }
+  .lv-head::before { content:""; position:absolute; inset:0 0 auto 0; height:4px; background: var(--lvc); }
+  .lv-head h2 { font-size: clamp(1.4rem,1.1rem + 1.2vw,1.8rem); margin-bottom: 8px; }
+  .lv-head .lv-n { font-family: var(--font-display); font-size:.74rem; font-weight:700; letter-spacing:.1em;
+    text-transform: uppercase; color: var(--lvc); margin-bottom: 8px; }
+  .lv-head p { font-size:.95rem; color: var(--text-mute); max-width: 68ch; }
+  .lv-outcome { margin-top:14px; padding:12px 14px; border-radius: var(--r); background: var(--bg-sunken);
+    font-size:.88rem; color: var(--text-soft); border-left: 3px solid var(--lvc); }
+  .lv-outcome b { color: var(--text); }
+  .ch { margin-bottom: 26px; }
+  .ch__t { display:flex; align-items:baseline; gap:10px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .ch__t h3 { font-size:1rem; }
+  .ch__t span { font-size:.74rem; color: var(--text-faint); font-family: var(--font-mono); margin-left:auto; }
+  .les {
+    display:flex; gap:13px; padding:12px 14px; border:1px solid var(--border); border-radius: var(--r);
+    background: var(--bg-elev); margin-bottom:7px; text-decoration:none; color:inherit;
+    transition: border-color .15s, transform .15s;
+  }
+  a.les:hover { border-color: var(--lvc); transform: translateX(3px); }
+  .les__n { font-family: var(--font-mono); font-size:.78rem; color: var(--text-faint); flex-shrink:0; padding-top:2px; min-width:2.2em; }
+  .les__b { flex:1; min-width:0; }
+  .les__b h4 { font-size:.95rem; font-weight:600; margin-bottom:3px; }
+  .les__b p { font-size:.84rem; color: var(--text-mute); margin:0; }
+  .les__r { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+  .les__m { font-size:.72rem; font-family: var(--font-mono); color: var(--text-faint); white-space:nowrap; }
+  .les.soon { opacity:.62; }
+  .les.done { border-color: color-mix(in srgb, var(--ok) 42%, var(--border)); }
+  .les.done .les__n { color: var(--ok); }
+  .tick { width:16px; height:16px; color: var(--ok); }
+</style>
+</head>
+<body data-page="percorso" data-root="">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+
+<main class="wrap" style="padding-top:44px;padding-bottom:70px">
+
+  <div style="max-width:72ch;margin-bottom:38px">
+    <div class="kicker">Mappa completa</div>
+    <h1 style="font-size:clamp(1.9rem,1.4rem + 2.2vw,2.7rem);letter-spacing:-.03em;margin-bottom:14px">Il percorso, tutto intero</h1>
+    <p class="lead">Novanta lezioni divise in quattro livelli e ventiquattro capitoli. Non è pensato per essere
+    letto tutto d'un fiato: è pensato per essere percorso in ordine, una lezione alla volta, con le mani sulla
+    tastiera. Le lezioni ancora in preparazione sono segnate; la struttura completa è qui perché tu sappia
+    fin dal primo giorno dove stai andando.</p>
+  </div>
+
+  <div class="stat-row" style="margin-bottom:46px" id="np-stats"></div>
+
+  <div id="np-path"></div>
+
+</main>
+
+<footer id="np-footer"></footer>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/glossario-data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+window.NP_PAGE_INIT = function () {
+  var NP = window.NetPath, esc = NP.esc;
+  var done = NP.store.get("done") || {};
+  var p = NP.progress();
+
+  var totMin = window.NETPATH_FLAT.reduce(function (a, l) { return a + l.m; }, 0);
+  document.getElementById("np-stats").innerHTML =
+    '<div class="stat"><b>' + p.total + '</b><span>lezioni in totale</span></div>' +
+    '<div class="stat"><b>24</b><span>capitoli</span></div>' +
+    '<div class="stat"><b>' + p.done + '</b><span>completate da te</span></div>' +
+    '<div class="stat"><b>~' + Math.round(totMin / 60) + 'h</b><span>di sola lettura</span></div>' +
+    '<div class="stat"><b>~400h</b><span>con esercizi e lab</span></div>';
+
+  var TICK = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+
+  document.getElementById("np-path").innerHTML = window.NETPATH_CURRICULUM.map(function (lv) {
+    var st = p.levels[lv.id];
+    var h = '<section class="lv-block" id="' + lv.id + '" style="--lvc:var(--' + lv.key + ')">';
+    h += '<div class="lv-head">' +
+           '<div class="lv-n">Livello ' + lv.n + ' · ' + esc(lv.subtitle) + '</div>' +
+           '<h2>' + esc(lv.title) + '</h2>' +
+           '<p>' + esc(lv.blurb) + '</p>' +
+           '<div class="lv-outcome"><b>Quando hai finito questo livello:</b> ' + esc(lv.outcome) + '</div>' +
+           '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:.8rem;font-family:var(--font-mono);color:var(--text-faint)">' +
+             '<span>' + st.total + ' lezioni</span><span>' + lv.hours + '</span><span>' + st.done + ' completate</span></div>' +
+           '<div class="bar" style="margin-top:12px"><i style="width:' + (st.total ? st.done / st.total * 100 : 0) + '%"></i></div>' +
+         '</div>';
+
+    lv.chapters.forEach(function (ch, ci) {
+      var nd = ch.lessons.filter(function (l) { return done[l.id]; }).length;
+      h += '<div class="ch"><div class="ch__t"><h3>' + (lv.n + '.' + (ci + 1)) + ' — ' + esc(ch.title) + '</h3>' +
+           '<span>' + nd + '/' + ch.lessons.length + '</span></div>';
+      ch.lessons.forEach(function (l) {
+        var cls = 'les' + (l.ready ? '' : ' soon') + (done[l.id] ? ' done' : '');
+        var inner =
+          '<div class="les__n">' + l.id.split('-')[1] + '</div>' +
+          '<div class="les__b"><h4>' + esc(l.t) + '</h4><p>' + esc(l.s) + '</p></div>' +
+          '<div class="les__r"><span class="les__m">' + l.m + ' min</span>' +
+          (done[l.id] ? TICK : (l.ready ? '' : '<span class="badge soon">presto</span>')) + '</div>';
+        h += l.ready
+          ? '<a class="' + cls + '" href="lezioni/' + l.id + '.html">' + inner + '</a>'
+          : '<div class="' + cls + '">' + inner + '</div>';
+      });
+      h += '</div>';
+    });
+    return h + '</section>';
+  }).join('');
+
+  if (location.hash) {
+    var t = document.querySelector(location.hash);
+    if (t) t.scrollIntoView();
+  }
+};
+</script>
+</body>
+</html>

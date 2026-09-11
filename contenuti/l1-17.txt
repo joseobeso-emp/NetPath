@@ -1,0 +1,269 @@
+#id: l1-17
+#title: ARP: il ponte tra IP e MAC
+#min: 20
+#level: 1
+#chapter: I servizi che tengono in piedi tutto
+#desc: Il protocollo di cui nessuno parla e che spiega metà dei problemi di rete locale.
+#obj: Descrivere il funzionamento di ARP in due pacchetti
+#obj: Leggere e interpretare una tabella ARP
+#obj: Riconoscere i problemi che nascono da ARP: IP duplicati, cache vecchie, spoofing
+#obj: Usare la tabella ARP come strumento di diagnosi quotidiano
+---
+<p class="lead">ARP è il collante tra il livello 3 e il livello 2. Sta sotto a ogni singola comunicazione
+di rete locale, non ha nessuna configurazione, e proprio per questo nessuno lo studia — finché non
+capita il ticket che senza ARP è incomprensibile. Sono venti minuti che ti tornano indietro decine di
+volte.</p>
+
+<h2>Il problema che risolve</h2>
+
+<p>Il tuo PC vuole mandare un pacchetto a <code>192.168.10.50</code>, che sta nella sua stessa rete.
+Ha già il pacchetto IP pronto. Ma per metterlo sul cavo deve costruirci intorno un frame Ethernet,
+e il frame Ethernet vuole un <strong>MAC address di destinazione</strong>.</p>
+
+<p>Il PC conosce l'IP. Non conosce il MAC. E senza MAC il frame non si può costruire.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'aula
+  </div>
+  <p>Sei in un'aula piena di gente e devi consegnare un foglio a «quello che ha il numero 50» —
+  ma non sai chi sia, non l'hai mai visto in faccia.</p>
+  <p>Cosa fai? <b>Ti alzi e urli: «Chi ha il numero 50?»</b> Tutti ti sentono, ma solo uno alza la mano
+  e dice: «io, sono qui, sono quello con la maglietta rossa».</p>
+  <p>Adesso sai a chi consegnare. E te lo segni su un foglietto, perché tra due minuti dovrai
+  consegnargli un altro foglio e non vuoi urlare di nuovo.</p>
+  <p><b>Questo è ARP</b>, letteralmente. L'urlo è un broadcast; la risposta è unicast; il foglietto è
+  la cache ARP. Due pacchetti in tutto, ed è l'intero protocollo.</p>
+</div>
+
+<h2>Come funziona, in due pacchetti</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Sequenza ARP: richiesta in broadcast a tutti, risposta unicast solo dal proprietario dell'indirizzo">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">«Chi ha 192.168.10.50? Rispondete a 192.168.10.25»</text>
+
+    <!-- attori -->
+    <rect x="16" y="46" width="110" height="54" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="71" y="68" text-anchor="middle" class="dg-label-sm">PC Anna</text>
+    <text x="71" y="86" text-anchor="middle" class="dg-mono-sm">.25</text>
+
+    <rect x="574" y="46" width="110" height="54" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="629" y="68" text-anchor="middle" class="dg-label-sm">Server</text>
+    <text x="629" y="86" text-anchor="middle" class="dg-mono-sm">.50</text>
+
+    <rect x="230" y="46" width="106" height="54" rx="9" fill="var(--dg-line-soft)" stroke="var(--dg-line)" stroke-width="1.2" opacity=".6"/>
+    <text x="283" y="68" text-anchor="middle" class="dg-label-sm">PC Carlo</text>
+    <text x="283" y="86" text-anchor="middle" class="dg-mono-sm">.31</text>
+
+    <rect x="368" y="46" width="106" height="54" rx="9" fill="var(--dg-line-soft)" stroke="var(--dg-line)" stroke-width="1.2" opacity=".6"/>
+    <text x="421" y="68" text-anchor="middle" class="dg-label-sm">Stampante</text>
+    <text x="421" y="86" text-anchor="middle" class="dg-mono-sm">.60</text>
+
+    <!-- passo 1 -->
+    <text x="16" y="142" class="dg-mono-sm">1 · RICHIESTA</text>
+    <rect x="16" y="152" width="668" height="42" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="350" y="170" text-anchor="middle" class="dg-mono-sm">destinazione MAC: FF:FF:FF:FF:FF:FF  —  BROADCAST, arriva a tutti</text>
+    <text x="350" y="188" text-anchor="middle" class="dg-label-sm">Carlo e la stampante la ricevono, vedono che non li riguarda e la buttano. Il server invece risponde.</text>
+
+    <!-- passo 2 -->
+    <text x="16" y="230" class="dg-mono-sm">2 · RISPOSTA</text>
+    <rect x="380" y="240" width="304" height="42" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.5"/>
+    <text x="532" y="258" text-anchor="middle" class="dg-mono-sm">«sono io, il mio MAC è 00:1B:44:11:3A:B7»</text>
+    <text x="532" y="276" text-anchor="middle" class="dg-label-sm">UNICAST: va solo ad Anna</text>
+    <path d="M374 262H140" stroke="var(--dg-5)" stroke-width="1.8" marker-end="url(#arpA)"/>
+    <defs><marker id="arpA" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-5)"/></marker></defs>
+    <text x="16" y="266" class="dg-mono-sm">Anna impara</text>
+  </svg>
+  </div>
+  <figcaption>La <b>richiesta</b> è in broadcast perché non si sa a chi chiedere; la <b>risposta</b> è
+  unicast perché a quel punto il mittente è noto. Due pacchetti, e la coppia IP↔MAC finisce nella cache
+  per qualche minuto.</figcaption>
+</figure>
+
+<p>Un dettaglio elegante: anche <strong>tutti gli altri</strong> che hanno sentito la richiesta ne
+approfittano per imparare la coppia IP↔MAC di chi l'ha mandata, perché era scritta dentro. Un broadcast,
+tanti che imparano qualcosa.</p>
+
+<h2>La tabella ARP</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Guardare la cache ARP</div>
+<pre><span class="p">arp -a</span>                          <span class="c"># Windows, macOS, Linux</span>
+
+<span class="o">Interfaccia: 192.168.10.25 --- 0x5</span>
+<span class="o">  Indirizzo Internet    Indirizzo fisico      Tipo</span>
+<span class="o">  192.168.10.1          e8-de-27-aa-31-04     dinamico</span>
+<span class="o">  192.168.10.50         00-1b-44-11-3a-b7     dinamico</span>
+<span class="o">  192.168.10.60         3c-2a-f4-90-11-5e     dinamico</span>
+<span class="o">  192.168.10.255        ff-ff-ff-ff-ff-ff     statico</span>
+<span class="o">  224.0.0.22            01-00-5e-00-00-16     statico</span>
+</pre>
+</div>
+
+<ul class="clean">
+  <li><b>Dinamico</b> = imparato con ARP, scade da solo (2–20 minuti, dipende dal sistema).</li>
+  <li><b>Statico</b> = configurato a mano o calcolato dal sistema (come broadcast e multicast).</li>
+  <li>Le righe che finiscono per <code>.255</code> e quelle che iniziano per <code>224.</code> non sono
+  dispositivi: sono broadcast e multicast, e ci sono sempre.</li>
+</ul>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Comandi utili</div>
+<pre><span class="c"># svuotare la cache (Windows, come amministratore)</span>
+<span class="p">arp -d *</span>
+<span class="p">netsh interface ip delete arpcache</span>
+
+<span class="c"># svuotare su macOS / Linux</span>
+<span class="p">sudo arp -a -d</span>
+<span class="p">sudo ip -s -s neigh flush all</span>       <span class="c"># Linux</span>
+
+<span class="c"># guardare la tabella ARP di un apparato</span>
+<span class="p">/ip arp print</span>                        <span class="c"># MikroTik</span>
+<span class="p">get system arp-table</span>                 <span class="c"># FortiGate</span>
+<span class="p">show ip arp</span>                          <span class="c"># Cisco</span>
+</pre>
+</div>
+
+<h2>Il ruolo di ARP nella decisione locale/remoto</h2>
+
+<p>Questa è la parte che collega ARP a tutto il resto, ed è importante. Prima di fare ARP, il PC decide
+se la destinazione è <strong>locale o remota</strong>, confrontandola con la propria maschera:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Se la destinazione è…</th><th>Il PC fa ARP per…</th><th>Perché</th></tr></thead>
+    <tbody>
+      <tr><td><b>Nella mia stessa rete</b></td><td>l'IP della destinazione</td>
+          <td>Gli parlo direttamente, mi serve il suo MAC</td></tr>
+      <tr><td><b>Fuori dalla mia rete</b></td><td>l'IP del <b>gateway</b></td>
+          <td>Devo consegnare al router, mi serve il MAC del router — della destinazione non mi importa nulla</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La conseguenza diagnostica
+  </div>
+  <p>Se guardi la cache ARP di un PC e <b>non c'è il gateway</b>, quel PC non sta comunicando con
+  nessuno fuori dalla sua rete — e quindi non naviga.</p>
+  <p>Se invece il gateway c'è ma il PC comunque non naviga, hai appena escluso i livelli 1, 2 e parte
+  del 3: il segnale arriva, il vicino risponde, il router è raggiungibile. Il problema è più in alto.
+  Una singola riga di <code>arp -a</code> ti ha fatto saltare mezza indagine.</p>
+</div>
+
+<h2>I problemi che nascono da ARP</h2>
+
+<h3>IP duplicato</h3>
+<p>Due dispositivi con lo stesso indirizzo IP rispondono entrambi alla stessa richiesta ARP.
+La cache di chi chiede viene sovrascritta continuamente, e il traffico va ora all'uno ora all'altro.</p>
+<p><strong>Sintomo:</strong> connessioni che vanno e vengono in modo casuale, spesso per più utenti
+contemporaneamente. <strong>Diagnosi:</strong> <code>arp -a</code> ripetuto mostra il MAC che cambia
+per lo stesso IP. Windows scrive anche un evento esplicito nel registro di sistema.
+<strong>Causa quasi sempre:</strong> qualcuno ha messo un IP statico dentro il campo del DHCP.</p>
+
+<h3>Cache non aggiornata</h3>
+<p>Hai sostituito un apparato — nuovo firewall, stesso indirizzo IP. I dispositivi hanno ancora in cache
+il MAC vecchio e continuano a mandare i frame a un apparato che non c'è più.</p>
+<p><strong>Sintomo:</strong> «dopo la sostituzione alcuni PC non navigano, altri sì», e si risolve da
+solo dopo qualche minuto. <strong>Soluzione immediata:</strong> svuota la cache ARP sui PC interessati,
+oppure aspetta la scadenza naturale.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Gratuitous ARP: il trucco che evita quel problema
+  </div>
+  <p>Esiste un ARP speciale in cui un dispositivo annuncia spontaneamente «io sono questo IP e questo è
+  il mio MAC», senza che nessuno gliel'abbia chiesto. Si chiama <b>gratuitous ARP</b>.</p>
+  <p>Serve a due cose fondamentali:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Annunciarsi dopo un cambio.</b> Un apparato appena sostituito lo manda subito, e tutti
+    aggiornano la cache senza aspettare la scadenza.</li>
+    <li><b>Far funzionare l'alta disponibilità.</b> Quando il firewall passivo prende il posto di quello
+    attivo, manda un gratuitous ARP per dire «adesso quell'indirizzo risponde a me». È letteralmente il
+    meccanismo che rende istantaneo un failover. Se non passa — perché uno switch lo filtra — il failover
+    «non funziona» e la causa è difficilissima da trovare senza conoscere questo dettaglio.</li>
+  </ul>
+</div>
+
+<h3>ARP spoofing</h3>
+<p>Siccome ARP non ha nessuna autenticazione, chiunque nella rete locale può rispondere «l'IP del gateway
+sono io». Da quel momento il traffico di tutti passa dall'attaccante, che può leggerlo o modificarlo.
+È un attacco banale da eseguire e molto efficace.</p>
+<p>Le difese — port security, DHCP snooping, Dynamic ARP Inspection — le vedremo nel capitolo 2.2.
+Per ora tienilo a mente come promemoria di un principio generale: <strong>la rete locale è un ambiente
+fiducioso per progetto</strong>, e questo è esattamente il motivo per cui si segmenta.</p>
+
+<h3>Proxy ARP</h3>
+<p>Un router può rispondere al posto di un altro dispositivo, dicendo «per raggiungere quello, manda
+a me». Usato in alcuni scenari di VPN e in reti mal configurate. Quando è attivo senza che tu lo sappia,
+crea comportamenti misteriosi in cui «tutto sembra locale»: se qualcosa non torna, è una delle cose da
+verificare.</p>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Guardalo succedere, adesso
+  </div>
+  <ol style="margin-bottom:0">
+    <li>Apri Wireshark e metti il filtro <code>arp</code>.</li>
+    <li>Svuota la cache ARP (<code>arp -d *</code> da amministratore).</li>
+    <li>Fai ping al tuo gateway.</li>
+    <li>Guarda i due pacchetti: la domanda in broadcast e la risposta. <b>Quello è tutto il protocollo.</b></li>
+    <li>Rifai <code>arp -a</code>: la riga è tornata.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: ARP",
+  "questions": [
+    { "q": "A cosa serve ARP?",
+      "a": [ {"t":"A scoprire il MAC address corrispondente a un IP nella stessa rete locale","ok":true},
+             {"t":"A tradurre un nome di dominio in indirizzo IP","ok":false},
+             {"t":"Ad assegnare automaticamente gli indirizzi IP","ok":false},
+             {"t":"A instradare i pacchetti tra reti diverse","ok":false} ],
+      "e": "ARP collega livello 3 e livello 2: conosco l'IP del vicino, ma per costruire il frame Ethernet mi serve il suo MAC. La traduzione nome→IP è il DNS, l'assegnazione automatica è il DHCP, l'instradamento è il routing." },
+
+    { "q": "Una richiesta ARP viaggia come:",
+      "a": [ {"t":"Broadcast, perché non si sa ancora a chi chiedere","ok":true},
+             {"t":"Unicast verso il gateway","ok":false},
+             {"t":"Multicast verso un gruppo di dispositivi","ok":false},
+             {"t":"Unicast verso il destinatario","ok":false} ],
+      "e": "Non conoscendo il MAC del destinatario, l'unico modo è chiedere a tutti: broadcast. La <b>risposta</b> invece è unicast, perché a quel punto chi risponde sa esattamente a chi rispondere." },
+
+    { "q": "Un PC deve raggiungere un server su Internet. Per quale indirizzo fa la richiesta ARP?",
+      "a": [ {"t":"Per l'indirizzo del proprio gateway","ok":true},
+             {"t":"Per l'indirizzo del server su Internet","ok":false},
+             {"t":"Per l'indirizzo del server DNS","ok":false},
+             {"t":"Non fa nessuna richiesta ARP","ok":false} ],
+      "e": "ARP funziona solo dentro la rete locale. Se la destinazione è remota, il PC deve consegnare il pacchetto al router: gli serve il MAC del <b>gateway</b>, non quello del server — che non potrebbe comunque ottenere, perché il broadcast non esce dalla rete locale." },
+
+    { "q": "La tabella ARP mostra lo stesso IP associato ora a un MAC, ora a un altro. Cosa succede?",
+      "a": [ {"t":"Due dispositivi hanno lo stesso indirizzo IP","ok":true},
+             {"t":"Il DHCP sta rinnovando gli indirizzi","ok":false},
+             {"t":"C'è un loop di rete","ok":false},
+             {"t":"Il cavo di rete è difettoso","ok":false} ],
+      "e": "Entrambi rispondono alla stessa richiesta ARP e si sovrascrivono a vicenda nella cache: il traffico va ora all'uno ora all'altro, con connessioni che vanno e vengono. Un <em>loop</em> produce il sintomo speculare — lo stesso <b>MAC</b> che rimbalza tra due porte dello switch — ed è un'altra cosa." },
+
+    { "q": "Hai sostituito il firewall mantenendo lo stesso indirizzo IP. Alcuni PC non navigano più. Perché?",
+      "a": [ {"t":"Hanno in cache ARP il MAC del vecchio apparato","ok":true},
+             {"t":"Il nuovo firewall ha un indirizzo IP sbagliato","ok":false},
+             {"t":"Il DHCP non ha distribuito il nuovo gateway","ok":false},
+             {"t":"Serve riavviare gli switch","ok":false} ],
+      "e": "L'IP è lo stesso ma il MAC è cambiato: chi ha ancora la vecchia coppia in cache manda i frame a un apparato che non esiste più. Si risolve svuotando la cache o aspettando la scadenza naturale. Il <b>gratuitous ARP</b> che un buon apparato manda all'avvio serve proprio a evitare questa situazione." },
+
+    { "q": "Perché un gratuitous ARP è essenziale nell'alta disponibilità dei firewall?",
+      "a": [ {"t":"Perché annuncia che l'indirizzo virtuale ora risponde al nodo subentrato","ok":true},
+             {"t":"Perché sincronizza le configurazioni tra i due nodi","ok":false},
+             {"t":"Perché verifica che il nodo passivo sia vivo","ok":false},
+             {"t":"Perché assegna gli indirizzi IP ai due nodi","ok":false} ],
+      "e": "Dopo un failover l'IP resta lo stesso ma il MAC cambia: senza un annuncio, tutti continuerebbero a mandare frame al nodo guasto finché la cache non scade — minuti di disservizio. Il gratuitous ARP rende il passaggio istantaneo. Se uno switch lo filtra, il failover «non funziona» e la causa è quasi impossibile da trovare senza conoscere questo meccanismo." }
+  ]
+}
+</script>

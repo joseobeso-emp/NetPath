@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Il modello a strati: perché esiste OSI — NetPath</title>
+<meta name="description" content="I sette livelli OSI spiegati con un pacco spedito da Milano a Tokyo. Il modello mentale più importante di tutto il percorso.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-03">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Che cos'è una rete</span>
+      </nav>
+      <h1 class="lesson-title">Il modello a strati: perché esiste OSI</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 03</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Elencare i sette livelli OSI e dire cosa fa ciascuno con parole tue</li>
+        <li>Capire perché dividere in strati è stata l'idea che ha reso possibile Internet</li>
+        <li>Collocare al livello giusto ogni apparato e ogni protocollo che incontri</li>
+        <li>Usare il modello per diagnosticare un guasto invece che per superare un esame</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Se di tutto questo percorso dovessi tenere una cosa sola, terrei questa lezione.
+Il modello a strati non è teoria da esame: è lo strumento con cui i tecnici ragionano e comunicano.
+Quando un collega ti dice «per me è un problema di livello 2», ti sta dicendo in quattro parole dove
+cercare. E quando saprai dirlo anche tu, sarai già un'altra persona.</p>
+
+<h2>Il problema che il modello a strati risolve</h2>
+
+<p>Torniamo alla foto da mandare da un computer all'altro. Per farla arrivare servono decine di decisioni
+diverse: che tensione mettere sul cavo, come capire dove finisce un pacchetto e inizia il successivo,
+come trovare la strada tra mille router, cosa fare se un pezzo si perde, come mostrare l'immagine alla fine.</p>
+
+<p>Negli anni Settanta qualcuno ha avuto un'idea che sembra ovvia e non lo era per niente:
+<strong>non risolviamo tutti questi problemi insieme. Dividiamoli in strati, e facciamo in modo che ogni
+strato parli solo con quello immediatamente sopra e sotto di sé.</strong></p>
+
+<p>Il guadagno è enorme. Chi progetta un cavo in fibra non deve sapere niente di posta elettronica.
+Chi scrive un programma di posta non deve sapere se il pacchetto viaggerà su rame, fibra o Wi-Fi.
+Puoi sostituire un intero strato — passare dal cavo al Wi-Fi — e tutto il resto continua a funzionare
+senza che nessuno tocchi una riga.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il pacco per Tokyo
+  </div>
+  <p>Devi mandare un regalo a un amico a Tokyo. Non lo fai tu da solo: ci sono tanti mestieri diversi,
+  uno sopra l'altro, e nessuno fa il lavoro dell'altro.</p>
+  <p><b>Tu</b> scegli il regalo e scrivi il biglietto. Non ti importa di aerei e camion.<br>
+  <b>Chi impacchetta</b> lo mette in una scatola con il pluriball. Non sa cosa c'è dentro, non gli serve.<br>
+  <b>L'ufficio postale</b> scrive l'indirizzo e decide la rotta: Milano → Dubai → Tokyo. Non apre la scatola.<br>
+  <b>Il corriere del tratto Milano-Dubai</b> carica il pacco su <em>quel</em> volo. Non sa che il pacco poi
+  andrà a Tokyo: sa solo portare roba a Dubai.<br>
+  <b>L'aereo</b> vola. Non sa niente di niente: sposta peso da un punto all'altro.</p>
+  <p>A Tokyo il processo si ripercorre al contrario: l'aereo atterra, il corriere scarica, l'ufficio postale
+  smista, qualcuno apre la scatola, e finalmente il tuo amico legge il biglietto.</p>
+  <p><b>Questo è esattamente il modello a strati.</b> Ogni mestiere fa solo la sua parte, si fida di quello
+  sotto e serve quello sopra. E la cosa importante: se il pacco non arriva, sai che puoi chiedere a un
+  mestiere alla volta — «è partito l'aereo?», «il corriere l'ha caricato?» — invece di impazzire.</p>
+</div>
+
+<h2>I sette livelli OSI</h2>
+
+<p>Il modello ufficiale si chiama <span class="term" data-term="osi">OSI</span> e ha sette livelli.
+Si legge dal basso verso l'alto: il livello 1 è il più «fisico», il 7 è il più vicino all'utente.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 452" role="img" aria-label="I sette livelli del modello OSI, dal fisico all'applicazione, con cosa fa ciascuno ed esempi">
+    <!-- intestazioni colonne -->
+    <text x="36"  y="20" class="dg-mono-sm">LIV.</text>
+    <text x="96"  y="20" class="dg-mono-sm">NOME</text>
+    <text x="250" y="20" class="dg-mono-sm">A CHE DOMANDA RISPONDE</text>
+    <text x="500" y="20" class="dg-mono-sm">ESEMPI CHE CONOSCI</text>
+    <text x="640" y="20" class="dg-mono-sm">UNITÀ</text>
+    <line x1="16" y1="28" x2="684" y2="28" stroke="var(--dg-line-soft)"/>
+
+    <!-- L7 -->
+    <rect x="16" y="36" width="668" height="52" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.4"/>
+    <text x="40"  y="68" text-anchor="middle" class="dg-title">7</text>
+    <text x="70"  y="62" class="dg-label">Applicazione</text>
+    <text x="70"  y="78" class="dg-mono-sm">Application</text>
+    <text x="250" y="62" class="dg-label-sm">«Che cosa vuole fare l'utente?»</text>
+    <text x="250" y="78" class="dg-label-sm">Il linguaggio del servizio vero e proprio</text>
+    <text x="500" y="62" class="dg-mono-sm">HTTP, SMTP, DNS, SMB</text>
+    <text x="500" y="78" class="dg-mono-sm">RDP, FTP, SIP</text>
+    <text x="640" y="70" class="dg-mono-sm">dati</text>
+
+    <!-- L6 -->
+    <rect x="16" y="94" width="668" height="44" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.1" opacity=".72"/>
+    <text x="40"  y="121" text-anchor="middle" class="dg-title">6</text>
+    <text x="70"  y="116" class="dg-label">Presentazione</text>
+    <text x="70"  y="130" class="dg-mono-sm">Presentation</text>
+    <text x="250" y="116" class="dg-label-sm">«Com'è codificato? Va cifrato o compresso?»</text>
+    <text x="250" y="130" class="dg-label-sm">Traduce i dati in un formato comune</text>
+    <text x="500" y="123" class="dg-mono-sm">TLS, JPEG, UTF-8</text>
+    <text x="640" y="123" class="dg-mono-sm">dati</text>
+
+    <!-- L5 -->
+    <rect x="16" y="144" width="668" height="44" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.1" opacity=".55"/>
+    <text x="40"  y="171" text-anchor="middle" class="dg-title">5</text>
+    <text x="70"  y="166" class="dg-label">Sessione</text>
+    <text x="70"  y="180" class="dg-mono-sm">Session</text>
+    <text x="250" y="166" class="dg-label-sm">«Come si apre, si mantiene e si chiude il dialogo?»</text>
+    <text x="250" y="180" class="dg-label-sm">Tiene insieme più scambi in una conversazione</text>
+    <text x="500" y="173" class="dg-mono-sm">NetBIOS, RPC</text>
+    <text x="640" y="173" class="dg-mono-sm">dati</text>
+
+    <!-- L4 -->
+    <rect x="16" y="194" width="668" height="52" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="40"  y="226" text-anchor="middle" class="dg-title">4</text>
+    <text x="70"  y="220" class="dg-label">Trasporto</text>
+    <text x="70"  y="236" class="dg-mono-sm">Transport</text>
+    <text x="250" y="220" class="dg-label-sm">«A quale programma della macchina? Con che garanzie?»</text>
+    <text x="250" y="236" class="dg-label-sm">Porte, affidabilità, ordine, ritrasmissioni</text>
+    <text x="500" y="220" class="dg-mono-sm">TCP, UDP</text>
+    <text x="500" y="236" class="dg-mono-sm">porte 80, 443, 3389…</text>
+    <text x="640" y="228" class="dg-mono-sm">segmento</text>
+
+    <!-- L3 -->
+    <rect x="16" y="252" width="668" height="52" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="40"  y="284" text-anchor="middle" class="dg-title">3</text>
+    <text x="70"  y="278" class="dg-label">Rete</text>
+    <text x="70"  y="294" class="dg-mono-sm">Network</text>
+    <text x="250" y="278" class="dg-label-sm">«Su quale macchina, in tutto il mondo? Che strada prendo?»</text>
+    <text x="250" y="294" class="dg-label-sm">Indirizzamento globale e instradamento</text>
+    <text x="500" y="278" class="dg-mono-sm">IP, ICMP, IPsec</text>
+    <text x="500" y="294" class="dg-mono-sm">router, firewall</text>
+    <text x="640" y="286" class="dg-mono-sm">pacchetto</text>
+
+    <!-- L2 -->
+    <rect x="16" y="310" width="668" height="52" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="40"  y="342" text-anchor="middle" class="dg-title">2</text>
+    <text x="70"  y="336" class="dg-label">Data link</text>
+    <text x="70"  y="352" class="dg-mono-sm">Collegamento</text>
+    <text x="250" y="336" class="dg-label-sm">«A quale vicino, su questo singolo collegamento?»</text>
+    <text x="250" y="352" class="dg-label-sm">Indirizzi MAC, inizio e fine del frame, errori</text>
+    <text x="500" y="336" class="dg-mono-sm">Ethernet, Wi-Fi, ARP</text>
+    <text x="500" y="352" class="dg-mono-sm">switch, VLAN, STP</text>
+    <text x="640" y="344" class="dg-mono-sm">frame</text>
+
+    <!-- L1 -->
+    <rect x="16" y="368" width="668" height="52" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="40"  y="400" text-anchor="middle" class="dg-title">1</text>
+    <text x="70"  y="394" class="dg-label">Fisico</text>
+    <text x="70"  y="410" class="dg-mono-sm">Physical</text>
+    <text x="250" y="394" class="dg-label-sm">«Come diventa un segnale elettrico, luminoso o radio?»</text>
+    <text x="250" y="410" class="dg-label-sm">Tensioni, frequenze, connettori, distanze</text>
+    <text x="500" y="394" class="dg-mono-sm">cavo Cat6, fibra, radio</text>
+    <text x="500" y="410" class="dg-mono-sm">RJ45, SFP, hub</text>
+    <text x="640" y="402" class="dg-mono-sm">bit</text>
+
+    <!-- frecce laterali -->
+    <path d="M8 400 L8 50" stroke="var(--dg-line)" stroke-width="1.2" marker-end="url(#up)"/>
+    <defs><marker id="up" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto">
+      <path d="M3.5 0L7 7H0z" fill="var(--dg-line)"/></marker></defs>
+    <text x="-224" y="12" transform="rotate(-90)" class="dg-mono-sm">verso l'utente</text>
+  </svg>
+  </div>
+  <figcaption>Il modello OSI. I livelli <b>1, 2, 3 e 4</b> sono quelli su cui lavorerai ogni giorno:
+  imparali a memoria. I livelli 5 e 6 nella pratica sono quasi sempre inglobati nel 7, e infatti
+  nel gergo quotidiano si dice «livello 7» per indicare tutto ciò che sta sopra il trasporto.</figcaption>
+</figure>
+
+<h2>Il trucco per ricordarli</h2>
+
+<p>Dal basso verso l'alto: <b>F</b>isico, <b>D</b>ata link, <b>R</b>ete, <b>T</b>rasporto,
+<b>S</b>essione, <b>P</b>resentazione, <b>A</b>pplicazione.</p>
+
+<p>In inglese, la frase mnemonica classica è <em>«Please Do Not Throw Sausage Pizza Away»</em>
+(Physical, Data link, Network, Transport, Session, Presentation, Application). Funziona, ed è quella
+che troverai in tutti i corsi internazionali: conviene impararla in inglese perché tutta la
+documentazione dei vendor è in inglese.</p>
+
+<p>Ma il vero modo per ricordarli non è la filastrocca: è associare a ogni livello <strong>una domanda</strong>.
+Se ti ricordi le domande, non ti serve la lista.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Liv.</th><th>La domanda</th><th>Se questo livello è rotto, il sintomo è…</th></tr></thead>
+    <tbody>
+      <tr><td><b>1</b></td><td>Il segnale c'è?</td>
+          <td>La lucina della porta è spenta. Nessuna comunicazione, zero.</td></tr>
+      <tr><td><b>2</b></td><td>Riesco a parlare col mio vicino?</td>
+          <td>Link acceso ma non vedi nessuno nella tua rete. VLAN sbagliata, tabella MAC piena, loop.</td></tr>
+      <tr><td><b>3</b></td><td>So trovare la strada verso un'altra rete?</td>
+          <td>Vedi i colleghi ma non esci su Internet. Gateway sbagliato, rotta mancante.</td></tr>
+      <tr><td><b>4</b></td><td>Il programma giusto sta ascoltando?</td>
+          <td>Il ping funziona ma il servizio no. Porta chiusa, firewall, servizio spento.</td></tr>
+      <tr><td><b>7</b></td><td>Il servizio si comporta come deve?</td>
+          <td>Tutto raggiungibile ma l'applicazione dà errore. Certificato scaduto, login, versione, permessi.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il modello TCP/IP: quello che usiamo davvero</h2>
+
+<p>Piccola onestà storica: OSI è un modello <em>teorico</em>, nato da un comitato. La rete che usiamo tutti
+i giorni è stata costruita su un altro modello, più pratico, che ha quattro livelli e si chiama
+<strong>TCP/IP</strong>. Quello ha vinto, e OSI è rimasto come linguaggio comune.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 620 300" role="img" aria-label="Confronto tra i sette livelli OSI e i quattro livelli del modello TCP/IP">
+    <text x="150" y="22" text-anchor="middle" class="dg-title">OSI · 7 livelli (il linguaggio)</text>
+    <text x="452" y="22" text-anchor="middle" class="dg-title">TCP/IP · 4 livelli (la realtà)</text>
+
+    <g stroke-width="1.3">
+      <rect x="40" y="38"  width="220" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="40" y="76"  width="220" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" opacity=".7"/>
+      <rect x="40" y="114" width="220" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" opacity=".55"/>
+      <rect x="40" y="152" width="220" height="34" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="40" y="190" width="220" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="40" y="228" width="220" height="34" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="40" y="266" width="220" height="26" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <text x="150" y="60"  text-anchor="middle" class="dg-label-sm">7 · Applicazione</text>
+    <text x="150" y="98"  text-anchor="middle" class="dg-label-sm">6 · Presentazione</text>
+    <text x="150" y="136" text-anchor="middle" class="dg-label-sm">5 · Sessione</text>
+    <text x="150" y="174" text-anchor="middle" class="dg-label-sm">4 · Trasporto</text>
+    <text x="150" y="212" text-anchor="middle" class="dg-label-sm">3 · Rete</text>
+    <text x="150" y="250" text-anchor="middle" class="dg-label-sm">2 · Data link</text>
+    <text x="150" y="284" text-anchor="middle" class="dg-label-sm">1 · Fisico</text>
+
+    <g stroke-width="1.5">
+      <rect x="342" y="38"  width="220" height="110" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="342" y="152" width="220" height="34"  rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="342" y="190" width="220" height="34"  rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="342" y="228" width="220" height="64"  rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <text x="452" y="88"  text-anchor="middle" class="dg-label">Applicazione</text>
+    <text x="452" y="106" text-anchor="middle" class="dg-mono-sm">HTTP, DNS, TLS, SMB…</text>
+    <text x="452" y="174" text-anchor="middle" class="dg-label">Trasporto · TCP, UDP</text>
+    <text x="452" y="212" text-anchor="middle" class="dg-label">Internet · IP</text>
+    <text x="452" y="256" text-anchor="middle" class="dg-label">Accesso alla rete</text>
+    <text x="452" y="274" text-anchor="middle" class="dg-mono-sm">Ethernet, Wi-Fi, cavi, fibra</text>
+
+    <g stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 3">
+      <path d="M260 55h82"/><path d="M260 131h82"/>
+      <path d="M260 169h82"/><path d="M260 207h82"/>
+      <path d="M260 245h82"/><path d="M260 279h82"/>
+    </g>
+  </svg>
+  </div>
+  <figcaption>I livelli 5, 6 e 7 di OSI nella pratica sono un blocco unico, e i livelli 1 e 2 vengono
+  spesso considerati insieme. Per questo nel gergo quotidiano si sentono quasi solo i numeri
+  <b>2, 3, 4 e 7</b>: sono gli unici che corrispondono a confini reali.</figcaption>
+</figure>
+
+<h2>Come si usa davvero: il livello degli apparati</h2>
+
+<p>Ogni apparato «vede» fino a un certo livello e non oltre. Questo determina cosa può e cosa non può fare,
+ed è il modo più veloce per capire se una scatola serve al tuo problema o no.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Apparato</th><th>Vede fino a</th><th>Quindi può</th><th>Quindi non può</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cavo, patch panel</b></td><td>Livello 1</td>
+          <td>Portare il segnale</td><td>Prendere qualsiasi decisione</td></tr>
+      <tr><td><b>Hub</b> <span style="color:var(--text-faint)">(estinto)</span></td><td>Livello 1</td>
+          <td>Ripetere il segnale su tutte le porte</td><td>Capire chi è il destinatario</td></tr>
+      <tr><td><b>Switch</b></td><td>Livello 2</td>
+          <td>Mandare il frame solo sulla porta giusta usando il MAC</td>
+          <td>Instradare tra reti IP diverse</td></tr>
+      <tr><td><b>Router</b></td><td>Livello 3</td>
+          <td>Scegliere la strada tra reti diverse usando l'IP</td>
+          <td>Sapere quale programma riceverà i dati</td></tr>
+      <tr><td><b>Firewall classico</b></td><td>Livello 4</td>
+          <td>Permettere o bloccare in base a IP e porta</td>
+          <td>Distinguere due siti che usano entrambi la porta 443</td></tr>
+      <tr><td><b>Firewall di nuova generazione</b><br>(FortiGate, Sophos XGS, Firebox)</td><td>Livello 7</td>
+          <td>Riconoscere l'applicazione, filtrare i siti, cercare virus nel contenuto</td>
+          <td>Vedere dentro il traffico cifrato senza SSL inspection</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché a un cliente serve un firewall «di nuova generazione»
+  </div>
+  <p>Adesso hai gli strumenti per rispondere senza fare il venditore. Un firewall che vede solo fino al
+  livello 4 ragiona così: «traffico verso la porta 443, permesso». Ma <b>tutto</b> oggi passa dalla 443:
+  il gestionale aziendale, YouTube, Dropbox, un sito di phishing e un malware che chiama casa.
+  Alla porta 443 sono tutti identici.</p>
+  <p>Un firewall di livello 7 guarda <em>dentro</em> e distingue «questo è Microsoft 365», «questo è
+  BitTorrent», «questo dominio è stato registrato ieri». Non è una funzione in più: è un livello OSI in più.
+  Detta così, un cliente la capisce in trenta secondi.</p>
+</div>
+
+<h2>Il vero valore: diagnosticare</h2>
+
+<p>Qui sta il motivo per cui questa lezione è la più importante. Il modello a strati ti dà un
+<strong>ordine in cui cercare</strong>, e l'ordine è dal basso verso l'alto — perché i livelli bassi sono
+velocissimi da verificare e, se sono rotti, tutto quello che sta sopra è rumore.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 260" role="img" aria-label="Scala di diagnosi dal livello 1 al livello 7 con il comando da usare a ogni gradino">
+    <text x="330" y="20" text-anchor="middle" class="dg-title">La scala della diagnosi: si sale un gradino alla volta</text>
+    <g>
+      <rect x="24"  y="196" width="120" height="42" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+      <text x="84" y="214" text-anchor="middle" class="dg-mono-sm">LIV. 1 · fisico</text>
+      <text x="84" y="230" text-anchor="middle" class="dg-label-sm">c'è la lucina?</text>
+
+      <rect x="152" y="158" width="120" height="42" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.5"/>
+      <text x="212" y="176" text-anchor="middle" class="dg-mono-sm">LIV. 2 · vicini</text>
+      <text x="212" y="192" text-anchor="middle" class="dg-label-sm">arp -a</text>
+
+      <rect x="280" y="120" width="120" height="42" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+      <text x="340" y="138" text-anchor="middle" class="dg-mono-sm">LIV. 3 · strada</text>
+      <text x="340" y="154" text-anchor="middle" class="dg-label-sm">ping + tracert</text>
+
+      <rect x="408" y="82" width="120" height="42" rx="7" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.5"/>
+      <text x="468" y="100" text-anchor="middle" class="dg-mono-sm">LIV. 4 · porta</text>
+      <text x="468" y="116" text-anchor="middle" class="dg-label-sm">telnet host porta</text>
+
+      <rect x="536" y="44" width="120" height="42" rx="7" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+      <text x="596" y="62" text-anchor="middle" class="dg-mono-sm">LIV. 7 · servizio</text>
+      <text x="596" y="78" text-anchor="middle" class="dg-label-sm">log e browser</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.4" fill="none" marker-end="url(#stepA)">
+      <path d="M144 206 L152 184"/><path d="M272 168 L280 146"/>
+      <path d="M400 130 L408 108"/><path d="M528 92 L536 70"/>
+    </g>
+    <defs><marker id="stepA" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+      <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-line)"/></marker></defs>
+    <text x="330" y="254" text-anchor="middle" class="dg-label-sm">se un gradino non regge, non ha senso salire: il problema è lì sotto</text>
+  </svg>
+  </div>
+  <figcaption>Questa scala è il metodo che userai per il resto della carriera. Ogni gradino ha un comando
+  che lo verifica in pochi secondi. Chi salta i gradini bassi passa ore a cercare configurazioni sbagliate
+  mentre il vero problema è un cavo.</figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Una frase da usare in ufficio già da domani
+  </div>
+  <p>Quando ti assegnano un ticket confuso, dì a voce alta: <b>«a che livello è il problema?»</b>
+  Poi verifica dal basso. Anche se non sai ancora risolverlo, avrai già ristretto il campo — e
+  potrai fare al collega esperto una domanda precisa invece che «non va niente, mi aiuti?».
+  La differenza tra queste due frasi è enorme: è la differenza tra un junior e uno che sta diventando bravo.</p>
+</div>
+
+<h2>Gli errori che fanno tutti all'inizio</h2>
+
+<ul class="clean">
+  <li><b>Credere che un livello «contenga» l'altro fisicamente.</b> I livelli sono ruoli, non scatole
+  separate. Un singolo pacchetto porta con sé informazioni di più livelli tutte insieme.</li>
+  <li><b>Imparare i sette nomi a memoria senza le domande.</b> Recitare «fisico, data link, rete…» non
+  serve a niente in un ticket. Sapere «il livello 3 risponde a: so trovare la strada?» serve sempre.</li>
+  <li><b>Pensare che il livello 7 sia «più importante».</b> È solo più vicino all'utente. Il 90% dei guasti
+  gravi sta ai livelli 1, 2 e 3.</li>
+  <li><b>Dimenticare che esiste il livello 8.</b> È una battuta tra tecnici — il livello 8 è l'utente —
+  ma contiene una verità operativa: prima di smontare una rete, verifica che l'utente non abbia
+  semplicemente sbagliato la password o staccato il cavo.</li>
+</ul>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il modello a strati",
+  "questions": [
+    { "q": "Uno switch tradizionale prende le sue decisioni guardando:",
+      "a": [ {"t":"Gli indirizzi MAC, quindi lavora al livello 2","ok":true},
+             {"t":"Gli indirizzi IP, quindi lavora al livello 3","ok":false},
+             {"t":"Le porte TCP, quindi lavora al livello 4","ok":false},
+             {"t":"Il segnale elettrico, quindi lavora al livello 1","ok":false} ],
+      "e": "Lo switch legge il MAC di destinazione del frame e decide su quale porta mandarlo: è livello 2. Chi guarda gli IP è il router (livello 3); chi guarda le porte è il firewall (livello 4); chi si limita a ripetere il segnale era l'hub (livello 1)." },
+
+    { "q": "Il ping verso un server risponde perfettamente, ma il gestionale dà «impossibile connettersi». Da che livello parti?",
+      "a": [ {"t":"Dal livello 4: verifico se la porta del servizio risponde","ok":true},
+             {"t":"Dal livello 1: controllo il cavo","ok":false},
+             {"t":"Dal livello 3: controllo il routing","ok":false},
+             {"t":"Dal livello 2: controllo la VLAN","ok":false} ],
+      "e": "Il ping che funziona <b>dimostra già</b> che i livelli 1, 2 e 3 sono a posto: il segnale passa, i vicini si vedono, la strada esiste. Rifare quelle verifiche è tempo sprecato. Il primo gradino non ancora verificato è il 4: la porta del servizio. Si prova con <code>telnet indirizzo porta</code> o <code>Test-NetConnection</code>." },
+
+    { "q": "Perché un firewall che vede solo fino al livello 4 non basta più oggi?",
+      "a": [ {"t":"Perché quasi tutto passa dalla porta 443 e a quel livello sono tutti identici","ok":true},
+             {"t":"Perché non è in grado di bloccare gli indirizzi IP","ok":false},
+             {"t":"Perché non supporta il Wi-Fi","ok":false},
+             {"t":"Perché non riesce a gestire abbastanza banda","ok":false} ],
+      "e": "Al livello 4 esistono solo IP e numeri di porta. Il gestionale del cliente, YouTube, Dropbox e un malware che comunica col suo centro di comando usano tutti la 443: sono indistinguibili. Per separarli serve guardare al livello 7, cioè <em>dentro</em> il traffico." },
+
+    { "q": "Qual è il vantaggio principale di aver diviso la rete in livelli?",
+      "a": [ {"t":"Si può cambiare un livello senza toccare gli altri","ok":true},
+             {"t":"I dati viaggiano più velocemente","ok":false},
+             {"t":"Si consuma meno banda","ok":false},
+             {"t":"Non servono più gli indirizzi","ok":false} ],
+      "e": "È l'indipendenza tra gli strati. Passare da cavo a Wi-Fi cambia i livelli 1 e 2 e non tocca nulla sopra: il tuo browser non si accorge di niente. Gli strati anzi <em>aggiungono</em> un piccolo costo in byte e in elaborazione; il guadagno è di flessibilità, non di velocità." },
+
+    { "q": "Un utente vede i colleghi e le cartelle condivise, ma non apre nessun sito Internet. Dove guardi per primo?",
+      "a": [ {"t":"Livello 3: gateway e rotte — esce dalla sua rete?","ok":true},
+             {"t":"Livello 1: il cavo","ok":false},
+             {"t":"Livello 2: la VLAN","ok":false},
+             {"t":"Livello 7: il browser","ok":false} ],
+      "e": "Se vede i colleghi, i livelli 1 e 2 funzionano: il segnale c'è e parla con i vicini della sua rete. Ciò che non riesce a fare è <b>uscire</b> dalla propria rete, ed è esattamente il compito del livello 3. Gateway sbagliato, rotta mancante o NAT rotto. Il DNS sarebbe invece il caso in cui anche gli IP numerici non rispondono… ed è la prossima cosa da provare subito dopo." },
+
+    { "q": "Nel modello TCP/IP, che è quello realmente usato, quanti livelli ci sono?",
+      "a": [ {"t":"Quattro","ok":true}, {"t":"Sette","ok":false},
+             {"t":"Cinque","ok":false}, {"t":"Tre","ok":false} ],
+      "e": "TCP/IP ne ha quattro: accesso alla rete, Internet, trasporto, applicazione. OSI con i suoi sette livelli resta come <em>linguaggio</em> condiviso per parlare di dove sta un problema, ed è per questo che si continua a studiarlo anche se non descrive nessuna implementazione reale." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

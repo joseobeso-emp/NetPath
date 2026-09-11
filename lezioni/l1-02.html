@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Il vocabolario minimo: host, nodo, client, server — NetPath</title>
+<meta name="description" content="Le parole che senti ogni giorno in ufficio e che devi smettere di annuire senza capire. Venti termini, spiegati una volta per tutte.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-02">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Che cos'è una rete</span>
+      </nav>
+      <h1 class="lesson-title">Il vocabolario minimo: host, nodo, client, server</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 02</span>
+        <span class="chip">15 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Usare correttamente host, nodo, client, server, peer, endpoint</li>
+        <li>Capire che client e server sono ruoli, non tipi di macchina</li>
+        <li>Distinguere LAN, WAN, WLAN, VLAN, VPN e Internet senza confonderle</li>
+        <li>Sapere cosa significano upload, download, simmetrico e asimmetrico</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Questa lezione è corta e sembra noiosa. Non lo è: è la lezione che ti fa smettere di
+annuire in riunione senza capire. Metà della sensazione di «non ci capisco niente» non nasce dai concetti
+difficili, nasce dal fatto che nessuno ti ha mai definito le parole di base — e allora ogni frase contiene
+due o tre buchi.</p>
+
+<h2>Le parole per «una cosa attaccata alla rete»</h2>
+
+<p>Ci sono tre parole che sembrano sinonimi e non lo sono. La differenza è sottile ma usarle bene ti fa
+suonare — e ragionare — come un tecnico serio.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parola</th><th>Significa</th><th>Esempi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Nodo</b></td>
+          <td>Qualunque cosa attaccata alla rete. Il termine più generico che esista.</td>
+          <td>Un PC, uno switch, una stampante, un router, un termostato</td></tr>
+      <tr><td><b>Host</b></td>
+          <td>Un nodo che ha un indirizzo IP e <em>usa</em> la rete per i propri scopi, cioè è una
+              destinazione o una sorgente di traffico.</td>
+          <td>Un PC, un server, un telefono, una telecamera IP</td></tr>
+      <tr><td><b>Apparato di rete</b><br><span style="font-size:.85em;color:var(--text-mute)">(network device)</span></td>
+          <td>Un nodo il cui mestiere è <em>far passare</em> il traffico degli altri, non generarlo.</td>
+          <td>Switch, router, firewall, access point</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>In pratica: <strong>tutti gli host sono nodi, ma non tutti i nodi sono host.</strong> Uno switch
+non gestito è un nodo ma non è un host (non ha nemmeno un indirizzo IP). Un firewall è entrambe le cose:
+fa passare il traffico degli altri, ma ha anche un suo indirizzo e genera traffico proprio.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne
+  </div>
+  <p>Immagina una città. I <b>nodi</b> sono tutti gli edifici. Gli <b>host</b> sono le case e i negozi:
+  posti dove qualcuno abita o dove vai a comprare qualcosa, cioè posti che sono una <em>meta</em>.
+  Gli <b>apparati di rete</b> sono gli incroci, i semafori e i caselli: non ci vai per andarci, ci passi
+  attraverso per arrivare da un'altra parte.</p>
+  <p>Quando qualcuno dice «quanti host ci sono in questa rete?» sta chiedendo quante case e negozi ci sono,
+  non quanti semafori.</p>
+</div>
+
+<h2>Client e server: sono ruoli, non macchine</h2>
+
+<p>Questo è l'errore concettuale più diffuso in assoluto tra chi inizia, ed è importante toglierselo subito.</p>
+
+<p><strong>Client</strong> e <strong>server</strong> non descrivono <em>che tipo di computer è</em>.
+Descrivono <em>chi sta chiedendo e chi sta rispondendo in quel preciso momento</em>.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 250" role="img" aria-label="Lo stesso computer fa da client verso un server web e da server verso un altro PC che stampa">
+    <text x="330" y="22" text-anchor="middle" class="dg-title">Lo stesso computer, due ruoli diversi nello stesso momento</text>
+
+    <!-- macchina centrale -->
+    <rect x="252" y="92" width="156" height="72" rx="12" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.8"/>
+    <text x="330" y="122" text-anchor="middle" class="dg-title">PC di Anna</text>
+    <text x="330" y="142" text-anchor="middle" class="dg-mono-sm">10.0.0.25</text>
+
+    <!-- server web -->
+    <rect x="518" y="92" width="126" height="72" rx="10" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.5"/>
+    <text x="581" y="120" text-anchor="middle" class="dg-label">Server web</text>
+    <text x="581" y="140" text-anchor="middle" class="dg-mono-sm">google.it</text>
+
+    <!-- stampante/altro pc -->
+    <rect x="16" y="92" width="126" height="72" rx="10" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <text x="79" y="120" text-anchor="middle" class="dg-label">PC di Bruno</text>
+    <text x="79" y="140" text-anchor="middle" class="dg-mono-sm">10.0.0.41</text>
+
+    <!-- frecce -->
+    <defs>
+      <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+        <path d="M0 0l7 3.5L0 7z" fill="var(--dg-2)"/></marker>
+      <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+        <path d="M0 0l7 3.5L0 7z" fill="var(--dg-1)"/></marker>
+    </defs>
+    <path d="M410 114h100" stroke="var(--dg-2)" stroke-width="1.8" marker-end="url(#a2)"/>
+    <text x="460" y="106" text-anchor="middle" class="dg-mono-sm">«dammi la pagina»</text>
+    <path d="M144 142h100" stroke="var(--dg-1)" stroke-width="1.8" marker-end="url(#a1)"/>
+    <text x="194" y="134" text-anchor="middle" class="dg-mono-sm">«dammi il file condiviso»</text>
+
+    <!-- etichette ruolo -->
+    <rect x="252" y="186" width="74" height="26" rx="13" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+    <text x="289" y="203" text-anchor="middle" class="dg-mono-sm">CLIENT</text>
+    <rect x="334" y="186" width="74" height="26" rx="13" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    <text x="371" y="203" text-anchor="middle" class="dg-mono-sm">SERVER</text>
+    <text x="330" y="232" text-anchor="middle" class="dg-label-sm">verso google è un client · verso Bruno è un server</text>
+  </svg>
+  </div>
+  <figcaption>Il PC di Anna, nello stesso identico istante, è <b>client</b> del server web di Google e
+  <b>server</b> per Bruno che sta aprendo una cartella condivisa. Chi chiede è il client, chi risponde
+  è il server. Sempre.</figcaption>
+</figure>
+
+<p>Certo, esistono macchine <em>progettate</em> per fare quasi sempre da server — quelle nel rack, con
+tanta RAM e due alimentatori — e le chiamiamo «server» per abitudine. Ma è un'abitudine, non la
+definizione. Tienilo a mente perché quando arriveremo al firewall dovrai chiederti continuamente
+«chi ha iniziato questa conversazione?», e quella domanda è esattamente «chi è il client qui?».</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Dove lo vedi nel lavoro
+  </div>
+  <p>Quando configuri una regola su un FortiGate scrivi «da questa <b>sorgente</b> verso questa
+  <b>destinazione</b>, su questa porta». La sorgente è il client, la destinazione è il server.
+  Se ti sbagli e li inverti, la regola non funzionerà — e non perché il firewall sia strano, ma perché
+  hai descritto una conversazione che non avviene. Metà delle regole firewall scritte male nascono da
+  qui.</p>
+</div>
+
+<h2>Peer to peer: quando non c'è un capo</h2>
+
+<p>C'è un terzo modello oltre a client-server: il <strong>peer to peer</strong> (da pari a pari), in cui
+i partecipanti sono tutti sullo stesso piano e ognuno è sia client sia server per gli altri.</p>
+
+<p>Lo incontri più spesso di quanto pensi: la condivisione di file tra due PC Windows senza un server,
+alcune parti di Microsoft Teams, WireGuard, i sistemi di videosorveglianza distribuiti e il modo in cui
+Windows distribuisce gli aggiornamenti dentro un'azienda (Delivery Optimization). Sapere che esiste
+ti evita di cercare «il server» quando server non ce n'è.</p>
+
+<h2>Le sigle che finiscono per -AN e che sembrano tutte uguali</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sigla</th><th>Sta per</th><th>In pratica</th></tr></thead>
+    <tbody>
+      <tr><td><b>LAN</b></td><td>Local Area Network</td>
+          <td>La rete dentro un edificio: l'ufficio, il magazzino, casa tua. Cavi e switch tuoi.</td></tr>
+      <tr><td><b>WLAN</b></td><td>Wireless LAN</td>
+          <td>La stessa cosa, ma senza fili: il Wi-Fi. È una LAN a tutti gli effetti, con un mezzo diverso.</td></tr>
+      <tr><td><b>WAN</b></td><td>Wide Area Network</td>
+          <td>La rete che collega posti lontani. Per un'azienda: la connessione Internet e i collegamenti
+              verso le altre sedi. Sui firewall la porta verso l'operatore si chiama letteralmente «WAN».</td></tr>
+      <tr><td><b>VLAN</b></td><td>Virtual LAN</td>
+          <td>Una LAN «disegnata via software» dentro gli stessi switch fisici. Serve a tenere separati
+              gruppi di dispositivi. Tutto il capitolo 2.1 parla di questo.</td></tr>
+      <tr><td><b>VPN</b></td><td>Virtual Private Network</td>
+          <td>Un tunnel cifrato che fa sembrare due posti lontani come se fossero la stessa LAN.</td></tr>
+      <tr><td><b>DMZ</b></td><td>Demilitarized Zone</td>
+          <td>Una zona di rete separata dove metti i server raggiungibili da Internet, così se li bucano
+              non arrivano dentro.</td></tr>
+      <tr><td><b>Internet</b></td><td>—</td>
+          <td>L'insieme di tutte le reti pubbliche del mondo collegate tra loro. Non è «il web»:
+              il web è <em>una</em> delle cose che ci viaggiano sopra, insieme a posta, VPN, giochi, videochiamate.</td></tr>
+      <tr><td><b>Intranet</b></td><td>—</td>
+          <td>Le risorse interne di un'azienda, raggiungibili solo da dentro (o via VPN).</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    LAN, WAN e VLAN con un'analogia sola
+  </div>
+  <p>Pensa a un condominio.</p>
+  <p>La <b>LAN</b> è il tuo appartamento: dentro ti muovi liberamente da una stanza all'altra.<br>
+  La <b>WAN</b> è la strada: serve per andare in un altro condominio, ed è pubblica, quindi ci
+  vai con più cautela.<br>
+  La <b>VLAN</b> è aver messo dei muri dentro l'appartamento per creare appartamenti separati:
+  fisicamente è sempre lo stesso immobile, ma chi sta in uno non entra nell'altro se non passando
+  dalla porta d'ingresso comune (il router).<br>
+  La <b>VPN</b> è un tunnel sotterraneo blindato che collega direttamente il tuo appartamento a quello
+  di tua sorella dall'altra parte della città: ci passi come se fosse un corridoio di casa tua,
+  e chi sta per strada non vede cosa ci porti dentro.</p>
+</div>
+
+<h2>Upload, download e la storia dell'asimmetria</h2>
+
+<p><strong>Download</strong> è ciò che arriva verso di te; <strong>upload</strong> è ciò che parte da te.
+Il punto di riferimento sei sempre tu: per il server è esattamente il contrario, e infatti sui grafici
+di monitoraggio di uno switch trovi «in» e «out» — più onesti, ma bisogna sapere <em>rispetto a cosa</em>.</p>
+
+<p>Molte connessioni italiane sono <strong>asimmetriche</strong>: molto download, poco upload
+(per esempio 1000 Mbps giù e 100 su, o peggio con le vecchie FTTC: 100 giù e 20 su). Per anni non è stato
+un problema, perché si consumava e basta. Oggi lo è: videochiamate, backup in cloud, telecamere che
+mandano flussi fuori, server pubblicati in sede. Una connessione <strong>simmetrica</strong> (stessa
+velocità nei due sensi) costa di più ma spesso è ciò che serve davvero.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il ticket che riceverai
+  </div>
+  <p>«Quando partono i backup in cloud, nessuno riesce più a fare videochiamate.» La causa quasi certa
+  è l'upload saturo: il backup riempie il canale in uscita e la voce non trova più posto.
+  La banda in download può essere perfettamente libera, ed è per questo che lo speedtest del cliente
+  «dice che va tutto bene». La soluzione non è più banda: è <b>QoS</b> o una finestra oraria per i backup.
+  Te lo ritroverai nel capitolo 2.7.</p>
+</div>
+
+<h2>Altre dieci parole che sentirai domani</h2>
+
+<ul class="clean">
+  <li><b>Interfaccia</b> — una porta di rete di un apparato, fisica (ether1) o logica (una VLAN, un tunnel).
+  Quando un collega dice «su che interfaccia?», chiede da quale porta entra o esce il traffico.</li>
+  <li><b>Link</b> — il collegamento tra due interfacce. «Il link è down» = il cavo non porta segnale.</li>
+  <li><b>Uplink</b> — il collegamento che va «verso l'alto», cioè verso il centro della rete o verso Internet.</li>
+  <li><b>Endpoint</b> — un dispositivo finale dell'utente: PC, portatile, telefono. Nel gergo della sicurezza
+  è la parola standard (antivirus «endpoint», protezione «endpoint»).</li>
+  <li><b>Throughput</b> — quanto traffico passa <em>davvero</em>, misurato. Diverso dalla banda, che è
+  la capacità teorica.</li>
+  <li><b>Overhead</b> — lo spazio «sprecato» dalle intestazioni e dai controlli. Non è sprecato davvero:
+  è il costo dell'organizzazione.</li>
+  <li><b>Broadcast</b> — un messaggio mandato a tutti quelli della stessa rete.</li>
+  <li><b>Unicast</b> — un messaggio da uno a uno, il caso normale.</li>
+  <li><b>Multicast</b> — un messaggio a un gruppo selezionato (videosorveglianza, IPTV).</li>
+  <li><b>Loop</b> — un anello in cui il traffico gira all'infinito. È una delle poche cose che possono
+  fermare un'azienda intera in trenta secondi.</li>
+</ul>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Un'abitudine che vale oro
+  </div>
+  <p>Da oggi, quando in una riunione o in un ticket senti una parola che non conosci, <b>non annuire</b>:
+  scrivila su un foglio. A fine giornata cercale nel <a href="../glossario.html">glossario</a>. Ci metti
+  cinque minuti e in due mesi non avrai più buchi. La sensazione di «non capisco niente» è quasi sempre,
+  materialmente, una lista di quindici parole mai definite.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il vocabolario",
+  "questions": [
+    { "q": "Uno switch non gestito, senza indirizzo IP, cos'è?",
+      "a": [ {"t":"Un nodo, ma non un host","ok":true},
+             {"t":"Un host, ma non un nodo","ok":false},
+             {"t":"Né un nodo né un host","ok":false},
+             {"t":"Sia un nodo sia un host","ok":false} ],
+      "e": "È attaccato alla rete, quindi è un <b>nodo</b>. Ma non ha un indirizzo IP e non è né sorgente né destinazione di traffico: fa solo passare quello degli altri, quindi non è un <b>host</b>. È un incrocio, non una casa." },
+
+    { "q": "Il PC di un utente sta scaricando una pagina web e contemporaneamente un collega sta aprendo una sua cartella condivisa. Quel PC è:",
+      "a": [ {"t":"Client verso il sito web e server verso il collega, nello stesso momento","ok":true},
+             {"t":"Solo client, perché è un PC e non un server","ok":false},
+             {"t":"Solo server, perché sta condividendo qualcosa","ok":false},
+             {"t":"Né l'uno né l'altro: è peer to peer","ok":false} ],
+      "e": "Client e server sono <b>ruoli per singola conversazione</b>, non categorie di hardware. Chi chiede è client, chi risponde è server, e la stessa macchina fa entrambe le cose contemporaneamente senza alcun problema." },
+
+    { "q": "Qual è la differenza tra LAN e VLAN?",
+      "a": [ {"t":"La VLAN è una separazione logica creata via software dentro gli stessi switch fisici","ok":true},
+             {"t":"La VLAN è una LAN senza fili","ok":false},
+             {"t":"La VLAN collega sedi distanti, la LAN è locale","ok":false},
+             {"t":"Sono sinonimi, la V indica solo che è moderna","ok":false} ],
+      "e": "La VLAN mette muri logici dentro la stessa infrastruttura fisica. La LAN senza fili è la <b>WLAN</b>; quella che collega sedi distanti è la <b>WAN</b>. Confondere queste tre sigle è normalissimo all'inizio e va tolto subito, perché nei ticket compaiono tutte e tre nella stessa frase." },
+
+    { "q": "Un cliente si lamenta che durante i backup notturni in cloud le videochiamate del mattino presto sono impossibili. Lo speedtest mostra 940 Mbps in download. Cosa è più probabile?",
+      "a": [ {"t":"L'upload è saturo: i backup riempiono il canale in uscita","ok":true},
+             {"t":"La banda in download non basta e va aumentata","ok":false},
+             {"t":"Il provider limita le videochiamate","ok":false},
+             {"t":"Il PC degli utenti è troppo lento","ok":false} ],
+      "e": "La connessione è asimmetrica: 940 Mbps giù possono convivere con 100 o 50 Mbps su. Il backup spinge dati <em>fuori</em>, quindi occupa l'upload — e la voce di una videochiamata è anch'essa traffico in uscita. Lo speedtest in download non lo mostra, ed è per questo che il cliente è convinto che «la linea vada benissimo»." },
+
+    { "q": "Cosa significa «il link è down» su una porta di uno switch?",
+      "a": [ {"t":"Non c'è segnale elettrico sul collegamento: cavo, connettore o apparato dall'altra parte","ok":true},
+             {"t":"Il dispositivo collegato non ha ricevuto un indirizzo IP","ok":false},
+             {"t":"La porta è stata bloccata da una regola di sicurezza","ok":false},
+             {"t":"Il traffico su quella porta è troppo elevato","ok":false} ],
+      "e": "«Link» è il collegamento fisico: down significa che i due lati non si vedono elettricamente. È un problema di <b>livello 1</b>, il più basso — e quindi il primo da escludere. Un dispositivo senza IP avrebbe invece link <em>up</em> e nessun indirizzo: sintomo completamente diverso." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

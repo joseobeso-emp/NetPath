@@ -1,0 +1,322 @@
+#id: l1-12
+#title: IPv4: come è fatto un indirizzo
+#min: 20
+#level: 1
+#chapter: Indirizzamento IP
+#desc: Quattro numeri, 32 bit, e la domanda che conta davvero: dove finisce la rete e dove inizia il singolo computer?
+#obj: Capire cos'è realmente un indirizzo IP sotto la superficie dei quattro numeri
+#obj: Riconoscere che un indirizzo da solo non significa nulla senza la maschera
+#obj: Sapere perché gli indirizzi IPv4 sono finiti e cosa è cambiato di conseguenza
+#obj: Leggere un ipconfig e capire ogni riga
+---
+<p class="lead">Tutti sanno «più o meno» cos'è un indirizzo IP. Ma quel «più o meno» è esattamente il
+punto in cui si blocca chi non riesce ad andare avanti nel networking. Questa lezione toglie
+l'approssimazione, e le quattro lezioni successive costruiscono su questa.</p>
+
+<h2>Quattro numeri che in realtà sono trentadue bit</h2>
+
+<p>Un indirizzo IPv4 lo vedi scritto così: <code>192.168.1.10</code>. Quattro numeri da 0 a 255,
+separati da punti. Ogni numero si chiama <strong>ottetto</strong>, perché occupa <strong>8 bit</strong>.
+Quattro ottetti da 8 bit fanno <strong>32 bit</strong> in totale.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 680 200" role="img" aria-label="L'indirizzo 192.168.1.10 mostrato in decimale e in binario, diviso nei quattro ottetti">
+    <text x="340" y="22" text-anchor="middle" class="dg-title">Lo stesso indirizzo, due modi di scriverlo</text>
+
+    <g stroke-width="1.5">
+      <rect x="30"  y="42" width="146" height="40" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="188" y="42" width="146" height="40" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="346" y="42" width="146" height="40" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="504" y="42" width="146" height="40" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <text x="103" y="68" text-anchor="middle" class="dg-mono">192</text>
+    <text x="261" y="68" text-anchor="middle" class="dg-mono">168</text>
+    <text x="419" y="68" text-anchor="middle" class="dg-mono">1</text>
+    <text x="577" y="68" text-anchor="middle" class="dg-mono">10</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.2">
+      <path d="M103 82v16"/><path d="M261 82v16"/><path d="M419 82v16"/><path d="M577 82v16"/>
+    </g>
+
+    <g stroke-width="1.4">
+      <rect x="30"  y="102" width="146" height="38" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="188" y="102" width="146" height="38" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="346" y="102" width="146" height="38" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="504" y="102" width="146" height="38" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <text x="103" y="126" text-anchor="middle" class="dg-mono">11000000</text>
+    <text x="261" y="126" text-anchor="middle" class="dg-mono">10101000</text>
+    <text x="419" y="126" text-anchor="middle" class="dg-mono">00000001</text>
+    <text x="577" y="126" text-anchor="middle" class="dg-mono">00001010</text>
+
+    <text x="103" y="162" text-anchor="middle" class="dg-mono-sm">8 bit</text>
+    <text x="261" y="162" text-anchor="middle" class="dg-mono-sm">8 bit</text>
+    <text x="419" y="162" text-anchor="middle" class="dg-mono-sm">8 bit</text>
+    <text x="577" y="162" text-anchor="middle" class="dg-mono-sm">8 bit</text>
+    <text x="340" y="188" text-anchor="middle" class="dg-label-sm">32 bit in tutto → 2³² = 4.294.967.296 indirizzi possibili</text>
+  </svg>
+  </div>
+  <figcaption>I punti e i numeri decimali esistono <b>solo per comodità nostra</b>: il computer vede
+  una fila di 32 zeri e uni. Ed è per questo che, per capire davvero il subnetting, bisogna passare
+  dal binario — non per masochismo, ma perché la parte decimale nasconde la struttura.</figcaption>
+</figure>
+
+<h2>Il concetto che cambia tutto: rete e host</h2>
+
+<p>Ecco il punto centrale. Un indirizzo IP è composto da <strong>due parti attaccate</strong>:</p>
+
+<ul class="clean">
+  <li>Una parte iniziale che dice <strong>a quale rete</strong> appartieni.</li>
+  <li>Una parte finale che dice <strong>quale dispositivo sei</strong> dentro quella rete.</li>
+</ul>
+
+<p>E qui arriva la cosa sorprendente: <strong>guardando solo l'indirizzo, è impossibile sapere dove
+finisce la prima parte e dove inizia la seconda.</strong> Non c'è nessun segno, nessuna separazione
+visibile. Quell'informazione sta in un secondo numero che viaggia sempre insieme all'indirizzo: la
+<span class="term" data-term="subnet-mask">subnet mask</span>.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il numero di telefono
+  </div>
+  <p>Guarda questo numero: <b>0303456789</b>. È un numero di telefono italiano. Qual è il prefisso della
+  città e qual è il numero della persona?</p>
+  <p>Se sai che è Brescia, il prefisso è <b>030</b> e il numero è <b>3456789</b>.
+  Se fosse Roma sarebbe <b>06</b> e poi <b>303456789</b>. Se fosse un numero di Desenzano sarebbe
+  <b>0309</b> e poi il resto.</p>
+  <p><b>Lo stesso numero si divide in punti diversi a seconda di quale città è</b>, e guardando solo
+  le cifre non puoi saperlo: te lo deve dire qualcun altro.</p>
+  <p>Nel networking quel «qualcun altro» è la subnet mask. Dice esattamente: «i primi tot bit sono il
+  prefisso (la rete), il resto è il numero della persona (il dispositivo)».</p>
+  <p>Ed ecco perché <b>un indirizzo IP senza la sua maschera non significa niente</b>. Se un collega ti
+  dice «il server è 10.0.5.20» tu non sai ancora se sta nella tua rete o no. Ti serve sapere anche la
+  maschera. Da oggi, quando qualcuno ti dà un IP, chiedi sempre anche quella: è il segno che hai capito
+  qualcosa di importante.</p>
+</div>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 680 240" role="img" aria-label="Lo stesso indirizzo IP diviso in rete e host in tre modi diversi a seconda della maschera">
+    <text x="340" y="20" text-anchor="middle" class="dg-title">Stesso indirizzo, tre maschere diverse, tre reti completamente diverse</text>
+
+    <!-- /8 -->
+    <text x="16" y="58" class="dg-mono-sm">/8</text>
+    <rect x="60" y="40" width="140" height="30" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <rect x="200" y="40" width="420" height="30" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="130" y="60" text-anchor="middle" class="dg-mono-sm">10</text>
+    <text x="410" y="60" text-anchor="middle" class="dg-mono-sm">. 40 . 12 . 200</text>
+    <text x="634" y="60" class="dg-mono-sm">16,7 mln di host</text>
+
+    <!-- /16 -->
+    <text x="16" y="112" class="dg-mono-sm">/16</text>
+    <rect x="60" y="94" width="280" height="30" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <rect x="340" y="94" width="280" height="30" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="200" y="114" text-anchor="middle" class="dg-mono-sm">10 . 40</text>
+    <text x="480" y="114" text-anchor="middle" class="dg-mono-sm">. 12 . 200</text>
+    <text x="634" y="114" class="dg-mono-sm">65.534 host</text>
+
+    <!-- /24 -->
+    <text x="16" y="166" class="dg-mono-sm">/24</text>
+    <rect x="60" y="148" width="420" height="30" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <rect x="480" y="148" width="140" height="30" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="270" y="168" text-anchor="middle" class="dg-mono-sm">10 . 40 . 12</text>
+    <text x="550" y="168" text-anchor="middle" class="dg-mono-sm">. 200</text>
+    <text x="634" y="168" class="dg-mono-sm">254 host</text>
+
+    <rect x="60" y="196" width="120" height="22" rx="4" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.2"/>
+    <text x="120" y="211" text-anchor="middle" class="dg-mono-sm">parte RETE</text>
+    <rect x="192" y="196" width="120" height="22" rx="4" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.2"/>
+    <text x="252" y="211" text-anchor="middle" class="dg-mono-sm">parte HOST</text>
+    <text x="330" y="212" class="dg-label-sm">L'indirizzo 10.40.12.200 è sempre lo stesso: cambia solo dove lo tagli.</text>
+  </svg>
+  </div>
+  <figcaption>Tre reti totalmente diverse, con lo stesso indirizzo di partenza. Con <code>/24</code> il
+  vicino <code>10.40.13.5</code> è <b>fuori</b> dalla tua rete e devi passare dal router. Con
+  <code>/16</code> è <b>dentro</b> e gli parli direttamente. Questa singola differenza è la causa di una
+  quantità enorme di ticket.</figcaption>
+</figure>
+
+<h2>Le vecchie classi A, B, C (e perché non esistono più)</h2>
+
+<p>All'inizio si usava una regola rigida basata sul primo numero dell'indirizzo. La incontrerai ancora
+nelle domande dei colloqui e in vecchia documentazione, quindi vale la pena conoscerla — sapendo che
+nella pratica è <strong>superata da più di trent'anni</strong>.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Classe</th><th>Primo numero</th><th>Maschera implicita</th><th>Host per rete</th></tr></thead>
+    <tbody>
+      <tr><td><b>A</b></td><td>1 – 126</td><td>255.0.0.0 (/8)</td><td>16.777.214</td></tr>
+      <tr><td><b>B</b></td><td>128 – 191</td><td>255.255.0.0 (/16)</td><td>65.534</td></tr>
+      <tr><td><b>C</b></td><td>192 – 223</td><td>255.255.255.0 (/24)</td><td>254</td></tr>
+      <tr><td><b>D</b></td><td>224 – 239</td><td>—</td><td>multicast</td></tr>
+      <tr><td><b>E</b></td><td>240 – 255</td><td>—</td><td>riservata, sperimentale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Il problema era macroscopico: se un'azienda aveva bisogno di 300 indirizzi, una rete di classe C (254)
+non bastava e bisognava darle una classe B — <strong>65.534 indirizzi, di cui 65.234 sprecati</strong>.
+Con questo sistema gli indirizzi finirono in pochissimi anni.</p>
+
+<p>La soluzione, dal 1993, si chiama <span class="term" data-term="cidr">CIDR</span>: si abbandonano le
+classi e si può tagliare l'indirizzo <strong>dove si vuole</strong>, scegliendo reti della dimensione
+giusta. È l'argomento della lezione 1-14.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il residuo delle classi che ti farà sbagliare
+  </div>
+  <p>Alcuni sistemi operativi, quando digiti un indirizzo che inizia per 10, propongono
+  automaticamente la maschera <code>255.0.0.0</code>, perché seguono ancora l'abitudine delle classi.
+  Se la tua rete è in realtà <code>10.0.5.0/24</code> e accetti la proposta, hai appena creato un PC
+  convinto che <em>tutti</em> i 16 milioni di indirizzi che iniziano per 10 siano suoi vicini di casa.</p>
+  <p>Sintomo: il PC funziona benissimo con i vicini, ma non raggiunge le altre sedi o i server in altre
+  subnet — perché non passa mai dal router, crede di poterci arrivare direttamente.
+  <b>Controlla sempre la maschera che ti viene proposta.</b></p>
+</div>
+
+<h2>Gli indirizzi sono finiti. Davvero.</h2>
+
+<p>2³² fa circa 4,3 miliardi di indirizzi. Sembravano infiniti nel 1981, quando i computer al mondo erano
+poche migliaia. Oggi siamo 8 miliardi di persone con più dispositivi a testa.</p>
+
+<p>Gli indirizzi IPv4 pubblici sono <strong>ufficialmente esauriti dal 2011</strong> a livello mondiale, e
+dal 2019 in Europa. Non se ne assegnano più di nuovi: si comprano da chi li ha (un indirizzo pubblico
+singolo costa oggi 30–50 dollari sul mercato secondario) o si affittano dagli operatori.</p>
+
+<p>Questo ha due conseguenze pratiche che vivi tutti i giorni:</p>
+
+<ol>
+  <li><strong>Il NAT è ovunque.</strong> Tutte le aziende usano indirizzi privati internamente e li
+  traducono in uno pubblico per uscire. È la lezione 1-21.</li>
+  <li><strong>Molti clienti non hanno un IP pubblico proprio.</strong> Sempre più connessioni,
+  soprattutto FWA e mobili, sono dietro <span class="term" data-term="cgnat">CGNAT</span>: il cliente
+  condivide l'indirizzo con altri. Conseguenza diretta: <b>non puoi pubblicare nessun servizio e le VPN
+  in ingresso non funzionano</b>. È una delle prime cose da verificare quando un cliente ti chiede
+  un accesso remoto.</li>
+</ol>
+
+<h2>Leggere un ipconfig, riga per riga</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Windows · ipconfig /all (estratto)</div>
+<pre><span class="p">Scheda Ethernet Ethernet:</span>
+   Suffisso DNS specifico . . . . : <span class="s">azienda.local</span>
+   Descrizione . . . . . . . . . : <span class="s">Intel(R) Ethernet Connection I219-LM</span>
+   Indirizzo fisico. . . . . . . : <span class="n">A4-BB-6D-1F-0C-22</span>
+   DHCP abilitato. . . . . . . . : <span class="s">Sì</span>
+   Indirizzo IPv4. . . . . . . . : <span class="n">192.168.10.37</span>(Preferenziale)
+   Subnet mask . . . . . . . . . : <span class="n">255.255.255.0</span>
+   Lease ottenuto. . . . . . . . : <span class="o">lunedì 14 settembre 2026 08:12:03</span>
+   Scadenza lease . . . . . . . .: <span class="o">martedì 15 settembre 2026 08:12:03</span>
+   Gateway predefinito . . . . . : <span class="n">192.168.10.1</span>
+   Server DHCP . . . . . . . . . : <span class="n">192.168.10.1</span>
+   Server DNS . . . . . . . . . .: <span class="n">192.168.10.5</span>
+                                   <span class="n">192.168.10.6</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Riga</th><th>Cosa ti dice</th><th>Cosa devi chiederti</th></tr></thead>
+    <tbody>
+      <tr><td><b>Indirizzo fisico</b></td><td>Il MAC, assegnato in fabbrica</td>
+          <td>I primi 3 byte dicono il produttore</td></tr>
+      <tr><td><b>DHCP abilitato: Sì</b></td><td>L'indirizzo arriva da un server, non è statico</td>
+          <td>Se è «No» ma dovrebbe essere «Sì», qualcuno ha messo un IP a mano — e spesso è l'origine del problema</td></tr>
+      <tr><td><b>Indirizzo IPv4</b></td><td>Chi sono io</td>
+          <td>Se inizia per 169.254 il DHCP non ha risposto</td></tr>
+      <tr><td><b>Subnet mask</b></td><td>Dove finisce la rete e inizia l'host</td>
+          <td>La riga più importante e quella che nessuno guarda</td></tr>
+      <tr><td><b>Gateway predefinito</b></td><td>Dove mando tutto ciò che è fuori dalla mia rete</td>
+          <td>È vuoto? Allora il PC non esce dalla sua rete, punto</td></tr>
+      <tr><td><b>Server DHCP</b></td><td>Chi mi ha dato l'indirizzo</td>
+          <td>È un indirizzo che ti aspettavi? Se no, c'è un DHCP abusivo in rete</td></tr>
+      <tr><td><b>Server DNS</b></td><td>Chi traduce i nomi</td>
+          <td>In un dominio Active Directory <b>devono</b> essere i domain controller, non 8.8.8.8</td></tr>
+      <tr><td><b>Scadenza lease</b></td><td>Fino a quando l'indirizzo è mio</td>
+          <td>Utile per capire da quanto un dispositivo è in rete</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Le cinque righe che risolvono metà dei ticket
+  </div>
+  <p>Quando ti arriva «non funziona la rete», chiedi un <code>ipconfig /all</code> prima di qualsiasi
+  altra cosa e guarda cinque righe in quest'ordine:</p>
+  <ol style="margin-bottom:0">
+    <li><b>Indirizzo 169.254.x.x?</b> → DHCP irraggiungibile. Cerca lì, e da nessun'altra parte.</li>
+    <li><b>Gateway vuoto?</b> → Il PC non esce dalla sua rete. Configurazione o DHCP incompleto.</li>
+    <li><b>Maschera diversa da quella degli altri PC?</b> → Qualcuno ha messo l'IP a mano male.</li>
+    <li><b>Server DHCP inatteso?</b> → C'è un router abusivo che distribuisce indirizzi. Succede più di
+    quanto immagini: un utente porta un router da casa e lo attacca alla presa.</li>
+    <li><b>DNS pubblici in un dominio Active Directory?</b> → L'accesso al dominio non funzionerà,
+    e i sintomi saranno bizzarri e vari.</li>
+  </ol>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Fallo adesso
+  </div>
+  <p>Lancia <code>ipconfig /all</code> (o <code>ifconfig</code> su Mac) sul PC che stai usando e
+  <b>scrivi su un foglio</b> i tuoi valori: indirizzo, maschera, gateway, DNS. Poi apri il
+  <a href="../strumenti.html">calcolatore di subnet</a> e inserisci indirizzo e maschera: ti dirà
+  esattamente quali sono i confini della tua rete.</p>
+  <p>Tienilo da parte: nelle prossime tre lezioni imparerai a calcolare a mente tutto quello che il
+  calcolatore ti sta mostrando adesso.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: l'indirizzo IPv4",
+  "questions": [
+    { "q": "Da quanti bit è composto un indirizzo IPv4?",
+      "a": [ {"t":"32","ok":true}, {"t":"48","ok":false}, {"t":"64","ok":false}, {"t":"128","ok":false} ],
+      "e": "Quattro ottetti da 8 bit: 32 bit, cioè circa 4,3 miliardi di indirizzi possibili. 48 bit è la lunghezza di un MAC address, 128 bit quella di un indirizzo IPv6." },
+
+    { "q": "Perché un indirizzo IP da solo non basta a sapere in quale rete si trova un dispositivo?",
+      "a": [ {"t":"Perché serve la subnet mask per sapere dove finisce la parte di rete","ok":true},
+             {"t":"Perché serve conoscere anche il MAC address","ok":false},
+             {"t":"Perché l'indirizzo cambia continuamente","ok":false},
+             {"t":"Perché serve prima interrogare il DNS","ok":false} ],
+      "e": "L'indirizzo contiene la parte rete e la parte host attaccate, senza alcun separatore visibile. Solo la maschera dice dove tagliare. Per questo <code>10.0.5.20</code> da solo non ti dice ancora se è nella tua rete o no — ed è la ragione per cui va sempre chiesta anche la maschera." },
+
+    { "q": "Un PC ha indirizzo <code>10.0.5.20</code> con maschera <code>255.0.0.0</code> mentre gli altri della rete hanno <code>255.255.255.0</code>. Cosa succede?",
+      "a": [ {"t":"Crede che tutti gli indirizzi 10.x.x.x siano suoi vicini e non passa dal router per raggiungerli","ok":true},
+             {"t":"Non riesce a comunicare con nessuno","ok":false},
+             {"t":"Perde l'indirizzo IP al riavvio","ok":false},
+             {"t":"Non c'è alcuna differenza pratica","ok":false} ],
+      "e": "Con /8 il PC considera locale tutto ciò che inizia per 10, quindi per raggiungere 10.0.9.4 tenta l'ARP diretto invece di rivolgersi al gateway — e non riceve risposta. Con i vicini della sua vera subnet funziona benissimo, ed è proprio questo a rendere il guasto confuso: «va, ma non raggiunge l'altra sede»." },
+
+    { "q": "Cosa significa vedere un indirizzo <code>169.254.x.x</code> su un PC?",
+      "a": [ {"t":"Il PC non ha ricevuto risposta dal DHCP e si è assegnato un indirizzo da solo","ok":true},
+             {"t":"Il PC è collegato a una rete pubblica","ok":false},
+             {"t":"L'indirizzo è stato configurato manualmente","ok":false},
+             {"t":"Il PC è dietro un CGNAT dell'operatore","ok":false} ],
+      "e": "È l'APIPA: quando nessun DHCP risponde, Windows si autoassegna un 169.254.x.x per poter almeno parlare con eventuali vicini nella stessa condizione. È un sintomo inconfondibile e restringe subito la ricerca: DHCP spento, VLAN sbagliata, relay mancante o cavo che non arriva dove pensi." },
+
+    { "q": "Perché le classi A, B e C non si usano più?",
+      "a": [ {"t":"Perché sprecavano enormi quantità di indirizzi: servivano 300 host e te ne assegnavano 65.534","ok":true},
+             {"t":"Perché non erano compatibili con IPv6","ok":false},
+             {"t":"Perché i router moderni non le supportano","ok":false},
+             {"t":"Perché erano troppo difficili da calcolare","ok":false} ],
+      "e": "Le dimensioni fisse costringevano a saltare dal troppo poco al troppissimo, bruciando gli indirizzi a velocità insostenibile. Il CIDR, dal 1993, permette di tagliare dove serve e assegnare reti della dimensione giusta. Le classi restano solo come residuo storico — e come trappola, quando un sistema propone da solo la maschera «di classe»." },
+
+    { "q": "Un cliente chiede di poter accedere da casa al suo gestionale. Scopri che il suo router ha un indirizzo WAN <code>100.71.4.19</code>. Cosa gli dici?",
+      "a": [ {"t":"È dietro CGNAT: non ha un indirizzo pubblico proprio, serve chiedere un IP pubblico all'operatore","ok":true},
+             {"t":"Va tutto bene, basta aprire la porta sul firewall","ok":false},
+             {"t":"Deve cambiare la subnet mask interna","ok":false},
+             {"t":"Serve un DNS dinamico e si risolve","ok":false} ],
+      "e": "<code>100.64.0.0/10</code> è lo spazio riservato al CGNAT: il cliente condivide un indirizzo pubblico con altri utenti dell'operatore. Nessun port forward e nessuna VPN in ingresso possono funzionare, perché il traffico dall'esterno non sa a quale dei clienti consegnare. Nemmeno un DNS dinamico risolve: l'indirizzo non è raggiungibile in ogni caso. Serve chiedere un IP pubblico, di solito a pagamento." }
+  ]
+}
+</script>

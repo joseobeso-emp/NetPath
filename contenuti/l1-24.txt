@@ -1,0 +1,278 @@
+#id: l1-24
+#title: La cassetta degli attrezzi
+#min: 28
+#level: 1
+#chapter: Trasporto, strumenti e metodo
+#desc: ping, traceroute, nslookup, netstat, nc, Wireshark: cosa ti dicono davvero e come si leggono le risposte.
+#obj: Usare ogni strumento sapendo esattamente cosa dimostra e cosa non dimostra
+#obj: Leggere l'output di un traceroute senza trarre conclusioni sbagliate
+#obj: Scegliere lo strumento giusto in base al livello OSI sospettato
+#obj: Fare una prima cattura Wireshark utile
+---
+<p class="lead">Gli strumenti li conoscono tutti. Quello che distingue un tecnico bravo è sapere
+<strong>cosa dimostra</strong> ciascun risultato — e soprattutto cosa <em>non</em> dimostra. Un ping che
+non risponde non significa «l'host è giù», e un traceroute con degli asterischi non significa «lì c'è
+il problema». Queste due frasi da sole valgono la lezione.</p>
+
+<h2>ping — il livello 3 funziona?</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>ping · le opzioni che contano</div>
+<pre><span class="p">ping 8.8.8.8</span>                         <span class="c"># base</span>
+<span class="p">ping -t 8.8.8.8</span>                      <span class="c"># continuo (Windows) — Ctrl+C per fermare</span>
+<span class="p">ping -n 100 8.8.8.8</span>                  <span class="c"># 100 pacchetti: misura la PERDITA</span>
+<span class="p">ping -l 1472 -f 8.8.8.8</span>              <span class="c"># pacchetto grande, non frammentabile: prova l'MTU</span>
+<span class="p">ping -c 100 -i 0.2 8.8.8.8</span>           <span class="c"># macOS/Linux: 100 pacchetti ogni 0,2 s</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Risposta</th><th>Cosa significa davvero</th></tr></thead>
+    <tbody>
+      <tr><td><b>Risposta da …</b></td><td>Livelli 1, 2 e 3 funzionano fino a quella destinazione. Nient'altro.</td></tr>
+      <tr><td><b>Richiesta scaduta</b> (timeout)</td>
+          <td>Nessuna risposta. <b>Non</b> significa «è giù»: potrebbe essere un firewall che scarta ICMP, oppure la risposta che non torna indietro.</td></tr>
+      <tr><td><b>Host di destinazione non raggiungibile</b></td>
+          <td>Un router lungo il percorso ha detto esplicitamente «non so dove mandarlo». È un problema di <b>routing</b>, e il messaggio ti dice anche chi l'ha generato.</td></tr>
+      <tr><td><b>Rete di destinazione non raggiungibile</b></td>
+          <td>Come sopra, ma manca la rotta verso l'intera rete.</td></tr>
+      <tr><td><b>TTL scaduto durante il transito</b></td>
+          <td>Troppi salti: quasi sempre un <b>loop di routing</b>.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Il ping non risponde quindi è giù»: l'errore più diffuso
+  </div>
+  <p>Moltissimi server e firewall <b>bloccano l'ICMP per scelta</b>. Windows stesso, con il firewall
+  predefinito, non risponde al ping da reti diverse dalla propria.</p>
+  <p>Un ping che non risponde è <b>un'informazione debole</b>. Se devi sapere se un servizio è attivo,
+  prova la <b>porta</b>: <code>Test-NetConnection srv01 -Port 445</code>. Quella è una risposta forte,
+  perché prova esattamente ciò che ti interessa.</p>
+</div>
+
+<h2>traceroute — dove si ferma il traffico</h2>
+
+<p>Manda pacchetti con TTL 1, poi 2, poi 3… Ogni router che azzera il TTL risponde «tempo scaduto»
+rivelando la propria identità. È il modo ingegnoso con cui si ricostruisce il percorso.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>traceroute · uso corretto</div>
+<pre><span class="p">tracert -d 8.8.8.8</span>            <span class="c"># Windows — -d evita il DNS: molto più veloce</span>
+<span class="p">traceroute -n 8.8.8.8</span>         <span class="c"># macOS/Linux</span>
+<span class="p">mtr 8.8.8.8</span>                   <span class="c"># il migliore: traceroute + statistiche continue</span>
+<span class="p">tracetcp www.sito.it:443</span>     <span class="c"># traccia in TCP: passa dove ICMP viene bloccato</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Come si legge un traceroute — e i due errori che fanno tutti
+  </div>
+  <p><b>Errore 1: «al salto 7 ci sono gli asterischi, quindi il problema è lì».</b> Falso.
+  Molti router sono configurati per non rispondere ai messaggi di TTL scaduto (è traffico di servizio a
+  bassa priorità), ma <b>inoltrano perfettamente</b> il traffico vero. Se i salti successivi rispondono,
+  quel salto sta funzionando benissimo.</p>
+  <p><b>Errore 2: «al salto 5 la latenza è 180 ms, quindi lì c'è congestione».</b> Quasi sempre falso.
+  Generare le risposte ICMP è un compito secondario per un router: se è occupato, ci mette di più a
+  rispondere <em>per sé</em> pur inoltrando il traffico a piena velocità. <b>Guarda solo la latenza
+  dell'ultimo salto</b>, quella conta.</p>
+  <p><b>Quello che conta davvero:</b> il punto dove il traceroute <b>si ferma definitivamente</b>, e la
+  latenza finale. E sapere che il percorso di andata e quello di ritorno possono essere diversi, quindi
+  un traceroute racconta solo metà della storia.</p>
+</div>
+
+<h2>nslookup e dig — il DNS</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Interrogare il DNS</div>
+<pre><span class="p">nslookup www.azienda.it</span>                <span class="c"># usa il DNS configurato</span>
+<span class="p">nslookup www.azienda.it 1.1.1.1</span>        <span class="c"># scavalca: È IL COMANDO PIÙ UTILE</span>
+<span class="p">nslookup -type=MX azienda.it</span>           <span class="c"># record di posta</span>
+<span class="p">dig +short www.azienda.it</span>              <span class="c"># solo la risposta</span>
+<span class="p">dig +trace www.azienda.it</span>              <span class="c"># tutto il percorso dai root server</span>
+</pre>
+</div>
+
+<p>Il confronto tra le prime due righe è la diagnosi: se il DNS pubblico risponde e il tuo no, il
+problema è <strong>il tuo server DNS</strong>, non il dominio né Internet. Tre secondi, e hai
+circoscritto il guasto.</p>
+
+<h2>Test-NetConnection, telnet, nc — il livello 4</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La porta risponde?</div>
+<pre><span class="c"># Windows — completo: DNS, ping, porta, interfaccia usata</span>
+<span class="p">Test-NetConnection srv01 -Port 445 -InformationLevel Detailed</span>
+<span class="p">tnc srv01 -Port 443</span>                     <span class="c"># abbreviazione</span>
+
+<span class="c"># macOS / Linux</span>
+<span class="p">nc -zv srv01 445</span>
+<span class="p">nc -zv 10.10.10.50 443</span>
+
+<span class="c"># cosa è in ascolto sulla MIA macchina</span>
+<span class="p">netstat -ano | findstr LISTENING</span>       <span class="c"># Windows (-o dà il PID)</span>
+<span class="p">ss -tulpn</span>                                <span class="c"># Linux</span>
+<span class="p">lsof -i -P | grep LISTEN</span>                 <span class="c"># macOS</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Perché questo comando batte il ping
+  </div>
+  <p><code>Test-NetConnection srv01 -Port 445</code> in una riga ti dice: il nome si risolve (DNS),
+  l'host risponde al ping (livello 3), la porta accetta la connessione (livello 4), e da quale
+  interfaccia sei uscito (routing).</p>
+  <p>Quattro livelli verificati in un comando solo. È il singolo strumento più efficiente che hai su
+  Windows, e la maggior parte dei tecnici continua a usare il ping.</p>
+</div>
+
+<h2>Wireshark — quando le ipotesi finiscono</h2>
+
+<p>Wireshark cattura ogni pacchetto che passa dalla scheda di rete. È lo strumento definitivo: non ti
+dice cosa <em>pensi</em> che succeda, ti dice cosa <em>succede</em>.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Filtro</th><th>Cosa mostra</th></tr></thead>
+    <tbody>
+      <tr><td><code>ip.addr == 10.10.10.37</code></td><td>Tutto il traffico di un host, nei due sensi</td></tr>
+      <tr><td><code>tcp.port == 443</code></td><td>Traffico HTTPS</td></tr>
+      <tr><td><code>dns</code></td><td>Risoluzioni: chi chiede cosa e cosa riceve</td></tr>
+      <tr><td><code>dhcp</code></td><td>I quattro passaggi DORA</td></tr>
+      <tr><td><code>arp</code></td><td>Chi cerca chi, e chi risponde</td></tr>
+      <tr><td><code>tcp.flags.reset == 1</code></td><td>Connessioni rifiutate: chi ha detto no</td></tr>
+      <tr><td><code>tcp.analysis.retransmission</code></td><td><b>Ritrasmissioni</b>: la prova della perdita di pacchetti</td></tr>
+      <tr><td><code>icmp</code></td><td>Ping e messaggi di errore della rete</td></tr>
+      <tr><td><code>!(arp or stp or cdp)</code></td><td>Togli il rumore di fondo e guarda solo il traffico utile</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Come si fa una cattura utile
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Sappi cosa cerchi prima di iniziare.</b> Una cattura di dieci minuti «a caso» è inutilizzabile:
+    sono milioni di pacchetti.</li>
+    <li><b>Cattura vicino al problema.</b> Sul PC che ha il guasto, non su uno a caso.</li>
+    <li><b>Annota l'ora esatta</b> in cui riproduci il problema: poi filtri per quel momento.</li>
+    <li><b>Riproduci il problema</b> mentre catturi, e fermati subito dopo.</li>
+    <li><b>Usa Statistiche → Conversazioni</b> per vedere chi parla con chi e quanto: spesso la causa
+    salta fuori da lì senza guardare un solo pacchetto.</li>
+    <li><b>Analisi → Expert Information</b> riassume da solo ritrasmissioni, reset e anomalie.</li>
+  </ol>
+</div>
+
+<h2>Gli strumenti sugli apparati</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Catturare direttamente sul firewall</div>
+<pre><span class="c"># FortiGate — il comando che risolve più ticket di qualsiasi altro</span>
+<span class="p">diagnose sniffer packet any</span> <span class="s">"host 10.10.10.37 and port 443"</span> <span class="n">4 0 a</span>
+<span class="c">#   'any' = tutte le interfacce · 4 = mostra intestazioni e interfaccia</span>
+<span class="c">#   0 = senza limite di pacchetti · a = orario assoluto</span>
+
+<span class="c"># FortiGate — perché questo traffico viene bloccato?</span>
+<span class="p">diagnose debug flow filter addr 10.10.10.37</span>
+<span class="p">diagnose debug flow show function-name enable</span>
+<span class="p">diagnose debug flow trace start 20</span>
+<span class="p">diagnose debug enable</span>
+
+<span class="c"># MikroTik — cattura in diretta verso Wireshark sul tuo PC</span>
+<span class="p">/tool sniffer set filter-interface=br-lan streaming-enabled=yes \</span>
+<span class="p">    streaming-server=</span><span class="n">10.10.10.37</span>
+<span class="p">/tool sniffer start</span>
+
+<span class="c"># Linux / Sophos</span>
+<span class="p">tcpdump -i any -n host 10.10.10.37 and port 443</span>
+</pre>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Quale strumento, per quale livello
+  </div>
+  <div class="table-wrap" style="margin:8px 0 0">
+    <table>
+      <thead><tr><th>Sospetti…</th><th>Usi…</th></tr></thead>
+      <tbody>
+        <tr><td><b>Livello 1</b> — fisico</td><td>Lucine, contatori di errori sulla porta dello switch, tester di cavo</td></tr>
+        <tr><td><b>Livello 2</b> — vicini</td><td><code>arp -a</code>, tabella MAC dello switch, LLDP</td></tr>
+        <tr><td><b>Livello 3</b> — percorso</td><td><code>ping</code>, <code>tracert</code>, <code>mtr</code>, <code>route print</code></td></tr>
+        <tr><td><b>Livello 4</b> — porte</td><td><code>Test-NetConnection</code>, <code>nc</code>, <code>netstat</code></td></tr>
+        <tr><td><b>Livello 7</b> — servizio</td><td><code>nslookup</code>, browser, log dell'applicazione e del firewall</td></tr>
+        <tr><td><b>Non lo so</b></td><td>Wireshark, o il sniffer del firewall</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Da fare oggi
+  </div>
+  <p>Installa Wireshark e fai il <a href="../lab.html">laboratorio 04</a>: catturi ARP, DHCP, DNS e
+  l'handshake TCP e li vedi succedere davvero. Trenta minuti, ed è la differenza tra sapere i nomi dei
+  protocolli e averli visti in faccia.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: gli strumenti",
+  "questions": [
+    { "q": "Un server non risponde al ping. Cosa puoi concludere?",
+      "a": [ {"t":"Poco: potrebbe bloccare l'ICMP. Meglio provare una porta","ok":true},
+             {"t":"Che il server è spento","ok":false},
+             {"t":"Che il cavo è staccato","ok":false},
+             {"t":"Che il routing è rotto","ok":false} ],
+      "e": "Moltissimi sistemi bloccano l'ICMP per scelta, Windows compreso con il firewall predefinito. Un ping senza risposta è un'informazione debole: <code>Test-NetConnection srv01 -Port 445</code> prova esattamente ciò che ti interessa e dà una risposta forte." },
+
+    { "q": "In un traceroute il salto 7 mostra tre asterischi, ma i salti 8, 9 e 10 rispondono normalmente. Cosa significa?",
+      "a": [ {"t":"Quel router non risponde ai messaggi di servizio, ma inoltra il traffico correttamente","ok":true},
+             {"t":"Il problema è al salto 7","ok":false},
+             {"t":"Il percorso si interrompe lì","ok":false},
+             {"t":"C'è un loop di routing","ok":false} ],
+      "e": "Se i salti successivi rispondono, il traffico <b>è passato</b> dal salto 7: quel router semplicemente non genera risposte ICMP di TTL scaduto, pratica comunissima. Conta solo dove il traceroute si ferma <em>definitivamente</em>." },
+
+    { "q": "Qual è il modo più rapido per capire se un problema DNS dipende dal tuo server o dal dominio?",
+      "a": [ {"t":"Interrogare un DNS pubblico: <code>nslookup nome 1.1.1.1</code>","ok":true},
+             {"t":"Svuotare la cache DNS del PC","ok":false},
+             {"t":"Riavviare il servizio DNS","ok":false},
+             {"t":"Fare un traceroute verso il dominio","ok":false} ],
+      "e": "Scavalcando il DNS configurato ottieni un secondo parere indipendente: se il DNS pubblico risponde correttamente, il nome esiste e Internet funziona, quindi il guasto è nel <b>tuo</b> server. Tre secondi e hai dimezzato il campo di ricerca." },
+
+    { "q": "Quale filtro Wireshark usi per dimostrare che c'è perdita di pacchetti?",
+      "a": [ {"t":"tcp.analysis.retransmission","ok":true},
+             {"t":"ip.addr == 10.0.0.1","ok":false},
+             {"t":"dns","ok":false},
+             {"t":"arp","ok":false} ],
+      "e": "Le ritrasmissioni sono la prova diretta: TCP rimanda un segmento solo perché non ne ha ricevuto conferma. Un numero significativo di ritrasmissioni dimostra perdita lungo il percorso, ed è un dato oggettivo da portare all'operatore quando sostiene che «la linea è a posto»." },
+
+    { "q": "Perché <code>Test-NetConnection srv01 -Port 445</code> è più utile di un ping?",
+      "a": [ {"t":"Verifica in un colpo solo DNS, raggiungibilità, porta e interfaccia usata","ok":true},
+             {"t":"Perché funziona anche senza rete","ok":false},
+             {"t":"Perché è più veloce","ok":false},
+             {"t":"Perché non richiede privilegi di amministratore","ok":false} ],
+      "e": "Un comando che copre quattro livelli: risolve il nome, prova la raggiungibilità, verifica che il servizio sia effettivamente in ascolto su quella porta, e dice da quale interfaccia sei uscito. Il ping si ferma al livello 3 e può essere bloccato." },
+
+    { "q": "Prima di avviare una cattura Wireshark, la cosa più importante è:",
+      "a": [ {"t":"Sapere cosa stai cercando e catturare vicino al problema","ok":true},
+             {"t":"Catturare il più a lungo possibile per non perdere nulla","ok":false},
+             {"t":"Disattivare il firewall del PC","ok":false},
+             {"t":"Catturare su tutte le interfacce contemporaneamente","ok":false} ],
+      "e": "Una cattura lunga e generica produce milioni di pacchetti inutilizzabili. Si cattura sul dispositivo che ha il problema, si riproduce il guasto annotando l'ora, e si ferma subito: una cattura di trenta secondi mirata vale mille volte una di un'ora a caso." }
+  ]
+}
+</script>

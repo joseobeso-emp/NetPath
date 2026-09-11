@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Laboratorio MikroTik — NetPath</title>
+<meta name="description" content="Laboratori pratici sul MikroTik hAP ax²: dalla prima configurazione alle VLAN, firewall, VPN e QoS.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<style>
+  .lab-card { border:1px solid var(--border); border-radius: var(--r-xl); background: var(--bg-elev);
+              margin-bottom: 20px; overflow: hidden; }
+  .lab-card > summary {
+    padding: 18px 20px; cursor: pointer; list-style: none;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .lab-card > summary::-webkit-details-marker { display:none; }
+  .lab-card > summary:hover { background: var(--bg-sunken); }
+  .lab-card[open] > summary { border-bottom: 1px solid var(--border); }
+  .lab-n { font-family: var(--font-mono); font-size:.78rem; font-weight:600; color: var(--accent-text);
+           background: var(--accent-soft); padding: 4px 9px; border-radius: 6px; flex-shrink:0; }
+  .lab-card summary h3 { font-size: 1.02rem; margin:0; flex:1 1 240px; }
+  .lab-card summary .meta { font-family: var(--font-mono); font-size:.74rem; color: var(--text-faint); }
+  .lab-body { padding: 4px 20px 22px; }
+  .lab-body .prose { max-width: none; }
+  .lab-goal { padding:12px 14px; border-radius: var(--r); background: var(--accent-soft);
+              border-left:3px solid var(--accent); font-size:.9rem; color: var(--text-soft); margin: 14px 0 18px; }
+  .lab-goal b { color: var(--accent-text); }
+</style>
+</head>
+<body data-page="lab" data-root="">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+
+<main class="wrap" style="padding-top:44px;padding-bottom:70px;max-width:940px">
+
+  <div class="kicker">Laboratorio</div>
+  <h1 style="font-size:clamp(1.9rem,1.4rem + 2.2vw,2.7rem);letter-spacing:-.03em;margin-bottom:14px">
+    Le mani sul ferro</h1>
+  <p class="lead" style="max-width:70ch">
+    La teoria che non tocchi evapora in due settimane. Questi laboratori si fanno sul tuo
+    <b>MikroTik hAP ax²</b> — e i primi due nemmeno su quello: si fanno sul PC che stai usando adesso.
+    Ogni passo ha una casella: si salva nel browser, quindi puoi interrompere e riprendere.</p>
+
+  <div class="callout warn" style="max-width:70ch">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+      Prima regola
+    </div>
+    <p>Non fare questi laboratori sulla rete di casa in produzione mentre qualcuno lavora o guarda un film.
+    Il MikroTik va collegato <b>a valle</b> del router di casa (la sua porta ether1 al router esistente), così
+    crei una rete separata e tua, e se la rompi non rompi niente a nessuno.</p>
+  </div>
+
+  <h2 style="font-size:1.5rem;margin:44px 0 8px">Come si accede al MikroTik</h2>
+  <p style="color:var(--text-soft);max-width:70ch;margin-bottom:20px">Tre strade, tutte valide. Impara tutte e tre,
+  perché nella vita reale a volte ne funziona solo una.</p>
+
+  <div class="table-wrap" style="margin-bottom:44px">
+    <table>
+      <thead><tr><th>Strumento</th><th>Come</th><th>Quando usarlo</th></tr></thead>
+      <tbody>
+        <tr><td><b>WinBox</b></td><td>Applicazione gratuita da mikrotik.com. Nella scheda <b>Neighbors</b> trova il
+          router anche se non hai un IP valido, perché lo raggiunge via MAC address.</td>
+          <td>Sempre, e soprattutto quando ti sei chiuso fuori da solo. È il salvavita.</td></tr>
+        <tr><td><b>WebFig</b></td><td>Browser, <code>http://192.168.88.1</code>, utente <code>admin</code>, password vuota al primo avvio.</td>
+          <td>Quando sei su un Mac o non vuoi installare niente. Identico a WinBox come struttura.</td></tr>
+        <tr><td><b>Terminale (CLI)</b></td><td>SSH verso il router, oppure il bottone <b>New Terminal</b> dentro WinBox/WebFig.</td>
+          <td>È il modo in cui lavorerai davvero: veloce, copiabile, documentabile. Tutti i comandi qui sotto sono CLI.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 style="font-size:1.5rem;margin:0 0 18px">I laboratori</h2>
+
+  <!-- ===== LAB 00 ===== -->
+  <details class="lab-card" data-lab="lab00" open>
+    <summary><span class="lab-n">LAB 00</span><h3>Preparare il banco di lavoro</h3>
+      <span class="badge lv1">Livello 1</span><span class="meta" data-lab-count>0/0</span></summary>
+    <div class="lab-body prose">
+      <div class="lab-goal"><b>Obiettivo:</b> avere un router pulito, sapere come rientrarci se ti chiudi fuori,
+        e avere un backup a cui tornare. Dopo questo lab non avrai mai più paura di sperimentare.</div>
+
+      <div class="lab-step"><input type="checkbox" id="l00-1"><label for="l00-1">
+        Scarica <b>WinBox</b> da mikrotik.com (c'è anche per Mac) e installalo. Se sei su Mac e non vuoi installare nulla,
+        userai WebFig dal browser: va benissimo.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l00-2"><label for="l00-2">
+        Collega il tuo PC a una porta <b>ether2…ether5</b> del MikroTik con un cavo di rete. Non a ether1:
+        quella è la porta che guarda verso Internet.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l00-3"><label for="l00-3">
+        Apri WinBox, scheda <b>Neighbors</b>: dovresti vedere il router. Clicca sul suo <b>MAC address</b> (non sull'IP)
+        e connettiti con utente <code>admin</code> e password vuota.
+        <br><span style="font-size:.86rem;color:var(--text-mute)">Ricordati questa cosa: si entra via MAC anche
+        quando l'IP è sbagliato. Ti salverà almeno dieci volte nella tua carriera.</span></label></div>
+      <div class="lab-step"><input type="checkbox" id="l00-4"><label for="l00-4">
+        <b>Metti una password all'utente admin.</b> Subito, prima di qualsiasi altra cosa.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l00-5"><label for="l00-5">
+        Fai un reset completo, senza configurazione predefinita, per partire davvero da zero.
+        Il router si riavvia e resta muto: rientri via MAC con WinBox.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l00-6"><label for="l00-6">
+        Fai un <b>backup</b> ed esportalo sul PC. Da qui in poi, backup prima di ogni laboratorio.</label></div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>RouterOS · terminale</div>
+<pre><span class="c"># 1. metti subito una password ad admin</span>
+<span class="p">/user set admin password=</span><span class="s">"UnaPasswordCheRicordi"</span>
+
+<span class="c"># 2. guarda che versione hai e che modello è</span>
+<span class="p">/system resource print</span>
+<span class="p">/system routerboard print</span>
+
+<span class="c"># 3. backup binario (per tornare indietro) + export leggibile (per capire)</span>
+<span class="p">/system backup save name=</span><span class="s">prima-di-tutto</span>
+<span class="p">/export file=</span><span class="s">config-iniziale</span>
+
+<span class="c"># 4. reset TOTALE senza configurazione predefinita</span>
+<span class="c">#    ATTENZIONE: dopo questo comando il router non risponde più su IP.</span>
+<span class="c">#    Si rientra con WinBox &gt; Neighbors &gt; clic sul MAC address.</span>
+<span class="p">/system reset-configuration no-defaults=</span><span class="s">yes</span> <span class="p">skip-backup=</span><span class="s">yes</span>
+</pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout__head">Perché "no-defaults"</div>
+        <p>La configurazione predefinita di MikroTik fa già molte cose per te: crea il bridge, il DHCP, il NAT,
+        il firewall. Comodissima in produzione, pessima per imparare: nasconde esattamente i meccanismi che devi
+        capire. Partendo nudo, ogni cosa che funzionerà funzionerà perché l'hai costruita tu.</p>
+      </div>
+    </div>
+  </details>
+
+  <!-- ===== LAB 01 ===== -->
+  <details class="lab-card" data-lab="lab01">
+    <summary><span class="lab-n">LAB 01</span><h3>Guardare la rete che hai già sotto il naso</h3>
+      <span class="badge lv1">Livello 1</span><span class="meta" data-lab-count>0/0</span></summary>
+    <div class="lab-body prose">
+      <div class="lab-goal"><b>Obiettivo:</b> senza toccare nessun apparato, leggere la configurazione del PC che
+        stai usando e riconoscere ogni singolo valore. Da fare dopo la lezione 1-12.</div>
+
+      <div class="lab-step"><input type="checkbox" id="l01-1"><label for="l01-1">
+        Esegui <code>ipconfig /all</code> (Windows) o <code>ifconfig</code> / <code>ipconfig getpacket en0</code> (Mac)
+        e scrivi su un foglio: il tuo IP, la subnet mask, il gateway, i DNS.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l01-2"><label for="l01-2">
+        Usando il <a href="strumenti.html">calcolatore di subnet</a>, ricava l'indirizzo di rete e il broadcast
+        della tua rete. <b>Prima calcolalo a mente</b>, poi verifica.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l01-3"><label for="l01-3">
+        Guarda la tabella ARP con <code>arp -a</code>: quei MAC address sono i vicini che il tuo PC ha
+        incontrato di recente. Riconosci il gateway?</label></div>
+      <div class="lab-step"><input type="checkbox" id="l01-4"><label for="l01-4">
+        Guarda la tabella di routing (<code>route print</code> su Windows, <code>netstat -rn</code> su Mac).
+        Trova la riga <code>0.0.0.0/0</code>: è la rotta di default, quella che manda tutto al gateway.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l01-5"><label for="l01-5">
+        Fai <code>ping</code> al tuo gateway, poi a <code>8.8.8.8</code>, poi a <code>www.google.it</code>.
+        Tre passi: rete locale, Internet, DNS. È il primo triage di ogni ticket "non naviga".</label></div>
+      <div class="lab-step"><input type="checkbox" id="l01-6"><label for="l01-6">
+        Fai <code>tracert 8.8.8.8</code> (Windows) o <code>traceroute 8.8.8.8</code> (Mac) e conta i salti.
+        Il primo è sempre il tuo router: il secondo di solito è già l'operatore.</label></div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>Windows · prompt dei comandi</div>
+<pre><span class="p">ipconfig /all</span>
+<span class="p">arp -a</span>
+<span class="p">route print -4</span>
+<span class="p">ping 8.8.8.8</span>
+<span class="p">tracert -d 8.8.8.8</span>      <span class="c"># -d evita di risolvere i nomi: molto più veloce</span>
+<span class="p">nslookup www.google.it</span>
+</pre>
+      </div>
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>macOS · terminale</div>
+<pre><span class="p">ifconfig en0</span>
+<span class="p">ipconfig getpacket en0</span>    <span class="c"># mostra la risposta DHCP completa: bellissimo da leggere</span>
+<span class="p">arp -a</span>
+<span class="p">netstat -rn -f inet</span>
+<span class="p">ping -c 4 8.8.8.8</span>
+<span class="p">traceroute -n 8.8.8.8</span>
+<span class="p">dig www.google.it</span>
+</pre>
+      </div>
+    </div>
+  </details>
+
+  <!-- ===== LAB 02 ===== -->
+  <details class="lab-card" data-lab="lab02">
+    <summary><span class="lab-n">LAB 02</span><h3>Costruire una rete da zero, riga per riga</h3>
+      <span class="badge lv1">Livello 1</span><span class="meta" data-lab-count>0/0</span></summary>
+    <div class="lab-body prose">
+      <div class="lab-goal"><b>Obiettivo:</b> partendo da un router completamente vuoto, arrivare a un PC che
+        naviga su Internet — avendo scritto tu ogni singolo pezzo. Da fare dopo la lezione 1-21.</div>
+
+      <p>Questo è il laboratorio più importante di tutto il livello 1. Alla fine avrai costruito a mano, nell'ordine,
+      esattamente i cinque mattoni che ogni rete del mondo ha: <b>uno switch</b> (il bridge), <b>un indirizzo</b>,
+      <b>un distributore di indirizzi</b> (DHCP), <b>una via d'uscita</b> (la rotta di default) e
+      <b>un traduttore</b> (il NAT).</p>
+
+      <div class="lab-step"><input type="checkbox" id="l02-1"><label for="l02-1">
+        <b>Il bridge.</b> Unisci ether2–ether5 in un unico bridge: stai creando uno switch dentro il router.
+        Prima di farlo, prova a collegare due PC su due porte diverse: non si vedono. Dopo, sì.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l02-2"><label for="l02-2">
+        <b>L'indirizzo.</b> Dai al bridge l'IP <code>10.10.10.1/24</code>. Adesso il router è un dispositivo
+        con un indirizzo su quella rete.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l02-3"><label for="l02-3">
+        <b>Il DHCP.</b> Configura il server DHCP che distribuisce indirizzi da .100 a .200, con gateway .1 e
+        DNS .1. Rinnova l'indirizzo sul PC e verifica che arrivi quello giusto.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l02-4"><label for="l02-4">
+        <b>L'uscita.</b> Metti ether1 in DHCP client verso il tuo router di casa: il MikroTik prende un indirizzo
+        e soprattutto una <b>rotta di default</b>. Verificala con <code>/ip route print</code>.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l02-5"><label for="l02-5">
+        <b>Prova fallita (di proposito).</b> Da un PC della rete 10.10.10.0/24, prova a fare ping a 8.8.8.8.
+        <b>Non funziona.</b> Fermati qui e prova a capire perché prima di leggere il passo successivo.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l02-6"><label for="l02-6">
+        <b>Il NAT.</b> Non funzionava perché 10.10.10.x non esiste su Internet: la risposta non saprebbe tornare.
+        Aggiungi la regola di masquerade su ether1 e riprova. Adesso naviga.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l02-7"><label for="l02-7">
+        Ripeti a voce, ad alta voce, cosa fa ognuno dei cinque pezzi. Se ti inceppi su uno, torna alla lezione
+        corrispondente.</label></div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>RouterOS · la rete completa in 12 righe</div>
+<pre><span class="c"># --- 1. LO SWITCH: un bridge con dentro le porte 2-5 --------------------</span>
+<span class="p">/interface bridge add name=</span><span class="s">br-lan</span>
+<span class="p">/interface bridge port add bridge=</span><span class="s">br-lan</span> <span class="p">interface=</span><span class="s">ether2</span>
+<span class="p">/interface bridge port add bridge=</span><span class="s">br-lan</span> <span class="p">interface=</span><span class="s">ether3</span>
+<span class="p">/interface bridge port add bridge=</span><span class="s">br-lan</span> <span class="p">interface=</span><span class="s">ether4</span>
+<span class="p">/interface bridge port add bridge=</span><span class="s">br-lan</span> <span class="p">interface=</span><span class="s">ether5</span>
+
+<span class="c"># --- 2. L'INDIRIZZO DEL ROUTER SULLA LAN --------------------------------</span>
+<span class="p">/ip address add address=</span><span class="n">10.10.10.1/24</span> <span class="p">interface=</span><span class="s">br-lan</span>
+
+<span class="c"># --- 3. IL DISTRIBUTORE DI INDIRIZZI ------------------------------------</span>
+<span class="p">/ip pool add name=</span><span class="s">pool-lan</span> <span class="p">ranges=</span><span class="n">10.10.10.100-10.10.10.200</span>
+<span class="p">/ip dhcp-server add name=</span><span class="s">dhcp-lan</span> <span class="p">interface=</span><span class="s">br-lan</span> <span class="p">address-pool=</span><span class="s">pool-lan</span> <span class="p">disabled=</span><span class="s">no</span>
+<span class="p">/ip dhcp-server network add address=</span><span class="n">10.10.10.0/24</span> <span class="p">gateway=</span><span class="n">10.10.10.1</span> <span class="p">dns-server=</span><span class="n">10.10.10.1</span>
+
+<span class="c"># --- 4. LA VIA D'USCITA: ether1 chiede tutto al router di casa -----------</span>
+<span class="p">/ip dhcp-client add interface=</span><span class="s">ether1</span> <span class="p">disabled=</span><span class="s">no</span>
+<span class="p">/ip dns set servers=</span><span class="n">1.1.1.1,8.8.8.8</span> <span class="p">allow-remote-requests=</span><span class="s">yes</span>
+
+<span class="c"># --- 5. IL TRADUTTORE: senza questa riga non si esce su Internet ---------</span>
+<span class="p">/ip firewall nat add chain=</span><span class="s">srcnat</span> <span class="p">out-interface=</span><span class="s">ether1</span> <span class="p">action=</span><span class="s">masquerade</span>
+
+<span class="c"># --- VERIFICHE ----------------------------------------------------------</span>
+<span class="p">/ip address print</span>
+<span class="p">/ip route print</span>            <span class="c"># deve comparire 0.0.0.0/0 con gateway verso casa</span>
+<span class="p">/ip dhcp-server lease print</span>  <span class="c"># chi ha preso quale indirizzo</span>
+<span class="p">/ip firewall nat print</span>
+<span class="p">/ping 8.8.8.8</span>
+</pre>
+      </div>
+
+      <div class="callout feynman">
+        <div class="callout__head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+          I cinque pezzi, in parole da dodicenne
+        </div>
+        <p><b>Il bridge</b> è la ciabatta elettrica: unisce più prese in un'unica rete.<br>
+        <b>L'indirizzo</b> è il numero civico del router, così i PC sanno dove trovarlo.<br>
+        <b>Il DHCP</b> è l'impiegato all'ingresso che dà a ogni nuovo arrivato un numero civico libero e gli dice
+        dov'è l'uscita.<br>
+        <b>La rotta di default</b> è il cartello «per tutto il resto del mondo, di qua».<br>
+        <b>Il NAT</b> è il portiere che, quando esci, mette il <em>suo</em> indirizzo sulla lettera al posto del tuo —
+        perché il tuo indirizzo interno fuori non esiste — e si segna su un quaderno a chi dovrà consegnare
+        la risposta.</p>
+      </div>
+    </div>
+  </details>
+
+  <!-- ===== LAB 03 ===== -->
+  <details class="lab-card" data-lab="lab03">
+    <summary><span class="lab-n">LAB 03</span><h3>Rompere tutto di proposito</h3>
+      <span class="badge lv1">Livello 1</span><span class="meta" data-lab-count>0/0</span></summary>
+    <div class="lab-body prose">
+      <div class="lab-goal"><b>Obiettivo:</b> provocare tu stesso i sei guasti più comuni che troverai nei ticket,
+        vedere <em>esattamente</em> che sintomo producono e imparare a riconoscerli in tre secondi. È il laboratorio
+        che vale di più di tutti.</div>
+
+      <p>Per ognuno: causa il guasto, poi <b>prima di sistemarlo</b> scrivi sul tuo quaderno che sintomo vedi
+      da un PC della rete. Poi rimetti a posto.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Guasto da provocare</th><th>Come</th><th>Che sintomo deve darti</th></tr></thead>
+          <tbody>
+            <tr><td><b>1. DHCP spento</b></td><td><code>/ip dhcp-server disable dhcp-lan</code> poi rinnova sul PC</td>
+                <td>Il PC prende un <code>169.254.x.x</code> (APIPA). Non vede nessuno. Sintomo inconfondibile.</td></tr>
+            <tr><td><b>2. Gateway sbagliato</b></td><td>Nel network DHCP metti gateway <code>10.10.10.99</code> (inesistente)</td>
+                <td>Il PC ping-a il router e gli altri PC, ma non esce su Internet. "Vede la rete ma non naviga".</td></tr>
+            <tr><td><b>3. DNS sbagliato</b></td><td>Metti <code>dns-server=10.10.10.99</code></td>
+                <td><code>ping 8.8.8.8</code> funziona, <code>ping www.google.it</code> no. Il classico assoluto.</td></tr>
+            <tr><td><b>4. Maschera sbagliata</b></td><td>Sul PC, IP statico <code>10.10.10.50/16</code> invece di /24</td>
+                <td>Funziona quasi tutto ma alcune destinazioni no: il PC crede che siano locali e non passa dal router.</td></tr>
+            <tr><td><b>5. NAT rimosso</b></td><td><code>/ip firewall nat disable 0</code></td>
+                <td>Tutto locale funziona, Internet no. Il ping esce e non torna: le risposte non sanno come rientrare.</td></tr>
+            <tr><td><b>6. IP duplicato</b></td><td>Due dispositivi con lo stesso IP statico</td>
+                <td>Connessioni che vanno e vengono in modo casuale. Guarda <code>arp -a</code>: il MAC cambia da solo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="lab-step"><input type="checkbox" id="l03-1"><label for="l03-1">Guasto 1 provocato, sintomo osservato e annotato, ripristinato</label></div>
+      <div class="lab-step"><input type="checkbox" id="l03-2"><label for="l03-2">Guasto 2 provocato, sintomo osservato e annotato, ripristinato</label></div>
+      <div class="lab-step"><input type="checkbox" id="l03-3"><label for="l03-3">Guasto 3 provocato, sintomo osservato e annotato, ripristinato</label></div>
+      <div class="lab-step"><input type="checkbox" id="l03-4"><label for="l03-4">Guasto 4 provocato, sintomo osservato e annotato, ripristinato</label></div>
+      <div class="lab-step"><input type="checkbox" id="l03-5"><label for="l03-5">Guasto 5 provocato, sintomo osservato e annotato, ripristinato</label></div>
+      <div class="lab-step"><input type="checkbox" id="l03-6"><label for="l03-6">Guasto 6 provocato, sintomo osservato e annotato, ripristinato</label></div>
+      <div class="lab-step"><input type="checkbox" id="l03-7"><label for="l03-7">
+        <b>Prova finale:</b> fatti provocare un guasto a caso da un collega (o scegline uno a caso con un dado)
+        senza sapere quale, e diagnosticalo dai soli sintomi in meno di cinque minuti.</label></div>
+    </div>
+  </details>
+
+  <!-- ===== LAB 04 ===== -->
+  <details class="lab-card" data-lab="lab04">
+    <summary><span class="lab-n">LAB 04</span><h3>Vedere i pacchetti con Wireshark</h3>
+      <span class="badge lv1">Livello 1</span><span class="meta" data-lab-count>0/0</span></summary>
+    <div class="lab-body prose">
+      <div class="lab-goal"><b>Obiettivo:</b> vedere con i tuoi occhi ARP, DHCP, DNS e l'handshake TCP.
+        Dopo questo laboratorio i protocolli smettono di essere parole e diventano cose che hai visto.
+        Da fare dopo la lezione 1-24.</div>
+
+      <div class="lab-step"><input type="checkbox" id="l04-1"><label for="l04-1">
+        Installa <b>Wireshark</b> (gratuito, wireshark.org) e avvia una cattura sulla tua scheda di rete.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l04-2"><label for="l04-2">
+        <b>ARP.</b> Svuota la cache ARP (<code>arp -d *</code> da amministratore su Windows, <code>sudo arp -a -d</code>
+        su Mac), poi fai ping al gateway. Filtra con <code>arp</code>: vedi la domanda "chi ha 10.10.10.1?" e la
+        risposta. Due pacchetti, ed è tutto il protocollo.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l04-3"><label for="l04-3">
+        <b>DHCP.</b> Filtra con <code>dhcp</code> e rinnova l'indirizzo (<code>ipconfig /release</code> poi
+        <code>/renew</code>). Devi vedere quattro pacchetti: Discover, Offer, Request, ACK. Apri l'ACK e leggi
+        dentro i valori: indirizzo, maschera, gateway, DNS, durata del lease.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l04-4"><label for="l04-4">
+        <b>DNS.</b> Filtra con <code>dns</code> e apri un sito mai visitato. Vedi la domanda e la risposta con gli
+        IP. Nota quante richieste partono per una sola pagina: spesso decine.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l04-5"><label for="l04-5">
+        <b>Handshake TCP.</b> Filtra con <code>tcp.flags.syn==1</code>. Trova la sequenza SYN → SYN,ACK → ACK.
+        Quei tre pacchetti sono l'inizio di ogni connessione web della tua vita.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l04-6"><label for="l04-6">
+        <b>Confronto.</b> Guarda un pacchetto qualsiasi e apri i livelli nel riquadro centrale: Ethernet → IP → TCP → dati.
+        Quella è l'incapsulamento della lezione 1-04, vero, davanti a te.</label></div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>Wireshark · i filtri che userai sempre</div>
+<pre><span class="c"># protocolli di base</span>
+arp
+dhcp
+dns
+icmp
+
+<span class="c"># un host specifico, in qualsiasi direzione</span>
+ip.addr == <span class="n">10.10.10.50</span>
+
+<span class="c"># una conversazione precisa</span>
+ip.addr == <span class="n">10.10.10.50</span> &amp;&amp; ip.addr == <span class="n">8.8.8.8</span>
+
+<span class="c"># solo l'apertura delle connessioni TCP</span>
+tcp.flags.syn == <span class="n">1</span> &amp;&amp; tcp.flags.ack == <span class="n">0</span>
+
+<span class="c"># connessioni rifiutate: porta chiusa o firewall che risponde</span>
+tcp.flags.reset == <span class="n">1</span>
+
+<span class="c"># traffico verso una porta</span>
+tcp.port == <span class="n">443</span>
+</pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout__head">Il trucco del sniffer sul MikroTik</div>
+        <p>RouterOS sa catturare il traffico e mandarlo <b>in diretta a Wireshark</b> sul tuo PC. È esattamente
+        quello che farai sui FortiGate e sui Sophos in azienda quando un problema non si spiega.
+        Comando: <code>/tool sniffer set filter-interface=br-lan streaming-enabled=yes streaming-server=IP_DEL_TUO_PC</code>,
+        poi <code>/tool sniffer start</code>. Su Wireshark catturi l'interfaccia <code>udp port 37008</code>.</p>
+      </div>
+    </div>
+  </details>
+
+  <!-- ===== LAB in arrivo ===== -->
+  <details class="lab-card" data-lab="lab05">
+    <summary><span class="lab-n">LAB 05</span><h3>Tre VLAN separate e il traffico tra loro</h3>
+      <span class="badge lv2">Livello 2</span><span class="badge soon">in arrivo</span></summary>
+    <div class="lab-body prose">
+      <p>Costruirai tre reti separate sullo stesso router — uffici, ospiti, telecamere — le farai parlare in modo
+      controllato e proverai che una VLAN non vede l'altra. Arriva con il capitolo 2.1.</p>
+    </div>
+  </details>
+
+  <details class="lab-card" data-lab="lab06">
+    <summary><span class="lab-n">LAB 06</span><h3>Firewall: costruire le regole da zero</h3>
+      <span class="badge lv2">Livello 2</span><span class="badge soon">in arrivo</span></summary>
+    <div class="lab-body prose">
+      <p>Dalla catena vuota a un firewall stateful completo, con port forward e hairpin NAT. Arriva con il capitolo 2.4.</p>
+    </div>
+  </details>
+
+  <details class="lab-card" data-lab="lab07">
+    <summary><span class="lab-n">LAB 07</span><h3>Wi-Fi: SSID multipli e rete ospiti isolata</h3>
+      <span class="badge lv2">Livello 2</span><span class="badge soon">in arrivo</span></summary>
+    <div class="lab-body prose">
+      <p>Due SSID sullo stesso apparato, mappati su VLAN diverse, con la rete ospiti che non vede la rete aziendale.
+      Arriva con il capitolo 2.6.</p>
+    </div>
+  </details>
+
+  <details class="lab-card" data-lab="lab08">
+    <summary><span class="lab-n">LAB 08</span><h3>Un tunnel VPN che funziona davvero</h3>
+      <span class="badge lv2">Livello 2</span><span class="badge soon">in arrivo</span></summary>
+    <div class="lab-body prose">
+      <p>IPsec site-to-site e WireGuard a confronto, con la diagnosi di un tunnel che non sale.
+      Serve un secondo apparato (anche un router usato da 30 €, o una VM). Arriva con il capitolo 2.5.</p>
+    </div>
+  </details>
+
+</main>
+
+<footer id="np-footer"></footer>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/glossario-data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

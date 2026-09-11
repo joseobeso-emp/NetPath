@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TCP e UDP: porte, socket, handshake — NetPath</title>
+<meta name="description" content="La differenza tra una raccomandata e una cartolina, e perché le videochiamate usano la cartolina.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-22">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Trasporto, strumenti e metodo</span>
+      </nav>
+      <h1 class="lesson-title">TCP e UDP: porte, socket, handshake</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 22</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Scegliere consapevolmente tra TCP e UDP e capire perché un'applicazione usa l'uno o l'altro</li>
+        <li>Descrivere il three-way handshake e cosa significano i flag</li>
+        <li>Capire cos'è una porta e cos'è un socket</li>
+        <li>Leggere i sintomi di rete per capire a quale livello sta il problema</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Il livello 4 risponde a due domande: <em>a quale programma della macchina consegno?</em>
+e <em>con quali garanzie?</em>. La prima risposta sono le porte, la seconda è la scelta tra TCP e UDP.
+È anche il livello in cui si concentrano le regole dei firewall, quindi lo userai ogni giorno.</p>
+
+<h2>Le porte: il numero dell'interno</h2>
+
+<p>L'indirizzo IP identifica <strong>la macchina</strong>. Ma su una macchina girano decine di programmi
+che usano la rete insieme: browser, posta, desktop remoto, backup. Quando arriva un pacchetto, a chi va?</p>
+
+<p>La <span class="term" data-term="port">porta</span> è un numero da 1 a 65535 che identifica il
+programma. L'IP è l'indirizzo del palazzo, la porta è il numero dell'interno.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Intervallo</th><th>Nome</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><b>0 – 1023</b></td><td>Well-known</td>
+          <td>Servizi standard: 80 web, 443 web cifrato, 25 posta, 53 DNS. Su Linux servono privilegi di amministratore per usarle.</td></tr>
+      <tr><td><b>1024 – 49151</b></td><td>Registrate</td>
+          <td>Applicazioni note: 3389 RDP, 1433 SQL Server, 3306 MySQL, 5060 SIP.</td></tr>
+      <tr><td><b>49152 – 65535</b></td><td>Effimere</td>
+          <td>Scelte a caso dal client per la durata di una conversazione. Il tuo browser ne usa una diversa per ogni connessione.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Il socket: l'identità completa di una conversazione</h3>
+
+<p>Una conversazione è identificata da <strong>quattro valori</strong>: IP sorgente, porta sorgente,
+IP destinazione, porta destinazione. Questa quaterna si chiama <em>socket</em> ed è ciò che permette al
+tuo PC di avere venti schede del browser aperte sullo stesso sito senza confondersi: stesso IP, stessa
+porta di destinazione, ma <strong>porta sorgente diversa</strong> per ognuna.</p>
+
+<h2>TCP e UDP: due filosofie opposte</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Confronto tra TCP con conferme e ritrasmissioni e UDP senza garanzie">
+    <text x="175" y="22" text-anchor="middle" class="dg-title">TCP — la raccomandata</text>
+    <text x="525" y="22" text-anchor="middle" class="dg-title">UDP — la cartolina</text>
+
+    <line x1="60" y1="38" x2="60" y2="222" stroke="var(--dg-line-soft)" stroke-dasharray="4 4"/>
+    <line x1="290" y1="38" x2="290" y2="222" stroke="var(--dg-line-soft)" stroke-dasharray="4 4"/>
+    <line x1="410" y1="38" x2="410" y2="222" stroke="var(--dg-line-soft)" stroke-dasharray="4 4"/>
+    <line x1="640" y1="38" x2="640" y2="222" stroke="var(--dg-line-soft)" stroke-dasharray="4 4"/>
+
+    <defs><marker id="tcpA" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+      <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-2)"/></marker>
+      <marker id="tcpB" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+      <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-5)"/></marker>
+      <marker id="udpA" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+      <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-3)"/></marker></defs>
+
+    <g stroke="var(--dg-2)" stroke-width="1.6" marker-end="url(#tcpA)">
+      <path d="M62 56h224"/><path d="M62 104h224"/><path d="M62 176h224"/>
+    </g>
+    <g stroke="var(--dg-5)" stroke-width="1.6" marker-end="url(#tcpB)">
+      <path d="M288 80H64"/><path d="M288 128H64"/><path d="M288 200H64"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="175" y="50" text-anchor="middle">dato 1</text>
+      <text x="175" y="74" text-anchor="middle" fill="var(--dg-5)">ok, ricevuto</text>
+      <text x="175" y="98" text-anchor="middle">dato 2</text>
+      <text x="175" y="122" text-anchor="middle" fill="var(--dg-5)">ok, ricevuto</text>
+      <text x="175" y="152" text-anchor="middle" fill="var(--dg-3)">dato 3 — perso!</text>
+      <text x="175" y="170" text-anchor="middle">rimando il dato 3</text>
+      <text x="175" y="194" text-anchor="middle" fill="var(--dg-5)">ok, ricevuto</text>
+    </g>
+    <path d="M62 146h150" stroke="var(--dg-3)" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <path d="M206 140l12 12M218 140l-12 12" stroke="var(--dg-3)" stroke-width="2"/>
+
+    <g stroke="var(--dg-3)" stroke-width="1.6" marker-end="url(#udpA)">
+      <path d="M412 56h224"/><path d="M412 80h224"/><path d="M412 128h224"/><path d="M412 152h224"/>
+    </g>
+    <path d="M412 104h150" stroke="var(--dg-3)" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <path d="M556 98l12 12M568 98l-12 12" stroke="var(--dg-3)" stroke-width="2"/>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="525" y="50">dato 1</text><text x="525" y="74">dato 2</text>
+      <text x="525" y="98" fill="var(--dg-3)">dato 3 — perso, pazienza</text>
+      <text x="525" y="122">dato 4</text><text x="525" y="146">dato 5</text>
+    </g>
+    <text x="525" y="188" text-anchor="middle" class="dg-label-sm">Nessuna conferma, nessuna ritrasmissione.</text>
+    <text x="525" y="206" text-anchor="middle" class="dg-label-sm">Il flusso non si ferma mai ad aspettare.</text>
+    <text x="175" y="222" text-anchor="middle" class="dg-label-sm">Tutto arriva, ma il flusso si ferma finché non arriva.</text>
+  </svg>
+  </div>
+  <figcaption>TCP garantisce che <b>tutto</b> arrivi, in ordine e integro, al prezzo di fermarsi ad
+  aspettare. UDP non garantisce niente, ma non si ferma mai. Non è che uno sia migliore: risolvono
+  problemi diversi.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Perché una telefonata usa la cartolina
+  </div>
+  <p>Stai parlando al telefono con un amico e una parola si perde per strada.</p>
+  <p>Con <b>TCP</b> succederebbe questo: la conversazione si ferma, il sistema richiede quella parola,
+  aspetta che riarrivi, e poi riprende. Ma nel frattempo il tuo amico ha continuato a parlare, e tu ti
+  ritrovi indietro di mezzo secondo — e continui ad accumulare ritardo. <b>Peggiora invece di risolvere.</b></p>
+  <p>Con <b>UDP</b> succede questo: quella parola è persa, chi s'è visto s'è visto, si va avanti in tempo
+  reale. Senti un piccolo «clic» e la conversazione continua sincronizzata.</p>
+  <p>La regola generale: <b>quando arrivare in ritardo è peggio che non arrivare, si usa UDP.</b>
+  Voce, video in diretta, giochi, e — per un motivo diverso, la velocità — anche il DNS.</p>
+</div>
+
+<h2>Il three-way handshake</h2>
+
+<p>Prima di scambiare dati, TCP apre la connessione con tre pacchetti. Questi tre pacchetti sono la cosa
+che guarderai più spesso in una cattura.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Passo</th><th>Chi</th><th>Flag</th><th>Significato</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Client</td><td><b>SYN</b></td><td>«Voglio aprire una connessione, il mio numero di partenza è X»</td></tr>
+      <tr><td>2</td><td>Server</td><td><b>SYN, ACK</b></td><td>«Va bene, il mio numero è Y, e confermo il tuo X»</td></tr>
+      <tr><td>3</td><td>Client</td><td><b>ACK</b></td><td>«Confermo il tuo Y. Connessione stabilita, si parte»</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il valore diagnostico dei flag — leggilo due volte
+  </div>
+  <p>Quando in una cattura vedi cosa succede dopo un SYN, hai una diagnosi quasi certa:</p>
+  <div class="table-wrap" style="margin:10px 0 0">
+    <table>
+      <thead><tr><th>Cosa vedi</th><th>Cosa significa</th></tr></thead>
+      <tbody>
+        <tr><td><b>SYN → nessuna risposta</b>, e il SYN si ripete</td>
+            <td>Qualcosa <b>scarta silenziosamente</b>: quasi sempre un firewall con policy «drop», o l'host non esiste</td></tr>
+        <tr><td><b>SYN → RST</b> (reset)</td>
+            <td>L'host <b>c'è</b> ed è raggiungibile, ma <b>su quella porta non c'è nessuno in ascolto</b>: servizio spento, o firewall con policy «reject»</td></tr>
+        <tr><td><b>SYN → SYN,ACK → ACK</b></td>
+            <td>Connessione aperta: il livello 4 funziona. Se il problema persiste, è al livello 7</td></tr>
+        <tr><td><b>Handshake ok, poi silenzio</b></td>
+            <td>Sospetta l'<b>MTU</b>: i pacchetti piccoli passano, quelli grandi no</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0"><b>La distinzione tra nessuna risposta e RST è preziosa:</b>
+  «silenzio» punta a un firewall in mezzo, «reset» punta al servizio sulla macchina di destinazione.
+  Due direzioni d'indagine completamente diverse, distinguibili in tre secondi.</p>
+</div>
+
+<h2>Le altre cose che fa TCP</h2>
+
+<ul class="clean">
+  <li><b>Rimette in ordine.</b> I pacchetti possono arrivare disordinati; i numeri di sequenza permettono
+  di ricomporli.</li>
+  <li><b>Controlla il flusso</b> (finestra). Il ricevente dice «rallenta, non sto smaltendo»,
+  così un server veloce non sommerge un client lento.</li>
+  <li><b>Controlla la congestione.</b> TCP parte piano, accelera finché non perde pacchetti, poi
+  rallenta. È il motivo per cui un download raggiunge la velocità massima dopo qualche secondo, e per
+  cui su una linea con perdita di pacchetti la velocità crolla <em>molto</em> più di quanto ti
+  aspetteresti: TCP interpreta la perdita come congestione e si autolimita.</li>
+  <li><b>Chiude ordinatamente</b> con FIN e ACK da entrambe le parti.</li>
+</ul>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché l'1% di perdita fa crollare la velocità
+  </div>
+  <p>Un cliente ha una linea da 100 Mbps ma i trasferimenti vanno a 8 Mbps. Lo speedtest «dice che va
+  bene» perché fa tante connessioni in parallelo. Misuri la perdita di pacchetti: 1%.</p>
+  <p>Sembra pochissimo. Ma TCP, ogni volta che perde un pacchetto, <b>dimezza la finestra</b> perché
+  interpreta la perdita come congestione della rete. Con perdita continua, la velocità di una singola
+  connessione si stabilizza a una frazione della banda disponibile — e più lunga è la tratta (più alta
+  la latenza), peggio è.</p>
+  <p><b>Conclusione operativa:</b> quando un cliente dice «va lento», misurare la <b>perdita di
+  pacchetti</b> conta spesso più che misurare la banda. Un <code>ping -n 100</code> o un <code>mtr</code>
+  che mostrano l'1% di perdita spiegano tutto.</p>
+</div>
+
+<h2>Le porte da sapere a memoria</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Porta</th><th>Proto</th><th>Servizio</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td><b>22</b></td><td>TCP</td><td>SSH</td><td>Amministrazione remota cifrata</td></tr>
+      <tr><td><b>53</b></td><td>UDP/TCP</td><td>DNS</td><td>UDP di norma, TCP per risposte grandi</td></tr>
+      <tr><td><b>67/68</b></td><td>UDP</td><td>DHCP</td><td>Server 67, client 68</td></tr>
+      <tr><td><b>80 / 443</b></td><td>TCP</td><td>HTTP / HTTPS</td><td>La 443 oggi trasporta metà di Internet</td></tr>
+      <tr><td><b>123</b></td><td>UDP</td><td>NTP</td><td>L'ora sbagliata rompe Kerberos, certificati e VPN</td></tr>
+      <tr><td><b>389 / 636</b></td><td>TCP</td><td>LDAP / LDAPS</td><td>Interrogazione di Active Directory</td></tr>
+      <tr><td><b>445</b></td><td>TCP</td><td>SMB</td><td>Cartelle condivise. Mai esposta su Internet</td></tr>
+      <tr><td><b>500 / 4500</b></td><td>UDP</td><td>IPsec</td><td>Se sono bloccate, la VPN non sale</td></tr>
+      <tr><td><b>3389</b></td><td>TCP</td><td>RDP</td><td>Mai esposta: vettore numero uno dei ransomware</td></tr>
+      <tr><td><b>5060</b></td><td>UDP/TCP</td><td>SIP</td><td>Segnalazione VoIP; l'audio va su RTP, altre porte</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Provare se una porta risponde</div>
+<pre><span class="c"># Windows — il modo moderno e preciso</span>
+<span class="p">Test-NetConnection srv01 -Port 445</span>
+
+<span class="c"># Windows — telnet (va prima attivata la funzionalità)</span>
+<span class="p">telnet srv01 445</span>
+
+<span class="c"># macOS / Linux</span>
+<span class="p">nc -zv srv01 445</span>
+<span class="p">nc -zvu srv01 53</span>              <span class="c"># -u per UDP</span>
+
+<span class="c"># vedere quali porte sono in ascolto sulla MIA macchina</span>
+<span class="p">netstat -ano | findstr LISTENING</span>    <span class="c"># Windows</span>
+<span class="p">ss -tulpn</span>                            <span class="c"># Linux</span>
+<span class="p">lsof -i -P | grep LISTEN</span>             <span class="c"># macOS</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    UDP non si prova come TCP
+  </div>
+  <p>Con TCP, se la porta è aperta l'handshake si completa: hai una risposta chiara.</p>
+  <p>Con UDP non c'è nessun handshake: mandi un pacchetto e, se il servizio è aperto e non ha niente da
+  dire, <b>non risponde nulla</b>. Silenzio e porta aperta sono indistinguibili.</p>
+  <p>Per provare UDP bisogna mandare una richiesta <em>valida per quel protocollo</em> e vedere se
+  arriva una risposta sensata: per esempio una vera query DNS verso la 53, con
+  <code>nslookup nome IP_del_server</code>. È il motivo per cui i problemi sulle porte UDP sono più
+  faticosi da diagnosticare.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: TCP, UDP e porte",
+  "questions": [
+    { "q": "Perché il VoIP usa UDP invece di TCP?",
+      "a": [ {"t":"Perché ritrasmettere un pacchetto audio in ritardo peggiora la conversazione","ok":true},
+             {"t":"Perché UDP è cifrato e TCP no","ok":false},
+             {"t":"Perché UDP consuma meno banda","ok":false},
+             {"t":"Perché TCP non supporta l'audio","ok":false} ],
+      "e": "Un frammento di voce che arriva mezzo secondo dopo è inutile, e fermarsi ad aspettarlo accumula ritardo su tutto il resto. Meglio un piccolo «clic» e restare sincronizzati. Nessuno dei due protocolli cifra: la cifratura sta a un livello superiore." },
+
+    { "q": "Cosa identifica univocamente una conversazione di rete?",
+      "a": [ {"t":"La quaterna IP sorgente, porta sorgente, IP destinazione, porta destinazione","ok":true},
+             {"t":"Il solo indirizzo IP di destinazione","ok":false},
+             {"t":"L'indirizzo MAC dei due estremi","ok":false},
+             {"t":"La sola porta di destinazione","ok":false} ],
+      "e": "È il socket. Grazie alla porta sorgente diversa per ogni connessione, il tuo PC può avere venti schede aperte sullo stesso sito senza confondere le risposte — stesso IP e stessa porta 443, ma conversazioni distinte." },
+
+    { "q": "Mandi un SYN a un server e ricevi un RST. Cosa significa?",
+      "a": [ {"t":"L'host è raggiungibile ma su quella porta non c'è nessuno in ascolto","ok":true},
+             {"t":"Un firewall sta scartando il traffico","ok":false},
+             {"t":"L'host non esiste","ok":false},
+             {"t":"La connessione è stata stabilita correttamente","ok":false} ],
+      "e": "Il reset è una <b>risposta attiva</b>: qualcuno ha ricevuto il SYN e ha risposto «qui non c'è niente». Quindi routing e raggiungibilità funzionano, e il problema è il servizio (spento, in ascolto su un'altra porta) o un firewall configurato in «reject». Un firewall in «drop» produrrebbe invece <b>silenzio</b>, non un RST." },
+
+    { "q": "Una connessione si stabilisce correttamente ma poi non passa nulla. Cosa sospetti?",
+      "a": [ {"t":"Un problema di MTU: i pacchetti piccoli passano, quelli grandi no","ok":true},
+             {"t":"Il DNS non risolve","ok":false},
+             {"t":"La porta è chiusa","ok":false},
+             {"t":"Il cavo è difettoso","ok":false} ],
+      "e": "L'handshake usa pacchetti minuscoli e passa; i dati veri viaggiano in pacchetti grandi che, se eccedono l'MTU di un tratto (tipicamente dentro una VPN), vengono scartati. Sintomo tipico: «la connessione si apre e poi si blocca». Se la porta fosse chiusa l'handshake non si completerebbe; se fosse il DNS non si arriverebbe nemmeno a connettersi." },
+
+    { "q": "Perché una perdita di pacchetti dell'1% riduce la velocità molto più dell'1%?",
+      "a": [ {"t":"Perché TCP interpreta la perdita come congestione e riduce drasticamente la finestra","ok":true},
+             {"t":"Perché ogni pacchetto perso va ritrasmesso cento volte","ok":false},
+             {"t":"Perché la perdita corrompe anche i pacchetti vicini","ok":false},
+             {"t":"In realtà l'impatto è proprio dell'1%","ok":false} ],
+      "e": "TCP usa la perdita come segnale di congestione e dimezza la velocità di invio, poi risale lentamente. Con perdita continua la velocità si stabilizza molto sotto la banda disponibile, tanto più quanto è alta la latenza. Per questo, davanti a un «va lento», misurare la perdita conta spesso più che misurare la banda." },
+
+    { "q": "Perché è più difficile verificare se una porta UDP è aperta?",
+      "a": [ {"t":"Perché UDP non ha handshake: un servizio aperto che non ha nulla da dire semplicemente tace","ok":true},
+             {"t":"Perché le porte UDP sono sempre bloccate dai firewall","ok":false},
+             {"t":"Perché UDP usa numeri di porta diversi da TCP","ok":false},
+             {"t":"Perché UDP è cifrato","ok":false} ],
+      "e": "Senza handshake, «nessuna risposta» può significare sia porta chiusa sia porta aperta con un servizio silenzioso. Per avere una risposta sensata bisogna mandare una richiesta valida per quel protocollo — per esempio una vera query DNS verso la 53." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

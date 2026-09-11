@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DNS: la rubrica di Internet — NetPath</title>
+<meta name="description" content="Dalla cache del browser ai root server, con il percorso completo di una risoluzione e i guasti tipici.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-20">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>I servizi che tengono in piedi tutto</span>
+      </nav>
+      <h1 class="lesson-title">DNS: la rubrica di Internet</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 20</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Seguire una risoluzione DNS dall'inizio alla fine</li>
+        <li>Conoscere i tipi di record e a cosa servono</li>
+        <li>Diagnosticare i problemi DNS con nslookup e dig</li>
+        <li>Capire perché il DNS interno di Active Directory va trattato con rispetto</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">«Non è mai il DNS» dicono i tecnici. Ed è sempre il DNS. È il servizio che trasforma i
+nomi in indirizzi, sta sotto praticamente a ogni cosa che fa un utente, e quando si guasta produce
+sintomi che sembrano venire da qualsiasi altra parte. Capirlo bene ti fa risparmiare una quantità
+enorme di tempo.</p>
+
+<h2>Il problema che risolve</h2>
+
+<p>I computer si trovano tramite indirizzi IP. Le persone non ricordano gli indirizzi IP.
+Il DNS è l'elenco telefonico che collega le due cose — con una differenza importante rispetto a un
+elenco vero: <strong>non esiste un elenco unico</strong>. È distribuito su milioni di server in tutto
+il mondo, organizzati ad albero, e nessuno ha la lista completa.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: cercare una persona
+  </div>
+  <p>Devi trovare il numero di telefono di «Mario Rossi, di via Verdi, a Brescia, in Italia».
+  Non esiste un libro unico con tutti i numeri del mondo. Quindi:</p>
+  <p>Chiedi a un <b>ufficio informazioni internazionale</b>: «chi si occupa dell'Italia?»
+  Lui non conosce Mario, ma ti dice: «per l'Italia rivolgiti a quell'ufficio».<br>
+  Chiedi a <b>quell'ufficio</b>: «chi si occupa di Brescia?» Ti dice: «chiedi al comune di Brescia».<br>
+  Chiedi al <b>comune di Brescia</b>: «chi è Mario Rossi di via Verdi?» E finalmente ti dà il numero.</p>
+  <p>Tre domande, ognuna a chi ne sa un pezzetto in più, fino ad arrivare a chi ha la risposta esatta.
+  <b>Il DNS funziona esattamente così</b>, e ci mette qualche decina di millisecondi.
+  E come te, se lo rifai subito dopo non ricominci da capo: <b>te lo ricordi</b>. Quella memoria si
+  chiama cache.</p>
+</div>
+
+<h2>Il percorso completo di una risoluzione</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 380" role="img" aria-label="Il percorso di una risoluzione DNS dal browser ai root server fino al server autoritativo">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">«Dov'è www.esempio.it?»</text>
+
+    <g stroke-width="1.5">
+      <rect x="16" y="40" width="150" height="46" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="112" width="150" height="46" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+    </g>
+    <text x="91" y="60" text-anchor="middle" class="dg-label-sm">1 · Il tuo PC</text>
+    <text x="91" y="78" text-anchor="middle" class="dg-mono-sm">cache browser + OS + hosts</text>
+    <text x="91" y="132" text-anchor="middle" class="dg-label-sm">2 · DNS resolver</text>
+    <text x="91" y="150" text-anchor="middle" class="dg-mono-sm">router, server AD, 1.1.1.1</text>
+
+    <path d="M91 86v22" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#dns1)"/>
+    <defs><marker id="dns1" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+      <path d="M4 8L0 0h8z" fill="var(--dg-line)"/></marker>
+      <marker id="dns2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-4)"/></marker></defs>
+
+    <g stroke-width="1.5">
+      <rect x="330" y="56" width="200" height="44" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="330" y="128" width="200" height="44" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="330" y="200" width="200" height="44" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <text x="430" y="76" text-anchor="middle" class="dg-label-sm">3 · Root server (13 nel mondo)</text>
+    <text x="430" y="93" text-anchor="middle" class="dg-mono-sm">«per .it chiedi a…»</text>
+    <text x="430" y="148" text-anchor="middle" class="dg-label-sm">4 · Server del dominio .it</text>
+    <text x="430" y="165" text-anchor="middle" class="dg-mono-sm">«per esempio.it chiedi a…»</text>
+    <text x="430" y="220" text-anchor="middle" class="dg-label-sm">5 · Server autoritativo di esempio.it</text>
+    <text x="430" y="237" text-anchor="middle" class="dg-mono-sm">«www.esempio.it = 93.184.5.10»</text>
+
+    <g stroke="var(--dg-4)" stroke-width="1.5" fill="none" marker-end="url(#dns2)">
+      <path d="M170 128 L 324 78"/>
+      <path d="M170 138 L 324 150"/>
+      <path d="M170 148 L 324 222"/>
+    </g>
+
+    <rect x="16" y="286" width="668" height="34" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4"/>
+    <text x="350" y="307" text-anchor="middle" class="dg-mono-sm">6 · Il resolver risponde al PC E SI SEGNA LA RISPOSTA IN CACHE per il tempo indicato dal TTL</text>
+    <text x="350" y="346" text-anchor="middle" class="dg-label-sm">La prossima volta che qualcuno in azienda chiede lo stesso nome, la risposta arriva dal passo 2 in un millisecondo.</text>
+    <text x="350" y="366" text-anchor="middle" class="dg-label-sm">Il giro completo (passi 3-4-5) si fa solo la prima volta, o quando il TTL è scaduto.</text>
+  </svg>
+  </div>
+  <figcaption>Il tuo PC fa <b>una</b> domanda e riceve <b>una</b> risposta: si dice query ricorsiva.
+  Tutto il lavoro di inseguimento lo fa il resolver, con query iterative. È il motivo per cui il DNS
+  regge il traffico del pianeta: la cache ai vari livelli evita la stragrande maggioranza dei giri completi.</figcaption>
+</figure>
+
+<h2>Dove si annida la cache (e dove svuotarla)</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Livello</th><th>Durata</th><th>Come si svuota</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cache del browser</b></td><td>Minuti</td><td>Chiusura del browser, o <code>chrome://net-internals/#dns</code></td></tr>
+      <tr><td><b>Cache del sistema operativo</b></td><td>Segue il TTL</td>
+          <td><code>ipconfig /flushdns</code> (Windows)<br><code>sudo dscacheutil -flushcache</code> (macOS)</td></tr>
+      <tr><td><b>File hosts</b></td><td>Per sempre</td>
+          <td>Non è cache: è una forzatura manuale. <b>Sempre da controllare</b> quando un solo PC vede un sito diverso dagli altri.</td></tr>
+      <tr><td><b>Resolver aziendale</b></td><td>Segue il TTL</td>
+          <td><code>Clear-DnsServerCache</code> (Windows Server), <code>/ip dns cache flush</code> (MikroTik)</td></tr>
+      <tr><td><b>Resolver dell'operatore</b></td><td>Segue il TTL, ma alcuni «barano»</td><td>Non puoi: aspetti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il TTL e le migrazioni
+  </div>
+  <p>Ogni record DNS ha un <b>TTL</b>: per quanti secondi chi lo riceve può tenerlo in cache.
+  Un valore tipico è 3600 (un'ora), ma sono comuni anche 86400 (un giorno).</p>
+  <p><b>Conseguenza operativa importante:</b> se devi spostare un sito o un server di posta, abbassa il
+  TTL a 300 secondi <b>almeno 24-48 ore prima</b> della migrazione. Così, quando cambi l'indirizzo, il
+  mondo se ne accorge in cinque minuti invece che in un giorno. Poi lo rialzi.</p>
+  <p>Chi non lo fa passa la notte della migrazione a spiegare al cliente che «alcuni utenti vedono
+  ancora il vecchio server e bisogna aspettare». Sapere questo in anticipo è la differenza tra una
+  migrazione professionale e una pasticciata.</p>
+</div>
+
+<h2>I tipi di record</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Record</th><th>Cosa contiene</th><th>Esempio e uso</th></tr></thead>
+    <tbody>
+      <tr><td><b>A</b></td><td>Un indirizzo IPv4</td><td><code>www → 93.184.5.10</code></td></tr>
+      <tr><td><b>AAAA</b></td><td>Un indirizzo IPv6</td><td><code>www → 2606:2800::1</code></td></tr>
+      <tr><td><b>CNAME</b></td><td>Un alias verso un altro nome</td>
+          <td><code>shop → negozio.piattaforma.com</code>. Comodo: se cambia l'IP dell'altro, tu non tocchi niente.</td></tr>
+      <tr><td><b>MX</b></td><td>Chi riceve la posta del dominio</td>
+          <td><code>azienda.it → mail.protection.outlook.com</code>. Se è sbagliato, la posta non arriva.</td></tr>
+      <tr><td><b>TXT</b></td><td>Testo libero</td>
+          <td>SPF, DKIM, DMARC e le verifiche di proprietà del dominio. Fondamentale per la posta.</td></tr>
+      <tr><td><b>SRV</b></td><td>Quale server offre un certo servizio</td>
+          <td><b>Il cuore di Active Directory</b>: i PC trovano i domain controller così. E Teams e SIP li usano.</td></tr>
+      <tr><td><b>NS</b></td><td>Quali server sono autoritativi per il dominio</td><td>Delega di zona</td></tr>
+      <tr><td><b>PTR</b></td><td>La ricerca inversa: da IP a nome</td>
+          <td>Usata dai server di posta per verificare chi sta scrivendo. Se manca, le tue mail finiscono nello spam.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il DNS interno di Active Directory: trattare con rispetto</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore che rompe un'azienda intera
+  </div>
+  <p>In una rete con Active Directory, i PC <b>devono</b> avere come server DNS <b>solo i domain
+  controller</b>. Mai 8.8.8.8, mai 1.1.1.1, nemmeno «come secondario, per sicurezza».</p>
+  <p>Perché: i PC trovano i domain controller interrogando i record <b>SRV</b>, che esistono solo nel
+  DNS interno. Se un PC per caso interroga il DNS pubblico, quel nome non esiste, e da lì partono i
+  sintomi più assurdi: accesso lentissimo, criteri di gruppo non applicati, cartelle condivise
+  irraggiungibili, «impossibile contattare il dominio» a intermittenza.</p>
+  <p>E siccome il PC alterna i due server DNS, <b>il guasto è intermittente</b> — il che lo rende
+  difficilissimo da diagnosticare per chi non conosce questa regola. Il DNS pubblico si configura
+  <b>sul domain controller</b>, come forwarder: lui sa quando usare l'uno e quando l'altro.</p>
+</div>
+
+<h2>Diagnosticare il DNS</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>I comandi che useranno per anni</div>
+<pre><span class="c"># interrogazione base</span>
+<span class="p">nslookup www.azienda.it</span>
+
+<span class="c"># chiedere a un server SPECIFICO, scavalcando quello configurato</span>
+<span class="c"># è il comando più utile di tutti: dice se il problema è il nome o il server</span>
+<span class="p">nslookup www.azienda.it 1.1.1.1</span>
+
+<span class="c"># chiedere un tipo di record preciso</span>
+<span class="p">nslookup -type=MX azienda.it</span>
+<span class="p">nslookup -type=TXT azienda.it</span>
+
+<span class="c"># dig (macOS/Linux, e installabile su Windows) — più leggibile</span>
+<span class="p">dig www.azienda.it</span>
+<span class="p">dig @1.1.1.1 azienda.it MX</span>
+<span class="p">dig +trace www.azienda.it</span>     <span class="c"># mostra TUTTO il percorso, dai root in giù</span>
+<span class="p">dig +short www.azienda.it</span>     <span class="c"># solo la risposta, senza contorno</span>
+
+<span class="c"># Windows: cache locale e svuotamento</span>
+<span class="p">ipconfig /displaydns</span>
+<span class="p">ipconfig /flushdns</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il test che separa il DNS da tutto il resto in dieci secondi
+  </div>
+  <ol style="margin-bottom:0">
+    <li><code>ping 8.8.8.8</code> → <b>funziona?</b> Allora rete, routing e NAT sono a posto.</li>
+    <li><code>ping www.google.it</code> → <b>non funziona?</b> Il problema è <b>solo</b> il DNS.</li>
+    <li><code>nslookup www.google.it 1.1.1.1</code> → <b>risponde?</b> Allora il nome esiste e Internet
+    funziona: il guasto è nel <b>tuo</b> server DNS, non altrove.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">Tre comandi, e hai isolato il problema con certezza.
+  Questo è il genere di sequenza che fa dire ai colleghi «questo sa il fatto suo».</p>
+</div>
+
+<h2>Split DNS: lo stesso nome, due risposte</h2>
+
+<p>Un'azienda ha <code>portale.azienda.it</code>, che dall'esterno risponde sull'IP pubblico
+<code>203.0.113.5</code> e internamente sta su <code>10.10.10.50</code>.</p>
+
+<p>Se dall'interno gli utenti risolvono l'IP pubblico, il traffico esce dal firewall e deve rientrare —
+il famoso <span class="term" data-term="hairpin">hairpin NAT</span>, che va configurato apposta e spesso
+non funziona. La soluzione elegante è lo <span class="term" data-term="split-dns">split DNS</span>:
+nel DNS interno si crea una zona per <code>azienda.it</code> con il record che punta all'indirizzo
+privato. Stesso nome, risposta diversa a seconda di chi chiede.</p>
+
+<p>È una tecnica che risolve in cinque minuti problemi che altrimenti costano ore, e che dovresti
+proporre ogni volta che un cliente pubblica un servizio raggiungibile sia da dentro sia da fuori.</p>
+
+<h2>I guasti DNS più comuni</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>Il ping all'IP funziona, al nome no</td><td>DNS non raggiungibile o configurato male</td></tr>
+      <tr><td>Un solo PC vede un sito diverso dagli altri</td><td><b>File hosts</b> modificato</td></tr>
+      <tr><td>Dopo una migrazione alcuni vedono il vecchio server</td><td>Cache non ancora scaduta: TTL troppo alto</td></tr>
+      <tr><td>«Impossibile contattare il dominio», a intermittenza</td><td>DNS pubblici configurati sui PC in una rete Active Directory</td></tr>
+      <tr><td>Le mail in uscita finiscono nello spam</td><td>Record SPF, DKIM, DMARC o PTR mancanti o errati</td></tr>
+      <tr><td>Un sito interno funziona da fuori ma non da dentro</td><td>Manca lo split DNS (o l'hairpin NAT)</td></tr>
+      <tr><td>Navigazione lentissima all'apertura delle pagine</td><td>Un DNS secondario irraggiungibile: si aspetta il timeout a ogni richiesta</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: DNS",
+  "questions": [
+    { "q": "Il <code>ping 8.8.8.8</code> funziona, il <code>ping www.google.it</code> no. Dove cerchi?",
+      "a": [ {"t":"Nel DNS","ok":true},
+             {"t":"Nel routing","ok":false},
+             {"t":"Nel cavo di rete","ok":false},
+             {"t":"Nel NAT del firewall","ok":false} ],
+      "e": "Un IP numerico raggiungibile dimostra che livelli 1, 2, 3 e il NAT funzionano. L'unica cosa in più che serve per usare un <em>nome</em> è la traduzione nome→indirizzo. È il test diagnostico più rapido ed efficace che esista." },
+
+    { "q": "Perché in una rete Active Directory i PC non devono avere DNS pubblici configurati?",
+      "a": [ {"t":"Perché i record SRV dei domain controller esistono solo nel DNS interno","ok":true},
+             {"t":"Perché i DNS pubblici sono più lenti","ok":false},
+             {"t":"Perché violano le licenze Microsoft","ok":false},
+             {"t":"Perché non supportano i nomi con il punto","ok":false} ],
+      "e": "I PC localizzano i domain controller interrogando record SRV che esistono solo nella zona interna. Se una richiesta finisce al DNS pubblico, quel nome non esiste e partono sintomi assurdi e <b>intermittenti</b> — perché il PC alterna i server configurati. I DNS pubblici si mettono come forwarder <em>sul domain controller</em>, non sui client." },
+
+    { "q": "Cosa indica il TTL di un record DNS?",
+      "a": [ {"t":"Per quanti secondi la risposta può essere tenuta in cache","ok":true},
+             {"t":"Quanti router il pacchetto può attraversare","ok":false},
+             {"t":"Per quanto tempo il dominio resta registrato","ok":false},
+             {"t":"Il tempo massimo di risposta del server","ok":false} ],
+      "e": "In ambito DNS il TTL è la durata della cache. Il contatore dei salti è invece il TTL dell'<em>intestazione IP</em>: stesso nome, due significati diversi, ed è una confusione frequentissima. Prima di una migrazione si abbassa il TTL a 300 secondi, così il cambio si propaga in minuti invece che in ore." },
+
+    { "q": "Un solo PC apre un sito interno vedendo una versione diversa da tutti gli altri. Cosa controlli per primo?",
+      "a": [ {"t":"Il file hosts di quel PC","ok":true},
+             {"t":"Il server DNS aziendale","ok":false},
+             {"t":"Il firewall","ok":false},
+             {"t":"Il record MX del dominio","ok":false} ],
+      "e": "Il guasto colpisce <b>un solo PC</b>, quindi la causa è locale a quella macchina. Il file hosts ha la precedenza su qualsiasi DNS e non scade mai: una riga scritta da un tecnico mesi prima per una prova resta lì per sempre. È la prima cosa da guardare in questi casi." },
+
+    { "q": "Un'azienda pubblica <code>portale.azienda.it</code>. Da fuori funziona, da dentro no. Qual è la soluzione più pulita?",
+      "a": [ {"t":"Split DNS: nel DNS interno il nome punta all'indirizzo privato","ok":true},
+             {"t":"Aprire la porta 443 sul firewall","ok":false},
+             {"t":"Assegnare un secondo indirizzo pubblico","ok":false},
+             {"t":"Disattivare il NAT","ok":false} ],
+      "e": "Dall'interno il nome risolve l'IP pubblico e il traffico dovrebbe uscire e rientrare dal firewall (hairpin NAT), cosa che va configurata apposta e spesso non funziona. Lo split DNS elimina il problema alla radice: chi chiede da dentro riceve l'indirizzo privato e va dritto al server. Stesso nome, risposta diversa in base a chi chiede." },
+
+    { "q": "Quale record DNS determina dove viene consegnata la posta di un dominio?",
+      "a": [ {"t":"MX","ok":true}, {"t":"A","ok":false}, {"t":"CNAME","ok":false}, {"t":"PTR","ok":false} ],
+      "e": "MX (Mail eXchanger) indica quali server ricevono la posta del dominio, con una priorità. Il record A dà un indirizzo, il CNAME è un alias, e il PTR è la ricerca inversa da IP a nome — anch'esso importante per la posta, perché molti server lo verificano prima di accettare un messaggio." },
+
+    { "q": "La navigazione è lentissima solo all'apertura di ogni nuova pagina, poi il caricamento è veloce. Cosa sospetti?",
+      "a": [ {"t":"Un server DNS secondario irraggiungibile: si aspetta il suo timeout a ogni richiesta","ok":true},
+             {"t":"La banda Internet insufficiente","ok":false},
+             {"t":"Il firewall che ispeziona il traffico","ok":false},
+             {"t":"Il Wi-Fi con segnale debole","ok":false} ],
+      "e": "Il ritardo <b>solo all'inizio</b> e poi velocità normale è la firma di un problema di risoluzione, non di trasferimento. Se un DNS configurato non risponde, il sistema aspetta il timeout prima di provare il successivo, a ogni nome nuovo. Banda insufficiente o Wi-Fi debole rallenterebbero anche il caricamento dei contenuti." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

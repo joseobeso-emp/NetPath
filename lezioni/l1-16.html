@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Indirizzi privati, pubblici e speciali — NetPath</title>
+<meta name="description" content="RFC1918, loopback, APIPA, link-local, CGNAT: chi è chi e perché te ne accorgi guardando un ipconfig.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-16">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Indirizzamento IP</span>
+      </nav>
+      <h1 class="lesson-title">Indirizzi privati, pubblici e speciali</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 16</span>
+        <span class="chip">18 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Riconoscere a colpo d'occhio che tipo di indirizzo hai davanti</li>
+        <li>Sapere quali blocchi usare quando progetti una rete da zero</li>
+        <li>Capire perché certi indirizzi causano problemi ricorrenti</li>
+        <li>Scegliere uno spazio di indirizzamento che non darà problemi con VPN e fusioni aziendali</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Non tutti gli indirizzi sono uguali. Alcuni esistono solo dentro casa tua, altri esistono
+per tutto il mondo, e altri ancora hanno significati speciali che devi riconoscere al volo. Saper
+classificare un indirizzo in due secondi è una di quelle competenze che rendono la diagnosi immediata.</p>
+
+<h2>Privati e pubblici</h2>
+
+<p>Nel 1996 furono riservati tre blocchi di indirizzi da usare <strong>liberamente dentro le reti
+private</strong>. Su Internet non esistono: nessun router pubblico li instrada. Per uscire serve il NAT.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Blocco</th><th>Da → a</th><th>Indirizzi</th><th>Quando si usa</th></tr></thead>
+    <tbody>
+      <tr><td><code>10.0.0.0/8</code></td><td>10.0.0.0 → 10.255.255.255</td><td>16,7 milioni</td>
+          <td>Aziende medio-grandi, multi-sede. Il più flessibile: ti dà tutto lo spazio che vuoi.</td></tr>
+      <tr><td><code>172.16.0.0/12</code></td><td>172.<b>16</b>.0.0 → 172.<b>31</b>.255.255</td><td>1 milione</td>
+          <td>Il meno usato, e proprio per questo il più utile per evitare conflitti.</td></tr>
+      <tr><td><code>192.168.0.0/16</code></td><td>192.168.0.0 → 192.168.255.255</td><td>65.536</td>
+          <td>Piccoli uffici e reti domestiche. Usatissimo — ed è esattamente il suo problema.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore sul blocco 172
+  </div>
+  <p>Il blocco privato è <code>172.16.0.0/12</code>: va da <b>172.16</b>.x.x a <b>172.31</b>.x.x.
+  <b>172.15</b> e <b>172.32</b> sono indirizzi pubblici, appartenenti a qualcun altro.</p>
+  <p>Se per sbaglio configuri una rete interna su 172.32.0.0/16, tutto sembrerà funzionare — finché
+  qualcuno non dovrà raggiungere un server vero che sta su quegli indirizzi, e a quel punto il traffico
+  resterà dentro l'azienda invece di uscire. È un guasto che si manifesta mesi dopo, e nessuno lo collega
+  più alla scelta iniziale.</p>
+</div>
+
+<h2>Gli indirizzi speciali che devi riconoscere</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 680 330" role="img" aria-label="Elenco visivo dei blocchi di indirizzi speciali con il loro significato">
+    <text x="340" y="20" text-anchor="middle" class="dg-title">Guardi l'inizio dell'indirizzo e sai già cos'è</text>
+    <g stroke-width="1.5">
+      <rect x="16" y="34"  width="648" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="74"  width="648" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="114" width="648" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="154" width="648" height="34" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="16" y="194" width="648" height="34" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="16" y="234" width="648" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="16" y="274" width="648" height="34" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="32" y="55">10.x.x.x</text>          <text x="200" y="55" class="dg-label-sm">privato RFC 1918 — dentro le aziende</text>
+      <text x="32" y="95">172.16–31.x.x</text>     <text x="200" y="95" class="dg-label-sm">privato RFC 1918 — attenzione ai confini</text>
+      <text x="32" y="135">192.168.x.x</text>      <text x="200" y="135" class="dg-label-sm">privato RFC 1918 — piccoli uffici e case</text>
+      <text x="32" y="175">127.x.x.x</text>        <text x="200" y="175" class="dg-label-sm">loopback — «me stesso», non esce mai dalla macchina</text>
+      <text x="32" y="215">169.254.x.x</text>      <text x="200" y="215" class="dg-label-sm">APIPA — il DHCP non ha risposto</text>
+      <text x="32" y="255">100.64–127.x.x</text>   <text x="200" y="255" class="dg-label-sm">CGNAT — sei dietro il NAT dell'operatore</text>
+      <text x="32" y="295">224–239.x.x.x</text>    <text x="200" y="295" class="dg-label-sm">multicast — un flusso destinato a un gruppo</text>
+    </g>
+    <text x="620" y="55" class="dg-mono-sm" text-anchor="end">serve NAT per uscire</text>
+    <text x="620" y="175" class="dg-mono-sm" text-anchor="end">sempre e solo locale</text>
+    <text x="620" y="215" class="dg-mono-sm" text-anchor="end">è un guasto, non una scelta</text>
+    <text x="620" y="255" class="dg-mono-sm" text-anchor="end">niente port forward</text>
+  </svg>
+  </div>
+  <figcaption>Sette famiglie. Riconoscerle a colpo d'occhio ti fa saltare interi passaggi di diagnosi:
+  vedere un 169.254 ti dice immediatamente dove cercare, e un 100.64 ti dice immediatamente cosa
+  <em>non</em> potrai fare.</figcaption>
+</figure>
+
+<h3>127.0.0.1 — il loopback</h3>
+<p>«Me stesso». Il traffico verso 127.x.x.x non esce mai dalla scheda di rete: il sistema operativo lo
+rimanda a sé stesso. Ha un nome che conosci: <code>localhost</code>.</p>
+<p>Serve a provare che la pila di rete del computer funziona, indipendentemente da cavi e configurazioni.
+Se <code>ping 127.0.0.1</code> non risponde, il problema non è la rete: è il sistema operativo.
+Tutto il blocco <code>/8</code> è riservato: anche 127.55.3.2 è te stesso.</p>
+
+<h3>169.254.x.x — APIPA / link-local</h3>
+<p>Quando un dispositivo chiede un indirizzo al DHCP e non riceve risposta, se lo assegna da solo in
+questo blocco. <strong>Non è una configurazione: è un sintomo di guasto.</strong></p>
+<p>Le cause, in ordine di probabilità: il server DHCP è spento o ha esaurito gli indirizzi; il cavo è
+collegato a una VLAN dove non c'è DHCP; manca il relay tra VLAN; oppure il cavo non arriva dove pensi
+che arrivi.</p>
+
+<h3>100.64.0.0/10 — CGNAT</h3>
+<p>Lo spazio riservato al NAT degli operatori. Se il router di un cliente ha un indirizzo WAN in questo
+blocco, quel cliente <strong>non ha un indirizzo pubblico proprio</strong>: lo condivide con altri.</p>
+<p>Conseguenze immediate, tutte da comunicare al cliente prima di prendere impegni: niente port
+forwarding, niente VPN in ingresso, niente pubblicazione di servizi, e il DNS dinamico non risolve il
+problema. L'unica soluzione è chiedere all'operatore un indirizzo pubblico, di solito a pagamento
+(tipicamente 3–10 € al mese).</p>
+
+<h3>224.0.0.0/4 — multicast</h3>
+<p>Flussi destinati a gruppi: IPTV, videosorveglianza, alcuni protocolli di routing.
+<code>224.0.0.5</code> per esempio è «tutti i router OSPF».</p>
+
+<h3>Altri da conoscere</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Indirizzo</th><th>Significato</th></tr></thead>
+    <tbody>
+      <tr><td><code>0.0.0.0</code></td><td>«Nessun indirizzo» o «qualsiasi indirizzo». In una tabella di routing <code>0.0.0.0/0</code> significa «tutto il resto del mondo»: è la rotta di default.</td></tr>
+      <tr><td><code>255.255.255.255</code></td><td>Broadcast limitato: a tutti quelli della rete locale. Lo usa il DHCP Discover, quando il client non ha ancora un indirizzo.</td></tr>
+      <tr><td><code>192.0.2.0/24</code><br><code>198.51.100.0/24</code><br><code>203.0.113.0/24</code></td><td>Riservati alla <b>documentazione</b>. Usali negli esempi e negli schemi: sono garantiti non assegnati a nessuno.</td></tr>
+      <tr><td><code>198.18.0.0/15</code></td><td>Riservato ai test di prestazioni delle apparecchiature. Alcuni prodotti lo usano internamente — se lo vedi comparire, non è un errore.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Scegliere lo spazio di indirizzamento: la decisione che ti perseguita</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Perché 192.168.1.0/24 è la scelta peggiore possibile
+  </div>
+  <p>È l'impostazione predefinita di quasi tutti i router domestici del mondo. Ed è per questo che va
+  evitata in azienda, per un motivo molto concreto:</p>
+  <p>Il giorno in cui un dipendente lavora da casa e attiva la VPN, il suo PC si trova con
+  <b>la rete di casa e la rete dell'ufficio con gli stessi indirizzi</b>. Il computer non sa più se
+  192.168.1.10 è la stampante di casa o il server dell'azienda. La VPN si collega, ma non funziona
+  niente — e la diagnosi è confusa perché «la VPN risulta connessa».</p>
+  <p>Lo stesso problema si presenta, in forma peggiore, quando due aziende si fondono o quando devi
+  collegare due sedi che hanno entrambe scelto la stessa rete. Risolverlo dopo richiede NAT su NAT,
+  ed è una delle situazioni più sgradevoli in cui puoi ritrovarti.</p>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Come scegliere bene, in trenta secondi
+  </div>
+  <p>Usa <code>10.x.y.0/24</code> con un criterio, dove <b>x identifica la sede</b> e
+  <b>y identifica la VLAN</b>:</p>
+  <div class="table-wrap" style="margin:10px 0 0">
+    <table>
+      <thead><tr><th>Sede</th><th>VLAN 10 Uffici</th><th>VLAN 20 Ospiti</th><th>VLAN 30 Telecamere</th><th>VLAN 99 Gestione</th></tr></thead>
+      <tbody>
+        <tr><td><b>Sede centrale</b> (x=10)</td><td>10.10.10.0/24</td><td>10.10.20.0/24</td><td>10.10.30.0/24</td><td>10.10.99.0/24</td></tr>
+        <tr><td><b>Filiale Brescia</b> (x=20)</td><td>10.20.10.0/24</td><td>10.20.20.0/24</td><td>10.20.30.0/24</td><td>10.20.99.0/24</td></tr>
+        <tr><td><b>Filiale Verona</b> (x=30)</td><td>10.30.10.0/24</td><td>10.30.20.0/24</td><td>10.30.30.0/24</td><td>10.30.99.0/24</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0">Vantaggi enormi e gratuiti: <b>guardi un indirizzo e sai
+  subito sede e VLAN</b>; le regole firewall diventano leggibili; le rotte verso una sede si scrivono
+  in una riga sola (<code>10.20.0.0/16</code> → filiale Brescia); non collide mai con le reti domestiche
+  dei dipendenti; e c'è spazio per 250 sedi e 250 VLAN ciascuna.</p>
+</div>
+
+<h2>Riconoscimento rapido: la tabella del colpo d'occhio</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Vedi…</th><th>Concludi immediatamente</th><th>Prossima mossa</th></tr></thead>
+    <tbody>
+      <tr><td><code>169.254.x.x</code></td><td>Il DHCP non risponde</td><td>Verifica DHCP, VLAN della porta, cavo</td></tr>
+      <tr><td><code>127.0.0.1</code></td><td>Sta parlando con sé stesso</td><td>Se il ping fallisce, il problema è il sistema operativo</td></tr>
+      <tr><td><code>100.64–127.x.x</code> sulla WAN</td><td>Il cliente è dietro CGNAT</td><td>Niente servizi pubblicati: chiedi un IP pubblico all'operatore</td></tr>
+      <tr><td><code>192.168.1.x</code> in azienda</td><td>Collisione garantita con le reti di casa</td><td>Pianifica una migrazione dell'indirizzamento</td></tr>
+      <tr><td><code>172.32.x.x</code> in rete interna</td><td>Non è privato: è pubblico di qualcun altro</td><td>Va corretto prima che diventi un problema</td></tr>
+      <tr><td>Gateway <code>0.0.0.0</code></td><td>Non c'è rotta di default</td><td>Il dispositivo non esce dalla sua rete</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: tipi di indirizzo",
+  "questions": [
+    { "q": "Quale di questi NON è un indirizzo privato?",
+      "a": [ {"t":"172.35.4.1","ok":true}, {"t":"172.20.4.1","ok":false},
+             {"t":"10.200.3.7","ok":false}, {"t":"192.168.44.9","ok":false} ],
+      "e": "Il blocco privato è <code>172.16.0.0/12</code>, cioè da 172.<b>16</b> a 172.<b>31</b>. Il 172.35 è già fuori: è spazio pubblico assegnato a qualcun altro. È l'errore più frequente in assoluto perché «172» suona sempre privato." },
+
+    { "q": "Un router di un cliente ha indirizzo WAN <code>100.92.14.8</code>. Cosa significa?",
+      "a": [ {"t":"È dietro CGNAT: non ha un IP pubblico proprio","ok":true},
+             {"t":"Ha un IP pubblico regolare","ok":false},
+             {"t":"Il DHCP dell'operatore non ha funzionato","ok":false},
+             {"t":"È un indirizzo di loopback","ok":false} ],
+      "e": "<code>100.64.0.0/10</code> (da 100.64 a 100.127) è lo spazio riservato al CGNAT. Il cliente condivide un IP pubblico con altri utenti: niente port forward, niente VPN in ingresso, niente servizi pubblicati. Va detto <b>prima</b> di accettare un lavoro di accesso remoto." },
+
+    { "q": "Perché <code>192.168.1.0/24</code> è una pessima scelta per una rete aziendale?",
+      "a": [ {"t":"Perché è la rete predefinita di quasi tutti i router domestici, e collide con le VPN dei dipendenti","ok":true},
+             {"t":"Perché supporta troppi pochi host","ok":false},
+             {"t":"Perché non è un indirizzo privato valido","ok":false},
+             {"t":"Perché i firewall la bloccano per impostazione predefinita","ok":false} ],
+      "e": "Quando un dipendente si collega in VPN da casa, il suo PC vede la stessa rete da due parti e non sa più dove mandare i pacchetti: la VPN risulta connessa ma niente funziona. Lo stesso problema si presenta collegando due sedi che hanno fatto la stessa scelta. È tecnicamente valida come rete: è la <em>collisione</em> il problema." },
+
+    { "q": "Cosa significa <code>0.0.0.0/0</code> in una tabella di routing?",
+      "a": [ {"t":"La rotta di default: tutto ciò che non corrisponde ad altre rotte","ok":true},
+             {"t":"Un errore di configurazione","ok":false},
+             {"t":"L'indirizzo del router stesso","ok":false},
+             {"t":"Una rete disabilitata","ok":false} ],
+      "e": "Prefisso zero significa «nessun bit deve corrispondere», quindi corrisponde a qualunque destinazione. Siccome i router scelgono sempre il prefisso più specifico, questa rotta viene usata solo quando nessun'altra corrisponde: è il cartello «per tutto il resto, di qua»." },
+
+    { "q": "Il <code>ping 127.0.0.1</code> su un PC non risponde. Cosa concludi?",
+      "a": [ {"t":"Il problema è nel sistema operativo, non nella rete","ok":true},
+             {"t":"Il cavo di rete è scollegato","ok":false},
+             {"t":"Il gateway è configurato male","ok":false},
+             {"t":"Il firewall aziendale sta bloccando l'ICMP","ok":false} ],
+      "e": "Il loopback non esce mai dalla macchina: non tocca cavi, switch, gateway né firewall di rete. Se non risponde, la pila TCP/IP del sistema operativo è compromessa, oppure c'è un firewall <em>locale</em> configurato in modo assurdo. Il risultato è comunque utilissimo: hai escluso in un colpo solo tutta l'infrastruttura." },
+
+    { "q": "Quale schema di indirizzamento conviene per un cliente con tre sedi e quattro VLAN ciascuna?",
+      "a": [ {"t":"10.<b>sede</b>.<b>vlan</b>.0/24, per esempio 10.20.30.0/24 per la sede 20 VLAN 30","ok":true},
+             {"t":"192.168.1.0/24 in tutte e tre le sedi","ok":false},
+             {"t":"Una sola rete /16 piatta per tutto","ok":false},
+             {"t":"Indirizzi scelti a caso, purché privati","ok":false} ],
+      "e": "Codificare sede e VLAN dentro l'indirizzo rende tutto leggibile a colpo d'occhio, permette di riassumere le rotte verso una sede in una riga sola (<code>10.20.0.0/16</code>) ed evita collisioni con le reti domestiche. Reti identiche in sedi diverse rendono impossibile il routing tra loro; una rete piatta annulla ogni segmentazione." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

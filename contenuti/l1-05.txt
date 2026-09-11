@@ -1,0 +1,297 @@
+#id: l1-05
+#title: Cavi di rame: categorie, pin, errori classici
+#min: 22
+#level: 1
+#chapter: Il mondo fisico
+#desc: Cat5e, Cat6, Cat6a, schermature, lunghezze massime e i tre errori che causano il 40% dei ticket "la rete è lenta".
+#obj: Scegliere la categoria di cavo giusta senza sprecare soldi del cliente
+#obj: Capire perché i fili sono intrecciati e perché contano i 100 metri
+#obj: Riconoscere i sintomi di un problema di cablaggio prima di cercarlo altrove
+#obj: Sapere cosa chiedere quando un cliente dice "la rete è lenta in magazzino"
+---
+<p class="lead">Il livello 1 è quello che i tecnici snobbano e che si vendica. Una percentuale enorme di
+guasti «inspiegabili» — lentezze a singhiozzo, telefoni VoIP che gracchiano, apparati che si riavviano —
+finisce in un cavo fatto male, troppo lungo, o passato accanto a un cavo di corrente. Questa lezione ti
+mette in condizione di escludere il livello 1 in cinque minuti, che è esattamente ciò che serve.</p>
+
+<h2>Com'è fatto un cavo di rete</h2>
+
+<p>Dentro la guaina ci sono <strong>otto fili di rame, raggruppati in quattro coppie</strong>, e ogni coppia
+è <strong>intrecciata su sé stessa</strong>. Il nome tecnico è infatti <em>twisted pair</em>, doppino
+intrecciato.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 260" role="img" aria-label="Sezione di un cavo di rete con quattro coppie intrecciate e schema dei pin del connettore RJ45">
+    <text x="150" y="22" text-anchor="middle" class="dg-title">Le quattro coppie</text>
+    <circle cx="150" cy="130" r="82" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="2"/>
+    <circle cx="150" cy="130" r="74" fill="none" stroke="var(--dg-line-soft)" stroke-width="1"/>
+    <g stroke-width="1.4">
+      <circle cx="118" cy="100" r="11" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <circle cx="142" cy="94"  r="11" fill="var(--dg-surface)" stroke="var(--dg-3)"/>
+      <circle cx="182" cy="106" r="11" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <circle cx="186" cy="132" r="11" fill="var(--dg-surface)" stroke="var(--dg-5)"/>
+      <circle cx="166" cy="166" r="11" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <circle cx="140" cy="172" r="11" fill="var(--dg-surface)" stroke="var(--dg-2)"/>
+      <circle cx="110" cy="152" r="11" fill="var(--dg-3-fill)" stroke="var(--dg-4)"/>
+      <circle cx="108" cy="126" r="11" fill="var(--dg-surface)" stroke="var(--dg-4)"/>
+    </g>
+    <text x="150" y="232" text-anchor="middle" class="dg-label-sm">4 coppie · 8 fili · ogni coppia ha un colore pieno e uno a righe</text>
+
+    <text x="470" y="22" text-anchor="middle" class="dg-title">Il connettore RJ45, pin per pin</text>
+    <rect x="372" y="44" width="196" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.6"/>
+    <g class="dg-mono-sm">
+      <rect x="384" y="56" width="20" height="96" fill="var(--dg-3-fill)"/><text x="394" y="168" text-anchor="middle">1</text>
+      <rect x="406" y="56" width="20" height="96" fill="var(--dg-3-fill)" opacity=".45"/><text x="416" y="168" text-anchor="middle">2</text>
+      <rect x="428" y="56" width="20" height="96" fill="var(--dg-5-fill)"/><text x="438" y="168" text-anchor="middle">3</text>
+      <rect x="450" y="56" width="20" height="96" fill="var(--dg-2-fill)"/><text x="460" y="168" text-anchor="middle">4</text>
+      <rect x="472" y="56" width="20" height="96" fill="var(--dg-2-fill)" opacity=".45"/><text x="482" y="168" text-anchor="middle">5</text>
+      <rect x="494" y="56" width="20" height="96" fill="var(--dg-5-fill)" opacity=".45"/><text x="504" y="168" text-anchor="middle">6</text>
+      <rect x="516" y="56" width="20" height="96" fill="var(--dg-4-fill)"/><text x="526" y="168" text-anchor="middle">7</text>
+      <rect x="538" y="56" width="20" height="96" fill="var(--dg-4-fill)" opacity=".45"/><text x="548" y="168" text-anchor="middle">8</text>
+    </g>
+    <path d="M384 186h44" stroke="var(--dg-3)" stroke-width="2.4"/>
+    <text x="406" y="202" text-anchor="middle" class="dg-mono-sm">coppia 2</text>
+    <path d="M428 186h22M494 186h22" stroke="var(--dg-5)" stroke-width="2.4"/>
+    <text x="472" y="202" text-anchor="middle" class="dg-mono-sm">coppia 3 (divisa!)</text>
+    <path d="M450 214h44" stroke="var(--dg-2)" stroke-width="2.4"/>
+    <text x="472" y="230" text-anchor="middle" class="dg-mono-sm">coppia 1</text>
+    <path d="M516 214h44" stroke="var(--dg-4)" stroke-width="2.4"/>
+    <text x="538" y="230" text-anchor="middle" class="dg-mono-sm">coppia 4</text>
+  </svg>
+  </div>
+  <figcaption>Nota il dettaglio che rovina i cavi fatti in casa: <b>i pin 3 e 6 appartengono alla stessa
+  coppia</b>, anche se non sono adiacenti. Se li prendi da due coppie diverse il cavo «funziona» a 100
+  Mbps e poi crolla o dà errori a 1 Gbps. È uno dei guasti più subdoli che esistano.</figcaption>
+</figure>
+
+<h3>Perché sono intrecciati</h3>
+
+<p>Ogni filo che porta corrente genera un piccolo campo magnetico e, allo stesso modo, viene disturbato
+dai campi magnetici degli altri. In una coppia, i due fili portano lo <em>stesso</em> segnale con polarità
+opposta. Un disturbo esterno colpisce entrambi allo stesso modo, e siccome alla fine la scheda di rete
+legge la <em>differenza</em> tra i due, il disturbo si cancella da solo.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne
+  </div>
+  <p>Sei in una stanza rumorosa e vuoi mandare un messaggio a un amico dall'altra parte. Invece di gridare
+  una frase sola, ne dici due contemporaneamente con due voci: una dice «SÌ» e l'altra dice «NO»,
+  e il tuo amico deve guardare la <em>differenza</em> fra le due.</p>
+  <p>Se qualcuno urla nella stanza, quell'urlo si sovrappone a tutte e due le voci allo stesso modo.
+  Ma siccome il tuo amico guarda solo la differenza, l'urlo — che c'è in entrambe — si annulla.
+  Resta solo il tuo messaggio.</p>
+  <p>Intrecciare i fili serve proprio a garantire che il disturbo colpisca i due fili in modo <b>identico</b>:
+  se corressero dritti e paralleli, uno starebbe sempre un po' più vicino alla fonte del rumore e il trucco
+  non funzionerebbe. Ecco perché quando spelli un cavo devi <b>mantenere l'intreccio fino a un centimetro
+  dal connettore</b>: ogni centimetro di fili sbrogliati è un pezzo di cavo senza protezione.</p>
+</div>
+
+<h2>Le categorie: cosa comprare davvero</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Categoria</th><th>Velocità</th><th>Fino a</th><th>Quando ha senso</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cat5</b></td><td>100 Mbps</td><td>100 m</td>
+          <td>Obsoleto. Se lo trovi in un cliente, è materiale da sostituire.</td></tr>
+      <tr><td><b>Cat5e</b></td><td>1 Gbps</td><td>100 m</td>
+          <td>Ancora validissimo per le postazioni. Se un cliente ha Cat5e sano, non serve rifare niente.</td></tr>
+      <tr><td><b>Cat6</b></td><td>1 Gbps<br>10 Gbps</td><td>100 m<br>55 m</td>
+          <td>Lo standard per i nuovi cablaggi. Costa poco più del 5e e lascia margine.</td></tr>
+      <tr><td><b>Cat6a</b></td><td>10 Gbps</td><td>100 m</td>
+          <td>Dorsali tra armadi, collegamenti a server e NAS, access point Wi-Fi 6E/7.</td></tr>
+      <tr><td><b>Cat7 / Cat8</b></td><td>10–40 Gbps</td><td>100 m / 30 m</td>
+          <td>Nicchia. Cat7 non ha nemmeno un connettore RJ45 standard: nel 99% dei casi è soldi buttati.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La regola pratica da usare con i clienti
+  </div>
+  <p><b>Cat6 per le postazioni, Cat6a per le dorsali e gli access point.</b> Fine.</p>
+  <p>Il motivo è economico, non tecnico: il cavo costa pochissimo rispetto alla <em>manodopera</em> per
+  posarlo. Se devi aprire una canalina, mettere un cavo migliore costa il 10% in più su un lavoro che
+  durerà quindici anni. Ma non farti vendere Cat7 o Cat8: lì il rapporto si ribalta e non servono a nulla
+  in un ufficio.</p>
+</div>
+
+<h3>Schermato o non schermato?</h3>
+
+<p>Le sigle sono UTP (non schermato), FTP/STP (schermato). La schermatura serve solo se c'è disturbo
+elettromagnetico serio: officine, macchinari industriali, ascensori, canaline condivise con la forza motrice.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il cavo schermato messo male è peggio di quello non schermato
+  </div>
+  <p>La schermatura funziona <b>solo se è collegata a terra correttamente e solo da un lato</b>.
+  Se la colleghi a terra da entrambi i lati, e i due punti hanno potenziali di terra leggermente diversi
+  (cosa normalissima in un capannone), nella schermatura scorre una corrente che diventa essa stessa il
+  disturbo. Si chiama <em>ground loop</em>.</p>
+  <p>Risultato: un cliente che ha speso di più per il cavo schermato e ha una rete peggiore di prima.
+  In un ufficio normale, <b>UTP e basta</b>.</p>
+</div>
+
+<h2>I famosi 100 metri</h2>
+
+<p>Il limite dello standard è <strong>100 metri complessivi</strong>, così ripartiti: 90 metri di cavo
+rigido nel muro (il <em>permanent link</em>) più 10 metri totali di bretelle morbide ai due capi.</p>
+
+<p>Oltre i 100 metri il segnale si è attenuato troppo. La cosa insidiosa è che <strong>non smette di
+funzionare: inizia a funzionare male</strong>. Il link resta acceso, il PC naviga, ma ci sono errori
+e ritrasmissioni — cioè il classico «ogni tanto va a scatti» che nessuno riesce a spiegare.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Se devi superare i 100 m</th><th>Soluzione</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>Un capannone lungo</td><td>Switch intermedio in un armadietto</td>
+          <td>Il più economico. Serve corrente nel punto intermedio.</td></tr>
+      <tr><td>Un edificio staccato</td><td>Fibra ottica</td>
+          <td>La scelta giusta, e ti isola anche elettricamente dai fulmini.</td></tr>
+      <tr><td>Un cancello, una telecamera lontana</td><td>Extender PoE o ponte radio</td>
+          <td>Gli extender arrivano a 200–500 m ma tipicamente a 100 Mbps.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>I tre errori che causano il 40% dei ticket «la rete è lenta»</h2>
+
+<h3>1. Il cavo accanto alla corrente</h3>
+<p>Un cavo di rete posato parallelo a un cavo elettrico per decine di metri raccoglie disturbi a 50 Hz.
+La regola: almeno <b>20–30 cm di distanza</b> dai cavi di potenza, e se devono incrociarsi, che lo facciano
+<b>a 90 gradi</b>, perché l'accoppiamento è minimo quando sono perpendicolari.</p>
+
+<h3>2. L'intreccio sbrogliato al connettore</h3>
+<p>Chi crimpa in fretta spela cinque centimetri di guaina e distende i fili per infilarli meglio.
+Quei cinque centimetri sono cavo senza protezione, ripetuti a ogni estremità e a ogni patch panel.
+<b>Massimo 13 mm di fili sbrogliati.</b></p>
+
+<h3>3. Il duplex mismatch</h3>
+<p>Un lato configurato a mano su «100 Mbps full duplex» e l'altro lasciato in autonegoziazione.
+Il lato automatico non riesce a negoziare, ripiega su half duplex, e i due si parlano sopra.
+Sintomo: il link funziona ma la velocità è ridicola, con moltissimi errori. <b>Lascia sempre tutto in
+autonegoziazione</b>, tranne casi rarissimi e documentati.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 210" role="img" aria-label="Sintomi tipici dei problemi di cablaggio e cosa indicano">
+    <text x="330" y="20" text-anchor="middle" class="dg-title">Sintomo → sospetto, al livello 1</text>
+    <g>
+      <rect x="14" y="40" width="196" height="58" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.4"/>
+      <text x="112" y="62" text-anchor="middle" class="dg-label-sm">Il link non si accende</text>
+      <text x="112" y="82" text-anchor="middle" class="dg-mono-sm">cavo rotto · pin errati · porta guasta</text>
+
+      <rect x="232" y="40" width="196" height="58" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.4"/>
+      <text x="330" y="62" text-anchor="middle" class="dg-label-sm">Link up ma a 100 Mbps</text>
+      <text x="330" y="82" text-anchor="middle" class="dg-mono-sm">una coppia interrotta · cavo Cat5</text>
+
+      <rect x="450" y="40" width="196" height="58" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.4"/>
+      <text x="548" y="62" text-anchor="middle" class="dg-label-sm">Va a scatti, errori CRC</text>
+      <text x="548" y="82" text-anchor="middle" class="dg-mono-sm">troppo lungo · disturbi · connettore</text>
+
+      <rect x="14" y="116" width="196" height="58" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+      <text x="112" y="138" text-anchor="middle" class="dg-label-sm">Lentissimo con molti errori</text>
+      <text x="112" y="158" text-anchor="middle" class="dg-mono-sm">duplex mismatch</text>
+
+      <rect x="232" y="116" width="196" height="58" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+      <text x="330" y="138" text-anchor="middle" class="dg-label-sm">Il link cade e torna</text>
+      <text x="330" y="158" text-anchor="middle" class="dg-mono-sm">connettore ossidato · PoE al limite</text>
+
+      <rect x="450" y="116" width="196" height="58" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+      <text x="548" y="138" text-anchor="middle" class="dg-label-sm">Tutto l'armadio instabile</text>
+      <text x="548" y="158" text-anchor="middle" class="dg-mono-sm">terra assente · alimentatore</text>
+    </g>
+    <text x="330" y="198" text-anchor="middle" class="dg-label-sm">Guarda SEMPRE il contatore degli errori sulla porta dello switch prima di cercare altrove.</text>
+  </svg>
+  </div>
+  <figcaption>Il contatore degli errori (<b>CRC errors</b>, <b>input errors</b>) su una porta di switch è
+  la prova regina: se sale mentre guardi, il problema è al livello 1 e cercare altrove è tempo perso.</figcaption>
+</figure>
+
+<h2>Il colpo d'occhio sul cablaggio di un cliente</h2>
+
+<p>Quando entri in un armadio per la prima volta, guarda quattro cose. Ci metti due minuti e ti fai
+un'idea che vale un'ora di analisi:</p>
+
+<ul class="clean">
+  <li><b>Le bretelle sono etichettate?</b> Se no, ogni intervento futuro costerà il doppio, e l'hai
+  appena scoperto senza toccare niente.</li>
+  <li><b>Il raggio di curvatura è rispettato?</b> Cavi piegati a 90 gradi con una fascetta stretta sono
+  cavi danneggiati. Regola: curva mai più stretta di quattro volte il diametro del cavo.</li>
+  <li><b>Ci sono cavi di corrente nella stessa canalina?</b> È la causa numero uno dei disturbi.</li>
+  <li><b>Che categoria c'è scritta sulla guaina?</b> È stampata sopra, ogni mezzo metro. Fotografala:
+  ti serve per il preventivo e per capire cosa può reggere la rete.</li>
+</ul>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il ticket «la rete è lenta in magazzino»
+  </div>
+  <p>Ecco come lo affronti adesso, in ordine, e senza aprire una sola configurazione:</p>
+  <ol style="margin-bottom:0">
+    <li>A che velocità è agganciata la porta dello switch? Se dice 100 Mbps dove ti aspetti 1 Gbps,
+    hai già trovato: cavo, connettore o categoria.</li>
+    <li>Il contatore degli errori sulla porta sale? Se sì, è cablaggio. Fine dell'indagine.</li>
+    <li>Quanto è lungo quel cavo? In un magazzino i 100 metri si superano con una facilità impressionante.</li>
+    <li>Il cavo passa vicino a quadri elettrici, motori, ascensori, saldatrici?</li>
+    <li><b>Solo adesso</b> inizi a guardare VLAN, QoS e firewall.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il livello 1 in rame",
+  "questions": [
+    { "q": "Qual è la lunghezza massima di un collegamento in rame secondo lo standard?",
+      "a": [ {"t":"100 metri complessivi, di cui 90 di cavo rigido","ok":true},
+             {"t":"300 metri","ok":false},
+             {"t":"50 metri per il Cat6 e 100 per il Cat5e","ok":false},
+             {"t":"Non c'è limite, dipende dallo switch","ok":false} ],
+      "e": "100 metri totali: 90 di dorsale fissa più 10 di bretelle ai due capi. Superarli non spegne il collegamento — lo rende <b>instabile</b>, che è molto peggio perché il guasto sembra casuale. L'unica eccezione è il Cat6 a 10 Gbps, che scende a 55 m." },
+
+    { "q": "Perché i fili di un cavo di rete sono intrecciati a coppie?",
+      "a": [ {"t":"Perché i disturbi colpiscono i due fili allo stesso modo e si cancellano","ok":true},
+             {"t":"Per far stare più fili dentro la stessa guaina","ok":false},
+             {"t":"Per rendere il cavo più resistente agli strappi","ok":false},
+             {"t":"Perché così il segnale viaggia più veloce","ok":false} ],
+      "e": "I due fili portano lo stesso segnale invertito e la scheda legge la differenza: un disturbo che colpisce entrambi si annulla. L'intreccio garantisce che il disturbo li colpisca <em>identicamente</em>. Per questo l'intreccio va mantenuto fino a un centimetro dal connettore." },
+
+    { "q": "Una porta di switch mostra il link a 1 Gbps ma il contatore degli errori CRC cresce continuamente. Cosa fai?",
+      "a": [ {"t":"Tratto il problema come livello 1: cavo, connettore, lunghezza, disturbi","ok":true},
+             {"t":"Controllo le regole del firewall","ok":false},
+             {"t":"Verifico la configurazione della VLAN","ok":false},
+             {"t":"Aumento la banda della connessione Internet","ok":false} ],
+      "e": "Gli errori CRC significano che i frame arrivano fisicamente corrotti: è la prova che il problema sta al livello 1. Nessuna configurazione di VLAN, firewall o banda può causarli o risolverli. È uno dei pochi casi in cui hai una certezza diagnostica quasi immediata." },
+
+    { "q": "In un ufficio normale, senza macchinari, conviene il cavo schermato?",
+      "a": [ {"t":"No: se messo a terra male peggiora le cose, e UTP basta","ok":true},
+             {"t":"Sì, sempre: la schermatura non può che aiutare","ok":false},
+             {"t":"Sì, perché è obbligatorio dallo standard Cat6","ok":false},
+             {"t":"Solo se si usa il PoE","ok":false} ],
+      "e": "La schermatura va collegata a terra correttamente e da un lato solo. Fatta male crea un anello di massa che diventa esso stesso una fonte di disturbo: il cliente paga di più e ottiene una rete peggiore. Serve in ambienti industriali, non negli uffici." },
+
+    { "q": "Un collega ha forzato a mano «100 full duplex» su una porta dello switch, mentre il PC è rimasto in automatico. Cosa succede?",
+      "a": [ {"t":"Il PC ripiega su half duplex e nasce un duplex mismatch: lentezza estrema con molti errori","ok":true},
+             {"t":"Entrambi funzionano a 100 full duplex senza problemi","ok":false},
+             {"t":"Il link non si accende affatto","ok":false},
+             {"t":"La porta si spegne automaticamente per sicurezza","ok":false} ],
+      "e": "L'autonegoziazione ha bisogno di un interlocutore che negozi. Se l'altro lato è forzato, non arriva risposta e il lato automatico ripiega prudenzialmente su half duplex. Uno parla e ascolta insieme, l'altro no: collisioni continue, prestazioni disastrose e link comunque acceso. Da qui la regola: <b>autonegoziazione ovunque</b>." },
+
+    { "q": "Quale categoria di cavo consigli per un nuovo cablaggio di postazioni in un ufficio?",
+      "a": [ {"t":"Cat6, perché costa poco più del Cat5e e lascia margine","ok":true},
+             {"t":"Cat8, per essere sicuri di non doverlo rifare","ok":false},
+             {"t":"Cat5e, perché tanto 1 Gbps basta","ok":false},
+             {"t":"Cat7, perché è lo standard più recente","ok":false} ],
+      "e": "Il cavo costa pochissimo rispetto alla manodopera per posarlo, quindi il Cat6 è il compromesso giusto: piccolo sovrapprezzo, margine per il futuro. Cat7 e Cat8 in un ufficio sono soldi buttati — il Cat7 non ha nemmeno un connettore RJ45 standard." }
+  ]
+}
+</script>

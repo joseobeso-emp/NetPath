@@ -1,0 +1,266 @@
+#id: l1-07
+#title: Gli apparati: hub, switch, router, firewall, AP
+#min: 22
+#level: 1
+#chapter: Il mondo fisico
+#desc: Cosa fa fisicamente ogni scatola che vedi in un rack, a quale livello OSI lavora e quando serve davvero.
+#obj: Guardare un rack e dire cosa fa ogni apparato
+#obj: Collocare ogni scatola al livello OSI corretto
+#obj: Capire perché oggi molti apparati fanno più cose insieme e quando conviene separarle
+#obj: Sapere cosa chiedere a un cliente per capire cosa gli serve
+---
+<p class="lead">Adesso che conosci i livelli OSI, il rack di un cliente smette di essere un mucchio di
+scatole con le lucine e diventa leggibile. Ogni apparato esiste perché risolve un problema preciso e
+lavora fino a un livello preciso. Queste due informazioni bastano per capire quasi tutto.</p>
+
+<h2>La mappa completa</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 680 420" role="img" aria-label="Gli apparati di rete ordinati per livello OSI, dal cavo al firewall di livello 7">
+    <text x="340" y="20" text-anchor="middle" class="dg-title">Ogni apparato «vede» fino a un certo livello — e non oltre</text>
+
+    <!-- L7 -->
+    <rect x="40" y="36" width="600" height="58" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.6"/>
+    <text x="66" y="60" class="dg-mono-sm">LIV. 7</text>
+    <text x="66" y="78" class="dg-label-sm">applicazione</text>
+    <text x="190" y="62" class="dg-label">Firewall di nuova generazione · Proxy · Load balancer</text>
+    <text x="190" y="80" class="dg-label-sm">FortiGate, Sophos XGS, WatchGuard, Palo Alto — vedono <tspan font-style="italic">quale</tspan> applicazione</text>
+
+    <!-- L4 -->
+    <rect x="40" y="102" width="600" height="58" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="66" y="126" class="dg-mono-sm">LIV. 4</text>
+    <text x="66" y="144" class="dg-label-sm">trasporto</text>
+    <text x="190" y="128" class="dg-label">Firewall classico · NAT · Port forwarding</text>
+    <text x="190" y="146" class="dg-label-sm">decide in base a indirizzo IP + numero di porta</text>
+
+    <!-- L3 -->
+    <rect x="40" y="168" width="600" height="58" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="66" y="192" class="dg-mono-sm">LIV. 3</text>
+    <text x="66" y="210" class="dg-label-sm">rete</text>
+    <text x="190" y="194" class="dg-label">Router · Switch L3 · Gateway</text>
+    <text x="190" y="212" class="dg-label-sm">sceglie la strada in base all'indirizzo IP di destinazione</text>
+
+    <!-- L2 -->
+    <rect x="40" y="234" width="600" height="58" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="66" y="258" class="dg-mono-sm">LIV. 2</text>
+    <text x="66" y="276" class="dg-label-sm">data link</text>
+    <text x="190" y="260" class="dg-label">Switch · Access point · Bridge</text>
+    <text x="190" y="278" class="dg-label-sm">consegna al vicino giusto in base al MAC address</text>
+
+    <!-- L1 -->
+    <rect x="40" y="300" width="600" height="58" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="66" y="324" class="dg-mono-sm">LIV. 1</text>
+    <text x="66" y="342" class="dg-label-sm">fisico</text>
+    <text x="190" y="326" class="dg-label">Cavi · Patch panel · Media converter · Hub · Ripetitori</text>
+    <text x="190" y="344" class="dg-label-sm">trasporta il segnale, non decide nulla</text>
+
+    <text x="340" y="390" text-anchor="middle" class="dg-label-sm">Più in alto guarda un apparato, più decisioni fini può prendere — e più lavoro deve fare per ogni pacchetto.</text>
+    <text x="340" y="408" text-anchor="middle" class="dg-label-sm">È per questo che un firewall con tutte le funzioni attive va molto più lento del suo throughput dichiarato.</text>
+  </svg>
+  </div>
+  <figcaption>Questa immagine risponde da sola a metà delle domande che ti farai: «può questo apparato
+  fare questa cosa?». Se la cosa richiede informazioni di un livello che l'apparato non vede, la
+  risposta è no.</figcaption>
+</figure>
+
+<h2>Uno per uno</h2>
+
+<h3>Hub — il nonno estinto, ma da capire</h3>
+<p>Riceveva un segnale su una porta e lo ripeteva <em>identico su tutte le altre</em>, senza capire nulla.
+Conseguenze: tutti ricevevano tutto (zero riservatezza), e se due parlavano insieme i segnali si
+sovrapponevano e andavano persi (collisione). Più dispositivi c'erano, più la rete rallentava in modo
+catastrofico.</p>
+<p>Non lo troverai mai in servizio, ma capire perché è morto è il modo migliore per capire cosa fa
+davvero uno switch.</p>
+
+<h3>Switch — il distributore intelligente</h3>
+<p>Fa la stessa cosa dell'hub ma con una differenza enorme: <strong>impara dove sta ciascuno</strong> e
+manda ogni frame solo sulla porta giusta. Lo vedremo in dettaglio nella lezione 1-10, perché il
+meccanismo è semplicissimo e bellissimo.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo di switch</th><th>Cosa aggiunge</th><th>Quando serve</th></tr></thead>
+    <tbody>
+      <tr><td><b>Non gestito</b><br><span style="font-size:.85em;color:var(--text-mute)">unmanaged</span></td>
+          <td>Niente: si attacca e funziona. Non ha indirizzo IP, non si configura.</td>
+          <td>Piccoli uffici, prolunghe. Economico, ma cieco: non puoi diagnosticare nulla.</td></tr>
+      <tr><td><b>Gestito</b><br><span style="font-size:.85em;color:var(--text-mute)">managed</span></td>
+          <td>VLAN, spanning tree, LACP, contatori degli errori, SNMP, port security</td>
+          <td><b>Sempre, in azienda.</b> Senza contatori e senza VLAN lavori bendato.</td></tr>
+      <tr><td><b>Switch L3</b></td><td>Sa anche instradare tra VLAN, cioè fa il lavoro del router</td>
+          <td>Reti medio-grandi: evita di far passare tutto il traffico interno dal firewall.</td></tr>
+      <tr><td><b>PoE</b></td><td>Alimenta i dispositivi attraverso il cavo di rete</td>
+          <td>Access point, telecamere, telefoni VoIP. Vedi la prossima lezione.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Router — chi conosce la strada</h3>
+<p>Collega reti IP <strong>diverse</strong> e decide dove mandare ogni pacchetto consultando la sua
+tabella di routing. È l'unico apparato che «sa» che esiste un mondo oltre la rete locale.</p>
+<p>Nota che uno switch e un router fanno cose concettualmente diverse anche se hanno entrambi delle prese
+RJ45: <b>lo switch collega dispositivi della stessa rete, il router collega reti diverse tra loro</b>.</p>
+
+<h3>Firewall — chi decide cosa può passare</h3>
+<p>È un router che, in più, applica delle regole: questa conversazione sì, questa no. Il moderno è
+<span class="term" data-term="stateful">stateful</span>: ricorda le conversazioni già aperte e lascia
+passare automaticamente le risposte.</p>
+<p>Nei prodotti che usi in azienda — FortiGate, Sophos XGS, WatchGuard Firebox — il firewall è anche
+router, fa NAT, termina le VPN, filtra i siti, cerca i virus e spesso gestisce pure il Wi-Fi. È una
+scatola sola con dentro sei mestieri. Comodo, ma attenzione: è anche un <b>unico punto di guasto</b>,
+ed è il motivo per cui nelle aziende importanti se ne mettono due in alta disponibilità.</p>
+
+<h3>Access point — lo switch senza fili</h3>
+<p>Un AP non è un router: è più simile a uno switch con un'antenna. Prende i frame che arrivano via radio
+e li mette sulla rete cablata, e viceversa. Gli indirizzi IP li distribuisce il DHCP che sta altrove, e
+il traffico verso Internet passa comunque dal router.</p>
+<p>Quello che in casa chiamiamo «il router Wi-Fi» è in realtà quattro apparati in una scatola: modem +
+router + switch + access point. In azienda queste funzioni tornano separate, perché ciascuna va
+dimensionata e posizionata per conto suo.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il palazzo di uffici
+  </div>
+  <p>Immagina un grande palazzo di uffici.</p>
+  <p>Il <b>cavo</b> è il corridoio: porta le persone, non decide nulla.<br>
+  Lo <b>switch</b> è l'usciere del piano: conosce tutti quelli del suo piano per nome e sa esattamente
+  in quale stanza portare ogni busta. Fuori dal piano non sa niente di niente.<br>
+  Il <b>router</b> è il portiere all'ingresso: conosce le strade della città e sa dire «per andare in
+  via Garibaldi, prendi quell'uscita». Non conosce le persone: conosce gli indirizzi.<br>
+  Il <b>firewall</b> è la guardia accanto al portiere: guarda chi entra e chi esce e ha una lista di
+  regole. «Le consegne sì, i venditori no, e i pacchi li apriamo per controllare.»<br>
+  L'<b>access point</b> è l'usciere che invece del corridoio usa i walkie-talkie: fa lo stesso identico
+  mestiere dell'usciere del piano, ma con chi non è collegato fisicamente.</p>
+</div>
+
+<h2>Altri apparati che incontrerai</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Apparato</th><th>A cosa serve</th></tr></thead>
+    <tbody>
+      <tr><td><b>Modem / ONT</b></td>
+          <td>Traduce il segnale dell'operatore (fibra, rame, radio) in Ethernet. In fibra si chiama ONT
+              ed è quella scatolina che lascia l'operatore. Spesso non è tua e non la puoi configurare.</td></tr>
+      <tr><td><b>Patch panel</b></td>
+          <td>Il pannello dove arrivano tutti i cavi delle prese a muro. Non fa nulla di elettronico:
+              serve a non dover crimpare i cavi rigidi, che sono fragili.</td></tr>
+      <tr><td><b>Media converter</b></td>
+          <td>Converte rame in fibra e viceversa. Utile quando devi allungare una tratta e non hai uno
+              switch con slot SFP.</td></tr>
+      <tr><td><b>Load balancer</b></td>
+          <td>Distribuisce le richieste su più server, e toglie dal giro quelli guasti.</td></tr>
+      <tr><td><b>Controller Wi-Fi</b></td>
+          <td>Gestisce decine di access point in modo centralizzato: canali, potenze, roaming, SSID.
+              Può essere una scatola, un software, o un servizio in cloud (Meraki, Sophos Central,
+              FortiGate come controller dei FortiAP).</td></tr>
+      <tr><td><b>UPS</b></td>
+          <td>Gruppo di continuità. Non è un apparato di rete ma è il primo indiziato quando
+              «di notte si riavvia tutto». Vedi la prossima lezione.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Perché oggi tutto sta in una scatola sola</h2>
+
+<p>Nelle piccole e medie aziende italiane — cioè quasi tutti i tuoi clienti — troverai spessissimo un
+<strong>UTM</strong> (Unified Threat Management): una scatola che fa firewall, router, VPN, antivirus,
+filtro web, e a volte anche controller Wi-Fi e switch.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Tutto in una scatola</th><th>Apparati separati</th></tr></thead>
+    <tbody>
+      <tr><td><b>Costo</b></td><td>Molto più basso</td><td>Più alto</td></tr>
+      <tr><td><b>Gestione</b></td><td>Un'interfaccia sola</td><td>Più console, più competenze</td></tr>
+      <tr><td><b>Guasti</b></td><td>Si ferma tutto insieme</td><td>Il guasto resta circoscritto</td></tr>
+      <tr><td><b>Prestazioni</b></td><td>Le funzioni si contendono la stessa CPU</td><td>Ognuno fa il suo mestiere</td></tr>
+      <tr><td><b>Quando sceglierlo</b></td><td>Fino a 100–150 utenti, sede singola</td>
+          <td>Oltre, o quando la continuità è critica</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il numero sul datasheet che inganna tutti
+  </div>
+  <p>Sul datasheet di un firewall leggi «Firewall throughput: 10 Gbps». Sembra enorme. Poi scorri e trovi
+  «Threat protection throughput: 900 Mbps».</p>
+  <p>Sono due numeri veri che misurano due cose diverse: il primo è a funzioni spente (solo IP e porte,
+  livello 4), il secondo con antivirus, IPS e filtro attivi (livello 7). <b>La differenza è tipicamente
+  da 5 a 10 volte</b>, e con l'ispezione SSL scende ancora.</p>
+  <p>Il numero da guardare per dimensionare un apparato è sempre <b>quello più basso</b>, perché è quello
+  che avrai quando le protezioni saranno accese — e se non le accendi, tanto valeva comprare un router.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Le sei domande per capire cosa serve a un cliente
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Quanti utenti e quanti dispositivi?</b> Non è la stessa cosa: oggi ogni persona ne ha tre.</li>
+    <li><b>Quanta banda ha la linea, e quanta in upload?</b> Dimensiona il firewall in base a quella.</li>
+    <li><b>Ci sono sedi da collegare, o persone che lavorano da casa?</b> Sono VPN, e consumano CPU.</li>
+    <li><b>Ci sono servizi pubblicati verso l'esterno?</b> Se sì, servono DMZ e attenzione seria.</li>
+    <li><b>Quanto costa un'ora di fermo?</b> È la domanda che decide se serve l'alta disponibilità, e la
+    risposta la deve dare il cliente, non tu.</li>
+    <li><b>Che cosa deve <em>non</em> poter accadere?</b> È la domanda migliore di tutte: fa emergere
+    i requisiti veri, quelli che nessuno scrive nel capitolato.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: gli apparati",
+  "questions": [
+    { "q": "Qual è la differenza fondamentale tra uno switch e un router?",
+      "a": [ {"t":"Lo switch collega dispositivi della stessa rete, il router collega reti diverse","ok":true},
+             {"t":"Il router è più veloce dello switch","ok":false},
+             {"t":"Lo switch funziona solo via cavo, il router anche via Wi-Fi","ok":false},
+             {"t":"Il router non ha bisogno di indirizzi IP","ok":false} ],
+      "e": "È una differenza di <b>livello</b>: lo switch ragiona sui MAC dentro una rete (livello 2), il router ragiona sugli IP tra reti diverse (livello 3). Sulle prestazioni è anzi vero il contrario: uno switch è tipicamente più veloce, perché il suo lavoro è più semplice." },
+
+    { "q": "Un access point è concettualmente più simile a:",
+      "a": [ {"t":"Uno switch con un'antenna","ok":true},
+             {"t":"Un router senza fili","ok":false},
+             {"t":"Un firewall wireless","ok":false},
+             {"t":"Un modem radio","ok":false} ],
+      "e": "L'AP lavora al livello 2: prende i frame dalla radio e li mette sul cavo, e viceversa. Non assegna indirizzi (lo fa il DHCP), non instrada (lo fa il router), non filtra (lo fa il firewall). Il «router Wi-Fi» di casa contiene un AP, ma è anche altre tre cose." },
+
+    { "q": "Perché conviene quasi sempre uno switch gestito invece di uno non gestito, in azienda?",
+      "a": [ {"t":"Perché senza VLAN e senza contatori degli errori non puoi né segmentare né diagnosticare","ok":true},
+             {"t":"Perché è più veloce nel trasferire i dati","ok":false},
+             {"t":"Perché consuma meno corrente","ok":false},
+             {"t":"Perché è l'unico che supporta il gigabit","ok":false} ],
+      "e": "La velocità e il gigabit ce li ha anche uno switch da 30 €. Quello che manca è la <b>visibilità</b> — contatori di errori, stato delle porte, log — e la capacità di segmentare con le VLAN. Senza, ogni diagnosi diventa indovinare, e ogni problema di sicurezza diventa irrisolvibile." },
+
+    { "q": "Sul datasheet di un firewall: «Firewall throughput 10 Gbps, Threat protection 900 Mbps». Quale usi per dimensionarlo?",
+      "a": [ {"t":"900 Mbps, perché è quello con le protezioni accese","ok":true},
+             {"t":"10 Gbps, perché è la capacità massima dell'apparato","ok":false},
+             {"t":"La media dei due, circa 5 Gbps","ok":false},
+             {"t":"Nessuno dei due: si guardano solo le sessioni","ok":false} ],
+      "e": "Il numero alto è misurato a funzioni spente (livello 4 puro). Appena accendi antivirus, IPS e filtro web — cioè il motivo per cui hai comprato quel firewall — vale il numero basso. Dimensionare sul numero alto è l'errore che porta a clienti con la linea al 30% e il firewall in ginocchio." },
+
+    { "q": "Perché l'hub è scomparso?",
+      "a": [ {"t":"Ripeteva tutto su tutte le porte: nessuna riservatezza e collisioni continue","ok":true},
+             {"t":"Non supportava i cavi di categoria 5e","ok":false},
+             {"t":"Consumava troppa corrente","ok":false},
+             {"t":"Non era compatibile con gli indirizzi IP","ok":false} ],
+      "e": "Tutti ricevevano il traffico di tutti (chiunque poteva ascoltare) e due trasmissioni contemporanee si distruggevano a vicenda, con prestazioni che crollavano all'aumentare dei dispositivi. Lo switch risolve entrambi i problemi imparando dove sta ciascuno." },
+
+    { "q": "Un cliente con 40 dipendenti, una sola sede e qualche utente in VPN. Cosa gli proponi?",
+      "a": [ {"t":"Un firewall UTM che integra router, VPN e protezioni, più switch gestiti","ok":true},
+             {"t":"Apparati separati per ogni funzione, per avere il massimo delle prestazioni","ok":false},
+             {"t":"Solo un router domestico più potente","ok":false},
+             {"t":"Due firewall in alta disponibilità, sempre e comunque","ok":false} ],
+      "e": "A quella dimensione l'UTM è il compromesso corretto: costo contenuto e gestione unificata. Separare tutto sarebbe sovradimensionato; l'alta disponibilità si propone solo dopo aver chiesto al cliente quanto gli costa un'ora di fermo — è una sua decisione economica, non una tua preferenza tecnica." }
+  ]
+}
+</script>

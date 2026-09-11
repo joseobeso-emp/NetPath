@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NAT: perché tutti usano 192.168.x.x — NetPath</title>
+<meta name="description" content="Come 200 dispositivi escono su Internet con un solo indirizzo pubblico, e cosa si rompe di conseguenza.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-21">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>I servizi che tengono in piedi tutto</span>
+      </nav>
+      <h1 class="lesson-title">NAT: perché tutti usano 192.168.x.x</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 21</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Spiegare il NAT con la tabella delle traduzioni davanti</li>
+        <li>Distinguere SNAT, DNAT e port forwarding</li>
+        <li>Capire perché il NAT rompe certe applicazioni e come si rimedia</li>
+        <li>Riconoscere quando un problema è causato dal NAT</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Il NAT è la tecnologia che ha tenuto in vita IPv4 per trent'anni oltre la sua scadenza
+naturale. È presente in ogni rete che vedrai, funziona così bene da essere invisibile, e allo stesso
+tempo è la causa di un'intera famiglia di problemi che senza conoscerlo sono incomprensibili.</p>
+
+<h2>Il problema</h2>
+
+<p>Un'azienda ha 200 dispositivi con indirizzi privati <code>10.10.10.x</code>. Questi indirizzi
+<strong>su Internet non esistono</strong>: nessun router pubblico sa dove mandarli, e una risposta
+destinata a 10.10.10.37 non saprebbe a quale delle milioni di reti private del mondo andare.</p>
+
+<p>L'azienda ha un solo indirizzo pubblico: <code>203.0.113.5</code>.
+Come fanno duecento dispositivi a uscire con un indirizzo solo — e come fanno le risposte a tornare
+ognuna al mittente giusto?</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il portiere del grande albergo
+  </div>
+  <p>Un albergo con duecento camere ha un solo indirizzo postale: «via Roma 5».</p>
+  <p>Il signore della camera 137 scrive una lettera a un amico. Se ci mettesse come mittente
+  «camera 137», la risposta non arriverebbe mai: fuori dall'albergo nessuno sa cosa sia la camera 137.</p>
+  <p>Allora <b>il portiere</b> prende la lettera, cancella il mittente e scrive «via Roma 5,
+  <b>pratica numero 4021</b>». E su un quaderno si segna: <em>pratica 4021 = camera 137</em>.</p>
+  <p>Quando arriva la risposta indirizzata a «via Roma 5, pratica 4021», il portiere guarda il quaderno
+  e la porta alla camera 137. Perfetto.</p>
+  <p>Ma adesso nota la cosa importante: <b>se un estraneo scrive all'albergo senza un numero di pratica,
+  il portiere non sa a chi darla e la butta.</b> Ecco perché, con il NAT, nessuno può entrare
+  spontaneamente dall'esterno. E per permetterlo bisogna dire al portiere: «tutta la posta senza pratica
+  che riguarda la ristorazione, portala sempre alla camera 12». Quello è il <b>port forwarding</b>.</p>
+  <p>Il quaderno del portiere è la <b>tabella delle sessioni NAT</b>, e il numero di pratica è la
+  <b>porta</b>.</p>
+</div>
+
+<h2>Come funziona davvero</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 330" role="img" aria-label="Il router riscrive indirizzo e porta sorgente e tiene una tabella delle traduzioni">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Il router riscrive il mittente e se lo segna</text>
+
+    <rect x="16" y="44" width="150" height="80" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="91" y="66" text-anchor="middle" class="dg-label-sm">RETE INTERNA</text>
+    <text x="91" y="86" text-anchor="middle" class="dg-mono-sm">10.10.10.37</text>
+    <text x="91" y="102" text-anchor="middle" class="dg-mono-sm">10.10.10.41</text>
+    <text x="91" y="118" text-anchor="middle" class="dg-mono-sm">10.10.10.52</text>
+
+    <rect x="262" y="44" width="176" height="80" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.8"/>
+    <text x="350" y="70" text-anchor="middle" class="dg-label">ROUTER / FIREWALL</text>
+    <text x="350" y="90" text-anchor="middle" class="dg-mono-sm">interno: 10.10.10.1</text>
+    <text x="350" y="108" text-anchor="middle" class="dg-mono-sm">pubblico: 203.0.113.5</text>
+
+    <rect x="534" y="44" width="150" height="80" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="609" y="74" text-anchor="middle" class="dg-label-sm">INTERNET</text>
+    <text x="609" y="96" text-anchor="middle" class="dg-mono-sm">server vari</text>
+
+    <path d="M170 84h86" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#nt)"/>
+    <path d="M444 84h84" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#nt)"/>
+    <defs><marker id="nt" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-line)"/></marker></defs>
+
+    <text x="350" y="160" text-anchor="middle" class="dg-mono-sm">LA TABELLA DELLE TRADUZIONI (il quaderno del portiere)</text>
+    <rect x="16" y="172" width="668" height="118" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.3"/>
+    <line x1="16" y1="196" x2="684" y2="196" stroke="var(--dg-line-soft)"/>
+    <g class="dg-mono-sm">
+      <text x="34" y="190">SORGENTE INTERNA</text>
+      <text x="230" y="190">DIVENTA VERSO INTERNET</text>
+      <text x="460" y="190">DESTINAZIONE</text>
+      <text x="612" y="190">PROTO</text>
+
+      <text x="34" y="218">10.10.10.37 : 51844</text>
+      <text x="230" y="218">203.0.113.5 : 51844</text>
+      <text x="460" y="218">142.250.180.99 : 443</text>
+      <text x="612" y="218">TCP</text>
+
+      <text x="34" y="242">10.10.10.41 : 51844</text>
+      <text x="230" y="242">203.0.113.5 : <tspan fill="var(--dg-3)" font-weight="700">62001</tspan></text>
+      <text x="460" y="242">142.250.180.99 : 443</text>
+      <text x="612" y="242">TCP</text>
+
+      <text x="34" y="266">10.10.10.52 : 49211</text>
+      <text x="230" y="266">203.0.113.5 : 49211</text>
+      <text x="460" y="266">93.184.5.10 : 443</text>
+      <text x="612" y="266">TCP</text>
+    </g>
+    <text x="350" y="312" text-anchor="middle" class="dg-label-sm">Riga 2: la porta 51844 era già occupata, quindi il router ne assegna un'altra. È questo che permette a 200 PC di condividere un indirizzo.</text>
+  </svg>
+  </div>
+  <figcaption>La chiave di tutto è la <b>porta</b>. Con 65.535 porte disponibili, un solo indirizzo
+  pubblico può gestire decine di migliaia di conversazioni contemporanee, ognuna riconoscibile.
+  Questa forma di NAT si chiama tecnicamente <b>PAT</b> (Port Address Translation) o «NAT overload»,
+  ed è quella che intendono tutti quando dicono «NAT».</figcaption>
+</figure>
+
+<h2>Le tre facce del NAT</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Cosa riscrive</th><th>A cosa serve</th><th>Nomi nei vari vendor</th></tr></thead>
+    <tbody>
+      <tr><td><b>SNAT</b><br>(Source NAT)</td><td>L'indirizzo <b>sorgente</b> del traffico in uscita</td>
+          <td>Far uscire la rete interna su Internet. È il caso normale, sempre attivo.</td>
+          <td>masquerade (MikroTik, Linux), overload (Cisco), «NAT in uscita»</td></tr>
+      <tr><td><b>DNAT</b><br>(Destination NAT)</td><td>L'indirizzo <b>destinazione</b> del traffico in ingresso</td>
+          <td>Far raggiungere un server interno dall'esterno.</td>
+          <td>port forward, Virtual IP (FortiGate), DNAT (Sophos), SNAT rule (WatchGuard)</td></tr>
+      <tr><td><b>NAT 1:1</b></td><td>Tutto il traffico di un IP pubblico verso un IP privato</td>
+          <td>Un server che ha «il suo» indirizzo pubblico dedicato.</td>
+          <td>static NAT, one-to-one, Virtual IP senza port mapping</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Confusione da chiarire subito: NAT ≠ firewall
+  </div>
+  <p>Si sente spesso dire «siamo protetti perché c'è il NAT». È vero solo in parte, e confondere le due
+  cose porta a decisioni sbagliate.</p>
+  <p><b>Quello che il NAT fa:</b> impedisce a chi sta fuori di <em>iniziare</em> una connessione verso
+  un dispositivo interno, perché non saprebbe a chi consegnarla. È una protezione reale, ma è un
+  <b>effetto collaterale</b> del meccanismo, non il suo scopo.</p>
+  <p><b>Quello che il NAT non fa:</b> non guarda cosa c'è dentro il traffico, non blocca un utente che
+  scarica un file infetto, non impedisce a un malware già dentro di comunicare verso l'esterno — anzi,
+  il NAT lo aiuta, perché quella connessione parte dall'interno ed è esattamente il caso che il NAT
+  permette. Non filtra niente e non registra niente di utile alla sicurezza.</p>
+  <p>Il NAT è il portiere che smista la posta. Il firewall è la guardia che decide chi può entrare e
+  cosa può uscire. Servono entrambi, e non si sostituiscono.</p>
+</div>
+
+<h2>Il port forwarding</h2>
+
+<p>Se un cliente ha un server che deve essere raggiungibile da Internet, bisogna dire al firewall:
+«il traffico che arriva sul mio indirizzo pubblico, porta 443, mandalo a 10.10.10.50 porta 443».</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un port forward è un buco nel muro. Trattalo come tale.
+  </div>
+  <p>Quando apri una porta, <b>il mondo intero</b> può raggiungere quel servizio. Non «chi conosce
+  l'indirizzo»: il mondo intero, perché esistono sistemi che scandagliano continuamente tutti gli
+  indirizzi IPv4 alla ricerca di porte aperte. Un nuovo servizio esposto riceve i primi tentativi di
+  accesso <b>nel giro di minuti</b>.</p>
+  <p><b>Non esporre mai direttamente:</b> RDP (3389), SMB (445), SQL (1433, 3306), interfacce di
+  amministrazione degli apparati, telecamere e NVR. Sono i vettori da cui entrano i ransomware,
+  e nel caso di RDP è di gran lunga il numero uno.</p>
+  <p><b>Se proprio devi esporre qualcosa:</b> limita gli indirizzi sorgente a quelli che servono
+  davvero, attiva il filtro geografico, metti l'IPS davanti, usa una porta non standard come misura
+  minore, e soprattutto <b>chiediti prima se non basta una VPN</b>. Nella maggior parte dei casi basta,
+  ed è la risposta giusta.</p>
+</div>
+
+<h2>Cosa il NAT rompe</h2>
+
+<p>Il NAT è una violazione del principio originario di Internet — ogni dispositivo raggiungibile
+direttamente — e certe cose si rompono per forza:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa si rompe</th><th>Perché</th><th>Rimedio</th></tr></thead>
+    <tbody>
+      <tr><td><b>Connessioni in ingresso</b></td><td>Nessuna riga in tabella per il traffico non sollecitato</td>
+          <td>Port forward, oppure VPN</td></tr>
+      <tr><td><b>VoIP / SIP</b></td><td>Il protocollo scrive il proprio IP <em>dentro</em> il messaggio, e quello non viene tradotto: il telefono dice «richiamami a 10.10.10.37»</td>
+          <td>SIP ALG (spesso peggiora le cose: nel dubbio disattivalo), STUN, o un SBC</td></tr>
+      <tr><td><b>FTP attivo</b></td><td>Il server tenta di aprire lui una connessione verso il client</td>
+          <td>FTP passivo, oppure ALG dedicato</td></tr>
+      <tr><td><b>IPsec</b></td><td>Il NAT modifica campi che IPsec protegge con un'impronta crittografica</td>
+          <td>NAT-Traversal (UDP 4500), che oggi è automatico</td></tr>
+      <tr><td><b>Tracciare chi ha fatto cosa</b></td><td>Dall'esterno tutti sembrano lo stesso indirizzo</td>
+          <td>Registrazione delle sessioni NAT: obbligatoria in molti contesti</td></tr>
+      <tr><td><b>Videogiochi e peer-to-peer</b></td><td>Vogliono connessioni dirette tra pari</td>
+          <td>UPnP (comodo ma pericoloso in azienda), o port forward manuale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il ticket «i telefoni VoIP squillano ma non si sente niente»
+  </div>
+  <p>Uno dei classici assoluti, e adesso sai spiegarlo. La segnalazione SIP passa (per questo il
+  telefono squilla), ma l'audio viaggia su un flusso separato (RTP) le cui porte vengono
+  <b>negoziate dentro i messaggi SIP</b> — e lì dentro il telefono ha scritto il suo indirizzo
+  privato, che il NAT non ha tradotto perché non guarda dentro il contenuto.</p>
+  <p>Risultato: l'altra parte manda l'audio a un indirizzo 10.x.x.x che su Internet non esiste.
+  <b>Squilla ma non si sente.</b></p>
+  <p>La soluzione dipende dal centralino: quasi sempre si risolve <b>disattivando il SIP ALG</b> del
+  firewall (che tenta di riscrivere quei campi e nove volte su dieci lo fa male) e lasciando che sia il
+  telefono a usare STUN o le impostazioni NAT del centralino. È una delle prime cose da provare, e
+  funziona sorprendentemente spesso.</p>
+</div>
+
+<h2>Vederlo funzionare</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Guardare la tabella NAT</div>
+<pre><span class="c"># MikroTik — le connessioni tradotte in questo momento</span>
+<span class="p">/ip firewall connection print</span>
+<span class="p">/ip firewall nat print</span>
+
+<span class="c"># FortiGate</span>
+<span class="p">diagnose sys session list</span>
+<span class="p">get system session-info full-stat</span>
+
+<span class="c"># Linux</span>
+<span class="p">conntrack -L</span>
+
+<span class="c"># Da un PC interno: qual è il mio indirizzo visto da fuori?</span>
+<span class="p">curl ifconfig.me</span>
+<span class="p">curl ipinfo.io/ip</span>
+</pre>
+</div>
+
+<p>Quell'ultimo comando è istruttivo: il tuo PC ha un indirizzo privato, ma il mondo vede un indirizzo
+completamente diverso. Provalo da due PC diversi della stessa rete: <strong>vedranno lo stesso
+indirizzo pubblico</strong>. È il NAT, in azione, davanti a te.</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: NAT",
+  "questions": [
+    { "q": "Cosa permette a 200 dispositivi di condividere un solo indirizzo pubblico?",
+      "a": [ {"t":"L'uso delle porte per distinguere le conversazioni","ok":true},
+             {"t":"La compressione del traffico","ok":false},
+             {"t":"Il fatto che non navighino tutti insieme","ok":false},
+             {"t":"L'assegnazione a turno dell'indirizzo pubblico","ok":false} ],
+      "e": "Il router riscrive indirizzo <b>e porta</b> sorgente e annota la corrispondenza in una tabella. Con 65.535 porte disponibili può gestire decine di migliaia di conversazioni contemporanee, ognuna distinguibile. È il motivo per cui questa forma di NAT si chiama tecnicamente PAT." },
+
+    { "q": "Perché senza port forwarding nessuno può raggiungere un server interno dall'esterno?",
+      "a": [ {"t":"Perché il router non ha una voce in tabella e non sa a chi consegnare","ok":true},
+             {"t":"Perché il firewall blocca tutto per impostazione predefinita","ok":false},
+             {"t":"Perché gli indirizzi privati sono cifrati","ok":false},
+             {"t":"Perché il provider non lo permette","ok":false} ],
+      "e": "La tabella NAT si popola con le connessioni <b>iniziate dall'interno</b>. Un pacchetto che arriva spontaneamente da fuori non corrisponde a nessuna riga: il router non sa a quale dei 200 dispositivi consegnarlo, quindi lo scarta. È un effetto del meccanismo, indipendente dalle regole del firewall." },
+
+    { "q": "«Abbiamo il NAT, quindi siamo protetti». Cosa rispondi?",
+      "a": [ {"t":"Il NAT impedisce le connessioni non sollecitate dall'esterno, ma non ispeziona nulla e non ferma un malware interno","ok":true},
+             {"t":"È vero: il NAT è un firewall a tutti gli effetti","ok":false},
+             {"t":"Il NAT non offre alcuna protezione","ok":false},
+             {"t":"Dipende dalla marca del router","ok":false} ],
+      "e": "La protezione contro le connessioni in ingresso è reale, ma è un effetto collaterale. Il NAT non guarda dentro il traffico, non blocca download infetti e non impedisce a un malware già presente di comunicare verso l'esterno — anzi quella connessione, partendo dall'interno, è proprio il caso che il NAT permette." },
+
+    { "q": "I telefoni VoIP squillano ma non si sente l'audio. Cosa sospetti?",
+      "a": [ {"t":"Il NAT: il SIP annuncia l'indirizzo privato dentro il messaggio e non viene tradotto","ok":true},
+             {"t":"I cavi di rete sono difettosi","ok":false},
+             {"t":"La banda è insufficiente","ok":false},
+             {"t":"I telefoni hanno il firmware vecchio","ok":false} ],
+      "e": "La segnalazione SIP passa (per questo squilla), ma l'audio RTP viene indirizzato all'IP privato che il telefono ha scritto <b>dentro</b> il messaggio, dove il NAT non arriva. La soluzione più frequente è disattivare il SIP ALG del firewall — che tenta di riscrivere quei campi e quasi sempre sbaglia — lasciando gestire il NAT al centralino o al telefono." },
+
+    { "q": "Un cliente chiede di pubblicare il desktop remoto per lavorare da casa. Cosa proponi?",
+      "a": [ {"t":"Una VPN, spiegando che RDP esposto è il principale vettore dei ransomware","ok":true},
+             {"t":"Un port forward sulla 3389","ok":false},
+             {"t":"Un port forward su una porta diversa dalla 3389","ok":false},
+             {"t":"Di usare TeamViewer senza dirlo a nessuno","ok":false} ],
+      "e": "RDP esposto viene trovato in pochi minuti dalle scansioni automatiche, e le credenziali deboli fanno il resto. Cambiare porta riduce il rumore ma non protegge: le scansioni provano tutte le porte. La risposta corretta è la VPN, e va data con il motivo, perché il cliente deve capire il rischio che gli stai evitando." },
+
+    { "q": "Cosa significa SNAT?",
+      "a": [ {"t":"Riscrittura dell'indirizzo sorgente, usata per far uscire la rete interna","ok":true},
+             {"t":"Riscrittura dell'indirizzo di destinazione, per i port forward","ok":false},
+             {"t":"NAT statico uno a uno","ok":false},
+             {"t":"NAT sicuro con cifratura","ok":false} ],
+      "e": "Source NAT: si riscrive il <b>mittente</b> del traffico in uscita, sostituendo l'indirizzo privato con quello pubblico. Il Destination NAT (DNAT) fa l'opposto sul traffico in ingresso ed è quello che sta dietro ai port forward. Attenzione: WatchGuard usa storicamente «SNAT» per indicare il port forward, ed è una fonte di equivoci tra tecnici abituati a vendor diversi." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

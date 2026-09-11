@@ -1,0 +1,270 @@
+#id: l1-09
+#title: MAC address e frame Ethernet
+#min: 20
+#level: 1
+#chapter: Ethernet e switching
+#desc: L'indirizzo scritto in fabbrica, campo per campo, con il frame Ethernet disegnato byte per byte.
+#obj: Leggere un MAC address e capire chi ha costruito quel dispositivo
+#obj: Descrivere tutti i campi di un frame Ethernet e a cosa servono
+#obj: Capire perché esistono sia MAC sia IP e non uno solo
+#obj: Riconoscere MAC particolari: broadcast, multicast, casuali dei telefoni
+---
+<p class="lead">Il MAC address è il primo indirizzo che un dispositivo possiede, prima ancora di
+accendersi. È scritto in fabbrica, non cambia (quasi mai), e sta alla base di tutto ciò che succede
+dentro una rete locale. Capirlo bene ti dà uno strumento diagnostico potentissimo.</p>
+
+<h2>Che cos'è un MAC address</h2>
+
+<p>Ogni scheda di rete al mondo ha un identificatore univoco da <strong>6 byte</strong>, cioè 48 bit,
+scritto in esadecimale e separato da due punti o trattini:</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 200" role="img" aria-label="Struttura di un MAC address: primi tre byte identificano il produttore, ultimi tre il numero di serie">
+    <text x="330" y="24" text-anchor="middle" class="dg-title">A4:BB:6D : 1F:0C:22</text>
+
+    <rect x="60" y="46" width="250" height="58" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.7"/>
+    <rect x="350" y="46" width="250" height="58" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.7"/>
+    <text x="185" y="72" text-anchor="middle" class="dg-mono">A4 : BB : 6D</text>
+    <text x="185" y="92" text-anchor="middle" class="dg-label-sm">3 byte — OUI, il produttore</text>
+    <text x="475" y="72" text-anchor="middle" class="dg-mono">1F : 0C : 22</text>
+    <text x="475" y="92" text-anchor="middle" class="dg-label-sm">3 byte — numero di serie della scheda</text>
+
+    <text x="185" y="128" text-anchor="middle" class="dg-label-sm">assegnato dall'IEEE a Intel, Dell, Cisco…</text>
+    <text x="185" y="146" text-anchor="middle" class="dg-label-sm">16,7 milioni di combinazioni per produttore</text>
+    <text x="475" y="128" text-anchor="middle" class="dg-label-sm">scelto dal produttore</text>
+    <text x="475" y="146" text-anchor="middle" class="dg-label-sm">unico all'interno del suo OUI</text>
+
+    <path d="M60 118v-8h250v8" stroke="var(--dg-1)" stroke-width="1.2" fill="none"/>
+    <path d="M350 118v-8h250v8" stroke="var(--dg-3)" stroke-width="1.2" fill="none"/>
+
+    <text x="330" y="180" text-anchor="middle" class="dg-label-sm">48 bit in tutto → 281.474.976.710.656 indirizzi possibili</text>
+  </svg>
+  </div>
+  <figcaption>I primi tre byte si chiamano <b>OUI</b> (Organizationally Unique Identifier) e sono
+  registrati presso l'IEEE. Dal solo MAC puoi quindi sapere <em>chi ha costruito</em> quel dispositivo,
+  ed è un'informazione diagnostica preziosissima.</figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il trucco dell'OUI che sembra magia
+  </div>
+  <p>Un cliente ti chiede: «nella rete c'è un dispositivo sconosciuto con IP 192.168.1.87, cos'è?»
+  Tu guardi la tabella ARP, trovi il MAC <code>00:1A:2B:…</code>, lo cerchi su un sito di lookup OUI e
+  scopri che è Avaya: <b>è un telefono</b>. Oppure <code>00:50:56</code> e sai che è una macchina virtuale
+  VMware. Oppure <code>B8:27:EB</code> e sai che qualcuno ha attaccato un Raspberry Pi alla rete
+  aziendale.</p>
+  <p>Alcuni OUI che imparerai a riconoscere a memoria:</p>
+  <ul style="margin-bottom:0">
+    <li><code>00:50:56</code> e <code>00:0C:29</code> — VMware</li>
+    <li><code>00:15:5D</code> — Hyper-V di Microsoft</li>
+    <li><code>B8:27:EB</code> e <code>DC:A6:32</code> — Raspberry Pi</li>
+    <li><code>00:09:0F</code> — Fortinet</li>
+    <li><code>4C:5E:0C</code> — Routerboard (MikroTik)</li>
+  </ul>
+</div>
+
+<h2>Perché servono sia MAC sia IP</h2>
+
+<p>È la domanda che tutti si fanno e quasi nessuno riceve una risposta chiara.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>MAC address</th><th>Indirizzo IP</th></tr></thead>
+    <tbody>
+      <tr><td><b>Chi lo assegna</b></td><td>Il produttore, in fabbrica</td><td>Chi amministra la rete (o il DHCP)</td></tr>
+      <tr><td><b>Cambia se sposti il dispositivo?</b></td><td>No, viaggia col dispositivo</td><td>Sì: cambia rete, cambia indirizzo</td></tr>
+      <tr><td><b>Dice dove sei?</b></td><td>No, dice solo chi sei</td><td>Sì: dice a quale rete appartieni</td></tr>
+      <tr><td><b>Fin dove è utile</b></td><td>Solo dentro la rete locale</td><td>In tutto il mondo</td></tr>
+      <tr><td><b>Analogia</b></td><td>Il codice fiscale</td><td>L'indirizzo di casa</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: codice fiscale e indirizzo
+  </div>
+  <p>Il tuo <b>codice fiscale</b> non cambia mai: è tuo per tutta la vita, anche se ti trasferisci a
+  Berlino. Ma se qualcuno deve mandarti una lettera, il codice fiscale non gli serve a niente: il postino
+  non saprebbe dove andare. Gli serve il tuo <b>indirizzo di casa</b>.</p>
+  <p>D'altra parte, quando il postino arriva al palazzo, l'indirizzo non basta più: deve sapere a quale
+  <em>persona</em> consegnare, perché nel palazzo ci sono venti famiglie. Lì torna utile il nome.</p>
+  <p>Il MAC è il codice fiscale: dice chi sei, ma non dove sei, quindi non serve a instradare.
+  L'IP è l'indirizzo: dice dove sei, e permette di arrivare fin lì da qualsiasi parte del mondo.
+  Nell'ultimo metro serve di nuovo sapere <em>chi</em>, e si torna al MAC.<br>
+  <b>Ecco perché servono entrambi, e perché esiste ARP</b>: è l'elenco del citofono che traduce
+  «indirizzo» in «nome».</p>
+</div>
+
+<h2>Il frame Ethernet, campo per campo</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Struttura di un frame Ethernet con preambolo, MAC destinazione, MAC sorgente, tipo, dati e FCS">
+    <text x="350" y="22" text-anchor="middle" class="dg-title">Frame Ethernet II — il formato usato praticamente ovunque</text>
+
+    <g stroke-width="1.5">
+      <rect x="14"  y="44" width="72"  height="52" rx="5" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".5"/>
+      <rect x="86"  y="44" width="104" height="52" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="190" y="44" width="104" height="52" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="294" y="44" width="62"  height="52" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="356" y="44" width="250" height="52" rx="5" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="606" y="44" width="80"  height="52" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+
+    <text x="50"  y="66" text-anchor="middle" class="dg-mono-sm">preamb.</text>
+    <text x="50"  y="82" text-anchor="middle" class="dg-mono-sm">8 byte</text>
+    <text x="138" y="66" text-anchor="middle" class="dg-mono-sm">MAC dest.</text>
+    <text x="138" y="82" text-anchor="middle" class="dg-mono-sm">6 byte</text>
+    <text x="242" y="66" text-anchor="middle" class="dg-mono-sm">MAC sorg.</text>
+    <text x="242" y="82" text-anchor="middle" class="dg-mono-sm">6 byte</text>
+    <text x="325" y="66" text-anchor="middle" class="dg-mono-sm">tipo</text>
+    <text x="325" y="82" text-anchor="middle" class="dg-mono-sm">2 byte</text>
+    <text x="481" y="66" text-anchor="middle" class="dg-mono-sm">DATI (payload)</text>
+    <text x="481" y="82" text-anchor="middle" class="dg-mono-sm">46 – 1500 byte</text>
+    <text x="646" y="66" text-anchor="middle" class="dg-mono-sm">FCS</text>
+    <text x="646" y="82" text-anchor="middle" class="dg-mono-sm">4 byte</text>
+
+    <!-- spiegazioni -->
+    <text x="14"  y="128" class="dg-label-sm">• <tspan font-weight="600">Preambolo</tspan> — sequenza di sincronizzazione: dice alla scheda «sto per iniziare, allineati». Non si conta nel frame.</text>
+    <text x="14"  y="148" class="dg-label-sm">• <tspan font-weight="600">MAC destinazione</tspan> — a chi va. Viene per primo, così lo switch può decidere senza leggere il resto.</text>
+    <text x="14"  y="168" class="dg-label-sm">• <tspan font-weight="600">MAC sorgente</tspan> — da chi viene. È il campo con cui lo switch impara.</text>
+    <text x="14"  y="188" class="dg-label-sm">• <tspan font-weight="600">Tipo</tspan> — cosa c'è dentro: 0x0800 = IPv4, 0x0806 = ARP, 0x86DD = IPv6, 0x8100 = tag VLAN.</text>
+    <text x="14"  y="208" class="dg-label-sm">• <tspan font-weight="600">Dati</tspan> — il pacchetto IP. Minimo 46 byte (se meno, si riempie), massimo 1500 (l'MTU).</text>
+    <text x="14"  y="228" class="dg-label-sm">• <tspan font-weight="600">FCS</tspan> — codice di controllo. Se non torna, il frame è corrotto e viene buttato in silenzio.</text>
+  </svg>
+  </div>
+  <figcaption>Nota il dettaglio di progetto elegante: il <b>MAC di destinazione viene per primo</b>.
+  Uno switch può così iniziare a inoltrare il frame dopo aver letto solo i primi 6 byte, senza aspettare
+  che arrivi tutto. Si chiama <em>cut-through switching</em> e riduce la latenza.</figcaption>
+</figure>
+
+<h3>Il famoso 1500</h3>
+<p>Il campo dati arriva al massimo a 1500 byte: è l'<span class="term" data-term="mtu">MTU</span>
+di Ethernet. Con le intestazioni il frame completo arriva a 1518 byte. Questo numero — 1500 — lo
+incontrerai ovunque: nelle VPN, nelle connessioni PPPoE (che scendono a 1492), nei tunnel.
+Tienilo a mente: tornerà.</p>
+
+<h2>MAC speciali da riconoscere</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>MAC</th><th>Significa</th><th>Quando lo vedi</th></tr></thead>
+    <tbody>
+      <tr><td><code>FF:FF:FF:FF:FF:FF</code></td><td><b>Broadcast</b>: a tutti quelli della rete</td>
+          <td>ARP, DHCP Discover, annunci vari. Se ne vedi troppi, c'è un problema.</td></tr>
+      <tr><td><code>01:00:5E:xx:xx:xx</code></td><td><b>Multicast</b> IPv4: a un gruppo</td>
+          <td>Videosorveglianza, IPTV, protocolli di routing</td></tr>
+      <tr><td><code>01:80:C2:00:00:00</code></td><td>BPDU dello <b>Spanning Tree</b></td>
+          <td>Gli switch che si accordano su chi spegne quale porta</td></tr>
+      <tr><td><code>00:00:5E:00:01:xx</code></td><td>Router virtuale <b>VRRP</b></td>
+          <td>Due router che condividono un IP per l'alta disponibilità</td></tr>
+      <tr><td>Secondo bit del primo byte = 1<br><span style="font-size:.85em">es. <code>02:</code>, <code>06:</code>, <code>0A:</code>, <code>3E:</code></span></td>
+          <td><b>Localmente amministrato</b>: non viene da una fabbrica</td>
+          <td>MAC casuali dei telefoni, macchine virtuali, MAC modificati a mano</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    I MAC casuali dei telefoni: un problema che avrai
+  </div>
+  <p>Da qualche anno iPhone e Android usano un <b>MAC address diverso per ogni rete Wi-Fi</b>, e alcuni lo
+  cambiano anche periodicamente. Serve a impedire che i negozi ti traccino mentre cammini in un centro
+  commerciale, ed è una buona cosa per la privacy.</p>
+  <p>Ma manda in crisi tutto ciò che si basa sul MAC: le riservazioni DHCP non funzionano più, i filtri
+  per MAC diventano inutili, il conteggio dei dispositivi si gonfia, e il portale ospiti ti chiede
+  di riautenticarti in continuazione.</p>
+  <p><b>Come si riconosce:</b> il secondo carattere esadecimale del MAC è 2, 6, A o E. <b>Come si risolve:</b>
+  non con i filtri MAC (che oggi non hanno comunque più senso come sicurezza) ma con l'autenticazione
+  vera — WPA2/3-Enterprise, oppure chiedendo all'utente di disattivare l'indirizzo privato su quella
+  specifica rete aziendale.</p>
+</div>
+
+<h2>Provalo adesso</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Vedere i MAC della tua rete</div>
+<pre><span class="c"># Windows — il tuo MAC</span>
+<span class="p">ipconfig /all</span>            <span class="c"># cerca "Indirizzo fisico"</span>
+<span class="p">getmac /v</span>
+
+<span class="c"># Windows — i MAC dei vicini che il PC ha incontrato</span>
+<span class="p">arp -a</span>
+
+<span class="c"># macOS / Linux</span>
+<span class="p">ifconfig en0 | grep ether</span>
+<span class="p">arp -a</span>
+</pre>
+</div>
+
+<p>Guarda l'elenco che esce da <code>arp -a</code>: quelli sono i dispositivi con cui il tuo PC ha parlato
+di recente. Prendi tre MAC e cercali su un sito di lookup OUI (cerca «MAC address lookup»).
+Scoprirai chi c'è nella tua rete: il router, la stampante, il telefono, il portatile del collega.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il caso dell'IP duplicato
+  </div>
+  <p>Un utente si lamenta che la connessione «va e viene». Guardi la tabella ARP e vedi che l'IP
+  192.168.1.50 risponde ora con un MAC e cinque secondi dopo con un altro. Due dispositivi hanno lo stesso
+  indirizzo IP: si rubano il traffico a vicenda.</p>
+  <p>Grazie all'OUI puoi anche identificare il colpevole senza girare per gli uffici: se un MAC è
+  Hewlett-Packard, è probabilmente la stampante a cui qualcuno ha messo un IP statico dentro il campo
+  del DHCP. Da qui la regola d'oro: <b>gli indirizzi statici stanno sempre fuori dal campo assegnato
+  dal DHCP</b>, e ancora meglio si usano le riservazioni DHCP.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: MAC e frame Ethernet",
+  "questions": [
+    { "q": "Quanto è lungo un MAC address?",
+      "a": [ {"t":"6 byte, cioè 48 bit","ok":true},
+             {"t":"4 byte, cioè 32 bit","ok":false},
+             {"t":"8 byte, cioè 64 bit","ok":false},
+             {"t":"16 byte, cioè 128 bit","ok":false} ],
+      "e": "48 bit scritti in 12 cifre esadecimali. 32 bit è la lunghezza di un indirizzo IPv4, 128 bit quella di un IPv6." },
+
+    { "q": "Cosa identificano i primi tre byte di un MAC address?",
+      "a": [ {"t":"Il produttore del dispositivo (OUI)","ok":true},
+             {"t":"La rete a cui il dispositivo appartiene","ok":false},
+             {"t":"Il tipo di connessione: cavo o Wi-Fi","ok":false},
+             {"t":"L'anno di produzione","ok":false} ],
+      "e": "L'OUI è registrato presso l'IEEE e assegnato a un costruttore. Da lì capisci se un dispositivo sconosciuto è una macchina virtuale, una stampante, un telefono o un Raspberry Pi — spesso senza doverti alzare dalla sedia. Il MAC non contiene alcuna informazione sulla rete: è proprio il suo limite, ed è il motivo per cui serve l'IP." },
+
+    { "q": "Il MAC di destinazione è <code>FF:FF:FF:FF:FF:FF</code>. Che tipo di frame è?",
+      "a": [ {"t":"Un broadcast, destinato a tutti i dispositivi della rete locale","ok":true},
+             {"t":"Un frame corrotto","ok":false},
+             {"t":"Un frame destinato al router","ok":false},
+             {"t":"Un frame multicast","ok":false} ],
+      "e": "Tutti i bit a 1 è l'indirizzo di broadcast: lo switch lo replica su tutte le porte della VLAN. Lo usano ARP e DHCP Discover. Il multicast ha invece una struttura specifica, come <code>01:00:5E:…</code> per IPv4." },
+
+    { "q": "Perché nel frame Ethernet il MAC di destinazione viene prima di quello sorgente?",
+      "a": [ {"t":"Così lo switch può decidere dove inoltrare senza aspettare tutto il frame","ok":true},
+             {"t":"Per convenzione storica, senza motivo tecnico","ok":false},
+             {"t":"Perché il MAC sorgente è opzionale","ok":false},
+             {"t":"Per rendere più facile il calcolo dell'FCS","ok":false} ],
+      "e": "È una scelta di progetto per la velocità: letti i primi 6 byte, lo switch sa già su quale porta mandare e può iniziare a inoltrare mentre il resto sta ancora arrivando (<em>cut-through</em>). Aspettare il frame intero (<em>store-and-forward</em>) è più sicuro perché permette di verificare l'FCS, ma aggiunge latenza." },
+
+    { "q": "Un telefono si collega al Wi-Fi aziendale con un MAC che inizia per <code>3E:</code>. Cosa significa?",
+      "a": [ {"t":"È un MAC casuale generato dal telefono per la privacy, non quello di fabbrica","ok":true},
+             {"t":"È un dispositivo Cisco","ok":false},
+             {"t":"È un MAC corrotto e va sostituita la scheda","ok":false},
+             {"t":"È un dispositivo che sta tentando un attacco","ok":false} ],
+      "e": "Il secondo carattere esadecimale 2, 6, A o E indica un indirizzo «localmente amministrato», cioè non assegnato da una fabbrica. iOS e Android lo usano per impedire il tracciamento. Non è un attacco, ma manda in crisi riservazioni DHCP e filtri MAC: la risposta corretta è passare all'autenticazione vera, non inseguire i MAC." },
+
+    { "q": "Qual è la dimensione massima del campo dati di un frame Ethernet standard?",
+      "a": [ {"t":"1500 byte","ok":true}, {"t":"1518 byte","ok":false},
+             {"t":"1492 byte","ok":false}, {"t":"9000 byte","ok":false} ],
+      "e": "1500 byte di dati: è l'MTU di Ethernet. 1518 è il frame <em>completo</em> comprese le intestazioni; 1492 è l'MTU tipica di una connessione PPPoE; 9000 è un jumbo frame, che va abilitato su tutto il percorso o crea più problemi di quanti ne risolva." }
+  ]
+}
+</script>

@@ -1,0 +1,303 @@
+#id: l1-25
+#title: Metodo di troubleshooting: dal cavo all'app
+#min: 26
+#level: 1
+#chapter: Trasporto, strumenti e metodo
+#desc: Il processo che trasforma "non funziona niente" in una diagnosi in dieci minuti. Da applicare da domani sui ticket.
+#obj: Applicare un metodo ripetibile invece di procedere a tentativi
+#obj: Fare le domande giuste prima di toccare qualsiasi cosa
+#obj: Usare la tecnica della bisezione per dimezzare il campo di ricerca a ogni passo
+#obj: Documentare e comunicare come fa un professionista
+---
+<p class="lead">Questa è l'ultima lezione del livello 1 ed è quella che userai ogni singolo giorno.
+Tutto quello che hai studiato finora serve a nutrire questo metodo: senza il metodo, la conoscenza resta
+un mucchio di nozioni; con il metodo, diventa capacità di risolvere. Da domani, sui tuoi ticket.</p>
+
+<h2>Perché serve un metodo</h2>
+
+<p>Senza metodo si procede per tentativi: si riavvia qualcosa, si cambia un'impostazione, si guarda se
+va meglio. A volte funziona — e quando funziona è ancora peggio, perché <strong>non hai capito
+perché</strong>, quindi il guasto tornerà e tu sarai al punto di prima.</p>
+
+<p>Con un metodo, ogni passo <strong>esclude</strong> qualcosa. Il campo si restringe in modo garantito,
+e arrivi alla causa anche quando il guasto è nuovo e non l'hai mai visto.</p>
+
+<h2>I sette passi</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 330" role="img" aria-label="I sette passi del metodo di troubleshooting in sequenza">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Il ciclo, sempre lo stesso</text>
+    <g stroke-width="1.5">
+      <rect x="16" y="36"  width="320" height="40" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="84"  width="320" height="40" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="132" width="320" height="40" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="16" y="180" width="320" height="40" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="364" y="36"  width="320" height="40" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="364" y="84"  width="320" height="40" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="364" y="132" width="320" height="40" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="34" y="53">1 · DEFINISCI</text>
+      <text x="34" y="69" fill="var(--dg-text-soft)">cosa non funziona, esattamente?</text>
+      <text x="34" y="101">2 · DELIMITA</text>
+      <text x="34" y="117" fill="var(--dg-text-soft)">chi funziona e chi no? da quando?</text>
+      <text x="34" y="149">3 · IPOTIZZA</text>
+      <text x="34" y="165" fill="var(--dg-text-soft)">a quale livello può stare?</text>
+      <text x="34" y="197">4 · VERIFICA</text>
+      <text x="34" y="213" fill="var(--dg-text-soft)">una prova che ESCLUDE metà dei casi</text>
+      <text x="382" y="53">5 · RISOLVI</text>
+      <text x="382" y="69" fill="var(--dg-text-soft)">una modifica alla volta, annotata</text>
+      <text x="382" y="101">6 · CONFERMA</text>
+      <text x="382" y="117" fill="var(--dg-text-soft)">fallo verificare all'utente</text>
+      <text x="382" y="149">7 · DOCUMENTA</text>
+      <text x="382" y="165" fill="var(--dg-text-soft)">causa, soluzione, prevenzione</text>
+    </g>
+    <path d="M176 220v22h-40v-22" stroke="var(--dg-2)" stroke-width="1.4" fill="none"/>
+    <text x="176" y="258" text-anchor="middle" class="dg-mono-sm">se l'ipotesi cade → torna al passo 3</text>
+    <text x="350" y="296" text-anchor="middle" class="dg-label-sm">Il passo 4 è il cuore: una buona verifica non «prova qualcosa», <tspan font-weight="700">elimina metà delle possibilità</tspan>.</text>
+    <text x="350" y="318" text-anchor="middle" class="dg-label-sm">Il passo 7 è quello che tutti saltano, ed è quello che ti fa crescere più in fretta.</text>
+  </svg>
+  </div>
+  <figcaption>Sette passi. I primi due si fanno <b>parlando</b>, non toccando: sono i più sottovalutati
+  e i più redditizi.</figcaption>
+</figure>
+
+<h2>Passo 1 — Definisci: le domande da fare</h2>
+
+<p>«Non funziona la rete» non è un problema: è uno stato d'animo. Il tuo primo lavoro è trasformarlo in
+una descrizione verificabile.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Domanda</th><th>Perché è importante</th></tr></thead>
+    <tbody>
+      <tr><td><b>«Cosa stavi cercando di fare, esattamente?»</b></td>
+          <td>«Non va Internet» può significare: non si apre un sito, non arriva la posta, non si apre il gestionale. Tre problemi diversi.</td></tr>
+      <tr><td><b>«Che messaggio esatto compare?»</b></td>
+          <td>Fatti mandare uno screenshot. «Errore di connessione» e «certificato non valido» portano in due direzioni opposte.</td></tr>
+      <tr><td><b>«Da quando?»</b></td><td>Delimita la finestra temporale in cui cercare il cambiamento.</td></tr>
+      <tr><td><b>«È cambiato qualcosa?»</b></td>
+          <td>La risposta è sempre «no». Riformula: «avete aggiunto dispositivi, spostato mobili, fatto lavori, cambiato operatore, aggiornato qualcosa?»</td></tr>
+      <tr><td><b>«Succede sempre o a volte?»</b></td>
+          <td>Intermittente cambia completamente strategia: servono monitoraggio e pazienza, non tentativi.</td></tr>
+      <tr><td><b>«Ha mai funzionato?»</b></td>
+          <td>Se non ha mai funzionato è un errore di configurazione. Se funzionava, è un cambiamento. Due indagini opposte.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Passo 2 — Delimita: chi funziona e chi no</h2>
+
+<p>È il passo che vale più di tutti gli altri messi insieme, perché individua <strong>cosa hanno in
+comune</strong> quelli che hanno il problema.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Se il problema riguarda…</th><th>La causa sta quasi certamente…</th></tr></thead>
+    <tbody>
+      <tr><td>Un solo utente, un solo PC</td><td>Su quel PC: configurazione, firewall locale, profilo, hosts, rotta residua</td></tr>
+      <tr><td>Un solo utente su qualsiasi PC</td><td>Nel suo <b>account</b>: permessi, criteri di gruppo, password scaduta</td></tr>
+      <tr><td>Tutti quelli di una stanza</td><td>Nello <b>switch</b> o nel cablaggio di quella zona</td></tr>
+      <tr><td>Tutti quelli di una VLAN</td><td>Nella <b>configurazione della VLAN</b>: gateway, DHCP, relay, policy</td></tr>
+      <tr><td>Tutti, verso una sola destinazione</td><td>Nel <b>percorso verso quella destinazione</b>: rotta, regola firewall, o la destinazione è giù</td></tr>
+      <tr><td>Tutti, verso tutto</td><td>Nel <b>punto comune</b>: firewall, linea, DNS, DHCP, alimentazione</td></tr>
+      <tr><td>Solo il Wi-Fi</td><td>Access point, radio, autenticazione</td></tr>
+      <tr><td>Solo in certi orari</td><td>Carico, backup, lease DHCP, un macchinario che si accende</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il gioco delle venti domande
+  </div>
+  <p>Nel gioco delle venti domande devi indovinare un oggetto facendo domande a cui si risponde solo
+  sì o no. Il modo peggiore di giocare è tirare a indovinare: «è una bicicletta? è un gatto?».
+  Ogni tentativo sbagliato ti fa perdere una domanda e non ti dice quasi niente.</p>
+  <p>Il modo migliore è fare domande che <b>tagliano il mondo a metà</b>: «è vivo?», «sta in una stanza?»,
+  «è più grande di una scatola da scarpe?». Con venti domande così puoi individuare un oggetto tra un
+  milione.</p>
+  <p><b>Il troubleshooting è identico.</b> «Provo a riavviare lo switch» è tirare a indovinare.
+  «Il collega accanto funziona?» taglia il mondo a metà: se funziona, hai escluso switch, VLAN, DHCP,
+  gateway, linea e firewall in una sola domanda, senza toccare niente.</p>
+</div>
+
+<h2>Passo 3-4 — Ipotizza e verifica dal basso</h2>
+
+<p>Usa la scala dei livelli OSI della lezione 1-03, e sali un gradino alla volta. Ogni verifica deve
+essere scelta per <strong>escludere</strong>, non per confermare.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La sequenza di triage in sei comandi</div>
+<pre><span class="c"># 1 - Ho un indirizzo valido?         (livelli 1-2-3, e il DHCP)</span>
+<span class="p">ipconfig /all</span>
+
+<span class="c"># 2 - Vedo i miei vicini?             (livello 2)</span>
+<span class="p">arp -a</span>
+<span class="p">ping 10.10.10.1</span>                   <span class="c"># il gateway</span>
+
+<span class="c"># 3 - Esco dalla mia rete?            (livello 3)</span>
+<span class="p">ping 8.8.8.8</span>
+
+<span class="c"># 4 - Risolvo i nomi?                 (DNS)</span>
+<span class="p">nslookup www.google.it</span>
+<span class="p">nslookup www.google.it 1.1.1.1</span>   <span class="c"># confronto: il mio DNS o il dominio?</span>
+
+<span class="c"># 5 - Il servizio risponde?           (livello 4)</span>
+<span class="p">Test-NetConnection srv01 -Port 445</span>
+
+<span class="c"># 6 - Se tutto passa ma non funziona  (livello 7)</span>
+<span class="c">    log dell'applicazione, log del firewall, certificati, permessi</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Sei comandi, dieci minuti, e sai dov'è il problema
+  </div>
+  <p>Questa sequenza da sola risolve o circoscrive la grande maggioranza dei ticket di rete. Non è
+  poco: è esattamente ciò che ti manca oggi quando un ticket ti sembra incomprensibile.</p>
+  <p>E quando non basta, ti porta comunque al punto in cui puoi chiedere aiuto <b>bene</b>:
+  «ho verificato che ipconfig è corretto, il gateway risponde, 8.8.8.8 risponde, il DNS risolve,
+  ma la porta 445 del server dà timeout mentre da un altro PC funziona». Con una frase così, un collega
+  senior ti dà la risposta in trenta secondi — e impara a considerarti affidabile.</p>
+</div>
+
+<h2>Passo 5 — Risolvi: le regole d'oro</h2>
+
+<ul class="clean">
+  <li><b>Una modifica alla volta.</b> Se ne fai tre e funziona, non saprai mai quale era quella giusta —
+  e le altre due restano lì, come bombe.</li>
+  <li><b>Annota ogni modifica</b> mentre la fai, non dopo. Con il valore precedente.</li>
+  <li><b>Se non risolve, rimetti com'era</b> prima di provare altro. Altrimenti accumuli modifiche
+  inutili che diventeranno il prossimo guasto misterioso.</li>
+  <li><b>Backup prima di toccare la configurazione</b> di un apparato. Sempre, senza eccezioni.</li>
+  <li><b>Se sei in produzione e non è urgentissimo, aspetta.</b> Una modifica al firewall alle 11 del
+  mattino può fermare cinquanta persone. Chiedi se si può fare alle 18.</li>
+</ul>
+
+<h2>Passo 7 — Documenta: dove sta la crescita</h2>
+
+<p>È il passo che tutti saltano ed è quello che, come hai visto nel <a href="../piano.html">piano di
+studio</a>, accorcia di un anno il percorso verso il livello senior. Cinque righe per ogni ticket:</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Modello — mettilo nel tuo quaderno dei ticket</div>
+<pre><span class="k">Sintomo:</span>    cosa vedeva l'utente, con le sue parole
+<span class="k">Delimitazione:</span> chi sì e chi no, da quando
+<span class="k">Verifiche:</span>  cosa ho provato e cosa ha escluso ciascuna prova
+<span class="k">Causa:</span>      la causa VERA, non «ho riavviato e funziona»
+<span class="k">Soluzione:</span>  cosa ho cambiato, con il valore precedente
+<span class="k">Prevenzione:</span> cosa eviterebbe che si ripeta
+<span class="k">Imparato:</span>   la regola generale che porto via
+</pre>
+</div>
+
+<h2>Gli errori che fanno perdere ore</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Errore</th><th>Perché fa perdere tempo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Credere al racconto invece di verificare</b></td>
+          <td>«Non ho toccato niente» è quasi sempre falso, e non per malafede: l'utente non collega la causa all'effetto.</td></tr>
+      <tr><td><b>Partire dal livello 7</b></td>
+          <td>Ore a controllare configurazioni mentre il cavo è mezzo sfilato.</td></tr>
+      <tr><td><b>Innamorarsi della prima ipotesi</b></td>
+          <td>Si continua a cercare conferme invece di smentite. Se due verifiche non la confermano, cambiala.</td></tr>
+      <tr><td><b>Cambiare più cose insieme</b></td>
+          <td>Non saprai mai la causa, e resteranno modifiche non necessarie.</td></tr>
+      <tr><td><b>Fermarsi appena funziona</b></td>
+          <td>Se non sai <em>perché</em> funziona, tornerà. E tornerà nel momento peggiore.</td></tr>
+      <tr><td><b>Non chiedere aiuto per orgoglio</b></td>
+          <td>Dopo 45 minuti senza progressi, chiedere non è una sconfitta: è gestione del tempo. Ma chiedi <b>bene</b>.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Come si comunica con il cliente durante un guasto
+  </div>
+  <p>Metà del giudizio che un cliente dà su di te non riguarda la soluzione: riguarda come lo hai
+  tenuto informato mentre aspettava.</p>
+  <ul style="margin-bottom:0">
+    <li><b>Conferma subito di aver preso in carico</b>, anche se non hai ancora fatto niente.
+    Il silenzio è la cosa che fa arrabbiare le persone, non l'attesa.</li>
+    <li><b>Di' cosa stai facendo, non cosa pensi.</b> «Sto verificando il collegamento verso l'operatore»,
+    non «boh, sembra strano».</li>
+    <li><b>Dai un aggiornamento anche quando non hai novità</b>, con un orario per il prossimo.</li>
+    <li><b>Se hai sbagliato, dillo subito e chiaramente.</b> Si perdona un errore ammesso, non uno scoperto.</li>
+    <li><b>Alla chiusura spiega la causa in una frase comprensibile</b>, senza sigle. «Il router
+    dell'operatore aveva perso la configurazione dopo il blackout di stanotte» vale più di dieci termini
+    tecnici — e giustifica il tempo che ci hai messo.</li>
+  </ul>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Hai finito il Livello 1. Adesso fai questo.
+  </div>
+  <ol style="margin-bottom:0">
+    <li>Fai il <a href="../lab.html">laboratorio 03</a>: provoca tu stesso i sei guasti più comuni sul
+    MikroTik e diagnosticali dai soli sintomi. È il collaudo di tutto quello che hai imparato.</li>
+    <li>Fai la <a href="../verifiche.html">Verifica 1</a>, senza ripassare prima. Sotto l'80%,
+    torna sulle lezioni delle domande sbagliate.</li>
+    <li>Sul prossimo ticket di rete che ti assegnano, applica i sette passi <b>per iscritto</b>,
+    anche se ti sembra lento. Dopo cinque ticket sarà automatico, e non tornerai più indietro.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il metodo",
+  "questions": [
+    { "q": "Qual è la domanda che restringe di più il campo di ricerca, all'inizio di un guasto?",
+      "a": [ {"t":"«Chi ha il problema e chi no?»","ok":true},
+             {"t":"«Avete provato a riavviare?»","ok":false},
+             {"t":"«Che antivirus usate?»","ok":false},
+             {"t":"«Quanta banda avete?»","ok":false} ],
+      "e": "Sapere chi funziona e chi no rivela immediatamente cosa hanno in comune quelli colpiti, e quindi dove sta la causa: un solo PC porta a qualcosa di locale, un'intera VLAN alla configurazione di quella VLAN, tutti verso una destinazione al percorso. È la domanda che taglia il mondo a metà senza toccare nulla." },
+
+    { "q": "Perché è importante fare una modifica alla volta?",
+      "a": [ {"t":"Altrimenti non saprai quale ha risolto, e le altre restano come futuri problemi","ok":true},
+             {"t":"Perché gli apparati non accettano più modifiche insieme","ok":false},
+             {"t":"Per non sovraccaricare la CPU del firewall","ok":false},
+             {"t":"Perché lo richiedono le procedure aziendali","ok":false} ],
+      "e": "Tre modifiche insieme che risolvono lasciano tre incognite: non sai quale serviva e le altre due restano in configurazione come modifiche non giustificate, che un giorno diventeranno il prossimo guasto misterioso. Una alla volta, annotata, con il valore precedente." },
+
+    { "q": "Un utente dice «non ho toccato niente». Come lo tratti?",
+      "a": [ {"t":"Come un'informazione non affidabile: riformulo chiedendo cosa è successo in azienda","ok":true},
+             {"t":"Come un dato certo, e cerco altrove","ok":false},
+             {"t":"Lo accuso di aver cambiato qualcosa","ok":false},
+             {"t":"Ignoro completamente quello che dice","ok":false} ],
+      "e": "Non è malafede: le persone non collegano la causa all'effetto, e «toccare» per loro significa aver modificato una configurazione. Riformulando — «avete aggiunto dispositivi, spostato mobili, fatto lavori, cambiato operatore?» — emergono quasi sempre cose utilissime. Accusare chiude la fonte di informazioni; ignorare butta via l'unico testimone." },
+
+    { "q": "Dopo 45 minuti senza progressi, la cosa giusta è:",
+      "a": [ {"t":"Chiedere aiuto, presentando cosa hai già escluso","ok":true},
+             {"t":"Continuare da solo per non fare brutta figura","ok":false},
+             {"t":"Riavviare tutto e sperare","ok":false},
+             {"t":"Chiudere il ticket come non riproducibile","ok":false} ],
+      "e": "Chiedere aiuto è gestione del tempo, non sconfitta — soprattutto con un cliente che aspetta. Ma va fatto <b>bene</b>: «ho escluso questo, questo e questo, resta questo» ottiene una risposta in trenta secondi e ti fa guadagnare credibilità. «Non funziona niente, mi aiuti?» ottiene fastidio." },
+
+    { "q": "Perché il passo «documenta» è quello che fa crescere di più?",
+      "a": [ {"t":"Perché trasforma un caso risolto in una regola che riconoscerai la prossima volta","ok":true},
+             {"t":"Perché lo richiede la certificazione ISO","ok":false},
+             {"t":"Perché permette di fatturare più ore","ok":false},
+             {"t":"Perché protegge legalmente in caso di contestazioni","ok":false} ],
+      "e": "Scrivere la causa vera e la regola generale converte l'esperienza in conoscenza riutilizzabile. È la differenza tra chi dopo tre anni ha visto trecento guasti e chi ha visto lo stesso guasto trecento volte. Gli altri motivi sono veri ma secondari." },
+
+    { "q": "Il problema colpisce tutti gli utenti di una VLAN e nessuno delle altre. Dove guardi?",
+      "a": [ {"t":"Nella configurazione di quella VLAN: gateway, DHCP, relay, policy","ok":true},
+             {"t":"Nei singoli PC degli utenti colpiti","ok":false},
+             {"t":"Nella linea Internet","ok":false},
+             {"t":"Nel cablaggio di ogni postazione","ok":false} ],
+      "e": "Il confine del problema coincide esattamente con il confine della VLAN: la causa è ciò che quella VLAN ha di diverso dalle altre. Se fosse la linea sarebbero colpite tutte; se fossero i PC il confine sarebbe casuale e non coinciderebbe con una VLAN intera." }
+  ]
+}
+</script>

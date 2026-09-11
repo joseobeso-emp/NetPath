@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NetPath — Da zero a senior nel networking</title>
+<meta name="description" content="Percorso di studio completo del networking: dalle basi fisiche alla progettazione di reti multi-sede. 4 livelli, 90 lezioni, laboratori pratici e verifiche.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="home" data-root="">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+
+<section class="hero">
+  <div class="hero__grid"></div>
+  <div class="wrap hero__inner">
+    <div class="eyebrow"><span class="pulse"></span> Percorso personale · aggiornato al 2026</div>
+    <h1>Da <em>non ci capisco niente</em> a progettare reti.</h1>
+    <p class="lead">
+      Questo non è un corso da guardare. È un percorso costruito su un'idea precisa:
+      <strong>nessun concetto viene dato per scontato</strong>, ogni cosa viene spiegata come la spiegheresti
+      a un ragazzino di dodici anni, e ogni lezione finisce con qualcosa che puoi toccare —
+      un comando, un laboratorio sul tuo MikroTik, un esercizio.
+      Novanta lezioni, quattro livelli, un obiettivo: arrivare a essere quello che in azienda risolve i problemi che nessun altro risolve.
+    </p>
+    <div class="hero__cta">
+      <a class="btn lg" href="lezioni/l1-01.html">Inizia dalla prima lezione</a>
+      <a class="btn ghost lg" id="np-resume" href="percorso.html">Vedi il percorso completo</a>
+    </div>
+  </div>
+</section>
+
+<main>
+
+<!-- ===== CRUSCOTTO PROGRESSI ===== -->
+<section class="section" style="padding-bottom:0">
+  <div class="wrap">
+    <div class="card" style="padding:24px" id="np-dash">
+      <div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap">
+        <div class="ring" id="np-ring">
+          <svg viewBox="0 0 36 36">
+            <circle class="track" cx="18" cy="18" r="15.5" fill="none" stroke-width="4"></circle>
+            <circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke-width="4"
+                    stroke-dasharray="97.4" stroke-dashoffset="97.4"></circle>
+          </svg>
+          <b>0%</b>
+        </div>
+        <div style="flex:1 1 240px;min-width:0">
+          <h3 style="font-size:1.1rem;margin-bottom:4px">I tuoi progressi</h3>
+          <p style="font-size:.88rem;color:var(--text-mute);margin-bottom:12px" id="np-dash-txt">
+            Non hai ancora completato nessuna lezione. Si comincia dalla prima.
+          </p>
+          <div class="bar"><i id="np-bar" style="width:0%"></i></div>
+        </div>
+        <div id="np-resume-box" style="flex:0 1 280px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== I QUATTRO LIVELLI ===== -->
+<section class="section">
+  <div class="wrap">
+    <div class="section__head">
+      <div class="kicker">La struttura</div>
+      <h2>Quattro livelli, costruiti uno sull'altro</h2>
+      <p>Ogni livello presuppone solo quello prima. Non si salta: se il livello 1 è fragile, il livello 3 diventa
+         memorizzazione a pappagallo — ed è esattamente il motivo per cui i ticket sembrano incomprensibili.</p>
+    </div>
+    <div class="grid c4" id="np-levels"></div>
+  </div>
+</section>
+
+<!-- ===== IL METODO ===== -->
+<section class="section" style="background:var(--bg-elev);border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="section__head">
+      <div class="kicker">Il metodo</div>
+      <h2>Perché questo percorso funziona dove i video non funzionano</h2>
+      <p>Non è una questione di quantità di materiale. È una questione di come il cervello fissa un concetto tecnico.</p>
+    </div>
+    <div class="grid c2">
+
+      <div class="card">
+        <div style="font-size:1.5rem;margin-bottom:10px">🧒</div>
+        <h3>Metodo Feynman</h3>
+        <p>Ogni concetto ha un riquadro viola che lo rispiega con parole da dodicenne e un esempio della vita
+           reale. Se non riesci a ripetere quella spiegazione a voce, non l'hai capito: torna indietro.
+           È una regola, non un consiglio.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.5rem;margin-bottom:10px">🔧</div>
+        <h3>Prima il come, poi il perché… e poi di nuovo il come</h3>
+        <p>Ogni lezione teorica ha un corrispettivo pratico: un comando da lanciare sul tuo PC, una cattura da
+           guardare, una configurazione da fare sul MikroTik. La teoria senza le mani sopra evapora in due settimane.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.5rem;margin-bottom:10px">🎯</div>
+        <h3>Orientato al ticket, non all'esame</h3>
+        <p>Ogni argomento è scelto perché <em>prima o poi arriva in un ticket</em>. Gli esempi sono casi reali da
+           MSP: il cliente che non naviga, il tunnel che non sale, il Wi-Fi che cade in magazzino.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.5rem;margin-bottom:10px">🔁</div>
+        <h3>Ripetizione distanziata</h3>
+        <p>I quiz non sono un voto: servono a farti recuperare l'informazione dalla memoria, che è l'unico gesto
+           che la consolida. Le risposte cambiano posizione a ogni tentativo, così non impari la posizione
+           invece del concetto.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== COSA TROVI ===== -->
+<section class="section">
+  <div class="wrap">
+    <div class="section__head">
+      <div class="kicker">Gli strumenti</div>
+      <h2>Non solo lezioni</h2>
+    </div>
+    <div class="grid c3">
+      <a class="card" href="piano.html">
+        <h3>📅 Piano di studio</h3>
+        <p>Quante ore a settimana, in che ordine, e la risposta onesta alla domanda "quanto ci metto davvero
+           ad arrivare a senior".</p>
+      </a>
+      <a class="card" href="lab.html">
+        <h3>🧪 Laboratorio MikroTik</h3>
+        <p>Laboratori pratici sul tuo hAP ax²: dal primo reset alla VLAN, dal firewall al tunnel VPN.
+           Con checklist che si salvano.</p>
+      </a>
+      <a class="card" href="strumenti.html">
+        <h3>🧮 Strumenti</h3>
+        <p>Calcolatore di subnet, convertitore binario, generatore infinito di esercizi di subnetting,
+           tabella delle porte.</p>
+      </a>
+      <a class="card" href="glossario.html">
+        <h3>📖 Glossario</h3>
+        <p>Ogni sigla che incontri nei ticket, spiegata in due righe comprensibili. Cercabile da tastiera
+           con <kbd class="key">⌘K</kbd>.</p>
+      </a>
+      <a class="card" href="verifiche.html">
+        <h3>✅ Verifiche trimestrali</h3>
+        <p>Ogni tre mesi un test serio che misura dove sei davvero e ti dice cosa ripassare prima di andare avanti.</p>
+      </a>
+      <a class="card" href="percorso.html">
+        <h3>🗺️ Percorso completo</h3>
+        <p>Tutte le 90 lezioni in una pagina sola, con i tuoi progressi accanto a ciascuna.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROMESSA ONESTA ===== -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="callout warn" style="margin:0">
+      <div class="callout__head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+        Una cosa da dire subito
+      </div>
+      <p>Nessun sito, nessun corso e nessuna certificazione ti rendono senior. Ti rendono <em>competente</em>, che è
+      una cosa diversa e che è il prerequisito. Il passaggio da competente a senior lo fanno i guasti veri, i
+      clienti arrabbiati, le notti di migrazione e i tuoi errori. Questo percorso serve a farti arrivare preparato
+      a quei momenti, e a fare in modo che ognuno di essi ti insegni qualcosa invece di spaventarti.
+      <a href="piano.html">Nel piano di studio trovi le stime realistiche, mese per mese.</a></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer id="np-footer"></footer>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/glossario-data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+window.NP_PAGE_INIT = function () {
+  var NP = window.NetPath, p = NP.progress();
+  var pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
+
+  // anello
+  var circ = 2 * Math.PI * 15.5;
+  var fill = document.querySelector("#np-ring .fill");
+  fill.setAttribute("stroke-dasharray", circ.toFixed(1));
+  fill.setAttribute("stroke-dashoffset", (circ * (1 - pct / 100)).toFixed(1));
+  document.querySelector("#np-ring b").textContent = pct + "%";
+  document.getElementById("np-bar").style.width = pct + "%";
+
+  var txt = document.getElementById("np-dash-txt");
+  if (p.done === 0) {
+    txt.textContent = "Non hai ancora completato nessuna lezione. Si comincia dalla prima: dieci minuti bastano.";
+  } else {
+    txt.innerHTML = "<b>" + p.done + "</b> lezioni completate su " + p.total +
+      ". Livello 1: " + p.levels.l1.done + "/" + p.levels.l1.total +
+      " · Livello 2: " + p.levels.l2.done + "/" + p.levels.l2.total +
+      " · Livello 3: " + p.levels.l3.done + "/" + p.levels.l3.total +
+      " · Livello 4: " + p.levels.l4.done + "/" + p.levels.l4.total + ".";
+  }
+
+  // riprendi
+  var last = NP.store.get("last");
+  var box = document.getElementById("np-resume-box");
+  if (last && last.id) {
+    box.innerHTML =
+      '<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);margin-bottom:6px">Riprendi da qui</div>' +
+      '<a class="btn" style="width:100%" href="lezioni/' + last.id + '.html">' + NP.esc(last.t) + "</a>";
+    document.getElementById("np-resume").setAttribute("href", "lezioni/" + last.id + ".html");
+    document.getElementById("np-resume").textContent = "Riprendi dove eri";
+  }
+
+  // card dei livelli
+  var host = document.getElementById("np-levels");
+  host.innerHTML = window.NETPATH_CURRICULUM.map(function (lv) {
+    var st = p.levels[lv.id];
+    var nL = lv.chapters.reduce(function (a, c) { return a + c.lessons.length; }, 0);
+    return '<a class="level-card ' + lv.id + '" href="percorso.html#' + lv.id + '">' +
+      '<div class="lv-n">Livello ' + lv.n + " · " + NP.esc(lv.subtitle) + "</div>" +
+      "<h3>" + NP.esc(lv.title) + "</h3>" +
+      "<p>" + NP.esc(lv.blurb) + "</p>" +
+      '<div class="lv-stats"><span>' + nL + " lezioni</span><span>" + lv.hours + "</span></div>" +
+      '<div class="bar" style="margin-top:12px"><i style="width:' + (st.total ? (st.done / st.total) * 100 : 0) + '%"></i></div>' +
+      "</a>";
+  }).join("");
+};
+</script>
+</body>
+</html>

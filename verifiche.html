@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verifiche trimestrali — NetPath</title>
+<meta name="description" content="Test periodici che misurano davvero cosa hai imparato e cosa devi ripassare.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="verifiche" data-root="">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+
+<main class="wrap" style="padding-top:44px;padding-bottom:70px;max-width:880px">
+
+  <div class="kicker">Verifiche</div>
+  <h1 style="font-size:clamp(1.9rem,1.4rem + 2.2vw,2.7rem);letter-spacing:-.03em;margin-bottom:14px">
+    Misurare dove sei davvero</h1>
+  <p class="lead" style="max-width:70ch">
+    I quiz delle lezioni servono a fissare quello che hai appena letto. Le verifiche servono a una cosa diversa
+    e più scomoda: scoprire cosa hai <b>dimenticato</b>. Si fanno a distanza di mesi, pescando da tutto il
+    programma, senza rileggere niente prima. Il risultato basso non è una brutta notizia: è l'unico modo per
+    sapere dove tornare.</p>
+
+  <div class="callout" style="max-width:70ch">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
+      Come si fa una verifica
+    </div>
+    <ul style="margin-bottom:0">
+      <li><b>Non ripassare prima.</b> Serve a misurare la memoria a lungo termine, non quella di dieci minuti fa.</li>
+      <li><b>Niente pause e niente ricerche.</b> Se non sai, scegli quello che ti sembra più sensato: anche
+      sbagliare con un ragionamento vale molto più che indovinare.</li>
+      <li><b>Le risposte cambiano posizione</b> a ogni tentativo, quindi rifarla non ti fa memorizzare la posizione.</li>
+      <li><b>Sotto la soglia, non si va avanti.</b> Si torna sulle lezioni indicate dalle domande sbagliate.</li>
+    </ul>
+  </div>
+
+  <h2 style="font-size:1.55rem;margin:48px 0 10px">Verifica 1 — Fondamenta</h2>
+  <p style="color:var(--text-mute);margin-bottom:6px">
+    Copre tutto il Livello 1: modello a strati, cavi, switching, indirizzamento IP, subnetting, ARP, DHCP, DNS,
+    NAT, TCP/UDP e metodo di diagnosi. <b>Soglia per proseguire al Livello 2: 80%.</b></p>
+  <p style="color:var(--text-faint);font-size:.85rem;font-family:var(--font-mono);margin-bottom:24px">
+    25 domande · da fare alla fine del mese 4</p>
+
+  <script type="application/json" data-quiz>
+{
+  "title": "Verifica 1 — Livello 1 · Fondamenta",
+  "questions": [
+    { "q": "Un utente ti dice che il suo PC ha indirizzo <code>169.254.18.7</code>. Qual è la prima cosa che hai capito?",
+      "a": [ {"t":"Che non ha ricevuto risposta dal server DHCP","ok":true},
+             {"t":"Che il suo cavo di rete è staccato","ok":false},
+             {"t":"Che il DNS è configurato male","ok":false},
+             {"t":"Che il firewall gli sta bloccando la navigazione","ok":false} ],
+      "e": "<b>169.254.x.x</b> è l'APIPA: Windows se lo assegna da solo quando nessun DHCP risponde. Il cavo potrebbe anche essere a posto (il PC vede il link), ma il DHCP non lo raggiunge: switch, VLAN sbagliata, relay mancante o server spento." },
+
+    { "q": "Quanti host utilizzabili ci sono in una rete <code>/26</code>?",
+      "a": [ {"t":"62","ok":true}, {"t":"64","ok":false}, {"t":"30","ok":false}, {"t":"126","ok":false} ],
+      "e": "/26 lascia 6 bit agli host: 2⁶ = 64 indirizzi totali. Meno il primo (indirizzo di rete) e l'ultimo (broadcast) = <b>62</b> host utilizzabili." },
+
+    { "q": "A quale livello del modello OSI lavora principalmente uno switch non gestito?",
+      "a": [ {"t":"Livello 2 — data link","ok":true},
+             {"t":"Livello 3 — rete","ok":false},
+             {"t":"Livello 1 — fisico","ok":false},
+             {"t":"Livello 4 — trasporto","ok":false} ],
+      "e": "Lo switch prende decisioni sui <b>MAC address</b>, che vivono al livello 2. Un hub era livello 1 (ripeteva il segnale senza capirlo); un router è livello 3 (decide sugli IP)." },
+
+    { "q": "Il ping a <code>8.8.8.8</code> funziona, il ping a <code>www.google.it</code> no. Dove cerchi?",
+      "a": [ {"t":"Nel DNS","ok":true},
+             {"t":"Nel cavo di rete","ok":false},
+             {"t":"Nella tabella di routing","ok":false},
+             {"t":"Nel NAT del firewall","ok":false} ],
+      "e": "Se un indirizzo numerico raggiungibile risponde, allora fisico, IP, routing e NAT funzionano. L'unica cosa che manca per usare un <em>nome</em> è la traduzione nome → indirizzo: il DNS." },
+
+    { "q": "Cosa fa esattamente ARP?",
+      "a": [ {"t":"Trova il MAC address che corrisponde a un IP nella stessa rete locale","ok":true},
+             {"t":"Traduce un nome di dominio in un indirizzo IP","ok":false},
+             {"t":"Assegna automaticamente gli indirizzi IP ai dispositivi","ok":false},
+             {"t":"Cifra il traffico tra due host della stessa rete","ok":false} ],
+      "e": "ARP è il ponte tra livello 3 e livello 2: so l'IP del vicino, ma per costruire il frame Ethernet mi serve il suo MAC. Il PC chiede in broadcast e il proprietario risponde. La traduzione nome→IP è il DNS; l'assegnazione automatica è il DHCP." },
+
+    { "q": "Quale affermazione su TCP e UDP è corretta?",
+      "a": [ {"t":"TCP ritrasmette ciò che si perde, UDP no","ok":true},
+             {"t":"UDP è cifrato, TCP è in chiaro","ok":false},
+             {"t":"TCP viaggia al livello 3, UDP al livello 4","ok":false},
+             {"t":"UDP garantisce l'ordine dei pacchetti, TCP no","ok":false} ],
+      "e": "TCP è la raccomandata: conferma la ricezione, rimette in ordine, ritrasmette. UDP è la cartolina: parte e chi s'è visto s'è visto. Entrambi stanno al livello 4 e nessuno dei due cifra: la cifratura è un livello sopra (TLS)." },
+
+    { "q": "Un PC ha IP <code>192.168.5.100</code> con maschera <code>255.255.255.0</code>. Vuole parlare con <code>192.168.6.20</code>. Cosa succede?",
+      "a": [ {"t":"Il pacchetto viene mandato al default gateway","ok":true},
+             {"t":"Il PC fa una ARP request per 192.168.6.20 e gli parla direttamente","ok":false},
+             {"t":"Il pacchetto viene scartato perché l'indirizzo è privato","ok":false},
+             {"t":"Il PC usa il DNS per trovare la strada","ok":false} ],
+      "e": "Con /24, la rete del PC è 192.168.5.0–255. La destinazione 192.168.6.20 è fuori, quindi il PC non prova a raggiungerla direttamente: incapsula il pacchetto verso il <b>MAC del gateway</b> e lascia a lui il problema. Questa decisione — locale o remoto — la fa ogni pacchetto, sempre." },
+
+    { "q": "Qual è la differenza tra un dominio di broadcast e un dominio di collisione?",
+      "a": [ {"t":"Il broadcast è l'insieme di chi riceve i broadcast; la collisione riguarda chi può disturbarsi trasmettendo insieme","ok":true},
+             {"t":"Sono due nomi diversi per la stessa cosa","ok":false},
+             {"t":"Il dominio di collisione si divide con le VLAN, quello di broadcast con gli switch","ok":false},
+             {"t":"Il dominio di broadcast esiste solo nelle reti wireless","ok":false} ],
+      "e": "Uno switch divide i domini di collisione (ogni porta è il suo) ma <b>non</b> divide il dominio di broadcast: un broadcast esce da tutte le porte. Per dividerlo servono un router o le VLAN. È il ragionamento che giustifica l'esistenza delle VLAN." },
+
+    { "q": "Perché esiste il NAT?",
+      "a": [ {"t":"Perché gli indirizzi IPv4 pubblici sono finiti e servono per far uscire reti private","ok":true},
+             {"t":"Perché cifra il traffico in uscita verso Internet","ok":false},
+             {"t":"Perché velocizza la navigazione mettendo in cache le pagine","ok":false},
+             {"t":"Perché è obbligatorio per usare il DNS","ok":false} ],
+      "e": "IPv4 ha ~4,3 miliardi di indirizzi, finiti da anni. Il NAT permette a centinaia di dispositivi con indirizzi privati (che su Internet non esistono) di uscire usando un solo indirizzo pubblico. Effetto collaterale di sicurezza: dall'esterno non si entra spontaneamente. Ma il NAT <b>non è</b> un meccanismo di cifratura." },
+
+    { "q": "Quale di questi NON è un indirizzo privato secondo RFC 1918?",
+      "a": [ {"t":"172.32.5.1","ok":true}, {"t":"10.250.7.4","ok":false},
+             {"t":"172.20.1.1","ok":false}, {"t":"192.168.200.15","ok":false} ],
+      "e": "Il blocco privato è <code>172.16.0.0/12</code>, cioè da <b>172.16</b>.x.x a <b>172.31</b>.x.x. 172.32 è già fuori: è pubblico. È l'errore più comune di tutti, perché 172 «sembra» sempre privato." },
+
+    { "q": "Cosa indica un TTL che scende nei pacchetti IP?",
+      "a": [ {"t":"Quanti router il pacchetto può ancora attraversare prima di essere scartato","ok":true},
+             {"t":"Quanti secondi il pacchetto resta valido","ok":false},
+             {"t":"Quanti byte restano da trasmettere","ok":false},
+             {"t":"Quante volte il pacchetto è stato ritrasmesso","ok":false} ],
+      "e": "Il TTL cala di 1 a ogni router (non col tempo, nonostante il nome). A zero il pacchetto muore: così un errore di routing non fa girare i pacchetti all'infinito. Traceroute sfrutta proprio questo, mandando pacchetti con TTL 1, 2, 3… per farsi segnalare ogni salto." },
+
+    { "q": "Un cavo di rete in rame può arrivare al massimo a circa:",
+      "a": [ {"t":"100 metri","ok":true}, {"t":"300 metri","ok":false},
+             {"t":"50 metri","ok":false}, {"t":"1 chilometro","ok":false} ],
+      "e": "100 metri complessivi (90 di dorsale fissa + 10 di bretelle), per attenuazione del segnale. Oltre, il segnale arriva troppo debole e si vedono errori e rallentamenti intermittenti — un guasto subdolo perché il link resta «su»." },
+
+    { "q": "Nel processo DHCP, qual è l'ordine corretto?",
+      "a": [ {"t":"Discover, Offer, Request, Acknowledge","ok":true},
+             {"t":"Request, Discover, Acknowledge, Offer","ok":false},
+             {"t":"Offer, Discover, Acknowledge, Request","ok":false},
+             {"t":"Discover, Request, Offer, Acknowledge","ok":false} ],
+      "e": "DORA. Il client grida «c'è un DHCP?» (Discover), il server propone un indirizzo (Offer), il client dice «prendo quello» (Request) — anche se c'è un solo server, perché potrebbero essercene due — e il server conferma (Acknowledge)." },
+
+    { "q": "Quale porta usa RDP, e qual è l'errore da non fare mai?",
+      "a": [ {"t":"3389, e non va mai esposta direttamente su Internet","ok":true},
+             {"t":"3389, e va sempre aperta verso tutti per permettere il supporto","ok":false},
+             {"t":"443, e va usata solo in HTTPS","ok":false},
+             {"t":"22, e va protetta con una chiave","ok":false} ],
+      "e": "RDP è la 3389 ed è uno dei principali punti d'ingresso dei ransomware. Si raggiunge <b>solo</b> tramite VPN o gateway dedicato. La 22 è SSH, la 443 è HTTPS." },
+
+    { "q": "Cosa contiene la tabella MAC di uno switch?",
+      "a": [ {"t":"L'associazione tra indirizzi MAC e porte fisiche dello switch","ok":true},
+             {"t":"L'associazione tra indirizzi IP e indirizzi MAC","ok":false},
+             {"t":"L'elenco dei nomi dei dispositivi collegati","ok":false},
+             {"t":"Le regole di sicurezza applicate a ogni porta","ok":false} ],
+      "e": "Lo switch impara da solo: quando vede un frame in arrivo dalla porta 5 con mittente AA:BB:CC, annota «AA:BB:CC sta sulla porta 5». L'associazione IP↔MAC invece è la tabella <b>ARP</b>, e sta sui dispositivi, non sullo switch." },
+
+    { "q": "L'indirizzo <code>10.40.12.200/22</code> a quale rete appartiene?",
+      "a": [ {"t":"10.40.12.0/22","ok":true}, {"t":"10.40.0.0/22","ok":false},
+             {"t":"10.40.12.0/24","ok":false}, {"t":"10.40.8.0/22","ok":false} ],
+      "e": "/22 significa blocchi da 4 nel terzo ottetto: 0, 4, 8, <b>12</b>, 16, 20… Il 12 è esattamente un confine di blocco, quindi la rete è 10.40.12.0/22 e copre da 10.40.12.0 a 10.40.15.255." },
+
+    { "q": "Perché un frame Ethernet contiene sia un MAC sorgente sia un MAC destinazione, se ha già gli IP dentro?",
+      "a": [ {"t":"Perché gli IP servono per arrivare alla rete giusta, i MAC per la consegna sul singolo collegamento","ok":true},
+             {"t":"Perché serve una copia di riserva nel caso l'IP si corrompa","ok":false},
+             {"t":"Perché alcuni dispositivi non supportano IP","ok":false},
+             {"t":"Perché il MAC identifica l'utente e l'IP il computer","ok":false} ],
+      "e": "È la divisione del lavoro tra i livelli. L'IP di destinazione resta lo stesso da un capo all'altro del viaggio; i MAC vengono <b>riscritti a ogni salto</b>, perché descrivono solo la consegna sul tratto corrente. È come un pacco con l'indirizzo finale sull'etichetta e il nome del corriere di turno sul retro." },
+
+    { "q": "Un utente non naviga. Il suo PC ha IP corretto, ping al gateway OK, ping a 8.8.8.8 fallito. Il collega alla scrivania accanto naviga senza problemi. Cosa è più probabile?",
+      "a": [ {"t":"Qualcosa di specifico su quel PC o su quella policy: firewall locale, proxy, o regola che lo riguarda","ok":true},
+             {"t":"La linea Internet è giù","ok":false},
+             {"t":"Il DNS aziendale è guasto","ok":false},
+             {"t":"Lo switch è rotto","ok":false} ],
+      "e": "Il fatto che il vicino navighi esclude linea, gateway e switch: il guasto <b>non è comune</b>. Quando un sintomo colpisce uno solo, la causa è quasi sempre locale a quell'uno: firewall del PC, antivirus, proxy configurato, oppure una regola sul firewall legata al suo IP o al suo utente. Questo ragionamento — cosa hanno in comune quelli che funzionano e quelli che no — è il cuore della diagnosi." },
+
+    { "q": "Cos'è il default gateway?",
+      "a": [ {"t":"L'indirizzo a cui il dispositivo manda tutto ciò che non è nella sua rete locale","ok":true},
+             {"t":"Il server che assegna gli indirizzi IP","ok":false},
+             {"t":"Il primo indirizzo utilizzabile di ogni subnet","ok":false},
+             {"t":"L'indirizzo pubblico con cui esci su Internet","ok":false} ],
+      "e": "È il cartello «per tutto il resto, di qua». Spesso, ma non necessariamente, è il primo indirizzo della subnet: è una convenzione, non una regola. L'indirizzo pubblico con cui esci è invece il risultato del NAT." },
+
+    { "q": "In quale caso useresti UDP invece di TCP?",
+      "a": [ {"t":"Per una telefonata VoIP","ok":true},
+             {"t":"Per scaricare un file di aggiornamento","ok":false},
+             {"t":"Per una sessione RDP","ok":false},
+             {"t":"Per inviare una mail","ok":false} ],
+      "e": "Nel VoIP un pacchetto che arriva in ritardo è inutile: ritrasmetterlo peggiorerebbe le cose. Meglio perdere qualche millisecondo di audio e restare sincronizzati. File, mail e desktop remoto invece vogliono integrità totale: TCP." },
+
+    { "q": "Cosa significa che un firewall è <b>stateful</b>?",
+      "a": [ {"t":"Tiene in memoria le connessioni già aperte e lascia passare il traffico di ritorno","ok":true},
+             {"t":"Salva la configurazione anche dopo un riavvio","ok":false},
+             {"t":"Analizza il contenuto dei pacchetti alla ricerca di virus","ok":false},
+             {"t":"Cambia le regole automaticamente in base al carico","ok":false} ],
+      "e": "Se tu apri una connessione verso un sito, il firewall se la annota; le risposte rientrano senza che serva una regola in ingresso. Capito questo, smetti di creare regole inutili — e capisci perché il traffico che <b>inizia</b> da fuori è tutt'altra storia." },
+
+    { "q": "Un cliente ha due switch collegati tra loro con due cavi, per sicurezza. Cosa succede se lo Spanning Tree non è attivo?",
+      "a": [ {"t":"Si crea un anello e i broadcast saturano la rete fino a bloccarla","ok":true},
+             {"t":"Il traffico si divide sui due cavi raddoppiando la banda","ok":false},
+             {"t":"Il secondo cavo resta inattivo finché il primo non si rompe","ok":false},
+             {"t":"Non succede nulla, gli switch gestiscono la cosa da soli","ok":false} ],
+      "e": "Senza STP i broadcast girano nell'anello moltiplicandosi a ogni giro: la rete si blocca in pochi secondi. Il raddoppio di banda richiede LACP configurato apposta; lo standby automatico richiede appunto STP. Due cavi messi «per sicurezza» senza configurare nulla sono un guasto in attesa." },
+
+    { "q": "Nell'indirizzo <code>172.16.8.15/20</code>, qual è l'indirizzo di broadcast?",
+      "a": [ {"t":"172.16.15.255","ok":true}, {"t":"172.16.8.255","ok":false},
+             {"t":"172.16.11.255","ok":false}, {"t":"172.16.255.255","ok":false} ],
+      "e": "/20 = blocchi da 16 nel terzo ottetto: 0, 16, 32… quindi 8 sta nel blocco 0–15. La rete è 172.16.0.0/20 e il broadcast è l'ultimo indirizzo: <b>172.16.15.255</b>." },
+
+    { "q": "Hai sostituito il firewall di un cliente. Da allora alcuni siti non si aprono dentro la VPN, mentre altri sì. Cosa sospetti per primo?",
+      "a": [ {"t":"Un problema di MTU: i pacchetti grandi non passano nel tunnel","ok":true},
+             {"t":"Il DNS del cliente non funziona","ok":false},
+             {"t":"La licenza del firewall è scaduta","ok":false},
+             {"t":"Gli utenti sbagliano la password","ok":false} ],
+      "e": "Il sintomo «alcuni sì, altri no, dentro un tunnel» è la firma classica dell'MTU. Il tunnel aggiunge intestazioni e riduce lo spazio utile: le richieste piccole (che aprono la pagina) passano, le risposte grandi no. La cura è l'MSS clamping. Se fosse il DNS non si aprirebbe <b>niente</b>." },
+
+    { "q": "Qual è l'ordine più efficiente per diagnosticare un guasto di rete?",
+      "a": [ {"t":"Partire dal basso: fisico, poi indirizzamento, poi routing, poi servizi, poi applicazione","ok":true},
+             {"t":"Partire dall'applicazione e scendere solo se serve","ok":false},
+             {"t":"Riavviare tutti gli apparati e vedere se si risolve","ok":false},
+             {"t":"Cambiare una configurazione alla volta finché non funziona","ok":false} ],
+      "e": "Dal basso verso l'alto, perché i livelli bassi sono veloci da verificare e se sono rotti tutto il resto è rumore: controllare il DNS mentre il cavo è staccato è tempo perso. Il riavvio a tappeto a volte funziona, ma non ti dice <b>perché</b>, quindi il guasto tornerà — e tu non avrai imparato niente." }
+  ]
+}
+  </script>
+
+  <h2 style="font-size:1.55rem;margin:56px 0 10px">Verifiche successive</h2>
+  <div class="grid c2" style="margin-top:18px">
+    <div class="card"><h3>Verifica 2 — mese 8</h3>
+      <p>Livello 1 + VLAN, spanning tree e routing. Soglia 75%.</p>
+      <span class="badge soon" style="margin-top:10px">in arrivo</span></div>
+    <div class="card"><h3>Verifica 3 — mese 11</h3>
+      <p>Livelli 1 e 2 completi: firewall, NAT, VPN, Wi-Fi, QoS. Soglia 75%.</p>
+      <span class="badge soon" style="margin-top:10px">in arrivo</span></div>
+    <div class="card"><h3>Verifica 4 — mese 16</h3>
+      <p>+ HA, BGP, SD-WAN, sicurezza avanzata. Soglia 70%.</p>
+      <span class="badge soon" style="margin-top:10px">in arrivo</span></div>
+    <div class="card"><h3>Verifica 5 — mese 22</h3>
+      <p>Livelli 1–3 completi, incluse Azure e analisi Wireshark. Soglia 70%.</p>
+      <span class="badge soon" style="margin-top:10px">in arrivo</span></div>
+  </div>
+
+</main>
+
+<footer id="np-footer"></footer>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/glossario-data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

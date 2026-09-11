@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fibra ottica: tipi, connettori, transceiver — NetPath</title>
+<meta name="description" content="Monomodale e multimodale, LC e SC, SFP e SFP+, e perché un patch arancione non va dove serve un giallo.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-06">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Il mondo fisico</span>
+      </nav>
+      <h1 class="lesson-title">Fibra ottica: tipi, connettori, transceiver</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 06</span>
+        <span class="chip">20 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere monomodale e multimodale e sapere quando serve l'una o l'altra</li>
+        <li>Riconoscere i connettori e i moduli guardandoli</li>
+        <li>Capire perché una fibra "non funziona" nove volte su dieci</li>
+        <li>Sapere cosa ordinare quando un cliente deve collegare due edifici</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">La fibra spaventa perché sembra roba da specialisti. In realtà per il tuo lavoro servono
+cinque concetti, e sono tutti visivi: che colore è, che connettore ha, che modulo ci va, quanto è lunga
+e se è pulita. Questa lezione ti mette in condizione di ordinare il materiale giusto e di risolvere il
+90% dei problemi di fibra, che riguardano quasi sempre le stesse due cose.</p>
+
+<h2>Perché esiste la fibra</h2>
+
+<p>Il rame ha tre limiti insuperabili: si ferma a 100 metri, raccoglie disturbi elettromagnetici, e
+<strong>conduce elettricità</strong> — il che significa che un fulmine su un edificio può friggere lo
+switch dell'edificio accanto passando dal cavo di rete. La fibra risolve tutti e tre i problemi
+insieme, perché dentro non viaggiano elettroni ma <strong>luce</strong>.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne
+  </div>
+  <p>Immagina un tubo lunghissimo con le pareti interne fatte di specchio perfetto. Accendi e spegni una
+  torcia a un'estremità: acceso = 1, spento = 0. La luce rimbalza sulle pareti e arriva dall'altra parte
+  chilometri più in là, senza perdersi.</p>
+  <p>Questo è una fibra ottica. Il «tubo» è un filo di vetro sottile come un capello, e lo «specchio» è un
+  secondo strato di vetro con proprietà leggermente diverse che rimanda indietro la luce che cerca di
+  uscire. Siccome dentro c'è luce e non corrente, un fulmine non ha nulla da percorrere, e un motore
+  elettrico lì accanto non disturba nulla: la luce se ne infischia dei campi magnetici.</p>
+</div>
+
+<h2>Monomodale e multimodale: l'unica distinzione che conta</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 250" role="img" aria-label="Confronto tra fibra multimodale, con più raggi che rimbalzano, e monomodale, con un solo raggio dritto">
+    <!-- multimodale -->
+    <text x="20" y="24" class="dg-title">MULTIMODALE · nucleo largo (50 µm)</text>
+    <rect x="20" y="38" width="480" height="56" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <g stroke-width="1.5" fill="none">
+      <path d="M22 66h476" stroke="var(--dg-3)"/>
+      <path d="M22 66l60 24 60-24 60 24 60-24 60 24 60-24 60 24 34-14" stroke="var(--dg-2)" opacity=".8"/>
+      <path d="M22 66l80-22 80 22 80-22 80 22 80-22 78 22" stroke="var(--dg-4)" opacity=".8"/>
+    </g>
+    <text x="520" y="60" class="dg-label-sm">Più raggi,</text>
+    <text x="520" y="76" class="dg-label-sm">strade diverse,</text>
+    <text x="520" y="92" class="dg-label-sm">arrivano sfasati</text>
+    <text x="20" y="112" class="dg-mono-sm">arancione o azzurra · LED economico · fino a 300–400 m · dentro l'edificio</text>
+
+    <!-- monomodale -->
+    <text x="20" y="152" class="dg-title">MONOMODALE · nucleo strettissimo (9 µm)</text>
+    <rect x="20" y="166" width="480" height="40" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <path d="M22 186h476" stroke="var(--dg-1)" stroke-width="2.6"/>
+    <text x="520" y="182" class="dg-label-sm">Un solo raggio,</text>
+    <text x="520" y="198" class="dg-label-sm">dritto, nessuno</text>
+    <text x="520" y="214" class="dg-label-sm">sfasamento</text>
+    <text x="20" y="226" class="dg-mono-sm">gialla · laser · fino a decine di km · tra edifici e verso l'operatore</text>
+  </svg>
+  </div>
+  <figcaption>Nella <b>multimodale</b> il nucleo è largo e la luce entra con angoli diversi: ogni raggio
+  percorre una strada di lunghezza diversa e arriva leggermente sfasato. Su distanze lunghe gli impulsi
+  si sovrappongono e il segnale diventa illeggibile. Nella <b>monomodale</b> il nucleo è così stretto che
+  esiste una sola strada possibile: nessuno sfasamento, quindi distanze enormi.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Multimodale (MM)</th><th>Monomodale (SM)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Colore della guaina</b></td><td>Arancione (OM1/OM2), azzurro-acqua (OM3/OM4), verde acqua (OM5)</td><td>Giallo</td></tr>
+      <tr><td><b>Distanza tipica</b></td><td>fino a 300–400 m</td><td>10, 40, 80 km e oltre</td></tr>
+      <tr><td><b>Sorgente luminosa</b></td><td>LED o VCSEL, economica</td><td>Laser, più costosa</td></tr>
+      <tr><td><b>Costo del cavo</b></td><td>simile</td><td>simile</td></tr>
+      <tr><td><b>Costo dei moduli</b></td><td>basso</td><td>più alto</td></tr>
+      <tr><td><b>Dove la usi</b></td><td>Dentro l'edificio: tra armadi, tra piani, verso i server</td>
+          <td>Tra edifici, verso altre sedi, collegamento dell'operatore</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore da cui ti salvi ricordando i colori
+  </div>
+  <p>Un patch <b>giallo</b> (monomodale) inserito in moduli multimodali, o viceversa, non funziona:
+  i nuclei hanno diametri diversi e la luce si perde. Il link resta spento o instabile, e si passano ore
+  a cercare colpe nella configurazione.</p>
+  <p>Regola pratica: <b>guarda il colore del cavo e l'etichetta del modulo prima di tutto</b>.
+  Devono raccontare la stessa storia.</p>
+</div>
+
+<h2>I connettori: due, e li riconosci a colpo d'occhio</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Connettore</th><th>Com'è fatto</th><th>Dove lo trovi</th></tr></thead>
+    <tbody>
+      <tr><td><b>LC</b></td><td>Piccolo, quadrato, con una linguetta come l'RJ45. Quasi sempre in coppia.</td>
+          <td>Il più diffuso oggi: tutti i moduli SFP e SFP+</td></tr>
+      <tr><td><b>SC</b></td><td>Più grande, quadrato, si innesta a scatto</td>
+          <td>Apparati più vecchi, terminazioni degli operatori, ONT della fibra</td></tr>
+      <tr><td><b>ST</b></td><td>Rotondo, a baionetta, si avvita</td>
+          <td>Impianti datati, ambito industriale</td></tr>
+      <tr><td><b>MPO/MTP</b></td><td>Rettangolare, contiene 12 o 24 fibre insieme</td>
+          <td>Data center, dorsali ad altissima densità</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Le fibre vanno quasi sempre a coppie: una per trasmettere, una per ricevere. Se un link non sale,
+<strong>la prima cosa da provare è invertire le due fibre</strong>: sono incrociate nel 30% dei casi,
+ed è una prova che costa cinque secondi.</p>
+
+<h2>I transceiver: SFP, SFP+ e compagnia</h2>
+
+<p>Uno switch non ha «una porta fibra»: ha uno slot in cui infili un modulo estraibile, il
+<span class="term" data-term="sfp">transceiver</span>, che contiene il laser e il ricevitore. Così lo
+stesso switch può fare 1 Gbps su multimodale oppure 10 Gbps a 40 km, cambiando solo il modulo.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Modulo</th><th>Velocità</th><th>Sigla tipica</th><th>Significa</th></tr></thead>
+    <tbody>
+      <tr><td><b>SFP</b></td><td>1 Gbps</td><td>1000BASE-SX</td><td>Multimodale, corta distanza (fino a 550 m)</td></tr>
+      <tr><td><b>SFP</b></td><td>1 Gbps</td><td>1000BASE-LX</td><td>Monomodale, fino a 10 km</td></tr>
+      <tr><td><b>SFP+</b></td><td>10 Gbps</td><td>10GBASE-SR</td><td>Multimodale, fino a 300 m</td></tr>
+      <tr><td><b>SFP+</b></td><td>10 Gbps</td><td>10GBASE-LR</td><td>Monomodale, fino a 10 km</td></tr>
+      <tr><td><b>SFP28</b></td><td>25 Gbps</td><td>25GBASE-SR</td><td>Data center</td></tr>
+      <tr><td><b>QSFP+/QSFP28</b></td><td>40 / 100 Gbps</td><td>—</td><td>Dorsali di data center</td></tr>
+      <tr><td><b>DAC</b></td><td>10–100 Gbps</td><td>—</td><td>Cavo in rame con i moduli già saldati, per 1–5 m dentro il rack. Costa pochissimo.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>La lettera dopo BASE- è una regola mnemonica comoda: <b>S</b> = <em>short</em>, multimodale;
+<b>L</b> = <em>long</em>, monomodale; <b>E</b>/<b>Z</b> = distanze estreme.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il tranello commerciale dei moduli
+  </div>
+  <p>Molti apparati accettano solo moduli <b>del proprio marchio</b>, con un codice scritto dentro il
+  modulo. Un SFP generico da 20 € viene rifiutato e lo switch scrive «unsupported transceiver» nel log,
+  mentre quello originale ne costa 200.</p>
+  <p>Esistono moduli «compatibili» riprogrammati per farsi riconoscere, e funzionano benissimo — ma
+  ricorda tre cose: devi specificare <b>per quale marca</b> li vuoi al momento dell'ordine, in alcuni casi
+  invalidano il supporto, e in un impianto critico non è il posto giusto dove risparmiare.
+  MikroTik e Ubiquiti tipicamente accettano tutto; Cisco e HPE sono i più restrittivi.</p>
+</div>
+
+<h2>Perché una fibra «non funziona»</h2>
+
+<p>Nel lavoro reale le cause sono sempre le stesse, in quest'ordine:</p>
+
+<ol>
+  <li><strong>Le due fibre sono invertite (TX/RX).</strong> Provalo per primo: cinque secondi.</li>
+  <li><strong>È sporca.</strong> Un granello di polvere sul nucleo da 9 micrometri blocca gran parte della
+  luce. Si pulisce con una penna apposita o con salviettine specifiche. <b>Mai</b> soffiarci sopra: l'umidità
+  del fiato peggiora la situazione.</li>
+  <li><strong>Il tipo di modulo non corrisponde alla fibra.</strong> SR su monomodale, o LR su multimodale.</li>
+  <li><strong>I due lati non hanno moduli compatibili tra loro</strong> (uno SR e uno LR).</li>
+  <li><strong>La fibra è danneggiata.</strong> Piegata troppo stretta, schiacciata da una porta,
+  o tranciata in uno scavo — capita più spesso di quanto immagini.</li>
+  <li><strong>Il segnale arriva troppo debole o troppo forte.</strong> Sì, anche <em>troppo forte</em>:
+  su una tratta corta con moduli da 80 km si abbaglia il ricevitore e serve un attenuatore.</li>
+</ol>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Lo strumento che ti fa sembrare un mago
+  </div>
+  <p>Quasi tutti gli switch sanno dirti la <b>potenza ottica</b> ricevuta e trasmessa da ogni modulo
+  (si chiama DDM o DOM). Su MikroTik: <code>/interface ethernet monitor sfp-sfpplus1</code>.
+  Su FortiGate: <code>get system interface transceiver</code>.</p>
+  <p>Un valore di RX intorno a <b>−3 … −15 dBm</b> è sano. Sotto −25 dBm il collegamento è al limite.
+  <code>-40 dBm</code> o «no signal» significa che dall'altra parte non arriva luce: fibra invertita,
+  rotta o modulo spento.</p>
+  <p>Poter dire al cliente «il tuo collegamento riceve −28 dBm, è al limite, la fibra va pulita o
+  ricertificata» invece di «non va, non so perché» è esattamente la differenza tra un tecnico e un
+  professionista.</p>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Sicurezza: non guardare mai dentro una fibra
+  </div>
+  <p>La luce dei laser monomodali è nell'infrarosso: <b>non la vedi</b>, quindi il riflesso automatico
+  di chiudere l'occhio non scatta, e può danneggiare la retina in modo permanente.
+  Non puntare mai l'estremità di una fibra verso l'occhio, tuo o di altri, nemmeno «per controllare se
+  è accesa». Per verificare la continuità si usa un tester ottico a luce visibile rossa, che costa 20 €.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: fibra ottica",
+  "questions": [
+    { "q": "Un cliente deve collegare due edifici distanti 600 metri. Cosa gli proponi?",
+      "a": [ {"t":"Fibra monomodale","ok":true},
+             {"t":"Cavo Cat6a, che arriva a 100 metri","ok":false},
+             {"t":"Fibra multimodale, che costa meno","ok":false},
+             {"t":"Due switch intermedi in rame, uno ogni 200 metri","ok":false} ],
+      "e": "Seicento metri escludono il rame (100 m) e sono al limite o oltre per la multimodale (300–400 m). La monomodale copre la distanza con ampio margine e, tra edifici separati, porta un secondo vantaggio decisivo: <b>isola elettricamente</b>, quindi un fulmine su un edificio non arriva all'altro." },
+
+    { "q": "Un collegamento in fibra appena fatto non si accende. Qual è la prima cosa da provare?",
+      "a": [ {"t":"Invertire le due fibre (TX e RX)","ok":true},
+             {"t":"Sostituire lo switch","ok":false},
+             {"t":"Riconfigurare la VLAN sulla porta","ok":false},
+             {"t":"Aggiornare il firmware","ok":false} ],
+      "e": "Le fibre vanno incrociate: il TX di uno va nel RX dell'altro. Sono invertite in una buona parte dei casi ed è la prova più veloce che esista — cinque secondi contro ore di indagine. Solo dopo si guardano pulizia, tipo di modulo e potenza ottica." },
+
+    { "q": "Di che colore è tipicamente la guaina di una fibra monomodale?",
+      "a": [ {"t":"Gialla","ok":true}, {"t":"Arancione","ok":false},
+             {"t":"Azzurro acqua","ok":false}, {"t":"Verde","ok":false} ],
+      "e": "Gialla = monomodale. Arancione = multimodale OM1/OM2, azzurro acqua = OM3/OM4, verde acqua = OM5. Guardare il colore prima di ogni altra cosa evita l'errore più comune: mischiare tipi incompatibili." },
+
+    { "q": "Cosa significa la sigla 10GBASE-LR su un modulo SFP+?",
+      "a": [ {"t":"10 Gbps, monomodale, fino a circa 10 km","ok":true},
+             {"t":"10 Gbps, multimodale, fino a 300 metri","ok":false},
+             {"t":"10 Gbps su cavo in rame","ok":false},
+             {"t":"1 Gbps, monomodale, lunga distanza","ok":false} ],
+      "e": "10G = la velocità; <b>L</b> = <em>long</em>, quindi monomodale, tipicamente 10 km. La versione multimodale a corta distanza sarebbe <b>S</b>R (<em>short</em>). Ricordare che S = corta/multimodale e L = lunga/monomodale copre la quasi totalità dei casi." },
+
+    { "q": "Un modulo riporta una potenza ricevuta di −38 dBm. Cosa vuol dire?",
+      "a": [ {"t":"Arriva pochissima luce: fibra sporca, danneggiata, invertita o modulo spento dall'altro lato","ok":true},
+             {"t":"Il segnale è perfetto","ok":false},
+             {"t":"Il segnale è troppo forte e serve un attenuatore","ok":false},
+             {"t":"La velocità negoziata è troppo bassa","ok":false} ],
+      "e": "Un valore sano sta intorno a −3…−15 dBm; sotto −25 dBm si è al limite. A −38 dBm praticamente non arriva luce. Un segnale <em>troppo forte</em> esiste eccome — capita usando moduli da 80 km su una tratta di 200 metri — ma si manifesta con valori vicini allo zero o positivi, non negativi estremi." },
+
+    { "q": "Perché non bisogna mai guardare dentro l'estremità di una fibra attiva?",
+      "a": [ {"t":"La luce è infrarossa e invisibile: l'occhio non si difende e la retina si danneggia","ok":true},
+             {"t":"Perché si sporca il connettore con le ciglia","ok":false},
+             {"t":"Perché la luce è così debole che non si vedrebbe comunque nulla","ok":false},
+             {"t":"Perché il vetro potrebbe rompersi e ferire","ok":false} ],
+      "e": "Il laser opera nell'infrarosso: non lo vedi, quindi non strizzi l'occhio e non distogli lo sguardo, e il danno alla retina può essere permanente. Per verificare la continuità si usa un tester a luce rossa visibile, che costa una ventina di euro." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

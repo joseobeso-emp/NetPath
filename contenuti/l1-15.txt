@@ -1,0 +1,284 @@
+#id: l1-15
+#title: Subnetting passo passo
+#min: 30
+#level: 1
+#chapter: Indirizzamento IP
+#desc: Il capitolo che fa paura, smontato in una procedura di quattro passi che funziona sempre, con esercizi generati a caso.
+#obj: Calcolare rete, broadcast e range di qualsiasi indirizzo in meno di trenta secondi
+#obj: Dividere una rete in sottoreti della dimensione richiesta
+#obj: Progettare uno schema di indirizzamento per un cliente reale
+#obj: Smettere di considerare il subnetting un ostacolo
+---
+<p class="lead">Il subnetting ha la fama di essere difficile. Non lo è: è <em>meccanico</em>. Esiste una
+procedura in quattro passi che funziona per qualsiasi indirizzo e qualsiasi maschera, senza eccezioni e
+senza conversioni in binario. Impari quella, fai venti esercizi, e per il resto della carriera lo fai a
+mente mentre parli al telefono con un cliente.</p>
+
+<h2>Il metodo dei quattro passi</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 220" role="img" aria-label="I quattro passi del metodo per il subnetting">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">La procedura, sempre uguale</text>
+    <g stroke-width="1.6">
+      <rect x="16"  y="40" width="156" height="88" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="192" y="40" width="156" height="88" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="368" y="40" width="156" height="88" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="544" y="40" width="140" height="88" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="94"  y="64" class="dg-mono-sm">PASSO 1</text>
+      <text x="94"  y="88" class="dg-label">Quale ottetto</text>
+      <text x="94"  y="106" class="dg-label">è «interessante»</text>
+      <text x="94"  y="122" class="dg-label-sm">dove cade il taglio</text>
+
+      <text x="270" y="64" class="dg-mono-sm">PASSO 2</text>
+      <text x="270" y="88" class="dg-label">Dimensione</text>
+      <text x="270" y="106" class="dg-label">del blocco</text>
+      <text x="270" y="122" class="dg-mono-sm">256 − maschera</text>
+
+      <text x="446" y="64" class="dg-mono-sm">PASSO 3</text>
+      <text x="446" y="88" class="dg-label">Conta a multipli</text>
+      <text x="446" y="106" class="dg-label">fino a superarlo</text>
+      <text x="446" y="122" class="dg-label-sm">torna indietro di uno</text>
+
+      <text x="614" y="64" class="dg-mono-sm">PASSO 4</text>
+      <text x="614" y="88" class="dg-label">Broadcast =</text>
+      <text x="614" y="106" class="dg-label">rete + blocco − 1</text>
+      <text x="614" y="122" class="dg-label-sm">in mezzo, gli host</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#s4)">
+      <path d="M172 84h16"/><path d="M348 84h16"/><path d="M524 84h16"/>
+    </g>
+    <defs><marker id="s4" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+      <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-line)"/></marker></defs>
+    <text x="350" y="166" text-anchor="middle" class="dg-label-sm">Nessuna conversione in binario. Solo due sottrazioni e un po' di conteggio.</text>
+    <text x="350" y="192" text-anchor="middle" class="dg-label-sm">L'«ottetto interessante» è quello in cui la maschera non è né 255 né 0.</text>
+  </svg>
+  </div>
+  <figcaption>Quattro passi, sempre gli stessi, in qualunque ordine di grandezza. Funziona con /26 come
+  con /12.</figcaption>
+</figure>
+
+<h2>Esempio 1: <code>192.168.10.37/26</code></h2>
+
+<p><strong>Passo 1 — quale ottetto è interessante.</strong><br>
+La maschera di /26 è <code>255.255.255.192</code>. I primi tre ottetti sono 255 (tutti bit di rete),
+il quarto è 192 (misto). L'ottetto interessante è il <strong>quarto</strong>.</p>
+
+<p><strong>Passo 2 — dimensione del blocco.</strong><br>
+256 − 192 = <strong>64</strong>. Le subnet sono grandi 64 indirizzi.</p>
+
+<p><strong>Passo 3 — conta a multipli di 64 finché non superi 37.</strong><br>
+0, 64… Il 64 ha già superato il 37, quindi torno indietro: la rete inizia a <strong>0</strong>.<br>
+Rete = <strong>192.168.10.0/26</strong></p>
+
+<p><strong>Passo 4 — il resto viene da solo.</strong><br>
+Broadcast = 0 + 64 − 1 = <strong>63</strong> → 192.168.10.63<br>
+Host utilizzabili = da <strong>.1</strong> a <strong>.62</strong> → 62 host</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Rete</th><th>Primo host</th><th>Ultimo host</th><th>Broadcast</th></tr></thead>
+    <tbody><tr><td><b>192.168.10.0</b></td><td>192.168.10.1</td><td>192.168.10.62</td><td>192.168.10.63</td></tr></tbody>
+  </table>
+</div>
+
+<h2>Esempio 2: <code>172.16.140.200/20</code></h2>
+
+<p><strong>Passo 1.</strong> La maschera di /20 è <code>255.255.240.0</code>. L'ottetto interessante è
+il <strong>terzo</strong> (240).</p>
+
+<p><strong>Passo 2.</strong> 256 − 240 = <strong>16</strong>. Blocchi da 16 nel terzo ottetto.</p>
+
+<p><strong>Passo 3.</strong> Conto a multipli di 16 finché non supero <b>140</b>:<br>
+0, 16, 32, 48, 64, 80, 96, 112, 128, <s>144</s>. Il 144 supera il 140, torno indietro: <strong>128</strong>.<br>
+Rete = <strong>172.16.128.0/20</strong></p>
+
+<p><strong>Passo 4.</strong> Il blocco successivo inizia a 144, quindi il broadcast è l'indirizzo subito
+prima: 143 nel terzo ottetto e 255 nel quarto.<br>
+Broadcast = <strong>172.16.143.255</strong><br>
+Host = da <strong>172.16.128.1</strong> a <strong>172.16.143.254</strong> → 4.094 host</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La regola per gli ottetti a destra di quello interessante
+  </div>
+  <p>Negli ottetti che stanno <b>dopo</b> quello interessante:</p>
+  <ul style="margin-bottom:0">
+    <li>nell'<b>indirizzo di rete</b> valgono tutti <b>0</b></li>
+    <li>nel <b>broadcast</b> valgono tutti <b>255</b></li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Nell'esempio 2 il quarto ottetto vale 0 nella rete
+  (172.16.128<b>.0</b>) e 255 nel broadcast (172.16.143<b>.255</b>). Sempre, senza eccezioni.</p>
+</div>
+
+<h2>Esempio 3: <code>10.5.8.135/29</code></h2>
+
+<p><strong>Passo 1.</strong> /29 = <code>255.255.255.248</code> → quarto ottetto.<br>
+<strong>Passo 2.</strong> 256 − 248 = <strong>8</strong>.<br>
+<strong>Passo 3.</strong> Multipli di 8 fino a superare 135: …128, <s>136</s> → rete a <strong>128</strong>.<br>
+<strong>Passo 4.</strong> Broadcast = 128 + 8 − 1 = <strong>135</strong>.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Attenzione al risultato di questo esempio
+  </div>
+  <p>L'indirizzo di partenza era <code>10.5.8.135</code>, e il broadcast è risultato <code>.135</code>:
+  <b>l'indirizzo che ti hanno dato è il broadcast della sua stessa subnet</b>. Non è assegnabile a nessun
+  dispositivo.</p>
+  <p>È esattamente il tipo di errore che trovi nelle configurazioni fatte in fretta, e che produce
+  guasti incomprensibili finché non fai questo calcolo. Gli host validi qui sono solo da .129 a .134:
+  sei indirizzi.</p>
+</div>
+
+<h2>Il problema al contrario: dividere una rete</h2>
+
+<p>Nella vita reale la domanda arriva quasi sempre così: <em>«ho la rete 192.168.20.0/24, mi servono
+quattro reti separate per uffici, ospiti, telecamere e stampanti.»</em></p>
+
+<p><strong>Quanti bit devo prendere in prestito?</strong> Ogni bit preso raddoppia il numero di reti:
+1 bit → 2 reti, 2 bit → 4 reti, 3 bit → 8 reti. Per quattro reti servono <strong>2 bit</strong>, quindi
+da /24 si passa a <strong>/26</strong>.</p>
+
+<p>Blocco = 256 − 192 = 64. Le quattro reti sono:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>VLAN</th><th>Rete</th><th>Range utilizzabile</th><th>Broadcast</th><th>Host</th></tr></thead>
+    <tbody>
+      <tr><td>10 · Uffici</td><td><b>192.168.20.0/26</b></td><td>.1 – .62</td><td>.63</td><td>62</td></tr>
+      <tr><td>20 · Ospiti</td><td><b>192.168.20.64/26</b></td><td>.65 – .126</td><td>.127</td><td>62</td></tr>
+      <tr><td>30 · Telecamere</td><td><b>192.168.20.128/26</b></td><td>.129 – .190</td><td>.191</td><td>62</td></tr>
+      <tr><td>40 · Stampanti</td><td><b>192.168.20.192/26</b></td><td>.193 – .254</td><td>.255</td><td>62</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Come lo fa davvero un professionista
+  </div>
+  <p>Il calcolo qui sopra è corretto ma <b>nella pratica non si fa così</b>, e vale la pena sapere perché
+  fin da adesso.</p>
+  <p>Spremere un /24 in quattro /26 significa avere 62 indirizzi per VLAN e zero margine: il giorno che
+  il cliente aggiunge venti telecamere, devi rifare tutto l'indirizzamento — riconfigurando DHCP, regole
+  firewall, riservazioni, VPN e documentazione. È un lavoro da mezza giornata per risparmiare indirizzi
+  che <b>non costano niente</b>.</p>
+  <p>Quello che fa un professionista è usare uno schema leggibile e abbondante, tipicamente un /24 intero
+  per VLAN, con il <b>terzo ottetto uguale al numero della VLAN</b>:</p>
+  <div class="table-wrap" style="margin-bottom:0">
+    <table>
+      <thead><tr><th>VLAN</th><th>Rete</th><th>Gateway</th><th>Perché è meglio</th></tr></thead>
+      <tbody>
+        <tr><td><b>10</b> Uffici</td><td>10.20.<b>10</b>.0/24</td><td>10.20.10.1</td><td rowspan="4" style="vertical-align:middle">Guardi un indirizzo e sai subito in che VLAN sei. Niente calcoli, niente errori, 254 host ciascuna, e spazio per crescere all'infinito.</td></tr>
+        <tr><td><b>20</b> Ospiti</td><td>10.20.<b>20</b>.0/24</td><td>10.20.20.1</td></tr>
+        <tr><td><b>30</b> Telecamere</td><td>10.20.<b>30</b>.0/24</td><td>10.20.30.1</td></tr>
+        <tr><td><b>40</b> Stampanti</td><td>10.20.<b>40</b>.0/24</td><td>10.20.40.1</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0"><b>Allora perché studiare il subnetting?</b> Perché ti
+  serve per leggere le reti che trovi già fatte (e sono quasi sempre fatte così), per i blocchi di IP
+  pubblici che l'operatore ti dà in /29 o /28, per i collegamenti punto-punto /30, per le regole
+  firewall, per le rotte e per Azure — dove lo spazio di indirizzamento va progettato sul serio.
+  Il subnetting non serve a inventare reti strette: serve a <b>capire quelle che incontri</b>.</p>
+</div>
+
+<h2>La tabella del blocco: l'unica cosa da memorizzare</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Ottetto maschera</th><th>Blocco</th><th>Le reti iniziano a…</th></tr></thead>
+    <tbody>
+      <tr><td>128</td><td>128</td><td>0, 128</td></tr>
+      <tr><td>192</td><td>64</td><td>0, 64, 128, 192</td></tr>
+      <tr><td>224</td><td>32</td><td>0, 32, 64, 96, 128, 160, 192, 224</td></tr>
+      <tr><td>240</td><td>16</td><td>0, 16, 32, 48, 64, 80, 96, 112, …</td></tr>
+      <tr><td>248</td><td>8</td><td>0, 8, 16, 24, 32, 40, …</td></tr>
+      <tr><td>252</td><td>4</td><td>0, 4, 8, 12, 16, …</td></tr>
+      <tr><td>254</td><td>2</td><td>0, 2, 4, 6, …</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Osserva la simmetria: <strong>blocco = 256 − valore della maschera</strong>, sempre. Se ricordi questo
+e le potenze di 2, non devi memorizzare nient'altro.</p>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    L'unico modo per impararlo davvero
+  </div>
+  <p>Il subnetting non si impara leggendo: si impara facendo. Vai alla
+  <a href="../strumenti.html"><b>palestra di subnetting</b></a> negli strumenti: genera esercizi a caso
+  all'infinito, e a ogni risposta ti mostra il ragionamento completo con i bit evidenziati.</p>
+  <p><b>Cinque esercizi al giorno per due settimane.</b> Sono tre minuti. Dopo due settimane li farai
+  a mente, e questo capitolo — che adesso ti sembra il più difficile del corso — diventerà quello che
+  ti fa sentire sicuro quando parli con un cliente.</p>
+</div>
+
+<h2>Gli errori tipici, per riconoscerli</h2>
+
+<ul class="clean">
+  <li><b>Contare i multipli nell'ottetto sbagliato.</b> Con /20 il taglio cade nel <em>terzo</em> ottetto,
+  non nel quarto. Il passo 1 esiste apposta: non saltarlo mai.</li>
+  <li><b>Dimenticare −2.</b> Un /26 ha 64 indirizzi ma 62 host. La domanda «quanti host» e la domanda
+  «quanti indirizzi» hanno risposte diverse.</li>
+  <li><b>Assegnare l'indirizzo di rete o il broadcast a un dispositivo.</b> Sembra funzionare finché non
+  smette di funzionare, e il guasto è incomprensibile.</li>
+  <li><b>Far sovrapporre due subnet.</b> 10.0.0.0/24 e 10.0.0.128/25 si sovrappongono: la seconda sta
+  <em>dentro</em> la prima. I router impazziscono e sceglieranno una delle due secondo regole che
+  non hai in mente.</li>
+  <li><b>Ragionare in decimale.</b> «Divido il /24 a metà: da .0 a .127 e da .128 a .255» è corretto.
+  «Da .0 a .100 e da .101 a .255» non esiste: il 101 non è un confine di blocco.</li>
+</ul>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: subnetting",
+  "questions": [
+    { "q": "Qual è l'indirizzo di rete di <code>192.168.10.37/26</code>?",
+      "a": [ {"t":"192.168.10.0","ok":true}, {"t":"192.168.10.32","ok":false},
+             {"t":"192.168.10.37","ok":false}, {"t":"192.168.10.64","ok":false} ],
+      "e": "Blocco = 256 − 192 = 64. Le reti iniziano a 0, 64, 128, 192. Il 37 sta nel blocco che parte da <b>0</b>. Il 32 sarebbe un confine di blocco solo con /27 (blocchi da 32)." },
+
+    { "q": "Qual è il broadcast di <code>172.16.140.200/20</code>?",
+      "a": [ {"t":"172.16.143.255","ok":true}, {"t":"172.16.140.255","ok":false},
+             {"t":"172.16.255.255","ok":false}, {"t":"172.16.144.255","ok":false} ],
+      "e": "/20 → maschera 255.255.240.0 → blocco 16 nel <b>terzo</b> ottetto. Il 140 cade nel blocco che parte da 128, che arriva fino a 143. Broadcast = 172.16.<b>143.255</b>. Dopo l'ottetto interessante, il broadcast ha sempre 255." },
+
+    { "q": "Devi dividere un <code>/24</code> in otto sottoreti uguali. Quale prefisso usi?",
+      "a": [ {"t":"/27","ok":true}, {"t":"/26","ok":false}, {"t":"/28","ok":false}, {"t":"/25","ok":false} ],
+      "e": "Ogni bit preso in prestito raddoppia il numero di reti: 1 bit → 2, 2 bit → 4, <b>3 bit → 8</b>. Da /24 più 3 bit si ottiene /27, con blocchi da 32 indirizzi e 30 host utilizzabili ciascuno." },
+
+    { "q": "Quanti host utilizzabili ha una <code>/29</code>?",
+      "a": [ {"t":"6","ok":true}, {"t":"8","ok":false}, {"t":"14","ok":false}, {"t":"4","ok":false} ],
+      "e": "32 − 29 = 3 bit → 2³ = 8 indirizzi totali, meno rete e broadcast = <b>6</b>. È la dimensione minima sensata per un blocco di IP pubblici assegnato da un operatore." },
+
+    { "q": "Un tecnico assegna a un server l'indirizzo <code>10.5.8.135/29</code>. Che problema c'è?",
+      "a": [ {"t":"Quell'indirizzo è il broadcast della sua subnet e non è assegnabile","ok":true},
+             {"t":"Nessuno, è un indirizzo valido","ok":false},
+             {"t":"L'indirizzo appartiene a una classe riservata","ok":false},
+             {"t":"La maschera /29 non esiste","ok":false} ],
+      "e": "Blocco = 8 → le reti iniziano a 128, 136, 144… Il 135 è l'ultimo del blocco che parte da 128, cioè il <b>broadcast</b>. Gli host validi sono solo da .129 a .134. Un indirizzo di broadcast assegnato a un host produce guasti intermittenti difficilissimi da spiegare senza fare questo calcolo." },
+
+    { "q": "Perché nella pratica si preferisce dare un <code>/24</code> intero a ogni VLAN invece di calcolare la dimensione minima?",
+      "a": [ {"t":"Perché gli indirizzi privati non costano nulla e rifare l'indirizzamento dopo costa moltissimo","ok":true},
+             {"t":"Perché le VLAN funzionano solo con maschere /24","ok":false},
+             {"t":"Perché i firewall non supportano maschere diverse da /24","ok":false},
+             {"t":"Perché il DHCP richiede almeno 254 indirizzi","ok":false} ],
+      "e": "Spremere le subnet fa risparmiare una risorsa gratuita (gli indirizzi privati) al prezzo di dover rifare tutto — DHCP, regole, riservazioni, rotte, documentazione — appena il cliente cresce. Uno schema leggibile e abbondante, per esempio con il terzo ottetto uguale al numero di VLAN, costa zero e regge per anni. Il subnetting resta però indispensabile per <em>leggere</em> le reti esistenti, gli IP pubblici e i punto-punto." },
+
+    { "q": "Due subnet sono <code>10.0.0.0/24</code> e <code>10.0.0.128/25</code>. Qual è il problema?",
+      "a": [ {"t":"Si sovrappongono: la seconda è contenuta nella prima","ok":true},
+             {"t":"Nessuno: sono due reti distinte","ok":false},
+             {"t":"Hanno maschere diverse e questo non è permesso","ok":false},
+             {"t":"La seconda non è un confine di blocco valido","ok":false} ],
+      "e": "10.0.0.0/24 copre da .0 a .255; 10.0.0.128/25 copre da .128 a .255, quindi ricade interamente dentro la prima. Maschere diverse tra subnet sono perfettamente legittime (si chiama VLSM) e .128 <em>è</em> un confine valido per un /25: il problema è unicamente la sovrapposizione, che rende ambiguo l'instradamento." }
+  ]
+}
+</script>

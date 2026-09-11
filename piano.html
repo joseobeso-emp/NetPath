@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Piano di studio — NetPath</title>
+<meta name="description" content="Quanto tempo serve davvero per passare da zero a senior nel networking, con un piano settimanale realistico.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="piano" data-root="">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+
+<main class="wrap" style="padding-top:44px;padding-bottom:70px">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 232px;gap:40px" class="piano-layout">
+<div class="prose" style="max-width:none">
+
+  <div class="kicker">Piano di studio</div>
+  <h1 style="font-size:clamp(1.9rem,1.4rem + 2.2vw,2.7rem);letter-spacing:-.03em;margin-bottom:16px">
+    Quanto ci vuole davvero</h1>
+  <p class="lead">Questa è la pagina più importante del sito, perché è quella che decide se finirai il percorso
+  o se lo abbandonerai a marzo. Contiene una risposta scomoda e un metodo che funziona anche quando non hai voglia.</p>
+
+  <h2>La risposta onesta alla domanda "quanto tempo mi serve"</h2>
+
+  <p>Dipende da cosa intendi per <em>senior</em>, e la confusione su questa parola è il motivo per cui tanta gente
+  si scoraggia. Ci sono tre soglie diverse, e vanno separate:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Soglia</th><th>Cosa significa concretamente</th><th>Tempo realistico</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Competente</b></td>
+          <td>Apri un ticket e sai <em>dove guardare</em>. Capisci cosa ti dicono i colleghi. Risolvi da solo i problemi
+              standard: un PC che non naviga, un port forward, una VLAN, una regola firewall.</td>
+          <td><b>8–12 mesi</b><br><span style="color:var(--text-mute);font-size:.85em">Livelli 1 e 2</span></td>
+        </tr>
+        <tr>
+          <td><b>Autonomo / specialista</b></td>
+          <td>Gestisci un guasto complesso senza chiedere aiuto. Configuri HA, SD-WAN, integrazione Azure.
+              Sai leggere una cattura Wireshark. I colleghi iniziano a chiedere <em>a te</em>.</td>
+          <td><b>20–30 mesi</b><br><span style="color:var(--text-mute);font-size:.85em">+ Livello 3</span></td>
+        </tr>
+        <tr>
+          <td><b>Senior vero</b></td>
+          <td>Progetti una rete da zero per un cliente, la difendi davanti a chi decide, la realizzi, e quando
+              qualcosa va storto alle 23:00 sei tu che tieni la calma e guidi gli altri.</td>
+          <td><b>3–4 anni</b><br><span style="color:var(--text-mute);font-size:.85em">+ Livello 4 + guasti veri</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+      Perché "senior" non si compra con le ore di studio
+    </div>
+    <p>Le prime due soglie dipendono quasi solo da quanto studi: sono conoscenza, e la conoscenza si accumula.
+    La terza dipende da <b>quanti casi diversi hai visto</b>, e i casi arrivano al ritmo con cui arrivano.
+    Non puoi studiare cinquanta guasti: devi viverne cinquanta.</p>
+    <p>La buona notizia: <b>tu lavori già in un MSP.</b> Ogni settimana ti passano davanti guasti veri di clienti veri
+    su Fortinet, Sophos, Meraki, WatchGuard e Azure. È il materiale che a un ragazzo che studia da casa
+    manca completamente. Il tuo vantaggio non è il tempo di studio: è che puoi trasformare ogni ticket in una
+    lezione. Il metodo qui sotto serve esattamente a questo.</p>
+  </div>
+
+  <h2>Il calendario, mese per mese</h2>
+
+  <p>Questo calendario presuppone <b>6–8 ore a settimana</b>: circa 45 minuti nei giorni feriali più due ore nel
+  weekend. È un ritmo sostenibile insieme a un lavoro a tempo pieno. Se riesci a fare 12 ore a settimana, dimezza
+  le durate delle prime due fasi — ma non della terza e della quarta, perché lì il limite non sei tu, è
+  l'esperienza che deve sedimentare.</p>
+
+  <div class="timeline" style="margin:30px 0 36px">
+
+    <div class="tl-item" style="--tlc:var(--lv1)">
+      <div class="tl-when">Mesi 1–4 · settembre 2026 → dicembre 2026</div>
+      <h3>Livello 1 — Fondamenta</h3>
+      <p>25 lezioni. Qui costruisci il linguaggio: pacchetti, livelli, indirizzi, subnet, ARP, DHCP, DNS, NAT, TCP.
+      È la fase in cui sembra tutto astratto e ti verrà voglia di saltare. Non saltare: il 70% delle difficoltà
+      che hai oggi sui ticket viene da concetti di questo livello che nessuno ti ha mai spiegato per bene.</p>
+      <p><b>Segnale che hai finito davvero:</b> guardi un <code>ipconfig /all</code> e sai spiegare ogni singola riga.
+      Ti arriva "il cliente non naviga" e sai già le prime quattro domande da fare.</p>
+    </div>
+
+    <div class="tl-item" style="--tlc:var(--lv2)">
+      <div class="tl-when">Mesi 5–11 · gennaio 2027 → luglio 2027</div>
+      <h3>Livello 2 — Rete aziendale</h3>
+      <p>28 lezioni. VLAN, spanning tree, routing, firewall stateful, NAT, IPsec, Wi-Fi, QoS. È il livello che
+      corrisponde al 90% dei ticket che arrivano in un MSP. Da qui in poi lo studio e il lavoro iniziano a
+      rinforzarsi a vicenda invece di rubarsi tempo.</p>
+      <p><b>Segnale che hai finito davvero:</b> ti assegnano "il tunnel con la filiale non sale" e lo risolvi da solo,
+      sapendo <em>perché</em> non saliva.</p>
+    </div>
+
+    <div class="tl-item" style="--tlc:var(--lv3)">
+      <div class="tl-when">Mesi 12–22 · agosto 2027 → giugno 2028</div>
+      <h3>Livello 3 — Avanzato</h3>
+      <p>21 lezioni, ma più dense e con molta più pratica. Alta disponibilità, BGP, SD-WAN, SSL inspection,
+      802.1X, Azure, Wireshark avanzato. In questa fase dovresti chiedere attivamente in azienda di essere messo
+      sui progetti, non solo sui guasti.</p>
+      <p><b>Segnale che hai finito davvero:</b> un collega ti porta un problema che non riesce a risolvere e tu
+      gli chiedi una cattura invece di tirare a indovinare.</p>
+    </div>
+
+    <div class="tl-item" style="--tlc:var(--lv4)">
+      <div class="tl-when">Mesi 23–36 · luglio 2028 → fine 2029</div>
+      <h3>Livello 4 — Esperto / architetto</h3>
+      <p>16 lezioni più il progetto finale. Requisiti, IP plan su larga scala, documenti di progetto, cutover,
+      i vendor in profondità, automazione. Qui il sito conta meno: contano i progetti veri che porti a casa.
+      Il livello 4 è una guida per quello che farai, non un corso da finire.</p>
+      <p><b>Segnale che sei arrivato:</b> il commerciale porta te dal cliente perché sei tu che spieghi cosa serve.</p>
+    </div>
+
+  </div>
+
+  <div class="callout tip">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+      Il riassunto in una riga
+    </div>
+    <p><b>Circa due anni per essere bravo. Circa quattro per essere senior.</b> Ma già dopo quattro mesi smetti di
+    sentirti perso davanti a un ticket, e quello cambia completamente come vivi le giornate di lavoro.</p>
+  </div>
+
+  <h2>La settimana tipo</h2>
+
+  <p>Non servono sessioni eroiche. Servono sessioni brevi e frequenti, perché la memoria funziona così:
+  quattro sessioni da 45 minuti battono una sessione da 3 ore, sempre, senza eccezioni.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Quando</th><th>Durata</th><th>Cosa fai</th></tr></thead>
+      <tbody>
+        <tr><td><b>Lun · Mer · Ven</b><br><span style="font-size:.85em;color:var(--text-mute)">mattina presto o dopo cena</span></td>
+            <td>45 min</td>
+            <td>Una lezione + il suo quiz. Se il quiz va sotto il 70%, rileggi la lezione il giorno dopo invece di andare avanti.</td></tr>
+        <tr><td><b>Martedì o giovedì</b></td><td>20 min</td>
+            <td>Ripasso: rifai i quiz delle lezioni della settimana <em>precedente</em>. È il passaggio che quasi tutti saltano ed è quello che fa la differenza tra ricordare a tre mesi e dimenticare a tre settimane.</td></tr>
+        <tr><td><b>Sabato mattina</b></td><td>2 ore</td>
+            <td>Laboratorio. MikroTik acceso, cavo in mano, Wireshark aperto. Rompi le cose di proposito e guarda cosa succede.</td></tr>
+        <tr><td><b>Ogni giorno al lavoro</b></td><td>10 min</td>
+            <td><b>Il quaderno dei ticket</b> (sotto). È la parte che accelera tutto il resto.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Il quaderno dei ticket: l'acceleratore</h2>
+
+  <p>Questa è la singola pratica che, se la fai, taglia un anno dal percorso. Ogni giorno, per ogni ticket di
+  rete che ti passa davanti — anche quelli che ha risolto un collega, anche quelli che non hai capito — scrivi
+  cinque righe in un file:</p>
+
+  <div class="code">
+    <div class="code__bar"><span class="dot"></span>Quaderno ticket — modello</div>
+<pre><span class="c"># 2026-09-14 · Cliente Rossi Srl · TCK-4412</span>
+<span class="k">Sintomo:</span>   Gli utenti della sede di Brescia non aprono il gestionale, il resto naviga.
+<span class="k">Ipotesi:</span>   Rotta mancante verso la subnet del server, oppure regola firewall.
+<span class="k">Verifica:</span>  Da un PC di Brescia: ping all'IP del server → risponde. telnet porta 1433 → non risponde.
+<span class="k">Causa:</span>     Policy del FortiGate limitata alla vecchia subnet 10.20.0.0/24 dopo il cambio piano IP.
+<span class="k">Imparato:</span>  Se il ping passa ma la porta no, il problema è quasi sempre a livello 4:
+           firewall o servizio, non routing. Devo partire da lì la prossima volta.
+</pre>
+  </div>
+
+  <p>Le prime settimane la riga <b>Causa</b> sarà spesso vuota o scritta da qualcun altro: va benissimo, chiedila
+  al collega che ha chiuso il ticket. La riga che conta davvero è l'ultima. Dopo sei mesi avrai un documento
+  con cento casi reali che vale più di qualsiasi certificazione, perché è tuo, è dei tuoi clienti, ed è
+  scritto nel tuo linguaggio.</p>
+
+  <div class="callout feynman">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+      Perché funziona, spiegato semplice
+    </div>
+    <p>Il cervello butta via quasi tutto quello che legge e tiene quasi tutto quello che <em>usa per risolvere un
+    problema che gli interessa</em>. Un ticket è un problema che ti interessa per forza: c'è un cliente che
+    aspetta. Scrivere cosa hai imparato subito dopo trasforma quell'adrenalina in memoria stabile.
+    È lo stesso motivo per cui ti ricordi perfettamente dov'eri durante un evento importante e non ti ricordi
+    niente della pagina di un libro letta ieri.</p>
+  </div>
+
+  <h2>Come si affronta una singola lezione</h2>
+
+  <ol>
+    <li><b>Leggi gli obiettivi in cima.</b> Trenta secondi. Ti dice a cosa fare attenzione.</li>
+    <li><b>Leggi tutta la lezione una volta, senza fermarti</b> sulle cose che non capisci. Serve la visione d'insieme.</li>
+    <li><b>Rileggi fermandoti sui riquadri viola</b> (metodo Feynman). Se non riesci a ripetere quella spiegazione
+        a voce alta con parole tue, torna su.</li>
+    <li><b>Fai i comandi</b> che trovi nella lezione, sul tuo PC, davvero. Anche se sembrano banali.</li>
+    <li><b>Fai il quiz.</b> Sotto il 70%: rileggi. Sopra il 90%: vai avanti.</li>
+    <li><b>Segna la lezione come completata</b> solo se sapresti spiegarla a un collega. Non se l'hai letta.</li>
+  </ol>
+
+  <h2>Cosa NON fare</h2>
+
+  <ul class="clean">
+    <li><b>Non studiare due vendor prima di aver capito il concetto.</b> Se non sai cos'è una policy stateful, la
+    differenza tra FortiGate e Sophos non ti serve a niente: stai imparando due interfacce grafiche a memoria.</li>
+    <li><b>Non guardare video mentre fai altro.</b> Il networking non entra passivamente. Se non hai le mani sulla
+    tastiera o una penna in mano, stai perdendo tempo e ti stai illudendo di studiare.</li>
+    <li><b>Non saltare il subnetting.</b> È noioso e sembra inutile finché non ti accorgi che sta sotto a tutto:
+    routing, VLAN, firewall, VPN, Azure. Chi lo salta si blocca per sempre al livello 2.</li>
+    <li><b>Non accumulare corsi.</b> Un percorso finito vale dieci percorsi iniziati. Questo è il tuo percorso: finiscilo.</li>
+    <li><b>Non studiare più di 90 minuti di fila.</b> Oltre, il rendimento crolla e inizi solo a scorrere con gli occhi.</li>
+  </ul>
+
+  <h2>Il laboratorio: il tuo MikroTik</h2>
+
+  <p>Il hAP ax² che hai comprato è, per questo percorso, lo strumento più prezioso che possiedi — più di qualunque
+  libro. RouterOS ti obbliga a configurare a mano cose che Fortinet e Meraki fanno di nascosto per te: interfacce,
+  bridge, DHCP server, regole NAT, tabelle di routing. Impari il <em>meccanismo</em>, e poi lo riconosci sotto
+  l'interfaccia di qualsiasi altro marchio.</p>
+
+  <p>Su quel router, durante il percorso, costruirai: una LAN con DHCP e DNS, tre VLAN separate con regole tra
+  loro, un firewall con NAT e port forward, un tunnel VPN verso un altro apparato, un Wi-Fi con SSID multipli e
+  reti ospiti, e una configurazione di QoS. <a href="lab.html">I laboratori sono qui</a>, uno per ogni blocco di lezioni.</p>
+
+  <div class="callout lab">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+      Regola del laboratorio
+    </div>
+    <p>Prima di ogni laboratorio, fai il backup della configurazione. Poi <b>rompi le cose di proposito</b>:
+    togli il gateway e guarda cosa succede, metti due DHCP nella stessa rete, sbaglia la subnet mask apposta.
+    Vedere il guasto che hai creato tu, sapendo cosa hai fatto, vale dieci volte vedere la configurazione giusta.
+    Un reset dura trenta secondi.</p>
+  </div>
+
+  <h2>Le verifiche trimestrali</h2>
+
+  <p>Ogni tre mesi c'è un test serio di 25–30 domande che pesca da tutto quello che hai visto fino a quel punto,
+  non solo dall'ultimo capitolo. Serve a due cose: scoprire cosa hai dimenticato (sempre più di quanto pensi)
+  e darti una misura oggettiva invece della sensazione. <a href="verifiche.html">Le trovi qui.</a></p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Verifica</th><th>Quando</th><th>Copre</th><th>Soglia per proseguire</th></tr></thead>
+      <tbody>
+        <tr><td>V1</td><td>Fine mese 4</td><td>Livello 1 completo</td><td>80%</td></tr>
+        <tr><td>V2</td><td>Fine mese 8</td><td>Livello 1 + metà Livello 2</td><td>75%</td></tr>
+        <tr><td>V3</td><td>Fine mese 11</td><td>Livelli 1 e 2</td><td>75%</td></tr>
+        <tr><td>V4</td><td>Fine mese 16</td><td>+ prima metà Livello 3</td><td>70%</td></tr>
+        <tr><td>V5</td><td>Fine mese 22</td><td>Livelli 1–3 completi</td><td>70%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>E le certificazioni?</h2>
+
+  <p>Servono, ma dopo, e non per imparare: per <b>dimostrare</b>. Studiare per una certificazione prima di avere
+  le basi significa imparare a memoria le risposte. L'ordine che ha senso nel tuo contesto:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Quando</th><th>Certificazione</th><th>Perché proprio quella</th></tr></thead>
+      <tbody>
+        <tr><td>Dopo il livello 2<br><span style="font-size:.85em;color:var(--text-mute)">~mese 12</span></td>
+            <td><b>Fortinet NSE 4 / FCP</b></td>
+            <td>Se lavorate molto su FortiGate è la più immediatamente spendibile: copre esattamente i ticket che fai.</td></tr>
+        <tr><td>Dopo il livello 2</td><td><b>Sophos Certified Engineer/Architect</b></td>
+            <td>Siete partner Sophos: i corsi partner costano poco o niente e contano per lo status aziendale. Chiedi in azienda, spesso li paga il partner program.</td></tr>
+        <tr><td>Durante il livello 3<br><span style="font-size:.85em;color:var(--text-mute)">~mese 15</span></td>
+            <td><b>Cisco CCNA</b></td>
+            <td>È la certificazione che dimostra le <em>fondamenta</em> in modo indipendente dal vendor. Se ne fai una sola nella vita, fai questa.</td></tr>
+        <tr><td>Durante il livello 3</td><td><b>Microsoft AZ-700</b></td>
+            <td>Networking di Azure. Con il lavoro che fate su Microsoft 365 ed Entra ID, è complementare e molto richiesta.</td></tr>
+        <tr><td>Livello 4</td><td><b>MTCNA / MTCRE</b> (MikroTik)</td>
+            <td>Economiche, molto tecniche, e ti fanno sfruttare fino in fondo l'apparato che hai già.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
+      Sui soldi
+    </div>
+    <p>Hai detto che non hai budget per una scuola. Non ti serve. Le uniche spese sensate in tutto il percorso
+    sono: il MikroTik (già fatto), eventualmente un secondo apparato usato da 30–50 € per fare i laboratori di
+    VPN site-to-site, e gli esami di certificazione — che nella stragrande maggioranza dei casi <b>paga l'azienda</b>,
+    perché le certificazioni dei dipendenti servono all'azienda per mantenere i livelli di partnership.
+    Chiedile: è una richiesta che qualsiasi datore di lavoro di un MSP si aspetta di ricevere.</p>
+  </div>
+
+  <h2>Quando ti blocchi</h2>
+
+  <p>Ti bloccherai. Capita a tutti, di solito intorno al subnetting nel livello 1 e intorno a IPsec nel livello 2.
+  Quando succede, in ordine:</p>
+
+  <ol>
+    <li><b>Non rileggere la stessa spiegazione una terza volta.</b> Se non ha funzionato due volte non funzionerà.</li>
+    <li><b>Disegnalo.</b> Su carta, in grande. Il 90% dei blocchi nel networking sono blocchi spaziali: non riesci a
+    immaginare dove stanno le cose. Un disegno li scioglie.</li>
+    <li><b>Fallo succedere.</b> Vai sul MikroTik, configuralo male di proposito, guarda l'errore. Il concetto diventa
+    concreto in cinque minuti.</li>
+    <li><b>Spiegalo a voce a qualcuno</b> — un collega, tua madre, il muro. Nel momento esatto in cui ti inceppi
+    parlando, hai trovato il punto che non hai capito. Quello è il punto da studiare, non tutto il capitolo.</li>
+    <li><b>Solo a questo punto chiedi aiuto</b>, e chiedilo bene: "ho capito che X fa Y, ma non capisco perché
+    quando succede Z…". Una domanda così ottiene una risposta utile; "non ci capisco niente di IPsec" no.</li>
+  </ol>
+
+  <div class="callout tip" style="margin-top:34px">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      Da fare oggi, prima di chiudere questa pagina
+    </div>
+    <ul style="margin-bottom:0">
+      <li>Segna in calendario tre slot da 45 minuti per questa settimana. Con la notifica.</li>
+      <li>Crea il file del quaderno dei ticket. Anche vuoto.</li>
+      <li>Tira fuori il MikroTik dalla scatola e attaccalo alla corrente.</li>
+      <li>Apri la <a href="lezioni/l1-01.html">lezione 01</a>. Sono diciotto minuti.</li>
+    </ul>
+  </div>
+
+</div>
+
+<aside class="toc-rail" id="np-toc" style="padding-top:60px"></aside>
+</div>
+</main>
+
+<footer id="np-footer"></footer>
+
+<style>
+@media (max-width: 1100px) { .piano-layout { grid-template-columns: minmax(0,1fr) !important; } .piano-layout .toc-rail { display:none; } }
+</style>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/glossario-data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

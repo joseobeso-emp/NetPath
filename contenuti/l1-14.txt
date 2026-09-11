@@ -1,0 +1,285 @@
+#id: l1-14
+#title: Subnet mask e CIDR
+#min: 24
+#level: 1
+#chapter: Indirizzamento IP
+#desc: /24, /26, 255.255.255.0: cosa significano davvero e come si passa da una notazione all'altra.
+#obj: Spiegare cosa fa meccanicamente una subnet mask
+#obj: Passare da notazione CIDR a decimale puntata e viceversa, a mente
+#obj: Calcolare indirizzo di rete, broadcast e host utilizzabili di qualsiasi subnet
+#obj: Capire perché si perdono sempre due indirizzi
+---
+<p class="lead">Questa è la lezione in cui si mettono insieme i due pezzi precedenti: l'indirizzo e il
+binario. Alla fine saprai guardare <code>192.168.10.37/26</code> e dire in dieci secondi dove inizia e
+dove finisce quella rete. È la competenza di base di chiunque lavori in rete.</p>
+
+<h2>Cosa fa meccanicamente la maschera</h2>
+
+<p>La maschera è un secondo numero da 32 bit che sta sempre accanto all'indirizzo. La regola è
+semplicissima:</p>
+
+<ul class="clean">
+  <li>Dove la maschera ha <strong>1</strong> → quel bit dell'indirizzo appartiene alla <strong>rete</strong>.</li>
+  <li>Dove la maschera ha <strong>0</strong> → quel bit appartiene all'<strong>host</strong>.</li>
+</ul>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="L'indirizzo 192.168.10.37 con maschera 255.255.255.192 e il calcolo dell'indirizzo di rete">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">192.168.10.37 con maschera /26</text>
+
+    <text x="16" y="56" class="dg-mono-sm">indirizzo</text>
+    <g class="dg-mono" text-anchor="middle">
+      <rect x="110" y="38" width="132" height="26" rx="4" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.2"/>
+      <rect x="248" y="38" width="132" height="26" rx="4" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.2"/>
+      <rect x="386" y="38" width="132" height="26" rx="4" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.2"/>
+      <rect x="524" y="38" width="66"  height="26" rx="4" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.2"/>
+      <rect x="590" y="38" width="66"  height="26" rx="4" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.2"/>
+      <text x="176" y="56">11000000</text><text x="314" y="56">10101000</text>
+      <text x="452" y="56">00001010</text><text x="557" y="56">00</text><text x="623" y="56">100101</text>
+    </g>
+
+    <text x="16" y="98" class="dg-mono-sm">maschera</text>
+    <g class="dg-mono" text-anchor="middle">
+      <rect x="110" y="80" width="132" height="26" rx="4" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.2"/>
+      <rect x="248" y="80" width="132" height="26" rx="4" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.2"/>
+      <rect x="386" y="80" width="132" height="26" rx="4" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.2"/>
+      <rect x="524" y="80" width="66"  height="26" rx="4" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.2"/>
+      <rect x="590" y="80" width="66"  height="26" rx="4" fill="none" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+      <text x="176" y="98">11111111</text><text x="314" y="98">11111111</text>
+      <text x="452" y="98">11111111</text><text x="557" y="98">11</text><text x="623" y="98">000000</text>
+    </g>
+
+    <line x1="588" y1="30" x2="588" y2="200" stroke="var(--dg-3)" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="588" y="224" text-anchor="middle" class="dg-mono-sm">il taglio cade qui, dentro il quarto ottetto</text>
+
+    <text x="16" y="150" class="dg-mono-sm">rete</text>
+    <g class="dg-mono" text-anchor="middle">
+      <rect x="110" y="132" width="480" height="26" rx="4" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4"/>
+      <rect x="590" y="132" width="66"  height="26" rx="4" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4" opacity=".4"/>
+      <text x="350" y="150">11000000 . 10101000 . 00001010 . 00</text>
+      <text x="623" y="150">000000</text>
+    </g>
+    <text x="670" y="150" class="dg-mono-sm">= 192.168.10.0</text>
+
+    <text x="110" y="186" class="dg-label-sm">↑ 26 bit di RETE — uguali per tutti i dispositivi di questa subnet</text>
+    <text x="596" y="186" class="dg-label-sm">↑ 6 bit di HOST</text>
+  </svg>
+  </div>
+  <figcaption>L'indirizzo di rete si ottiene <b>azzerando tutti i bit di host</b>. Qui i 6 bit finali
+  vanno a zero e <code>00100101</code> (37) diventa <code>00000000</code> (0):
+  la rete è <b>192.168.10.0/26</b>.</figcaption>
+</figure>
+
+<h2>Le due notazioni</h2>
+
+<p>La stessa maschera si scrive in due modi, e li userai entrambi:</p>
+
+<ul class="clean">
+  <li><strong>Decimale puntata</strong>: <code>255.255.255.192</code>. La vedi nelle schermate di Windows
+  e nelle configurazioni delle schede di rete.</li>
+  <li><strong>CIDR</strong>: <code>/26</code>. Il numero di bit a 1. La usi negli apparati di rete,
+  nelle documentazioni e quando parli con i colleghi.</li>
+</ul>
+
+<p>Passare dall'una all'altra è banale: conta i bit a 1. <code>255.255.255.0</code> ha 8+8+8+0 = 24 bit
+a 1, quindi è <code>/24</code>. <code>255.255.255.192</code> ha 8+8+8+2 = 26 bit, quindi
+<code>/26</code>.</p>
+
+<h2>La tabella da tenere sottomano</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>CIDR</th><th>Maschera</th><th>Indirizzi totali</th><th>Host utilizzabili</th><th>Uso tipico</th></tr></thead>
+    <tbody>
+      <tr><td><b>/8</b></td><td>255.0.0.0</td><td>16.777.216</td><td>16.777.214</td><td>Il blocco privato 10.0.0.0 nel suo complesso</td></tr>
+      <tr><td><b>/16</b></td><td>255.255.0.0</td><td>65.536</td><td>65.534</td><td>Un'intera sede molto grande, o un blocco da suddividere</td></tr>
+      <tr><td><b>/20</b></td><td>255.255.240.0</td><td>4.096</td><td>4.094</td><td>Blocco assegnato a una sede, da suddividere in VLAN</td></tr>
+      <tr><td><b>/22</b></td><td>255.255.252.0</td><td>1.024</td><td>1.022</td><td>Reti Wi-Fi grandi, reti ospiti di un hotel</td></tr>
+      <tr><td><b>/23</b></td><td>255.255.254.0</td><td>512</td><td>510</td><td>Una VLAN utenti grande</td></tr>
+      <tr><td><b>/24</b></td><td>255.255.255.0</td><td>256</td><td><b>254</b></td><td><b>Lo standard di fatto per una VLAN</b></td></tr>
+      <tr><td><b>/25</b></td><td>255.255.255.128</td><td>128</td><td>126</td><td>Mezza VLAN</td></tr>
+      <tr><td><b>/26</b></td><td>255.255.255.192</td><td>64</td><td>62</td><td>VLAN piccola: server, telecamere, stampanti</td></tr>
+      <tr><td><b>/27</b></td><td>255.255.255.224</td><td>32</td><td>30</td><td>VLAN di gestione degli apparati</td></tr>
+      <tr><td><b>/28</b></td><td>255.255.255.240</td><td>16</td><td>14</td><td>Un piccolo blocco di IP pubblici dall'operatore</td></tr>
+      <tr><td><b>/29</b></td><td>255.255.255.248</td><td>8</td><td>6</td><td>Blocco pubblico minimo utilizzabile</td></tr>
+      <tr><td><b>/30</b></td><td>255.255.255.252</td><td>4</td><td><b>2</b></td><td>Collegamento punto-punto tra due router</td></tr>
+      <tr><td><b>/31</b></td><td>255.255.255.254</td><td>2</td><td>2</td><td>Punto-punto ottimizzato (caso speciale)</td></tr>
+      <tr><td><b>/32</b></td><td>255.255.255.255</td><td>1</td><td>1</td><td>Un singolo host: rotte specifiche, regole firewall</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Non serve impararla a memoria: serve una formula
+  </div>
+  <p><b>Indirizzi totali = 2<sup>(32 − prefisso)</sup></b></p>
+  <p>Con /26 restano 32−26 = 6 bit di host, quindi 2⁶ = 64 indirizzi. Con /28 restano 4 bit, 2⁴ = 16.
+  Con /30 restano 2 bit, 2² = 4.</p>
+  <p>E le potenze di 2 le conosci già: sono le otto colonne della lezione precedente, lette al contrario.
+  <b>2, 4, 8, 16, 32, 64, 128, 256, 512, 1024.</b></p>
+</div>
+
+<h2>Perché si perdono sempre due indirizzi</h2>
+
+<p>In ogni subnet ci sono due indirizzi che non puoi assegnare a un dispositivo:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Indirizzo</th><th>Qual è</th><th>A cosa serve</th></tr></thead>
+    <tbody>
+      <tr><td><b>Indirizzo di rete</b></td><td>Il <b>primo</b>: tutti i bit di host a 0</td>
+          <td>È il «nome» della subnet. Quando scrivi una rotta o una regola firewall, indichi questo.</td></tr>
+      <tr><td><b>Broadcast</b></td><td>L'<b>ultimo</b>: tutti i bit di host a 1</td>
+          <td>Parlare a tutti i dispositivi della subnet in un colpo solo.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il condominio
+  </div>
+  <p>Immagina un palazzo con gli interni numerati da 0 a 255.</p>
+  <p>L'interno <b>0</b> non è di nessuno: è <b>il nome del palazzo</b>. Quando dici «il palazzo di via
+  Verdi» intendi tutto l'edificio, non un appartamento.</p>
+  <p>L'interno <b>255</b> non è di nessuno: è <b>l'altoparlante</b> che suona in tutti gli appartamenti
+  insieme. Se ci mandi un messaggio, lo ricevono tutti.</p>
+  <p>Restano gli interni da 1 a 254: <b>254 appartamenti veri</b>. Ecco perché una rete /24 ha 256
+  indirizzi ma solo 254 dispositivi.</p>
+  <p>E si capisce anche perché una rete /30 ha solo 2 host utilizzabili su 4: un palazzo con quattro
+  interni, di cui uno è il nome e uno l'altoparlante, ospita due famiglie. Sembra poco, ma è esattamente
+  ciò che serve per collegare due router: uno da una parte, uno dall'altra, niente di più.</p>
+</div>
+
+<h2>Il concetto chiave: la dimensione del blocco</h2>
+
+<p>Ecco l'idea che rende il subnetting meccanico invece che difficile. <strong>Le subnet non iniziano
+dove vuoi tu: iniziano a multipli fissi.</strong></p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 290" role="img" aria-label="Come si divide la rete 192.168.10.0/24 in subnet da /25, /26 e /27">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">La rete 192.168.10.0 divisa in blocchi via via più piccoli</text>
+
+    <text x="16" y="52" class="dg-mono-sm">/24</text>
+    <rect x="70" y="34" width="600" height="28" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <text x="370" y="53" text-anchor="middle" class="dg-mono-sm">.0 → .255   ·   un blocco da 256</text>
+
+    <text x="16" y="98" class="dg-mono-sm">/25</text>
+    <rect x="70"  y="80" width="296" height="28" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+    <rect x="374" y="80" width="296" height="28" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.4"/>
+    <text x="218" y="99" text-anchor="middle" class="dg-mono-sm">.0 → .127</text>
+    <text x="522" y="99" text-anchor="middle" class="dg-mono-sm">.128 → .255</text>
+
+    <text x="16" y="144" class="dg-mono-sm">/26</text>
+    <g stroke="var(--dg-4)" stroke-width="1.4" fill="var(--dg-4-fill)">
+      <rect x="70"  y="126" width="144" height="28" rx="5"/>
+      <rect x="222" y="126" width="144" height="28" rx="5"/>
+      <rect x="374" y="126" width="144" height="28" rx="5"/>
+      <rect x="526" y="126" width="144" height="28" rx="5"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="142" y="145">.0 → .63</text><text x="294" y="145">.64 → .127</text>
+      <text x="446" y="145">.128 → .191</text><text x="598" y="145">.192 → .255</text>
+    </g>
+
+    <text x="16" y="190" class="dg-mono-sm">/27</text>
+    <g stroke="var(--dg-3)" stroke-width="1.2" fill="var(--dg-3-fill)">
+      <rect x="70"  y="172" width="68" height="28" rx="4"/><rect x="146" y="172" width="68" height="28" rx="4"/>
+      <rect x="222" y="172" width="68" height="28" rx="4"/><rect x="298" y="172" width="68" height="28" rx="4"/>
+      <rect x="374" y="172" width="68" height="28" rx="4"/><rect x="450" y="172" width="68" height="28" rx="4"/>
+      <rect x="526" y="172" width="68" height="28" rx="4"/><rect x="602" y="172" width="68" height="28" rx="4"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle" font-size="9">
+      <text x="104" y="190">.0</text><text x="180" y="190">.32</text><text x="256" y="190">.64</text><text x="332" y="190">.96</text>
+      <text x="408" y="190">.128</text><text x="484" y="190">.160</text><text x="560" y="190">.192</text><text x="636" y="190">.224</text>
+    </g>
+
+    <text x="350" y="230" text-anchor="middle" class="dg-label-sm">Ogni volta che aggiungi un bit alla maschera, <tspan font-weight="700">raddoppi</tspan> il numero di reti e <tspan font-weight="700">dimezzi</tspan> la loro dimensione.</text>
+    <text x="350" y="252" text-anchor="middle" class="dg-label-sm">/25 → blocchi da 128 · /26 → da 64 · /27 → da 32 · /28 → da 16 · /29 → da 8 · /30 → da 4</text>
+    <text x="350" y="278" text-anchor="middle" class="dg-label-sm">Le reti iniziano SEMPRE a un multiplo della dimensione del blocco. Mai a caso.</text>
+  </svg>
+  </div>
+  <figcaption>Una rete <code>/26</code> può iniziare solo a .0, .64, .128 o .192. <b>Non esiste</b> una
+  rete 192.168.10.50/26: quel .50 sta dentro il blocco che inizia a .0. Questa singola regola è il
+  cuore del subnetting.</figcaption>
+</figure>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore che vedrai fare (e che non farai)
+  </div>
+  <p>Un tecnico deve collegare due router e sceglie la rete <code>10.1.1.5/30</code>. Sembra ragionevole:
+  «uso .5 e .6».</p>
+  <p>Ma le reti /30 hanno blocchi da 4 e iniziano a .0, .4, .8, .12… Il .5 cade nel blocco che parte
+  da <b>.4</b>: la rete è 10.1.1.4/30, con .4 come indirizzo di rete, .7 come broadcast, e host
+  utilizzabili <b>.5 e .6</b>. Per puro caso la configurazione funziona.</p>
+  <p>Ma se avesse scelto <code>10.1.1.7/30</code> e <code>10.1.1.8/30</code> per i due lati, avrebbe messo
+  i due router in <b>due reti diverse</b> (il .7 è il broadcast del blocco .4, l'.8 apre il blocco .8) e
+  il collegamento non sarebbe mai salito, con ore passate a controllare cavi e configurazioni.</p>
+</div>
+
+<h2>Riepilogo: i quattro numeri di ogni subnet</h2>
+
+<p>Data una subnet, ci sono sempre quattro numeri da saper ricavare. Esempio con
+<code>192.168.10.0/26</code>:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa</th><th>Valore</th><th>Come si trova</th></tr></thead>
+    <tbody>
+      <tr><td><b>Indirizzo di rete</b></td><td>192.168.10.<b>0</b></td><td>Il primo del blocco</td></tr>
+      <tr><td><b>Primo host</b></td><td>192.168.10.<b>1</b></td><td>Rete + 1</td></tr>
+      <tr><td><b>Ultimo host</b></td><td>192.168.10.<b>62</b></td><td>Broadcast − 1</td></tr>
+      <tr><td><b>Broadcast</b></td><td>192.168.10.<b>63</b></td><td>Rete + dimensione blocco − 1</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Nella prossima lezione impari a ricavarli in dieci secondi per qualunque indirizzo, con una procedura
+in quattro passi che funziona sempre.</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: maschere e CIDR",
+  "questions": [
+    { "q": "A quale notazione CIDR corrisponde <code>255.255.255.192</code>?",
+      "a": [ {"t":"/26","ok":true}, {"t":"/24","ok":false}, {"t":"/27","ok":false}, {"t":"/25","ok":false} ],
+      "e": "Si contano i bit a 1: 8 + 8 + 8 + 2 = 26. Il 192 è <code>11000000</code>, cioè due bit. Il /25 sarebbe 128, il /27 sarebbe 224." },
+
+    { "q": "Quanti host utilizzabili ha una rete /28?",
+      "a": [ {"t":"14","ok":true}, {"t":"16","ok":false}, {"t":"30","ok":false}, {"t":"12","ok":false} ],
+      "e": "32 − 28 = 4 bit di host → 2⁴ = 16 indirizzi totali, meno rete e broadcast = <b>14</b>. Il 16 è il totale, non gli utilizzabili; 30 sarebbe un /27." },
+
+    { "q": "Quali sono i possibili indirizzi di rete per una subnet /26 dentro 192.168.10.0/24?",
+      "a": [ {"t":".0, .64, .128, .192","ok":true},
+             {"t":".0, .32, .64, .96","ok":false},
+             {"t":".0, .50, .100, .150","ok":false},
+             {"t":"Qualunque, basta che siano distanziati","ok":false} ],
+      "e": "/26 significa blocchi da 64 indirizzi, e le reti iniziano sempre a un multiplo della dimensione del blocco: 0, 64, 128, 192. Blocchi da 32 sarebbero /27. Gli indirizzi «tondi» in decimale come .50 o .100 non hanno alcun significato in binario, ed è proprio questo che confonde chi ragiona solo in decimale." },
+
+    { "q": "Perché in ogni subnet si perdono due indirizzi?",
+      "a": [ {"t":"Il primo è l'indirizzo di rete e l'ultimo è il broadcast","ok":true},
+             {"t":"Uno serve al gateway e uno al DHCP","ok":false},
+             {"t":"Sono riservati al router e al DNS","ok":false},
+             {"t":"È una scelta arbitraria dello standard senza motivo tecnico","ok":false} ],
+      "e": "Il primo identifica la subnet stessa (lo usi quando scrivi rotte e regole), l'ultimo serve a parlare a tutti insieme. Il gateway invece <b>occupa un indirizzo utilizzabile</b> come qualsiasi altro dispositivo: sta spesso su .1 per convenzione, ma è un host a tutti gli effetti." },
+
+    { "q": "Un collega configura due router con <code>10.1.1.7/30</code> e <code>10.1.1.8/30</code>. Cosa succede?",
+      "a": [ {"t":"Finiscono in due reti diverse e il collegamento non funziona","ok":true},
+             {"t":"Funziona tutto regolarmente","ok":false},
+             {"t":"Funziona ma solo in una direzione","ok":false},
+             {"t":"I due router si assegnano automaticamente indirizzi corretti","ok":false} ],
+      "e": "Con /30 i blocchi sono da 4 e iniziano a .0, .4, .8… Il .7 è il <b>broadcast</b> del blocco che parte da .4; l'.8 è l'<b>indirizzo di rete</b> del blocco successivo. Sono due reti distinte, e per di più si tratta di due indirizzi non assegnabili. Il collegamento non salirà mai, e senza conoscere questa regola si passano ore a controllare i cavi." },
+
+    { "q": "Quanti indirizzi totali ci sono in una rete /22?",
+      "a": [ {"t":"1.024","ok":true}, {"t":"512","ok":false}, {"t":"2.048","ok":false}, {"t":"256","ok":false} ],
+      "e": "32 − 22 = 10 bit di host → 2¹⁰ = 1.024 indirizzi totali (1.022 utilizzabili). 512 sarebbe /23, 2.048 sarebbe /21." }
+  ]
+}
+</script>

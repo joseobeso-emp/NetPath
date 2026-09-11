@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cosa succede davvero quando apri un sito — NetPath</title>
+<meta name="description" content="La lezione che rimette insieme tutto: dal momento in cui premi Invio a quando vedi la pagina, passaggio per passaggio.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-23">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Trasporto, strumenti e metodo</span>
+      </nav>
+      <h1 class="lesson-title">Cosa succede davvero quando apri un sito</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 23</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Ricostruire l'intera sequenza di una navigazione usando tutto quello che hai studiato</li>
+        <li>Sapere, per ogni passaggio, cosa può rompersi e che sintomo produce</li>
+        <li>Usare questa sequenza come mappa mentale per diagnosticare qualsiasi problema</li>
+        <li>Rispondere alla domanda da colloquio più classica del networking</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Questa è la lezione che rimette insieme i pezzi. È anche, non a caso, la domanda che
+viene fatta in ogni colloquio tecnico serio: «cosa succede quando digiti un indirizzo e premi Invio?»
+Non la fanno per sentire le sigle: la fanno perché la risposta rivela in due minuti quanto hai capito
+davvero.</p>
+
+<h2>La sequenza completa</h2>
+
+<p>Scenario: sei al PC in ufficio, indirizzo <code>10.10.10.37/24</code>, gateway <code>10.10.10.1</code>,
+DNS <code>10.10.10.5</code>. Scrivi <code>www.esempio.it</code> e premi Invio.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 470" role="img" aria-label="I quattordici passaggi dal digitare un indirizzo al vedere la pagina">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dal tasto Invio alla pagina: cosa fa ogni livello</text>
+
+    <g font-family="var(--font-mono)">
+    <g stroke-width="1.4">
+      <rect x="16" y="34"  width="668" height="30" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="16" y="70"  width="668" height="30" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="16" y="106" width="668" height="30" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="16" y="142" width="668" height="30" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="178" width="668" height="30" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="16" y="214" width="668" height="30" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="16" y="250" width="668" height="30" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="16" y="286" width="668" height="30" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="16" y="322" width="668" height="30" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="16" y="358" width="668" height="30" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="16" y="394" width="668" height="30" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="34" y="54">1-2 · Il browser controlla le proprie cache e il file hosts</text>
+      <text x="34" y="90">3 · Chiede al DNS 10.10.10.5: «dov'è www.esempio.it?»</text>
+      <text x="34" y="126">4 · Il DNS risponde (o fa il giro dai root server): 93.184.5.10</text>
+      <text x="34" y="162">5 · Il PC confronta 93.184.5.10 con la propria rete → è FUORI</text>
+      <text x="34" y="198">6 · ARP per il gateway 10.10.10.1 (se non è già in cache)</text>
+      <text x="34" y="234">7 · Costruisce il frame: MAC dest. = router, IP dest. = 93.184.5.10</text>
+      <text x="34" y="270">8 · SYN → il router fa NAT (riscrive sorgente) e instrada</text>
+      <text x="34" y="306">9 · SYN,ACK dal server → ACK: connessione TCP aperta</text>
+      <text x="34" y="342">10-11 · Handshake TLS: certificato, verifica, chiavi di sessione</text>
+      <text x="34" y="378">12 · GET / HTTP/2 — finalmente la richiesta vera</text>
+      <text x="34" y="414">13-14 · Risposta, e il browser ripete quasi tutto per ogni risorsa</text>
+    </g>
+    <g class="dg-mono-sm" text-anchor="end" fill="var(--dg-text-soft)">
+      <text x="666" y="54">L7</text><text x="666" y="90">L7</text><text x="666" y="126">L7</text>
+      <text x="666" y="162">L3</text><text x="666" y="198">L2</text><text x="666" y="234">L2</text>
+      <text x="666" y="270">L3/L4</text><text x="666" y="306">L4</text>
+      <text x="666" y="342">L6</text><text x="666" y="378">L7</text><text x="666" y="414">L7</text>
+    </g>
+    </g>
+    <text x="350" y="452" text-anchor="middle" class="dg-label-sm">Tutto questo, per una pagina, in circa 200 millisecondi.</text>
+  </svg>
+  </div>
+  <figcaption>Nota come la sequenza <b>non</b> scorra ordinatamente dal livello 7 al livello 1: si sale
+  e si scende di continuo. È normale: ogni operazione (risolvere un nome, aprire una connessione) fa il
+  suo giro completo attraverso tutta la pila.</figcaption>
+</figure>
+
+<h2>Passo per passo, con cosa può rompersi</h2>
+
+<h3>1-2 · Le cache locali</h3>
+<p>Il browser guarda la sua cache DNS, poi quella del sistema operativo, poi il file
+<code>hosts</code>. Se trova una risposta, salta direttamente al passo 5.</p>
+<p><b>Cosa può rompersi:</b> una riga nel file hosts, o una cache che conserva un indirizzo vecchio
+dopo una migrazione. <b>Sintomo:</b> un solo PC vede un sito diverso da tutti gli altri.</p>
+
+<h3>3-4 · La risoluzione DNS</h3>
+<p>Il PC manda una query UDP sulla porta 53 al proprio server DNS. Se il server non ha la risposta in
+cache, fa il giro dai root server fino al server autoritativo.</p>
+<p><b>Cosa può rompersi:</b> DNS irraggiungibile, DNS che risponde male, dominio scaduto, DNS pubblici
+in un ambiente Active Directory. <b>Sintomo:</b> il ping all'IP funziona, quello al nome no.</p>
+
+<h3>5 · La decisione locale/remoto</h3>
+<p>Il PC applica la maschera: <code>93.184.5.10</code> non appartiene a <code>10.10.10.0/24</code>,
+quindi è remoto. Consulta la tabella di routing e trova la rotta di default verso <code>10.10.10.1</code>.</p>
+<p><b>Cosa può rompersi:</b> gateway mancante o sbagliato, maschera errata, rotta statica residua.
+<b>Sintomo:</b> vede i colleghi ma non esce.</p>
+
+<h3>6-7 · ARP e costruzione del frame</h3>
+<p>Serve il MAC del gateway. Se non è in cache, ARP in broadcast. Poi si costruisce il frame:
+<b>MAC di destinazione = il router</b>, <b>IP di destinazione = il server web</b>.</p>
+<p><b>Cosa può rompersi:</b> gateway spento, VLAN sbagliata, ARP spoofing, cache ARP obsoleta dopo la
+sostituzione di un apparato.</p>
+
+<h3>8 · Il router, il NAT e il viaggio</h3>
+<p>Il router riceve il frame, lo apre, vede l'IP di destinazione, consulta la <em>sua</em> tabella di
+routing. Il firewall verifica che la policy permetta la connessione, applica il NAT sostituendo
+<code>10.10.10.37:51844</code> con <code>203.0.113.5:51844</code>, se lo annota in tabella, costruisce un
+frame nuovo verso il router dell'operatore e lo spedisce. <b>Ogni router lungo il percorso ripete questo
+lavoro</b>, decrementando il TTL.</p>
+<p><b>Cosa può rompersi:</b> policy del firewall, NAT non configurato, linea giù, filtro web che blocca
+la categoria del sito, tabella delle sessioni piena.</p>
+
+<h3>9 · L'handshake TCP</h3>
+<p>SYN, SYN-ACK, ACK. Se qui c'è silenzio, qualcosa scarta; se arriva un RST, la porta non ha nessuno
+in ascolto.</p>
+
+<h3>10-11 · TLS</h3>
+<p>Il client dice quali algoritmi supporta e — dettaglio importantissimo — <strong>scrive in chiaro il
+nome del sito</strong> nel campo SNI. Il server manda il certificato, il client lo verifica (autorità,
+scadenza, nome corrispondente), e si concordano le chiavi di sessione.</p>
+<p><b>Cosa può rompersi:</b> certificato scaduto o non corrispondente, ora del PC sbagliata (per il PC
+il certificato «non è ancora valido»), SSL inspection del firewall senza certificato installato sul
+client, versioni TLS incompatibili con sistemi vecchi.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il campo SNI: perché un firewall può bloccare i siti HTTPS
+  </div>
+  <p>Il traffico HTTPS è cifrato, quindi un firewall non dovrebbe poter sapere quale sito stai
+  visitando. Ma il nome del server viaggia <b>in chiaro</b> nel primo pacchetto dell'handshake TLS —
+  il campo <span class="term" data-term="sni">SNI</span> — perché serve al server per scegliere il
+  certificato giusto quando ne ospita molti sullo stesso indirizzo.</p>
+  <p>È per questo che il filtro web funziona anche senza decifrare nulla: legge il nome e decide.
+  E in questo modo il firewall <b>sa dove vai ma non cosa fai</b> — un compromesso di privacy molto
+  diverso dalla SSL inspection completa, ed è una distinzione che conviene saper spiegare a un cliente.</p>
+</div>
+
+<h3>12-14 · HTTP e le risorse</h3>
+<p>Finalmente parte la richiesta vera: <code>GET / HTTP/2</code>. Il server risponde con l'HTML, che
+contiene riferimenti a decine di altre risorse — immagini, fogli di stile, script, tracciatori —
+<strong>spesso su domini diversi</strong>. Per ognuno di quei domini si ricomincia da capo: DNS,
+handshake TCP, TLS.</p>
+<p>Ecco perché una pagina moderna genera facilmente <b>50-100 risoluzioni DNS e altrettante connessioni</b>.
+E perché un DNS lento rende tutta la navigazione lentissima anche con una linea velocissima.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La tabella che trasforma questa lezione in uno strumento di lavoro
+  </div>
+  <p>Stampala e tienila accanto al monitor per il primo mese.</p>
+  <div class="table-wrap" style="margin:10px 0 0">
+    <table>
+      <thead><tr><th>Sintomo riferito dall'utente</th><th>Passo sospetto</th><th>Prima verifica</th></tr></thead>
+      <tbody>
+        <tr><td>«Non va niente», nessuna rete</td><td>0 — livello fisico</td><td>Lucine, cavo, <code>ipconfig</code></td></tr>
+        <tr><td>Indirizzo 169.254.x.x</td><td>prima del passo 1</td><td>DHCP</td></tr>
+        <tr><td>Vedo i colleghi, non Internet</td><td>5</td><td>Gateway e rotte</td></tr>
+        <tr><td>Ping all'IP sì, al nome no</td><td>3-4</td><td>DNS</td></tr>
+        <tr><td>Un solo sito non si apre</td><td>8 o 12</td><td>Filtro web, o il sito è davvero giù</td></tr>
+        <tr><td>«Connessione non privata»</td><td>11</td><td>Certificato, ora del PC, SSL inspection</td></tr>
+        <tr><td>Il sito si apre a metà</td><td>12-14</td><td>Risorse su domini bloccati dal filtro</td></tr>
+        <tr><td>Lento all'inizio, poi veloce</td><td>3-4</td><td>DNS secondario irraggiungibile</td></tr>
+        <tr><td>Va a scatti, VoIP disturbato</td><td>8</td><td>Perdita di pacchetti e jitter</td></tr>
+        <tr><td>Alcuni siti sì, altri no, in VPN</td><td>8</td><td>MTU / MSS clamping</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h2>La risposta da dare a un colloquio</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Come rispondere, in ottanta secondi
+  </div>
+  <p>«Il browser controlla le sue cache e il file hosts. Se non trova nulla, il sistema interroga il DNS
+  configurato, che se serve risolve ricorsivamente partendo dai root server, e ottiene l'indirizzo IP.</p>
+  <p>A quel punto il PC confronta quell'indirizzo con la propria rete tramite la maschera: essendo
+  remoto, consulta la tabella di routing e trova la rotta di default. Fa ARP per ottenere il MAC del
+  gateway e costruisce il frame — MAC di destinazione il router, IP di destinazione il server.</p>
+  <p>Il router applica le policy del firewall, fa il NAT sostituendo l'indirizzo privato con quello
+  pubblico, e instrada. Ogni salto successivo riscrive i MAC e decrementa il TTL, mentre gli IP restano
+  invariati.</p>
+  <p>Si apre la connessione TCP con il three-way handshake, poi l'handshake TLS in cui si verifica il
+  certificato e si concordano le chiavi. Infine parte la richiesta HTTP vera, e il browser ripete gran
+  parte del processo per ogni risorsa referenziata dalla pagina.»</p>
+  <p style="margin-bottom:0"><b>Perché funziona:</b> tocca i livelli 7, 4, 3 e 2 con i termini giusti,
+  mostra che hai capito la differenza tra MAC e IP, e cita NAT e TLS al punto giusto. Se poi aggiungi
+  «e per ognuno di questi passaggi so quale sintomo produce un guasto», hai risposto meglio della
+  maggior parte dei candidati.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il quadro completo",
+  "questions": [
+    { "q": "In che ordine avvengono queste operazioni?",
+      "a": [ {"t":"Risoluzione DNS → ARP per il gateway → handshake TCP → handshake TLS","ok":true},
+             {"t":"ARP per il gateway → risoluzione DNS → handshake TLS → handshake TCP","ok":false},
+             {"t":"Handshake TCP → risoluzione DNS → ARP → handshake TLS","ok":false},
+             {"t":"Handshake TLS → handshake TCP → DNS → ARP","ok":false} ],
+      "e": "Prima serve sapere <em>a quale indirizzo</em> andare (DNS), poi <em>a chi consegnare fisicamente</em> (ARP per il gateway), poi si apre la connessione (TCP) e solo su una connessione aperta si può negoziare la cifratura (TLS). TLS sta sopra TCP: non può precederlo." },
+
+    { "q": "Perché un firewall riesce a bloccare un sito HTTPS pur non potendo leggerne il contenuto?",
+      "a": [ {"t":"Perché il nome del sito viaggia in chiaro nel campo SNI dell'handshake TLS","ok":true},
+             {"t":"Perché decifra sempre tutto il traffico","ok":false},
+             {"t":"Perché blocca l'indirizzo IP, e ogni sito ne ha uno suo","ok":false},
+             {"t":"Perché HTTPS non è realmente cifrato","ok":false} ],
+      "e": "L'SNI deve essere in chiaro perché il server lo usa per scegliere quale certificato presentare quando ne ospita molti sullo stesso indirizzo. Il firewall lo legge e decide, senza decifrare nulla: sa <b>dove</b> vai ma non <b>cosa</b> fai. Bloccare per IP non funzionerebbe, perché migliaia di siti condividono gli stessi indirizzi dietro le CDN." },
+
+    { "q": "Un utente riceve «La connessione non è privata» su tutti i siti, ma solo sul suo PC. Cosa controlli per primo?",
+      "a": [ {"t":"Data e ora del PC","ok":true},
+             {"t":"Il server DNS","ok":false},
+             {"t":"Il gateway","ok":false},
+             {"t":"Il cavo di rete","ok":false} ],
+      "e": "I certificati hanno una finestra di validità: se l'orologio del PC è sbagliato di mesi o anni, <b>tutti</b> i certificati risultano non ancora validi o scaduti. Il fatto che riguardi tutti i siti e un solo PC punta a qualcosa di locale e trasversale, e l'ora è il sospetto numero uno. È anche il motivo per cui NTP conta più di quanto sembri." },
+
+    { "q": "Perché aprire una sola pagina web può generare decine di risoluzioni DNS?",
+      "a": [ {"t":"Perché la pagina carica risorse da molti domini diversi, e ognuno va risolto","ok":true},
+             {"t":"Perché il DNS non funziona bene e ritenta","ok":false},
+             {"t":"Perché ogni immagine ha un proprio server DNS","ok":false},
+             {"t":"Perché il browser verifica la risposta più volte per sicurezza","ok":false} ],
+      "e": "Una pagina moderna carica script, font, immagini, pubblicità e tracciatori da decine di domini distinti: per ognuno servono DNS, TCP e TLS. È il motivo per cui un DNS lento rende la navigazione lentissima anche con una linea velocissima — e per cui il sintomo è «lento a partire, poi veloce»." },
+
+    { "q": "Durante il viaggio verso il server, cosa cambia a ogni salto?",
+      "a": [ {"t":"Gli indirizzi MAC e il TTL; gli IP restano invariati","ok":true},
+             {"t":"Gli indirizzi IP; i MAC restano invariati","ok":false},
+             {"t":"Sia gli IP sia i MAC restano invariati","ok":false},
+             {"t":"Cambia tutto a ogni salto","ok":false} ],
+      "e": "Il MAC descrive un singolo tratto fisico, quindi viene riscritto a ogni router; il TTL cala di uno per evitare i loop infiniti. Gli IP identificano gli estremi del viaggio e restano gli stessi — con l'unica eccezione del NAT, che riscrive la sorgente in un punto ben preciso." },
+
+    { "q": "Il ping all'IP di un sito funziona, ma il sito non si apre e nemmeno gli altri. Dove guardi?",
+      "a": [ {"t":"DNS, filtro web o ispezione TLS: la rete sotto funziona","ok":true},
+             {"t":"Cavo e switch","ok":false},
+             {"t":"Gateway e tabella di routing","ok":false},
+             {"t":"Server DHCP","ok":false} ],
+      "e": "Un ping riuscito verso un IP remoto dimostra che livelli 1, 2, 3, routing e NAT funzionano. Il guasto sta più in alto: risoluzione dei nomi, un filtro applicativo che blocca, o un problema nell'handshake TLS. Rifare le verifiche dei livelli bassi sarebbe tempo sprecato — ed è esattamente ciò che distingue una diagnosi metodica da una a tentoni." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

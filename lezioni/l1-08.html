@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rack, alimentazione, PoE e messa a terra — NetPath</title>
+<meta name="description" content="La parte che nessuno insegna e che ti salva quando l'access point si riavvia da solo alle tre di notte.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-08">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Il mondo fisico</span>
+      </nav>
+      <h1 class="lesson-title">Rack, alimentazione, PoE e messa a terra</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 08</span>
+        <span class="chip">18 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Leggere un rack e capire se è fatto bene o male</li>
+        <li>Calcolare il budget PoE di uno switch e non sbagliare l'ordine</li>
+        <li>Riconoscere i guasti che vengono dall'alimentazione invece che dalla rete</li>
+        <li>Sapere cosa chiedere a un elettricista e cosa non dare per scontato</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Questa lezione non parla di protocolli. Parla del motivo per cui un impianto perfetto
+sulla carta va in crisi il martedì pomeriggio quando accendono il compressore in officina. È il tipo di
+sapere che distingue chi ha studiato da chi ha anche messo le mani nei rack.</p>
+
+<h2>Il rack: leggere un armadio in due minuti</h2>
+
+<p>Un rack standard è largo 19 pollici e la sua altezza si misura in <strong>unità</strong> (U):
+1U = 44,45 mm. Un switch tipico è 1U, un firewall piccolo 1U, un server 1U o 2U.
+Un armadio da 42U è alto quasi due metri.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa guardare</th><th>Fatto bene</th><th>Campanello d'allarme</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ordine dei cavi</b></td><td>Bretelle della lunghezza giusta, passate nei passacavi</td>
+          <td>Matassa di cavi lunghi 3 m per collegare porte adiacenti: ogni intervento futuro sarà un incubo</td></tr>
+      <tr><td><b>Etichette</b></td><td>Ogni bretella e ogni porta identificata</td>
+          <td>Niente etichette: dovrai scollegare per capire, e scollegare in produzione è rischioso</td></tr>
+      <tr><td><b>Aerazione</b></td><td>Ventole libere, 1U di spazio tra apparati caldi</td>
+          <td>Armadio chiuso senza ventilazione: gli apparati si degradano e si riavviano d'estate</td></tr>
+      <tr><td><b>Alimentazione</b></td><td>Ciabatta rack, UPS, apparati critici su UPS</td>
+          <td>Ciabatta da supermercato appoggiata sul fondo, con tre multiple a cascata</td></tr>
+      <tr><td><b>Messa a terra</b></td><td>Armadio collegato a terra con cavo giallo-verde visibile</td>
+          <td>Nessun collegamento di terra: pericoloso e fonte di disturbi</td></tr>
+      <tr><td><b>Spazio libero</b></td><td>Almeno il 30% libero per crescere</td>
+          <td>Pieno fino all'ultimo buco: il prossimo apparato andrà su uno scaffale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La foto che devi fare sempre
+  </div>
+  <p>Ogni volta che apri un rack di un cliente, <b>prima di toccare qualsiasi cosa, fotografalo</b>.
+  Fronte, retro, e un primo piano delle etichette. Ti servirà per rimettere le cose com'erano, per la
+  documentazione, e per dimostrare in che stato l'hai trovato se qualcosa poi non funziona.
+  Costa dieci secondi e ti ha già salvato almeno una volta, anche se non lo sai ancora.</p>
+</div>
+
+<h2>PoE: alimentare attraverso il cavo di rete</h2>
+
+<p>Il <span class="term" data-term="poe">PoE</span> permette a uno switch di mandare corrente lungo lo
+stesso cavo che porta i dati. È una delle invenzioni più utili della rete moderna: un access point sul
+soffitto o una telecamera su un palo hanno bisogno di un cavo solo, e non di una presa elettrica lì vicino.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 660 190" role="img" aria-label="Uno switch PoE alimenta access point, telecamera e telefono attraverso il cavo di rete">
+    <rect x="240" y="26" width="180" height="46" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="330" y="46" text-anchor="middle" class="dg-label">Switch PoE 24 porte</text>
+    <text x="330" y="63" text-anchor="middle" class="dg-mono-sm">budget totale: 180 W</text>
+
+    <g>
+      <rect x="30" y="124" width="120" height="44" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+      <text x="90" y="144" text-anchor="middle" class="dg-label-sm">Access point</text>
+      <text x="90" y="160" text-anchor="middle" class="dg-mono-sm">15,4 W · 802.3af</text>
+
+      <rect x="176" y="124" width="120" height="44" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+      <text x="236" y="144" text-anchor="middle" class="dg-label-sm">Telecamera PTZ</text>
+      <text x="236" y="160" text-anchor="middle" class="dg-mono-sm">25,5 W · 802.3at</text>
+
+      <rect x="322" y="124" width="120" height="44" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+      <text x="382" y="144" text-anchor="middle" class="dg-label-sm">Telefono VoIP</text>
+      <text x="382" y="160" text-anchor="middle" class="dg-mono-sm">6,5 W · 802.3af</text>
+
+      <rect x="468" y="124" width="160" height="44" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.4"/>
+      <text x="548" y="144" text-anchor="middle" class="dg-label-sm">AP Wi-Fi 7</text>
+      <text x="548" y="160" text-anchor="middle" class="dg-mono-sm">51 W · 802.3bt — non basta af!</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.5" fill="none">
+      <path d="M280 72v28h-190v24"/><path d="M306 72v40h-70v12"/>
+      <path d="M354 72v40h28v12"/><path d="M380 72v28h168v24"/>
+    </g>
+    <text x="330" y="106" text-anchor="middle" class="dg-mono-sm">dati + corrente sullo stesso cavo</text>
+  </svg>
+  </div>
+  <figcaption>La somma dei consumi deve stare dentro il <b>budget PoE</b> dello switch. Un apparato che
+  chiede uno standard superiore a quello che lo switch offre non si accende, oppure — peggio — si accende
+  e si riavvia sotto carico.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Standard</th><th>Nome comune</th><th>Potenza alla porta</th><th>Tipicamente alimenta</th></tr></thead>
+    <tbody>
+      <tr><td><b>802.3af</b></td><td>PoE</td><td>15,4 W</td><td>Telefoni VoIP, AP base, telecamere fisse</td></tr>
+      <tr><td><b>802.3at</b></td><td>PoE+</td><td>30 W</td><td>AP Wi-Fi 5/6, telecamere motorizzate, piccoli display</td></tr>
+      <tr><td><b>802.3bt tipo 3</b></td><td>PoE++ / 4PPoE</td><td>60 W</td><td>AP Wi-Fi 6E/7, telecamere con riscaldatore</td></tr>
+      <tr><td><b>802.3bt tipo 4</b></td><td>PoE++</td><td>90–100 W</td><td>Monitor, thin client, illuminazione LED</td></tr>
+      <tr><td><b>«PoE passivo»</b></td><td>— (non standard)</td><td>24 V o 48 V sempre attivi</td>
+          <td>Apparati MikroTik e Ubiquiti economici. <b>Attenzione</b>: manda corrente senza negoziare, e
+              può danneggiare un dispositivo standard.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore da 2.000 € che fanno in tanti
+  </div>
+  <p>«Switch 24 porte PoE, budget 180 W» <b>non</b> significa che puoi alimentare 24 dispositivi.
+  Significa che la somma dei consumi non può superare 180 W. Con 24 access point da 25 W ciascuno
+  servirebbero 600 W: ne alimenteresti sette e poi lo switch inizierebbe a spegnere porte, di solito
+  quelle con priorità più bassa, in modo apparentemente casuale.</p>
+  <p><b>Regola:</b> somma i consumi di targa, aggiungi il 20% di margine, e ordina uno switch con quel
+  budget. E verifica sempre <em>quale standard</em> serve: un AP Wi-Fi 7 su uno switch solo 802.3af
+  non si accende proprio.</p>
+</div>
+
+<h2>Alimentazione: il colpevole che nessuno sospetta</h2>
+
+<p>Molti guasti che sembrano di rete sono guasti di corrente. Impara a riconoscerne la firma:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Sospetto elettrico</th></tr></thead>
+    <tbody>
+      <tr><td>Apparati che si riavviano tutti insieme, a orari ricorrenti</td>
+          <td>Micro-interruzioni della rete elettrica, o un carico che si accende (condizionatore, compressore, ascensore)</td></tr>
+      <tr><td>Un solo apparato si riavvia, sempre lo stesso</td>
+          <td>Alimentatore in fine vita, o PoE al limite del budget</td></tr>
+      <tr><td>Tutto instabile d'estate, bene d'inverno</td>
+          <td>Temperatura: armadio senza ventilazione</td></tr>
+      <tr><td>Guasti dopo un temporale</td>
+          <td>Sovratensione. Servono scaricatori, e la fibra tra edifici separati</td></tr>
+      <tr><td>Disturbi e errori CRC quando parte un macchinario</td>
+          <td>Interferenza elettromagnetica sui cavi, o terra inadeguata</td></tr>
+      <tr><td>L'UPS suona e nessuno lo sente da mesi</td>
+          <td>Batterie esaurite: durano 3–5 anni e poi l'UPS non protegge più nulla</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Perché la terra conta, spiegato semplice
+  </div>
+  <p>«Terra» vuol dire: un filo che collega le parti metalliche degli apparati al terreno, così che
+  qualsiasi corrente indesiderata abbia una strada facile per andarsene via.</p>
+  <p>Immagina una vasca da bagno con due scarichi. Se uno solo è aperto, l'acqua va tutta lì e il livello
+  resta a zero. Se sono aperti tutti e due ma sono a due altezze leggermente diverse, l'acqua non sta
+  ferma: scorre continuamente dall'uno all'altro. Quel flusso continuo è il <b>ground loop</b>, e in
+  elettronica si traduce in un ronzio costante che disturba i segnali.</p>
+  <p>Per questo la regola è: <b>collega a terra, ma da un punto solo</b>. Un buon impianto di terra si
+  vede: un cavo giallo-verde che va dall'armadio alla barra di terra, senza giunzioni improvvisate.</p>
+</div>
+
+<h2>Quando serve un UPS, e come si dimensiona</h2>
+
+<p>Un gruppo di continuità serve a due cose, e la seconda è più importante della prima:</p>
+<ol>
+  <li><strong>Tenere accesi gli apparati durante un blackout</strong>, per il tempo necessario a spegnere
+  ordinatamente i server o a superare un'interruzione breve.</li>
+  <li><strong>Stabilizzare la corrente</strong>: filtra i buchi di tensione, i picchi e le micro-interruzioni,
+  che sono molto più frequenti dei blackout veri e sono quelli che consumano gli alimentatori.</li>
+</ol>
+
+<p>Dimensionamento pratico: somma i watt degli apparati, moltiplica per 1,5 come margine, e scegli un UPS
+con quella potenza. Per l'autonomia: 10–15 minuti bastano per gli apparati di rete (le interruzioni vere
+sono quasi sempre brevissime); se ci sono server da spegnere ordinatamente, servono 20–30 minuti e un
+software di spegnimento automatico.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'UPS che nessuno controlla non è un UPS
+  </div>
+  <p>Le batterie al piombo durano 3–5 anni. Dopo, l'UPS <b>continua ad accendersi e a sembrare a posto</b>,
+  ma alla prima interruzione vera si spegne tutto in due secondi. È uno dei modi più comuni in cui un
+  cliente scopre di non essere protetto: nel momento peggiore.</p>
+  <p>Metti nel contratto di manutenzione un test di autonomia annuale e la sostituzione batterie ogni
+  quattro anni. Ed è un'ottima cosa da proporre: costa poco, protegge molto, ed è la dimostrazione
+  concreta che stai pensando al cliente e non solo al ticket di oggi.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il ferro e la corrente",
+  "questions": [
+    { "q": "Uno switch dichiara «24 porte PoE, budget 180 W». Quanti access point da 25 W puoi alimentare?",
+      "a": [ {"t":"Sette, perché conta il budget totale e non il numero di porte","ok":true},
+             {"t":"Ventiquattro, uno per porta","ok":false},
+             {"t":"Dodici, cioè metà delle porte","ok":false},
+             {"t":"Dipende solo dalla lunghezza dei cavi","ok":false} ],
+      "e": "180 ÷ 25 = 7,2, quindi sette con un minimo margine. Superato il budget lo switch inizia a spegnere porte secondo priorità, producendo guasti apparentemente casuali e difficilissimi da interpretare se non conosci questo meccanismo." },
+
+    { "q": "Gli apparati di rete di un cliente si riavviano tutti insieme, più o meno sempre alla stessa ora del pomeriggio. Cosa sospetti?",
+      "a": [ {"t":"Un problema elettrico: un carico che si accende o micro-interruzioni","ok":true},
+             {"t":"Un attacco informatico","ok":false},
+             {"t":"Un loop di rete","ok":false},
+             {"t":"Il DHCP che scade","ok":false} ],
+      "e": "«Tutti insieme» e «sempre alla stessa ora» sono la firma di una causa comune e ricorrente, e l'unica cosa che condividono davvero tutti gli apparati è l'alimentazione. Tipicamente un condizionatore, un compressore o un ascensore che parte. Un loop causerebbe saturazione, non riavvii; un lease DHCP che scade non spegne nulla." },
+
+    { "q": "Perché un armadio rack va collegato a terra da un solo punto?",
+      "a": [ {"t":"Per evitare un ground loop, cioè correnti che scorrono tra due terre a potenziale diverso","ok":true},
+             {"t":"Per risparmiare cavo","ok":false},
+             {"t":"Perché lo impone la categoria del cablaggio","ok":false},
+             {"t":"Perché altrimenti il PoE non funziona","ok":false} ],
+      "e": "Due collegamenti a terra a potenziali leggermente diversi creano un flusso continuo di corrente nella schermatura, che diventa essa stessa la fonte del disturbo. È lo stesso motivo per cui il cavo schermato va messo a terra da un lato solo." },
+
+    { "q": "Un access point Wi-Fi 7 non si accende collegato a uno switch PoE 802.3af, mentre il vecchio AP funzionava. Perché?",
+      "a": [ {"t":"Richiede 802.3bt: l'af fornisce solo 15,4 W, troppo pochi","ok":true},
+             {"t":"Il cavo è troppo lungo","ok":false},
+             {"t":"Serve una VLAN dedicata","ok":false},
+             {"t":"Il firmware dello switch è vecchio","ok":false} ],
+      "e": "Gli standard PoE non sono tutti uguali: af 15,4 W, at 30 W, bt fino a 90 W. Un AP Wi-Fi 6E/7 può chiedere 50 W o più. Lo switch e il dispositivo negoziano, e se lo switch non può offrire abbastanza il dispositivo resta spento — o peggio si accende e si riavvia sotto carico radio." },
+
+    { "q": "Qual è il motivo più importante per avere un UPS, oltre a resistere ai blackout?",
+      "a": [ {"t":"Stabilizzare la corrente contro buchi, picchi e micro-interruzioni","ok":true},
+             {"t":"Ridurre il consumo elettrico","ok":false},
+             {"t":"Aumentare la velocità degli apparati","ok":false},
+             {"t":"Permettere di collegare più dispositivi a una presa sola","ok":false} ],
+      "e": "I blackout veri sono rari; le micro-interruzioni e le variazioni di tensione sono quotidiane e sono quelle che logorano gli alimentatori e provocano riavvii inspiegabili. L'UPS lavora soprattutto su quelle. Usarlo come ciabatta per collegare più dispositivi è invece esattamente ciò che non va fatto." },
+
+    { "q": "Qual è la prima cosa da fare quando apri il rack di un cliente?",
+      "a": [ {"t":"Fotografarlo, fronte e retro, prima di toccare qualsiasi cosa","ok":true},
+             {"t":"Scollegare i cavi non etichettati per capire dove vanno","ok":false},
+             {"t":"Riordinare le bretelle","ok":false},
+             {"t":"Riavviare gli apparati per partire da uno stato pulito","ok":false} ],
+      "e": "La foto ti permette di rimettere tutto com'era, serve da documentazione e ti tutela sullo stato in cui hai trovato l'impianto. Scollegare per «capire» in un ambiente in produzione è il modo più rapido per trasformare un piccolo intervento in un fermo aziendale." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

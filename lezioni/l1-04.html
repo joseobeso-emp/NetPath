@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Incapsulamento: le buste dentro le buste — NetPath</title>
+<meta name="description" content="Come un click diventa bit sul cavo, strato dopo strato, e come si ritorna indietro. Il meccanismo che rende concreto il modello OSI.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-04">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Che cos'è una rete</span>
+      </nav>
+      <h1 class="lesson-title">Incapsulamento: le buste dentro le buste</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 04</span>
+        <span class="chip">20 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Descrivere cosa aggiunge ogni livello quando i dati scendono la pila</li>
+        <li>Chiamare col nome giusto ciò che vedi: dati, segmento, pacchetto, frame, bit</li>
+        <li>Capire perché i MAC cambiano a ogni salto e gli IP no</li>
+        <li>Leggere un pacchetto in Wireshark riconoscendo i suoi strati</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Nella lezione precedente hai visto <em>quali</em> sono i livelli. Adesso vedi
+<em>come</em> collaborano davvero, e questo è il pezzo che trasforma il modello da schema da memorizzare
+a strumento che usi. Alla fine di questa lezione, quando aprirai Wireshark per la prima volta, capirai
+cosa stai guardando invece di spaventarti.</p>
+
+<h2>L'idea in una riga</h2>
+
+<p>Ogni livello, mentre i dati scendono verso il cavo, <strong>prende quello che gli passa il livello
+sopra e ci mette attorno la propria intestazione</strong>. Non lo modifica, non lo apre: lo tratta come
+un contenuto opaco e ci costruisce intorno una busta nuova.</p>
+
+<p>Questo si chiama <span class="term" data-term="encapsulation">incapsulamento</span>. Dall'altra parte
+avviene l'esatto contrario — si aprono le buste una a una, dall'esterno verso l'interno — e si chiama
+decapsulamento.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne
+  </div>
+  <p>Scrivi un biglietto d'auguri: «Tanti auguri Marco!». Questo è il <b>dato</b>.</p>
+  <p>Lo metti in una <b>busta</b> e ci scrivi sopra «per Marco, dalla zia». Adesso chi la trova sa a chi
+  darla, ma non ha aperto niente.</p>
+  <p>La busta la metti dentro una <b>scatola</b> su cui scrivi l'indirizzo completo: via, città, paese.
+  Chi trasporta la scatola non sa che dentro c'è una busta, e non gli interessa.</p>
+  <p>La scatola la metti in un <b>container</b> insieme ad altre mille scatole, con scritto sopra solo
+  «questo container va da Genova a Rotterdam». Chi guida la nave non sa niente né della scatola né della
+  busta né di Marco.</p>
+  <p>A destinazione si apre tutto al contrario: si apre il container, si prende la scatola, si apre la
+  scatola, si prende la busta, si apre la busta, e finalmente Marco legge «Tanti auguri».</p>
+  <p><b>Ogni involucro serve a un tratto diverso del viaggio, e ognuno ignora il contenuto degli altri.</b>
+  È tutto qui. Il resto sono solo i nomi tecnici degli involucri.</p>
+</div>
+
+<h2>La discesa, strato per strato</h2>
+
+<p>Vediamola per davvero. Apri il browser e scrivi <code>google.it</code>. Ecco cosa succede ai tuoi dati
+mentre scendono verso la scheda di rete:</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 420" role="img" aria-label="I dati scendono i livelli e a ogni passaggio viene aggiunta una intestazione: TCP, IP, Ethernet">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">La discesa: a ogni livello si aggiunge una busta</text>
+
+    <!-- L7 -->
+    <text x="16" y="60" class="dg-mono-sm">L7 · Applicazione</text>
+    <rect x="200" y="42" width="300" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+    <text x="350" y="64" text-anchor="middle" class="dg-mono">GET / HTTP/1.1  Host: google.it</text>
+    <text x="620" y="64" class="dg-mono-sm">= DATI</text>
+
+    <path d="M350 78v18" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dn)"/>
+    <defs><marker id="dn" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+      <path d="M4 8L0 0h8z" fill="var(--dg-line)"/></marker></defs>
+
+    <!-- L4 -->
+    <text x="16" y="130" class="dg-mono-sm">L4 · Trasporto</text>
+    <rect x="130" y="106" width="70" height="42" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="165" y="124" text-anchor="middle" class="dg-mono-sm">TCP</text>
+    <text x="165" y="140" text-anchor="middle" class="dg-mono-sm">→443</text>
+    <rect x="200" y="106" width="300" height="42" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.1" opacity=".6"/>
+    <text x="350" y="132" text-anchor="middle" class="dg-mono-sm">dati HTTP</text>
+    <text x="620" y="132" class="dg-mono-sm">= SEGMENTO</text>
+
+    <path d="M350 150v18" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dn)"/>
+
+    <!-- L3 -->
+    <text x="16" y="200" class="dg-mono-sm">L3 · Rete</text>
+    <rect x="60" y="178" width="70" height="42" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="95" y="196" text-anchor="middle" class="dg-mono-sm">IP</text>
+    <text x="95" y="212" text-anchor="middle" class="dg-mono-sm">da/a</text>
+    <rect x="130" y="178" width="70" height="42" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.1" opacity=".6"/>
+    <text x="165" y="203" text-anchor="middle" class="dg-mono-sm">TCP</text>
+    <rect x="200" y="178" width="300" height="42" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.1" opacity=".45"/>
+    <text x="350" y="203" text-anchor="middle" class="dg-mono-sm">dati HTTP</text>
+    <text x="620" y="203" class="dg-mono-sm">= PACCHETTO</text>
+
+    <path d="M350 222v18" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dn)"/>
+
+    <!-- L2 -->
+    <text x="16" y="272" class="dg-mono-sm">L2 · Data link</text>
+    <rect x="16" y="250" width="44" height="42" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="38" y="268" text-anchor="middle" class="dg-mono-sm">ETH</text>
+    <text x="38" y="284" text-anchor="middle" class="dg-mono-sm">MAC</text>
+    <rect x="60" y="250" width="70" height="42" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.1" opacity=".6"/>
+    <text x="95" y="275" text-anchor="middle" class="dg-mono-sm">IP</text>
+    <rect x="130" y="250" width="70" height="42" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.1" opacity=".5"/>
+    <text x="165" y="275" text-anchor="middle" class="dg-mono-sm">TCP</text>
+    <rect x="200" y="250" width="300" height="42" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.1" opacity=".38"/>
+    <text x="350" y="275" text-anchor="middle" class="dg-mono-sm">dati HTTP</text>
+    <rect x="500" y="250" width="44" height="42" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="522" y="275" text-anchor="middle" class="dg-mono-sm">FCS</text>
+    <text x="620" y="275" class="dg-mono-sm">= FRAME</text>
+
+    <path d="M350 294v18" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dn)"/>
+
+    <!-- L1 -->
+    <text x="16" y="344" class="dg-mono-sm">L1 · Fisico</text>
+    <rect x="130" y="322" width="414" height="34" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="337" y="344" text-anchor="middle" class="dg-mono-sm">0100111010110100101101001110101101001…</text>
+    <text x="620" y="344" class="dg-mono-sm">= BIT</text>
+
+    <text x="350" y="388" text-anchor="middle" class="dg-label-sm">Il contenuto non cambia mai: cambia solo quante buste ha attorno.</text>
+    <text x="350" y="406" text-anchor="middle" class="dg-label-sm">FCS = codice di controllo finale: serve a scoprire se il frame si è corrotto nel viaggio.</text>
+  </svg>
+  </div>
+  <figcaption>Le stesse identiche informazioni, viste da quattro livelli diversi, hanno quattro nomi
+  diversi. Non è pedanteria: <b>chiamare la cosa col nome giusto dice a un collega a che livello stai
+  ragionando</b>, e quindi cosa hai già escluso.</figcaption>
+</figure>
+
+<h2>I nomi contano davvero</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Livello</th><th>Nome dell'unità</th><th>Cosa aggiunge</th><th>Dimensione tipica</th></tr></thead>
+    <tbody>
+      <tr><td>7 · Applicazione</td><td><b>Dati</b></td><td>Il contenuto vero</td><td>variabile</td></tr>
+      <tr><td>4 · Trasporto</td><td><b>Segmento</b> (TCP)<br><b>Datagramma</b> (UDP)</td>
+          <td>Porta sorgente e destinazione, numeri di sequenza, conferme</td><td>20 byte (TCP), 8 (UDP)</td></tr>
+      <tr><td>3 · Rete</td><td><b>Pacchetto</b></td>
+          <td>IP sorgente e destinazione, TTL, protocollo trasportato</td><td>20 byte</td></tr>
+      <tr><td>2 · Data link</td><td><b>Frame</b></td>
+          <td>MAC sorgente e destinazione, tipo, codice di controllo</td><td>14 + 4 byte</td></tr>
+      <tr><td>1 · Fisico</td><td><b>Bit</b></td><td>Il segnale vero e proprio</td><td>—</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Somma le intestazioni di un caso tipico: 14 (Ethernet) + 20 (IP) + 20 (TCP) = <strong>54 byte</strong>
+di «costo organizzativo» su un frame che al massimo ne contiene 1.518. Circa il 3,5%. È poco,
+ed è il prezzo di un sistema che funziona in tutto il mondo con apparati di cento produttori diversi.</p>
+
+<h2>Il punto che sblocca tutto: cosa cambia a ogni salto</h2>
+
+<p>Ecco la cosa che, quando la capisci, fa scattare il click. Riguarda la differenza tra IP e MAC, ed è
+la ragione per cui esistono entrambi.</p>
+
+<p><strong>Gli indirizzi IP restano gli stessi da un capo all'altro del viaggio. Gli indirizzi MAC vengono
+riscritti a ogni singolo salto.</strong></p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Un pacchetto attraversa due router: gli IP restano invariati, i MAC cambiano a ogni tratto">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Da Anna al server: tre tratti, tre coppie di MAC, un solo IP</text>
+
+    <!-- nodi -->
+    <rect x="12" y="110" width="96" height="52" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <text x="60" y="132" text-anchor="middle" class="dg-label-sm">PC Anna</text>
+    <text x="60" y="150" text-anchor="middle" class="dg-mono-sm">10.0.0.25</text>
+
+    <rect x="212" y="110" width="86" height="52" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+    <text x="255" y="140" text-anchor="middle" class="dg-mono-sm">ROUTER 1</text>
+
+    <rect x="402" y="110" width="86" height="52" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+    <text x="445" y="140" text-anchor="middle" class="dg-mono-sm">ROUTER 2</text>
+
+    <rect x="592" y="110" width="96" height="52" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.5"/>
+    <text x="640" y="132" text-anchor="middle" class="dg-label-sm">Server</text>
+    <text x="640" y="150" text-anchor="middle" class="dg-mono-sm">93.184.5.10</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#hop)">
+      <path d="M108 136h98"/><path d="M298 136h98"/><path d="M488 136h98"/>
+    </g>
+    <defs><marker id="hop" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-line)"/></marker></defs>
+
+    <!-- MAC che cambiano -->
+    <g>
+      <rect x="118" y="180" width="86" height="40" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.2"/>
+      <text x="161" y="196" text-anchor="middle" class="dg-mono-sm">MAC Anna</text>
+      <text x="161" y="212" text-anchor="middle" class="dg-mono-sm">→ MAC R1</text>
+
+      <rect x="308" y="180" width="86" height="40" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.2"/>
+      <text x="351" y="196" text-anchor="middle" class="dg-mono-sm">MAC R1</text>
+      <text x="351" y="212" text-anchor="middle" class="dg-mono-sm">→ MAC R2</text>
+
+      <rect x="498" y="180" width="86" height="40" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.2"/>
+      <text x="541" y="196" text-anchor="middle" class="dg-mono-sm">MAC R2</text>
+      <text x="541" y="212" text-anchor="middle" class="dg-mono-sm">→ MAC Srv</text>
+    </g>
+    <text x="350" y="242" text-anchor="middle" class="dg-label-sm">L2 · riscritto a ogni tratto: descrive solo «il prossimo vicino»</text>
+
+    <!-- IP costante -->
+    <rect x="118" y="56" width="466" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <text x="351" y="78" text-anchor="middle" class="dg-mono-sm">IP sorgente 10.0.0.25  →  IP destinazione 93.184.5.10   (non cambia mai)</text>
+    <text x="350" y="274" text-anchor="middle" class="dg-label-sm">L3 · costante da un capo all'altro: descrive «la meta finale»</text>
+  </svg>
+  </div>
+  <figcaption>Il pacchetto IP è la <b>scatola con l'indirizzo di Marco</b>: quello non si tocca mai.
+  Il frame Ethernet è il <b>corriere del singolo tratto</b>: a ogni tappa viene buttato e rifatto,
+  perché il prossimo tratto ha un altro corriere.</figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Le due conseguenze pratiche che devi ricordare
+  </div>
+  <p><b>1.</b> Se catturi il traffico con Wireshark su un PC, il MAC di destinazione che vedi per il
+  traffico verso Internet <em>non è</em> quello di Google: è quello del tuo router. Sembra un errore,
+  è invece la prova che hai capito il meccanismo.</p>
+  <p><b>2.</b> Un router, per costruire il nuovo frame, deve conoscere il MAC del prossimo salto.
+  Come lo scopre? Con <b>ARP</b>. Ecco perché ARP esiste, e perché lo studieremo nella lezione 1-17:
+  è il pezzo che rende possibile tutto questo.</p>
+</div>
+
+<h2>La risalita a destinazione</h2>
+
+<p>Il server riceve una sequenza di bit e fa il percorso inverso. Ogni livello apre la sua busta,
+controlla che sia per lui, e passa il contenuto a quello sopra:</p>
+
+<ol>
+  <li><strong>Livello 1</strong>: trasforma il segnale elettrico in bit.</li>
+  <li><strong>Livello 2</strong>: verifica il codice di controllo (FCS). Se il frame si è corrotto,
+  lo butta via senza dire niente a nessuno — sarà il livello 4 ad accorgersene. Poi guarda il MAC di
+  destinazione: «è mio? Sì.» Toglie la busta Ethernet e guarda il campo «tipo»: dice che dentro c'è IP.</li>
+  <li><strong>Livello 3</strong>: guarda l'IP di destinazione: «è mio? Sì.» Toglie la busta IP e guarda
+  il campo «protocollo»: dice che dentro c'è TCP.</li>
+  <li><strong>Livello 4</strong>: guarda la porta di destinazione, 443: «chi è in ascolto sulla 443?
+  Il server web.» Rimette i segmenti in ordine, chiede la ritrasmissione di quelli mancanti.</li>
+  <li><strong>Livello 7</strong>: il server web finalmente legge <code>GET /</code> e prepara la risposta.</li>
+</ol>
+
+<p>Nota il dettaglio elegante: <strong>ogni intestazione contiene un campo che dice cosa c'è dentro.</strong>
+Ethernet ha «tipo» (0x0800 = IP), IP ha «protocollo» (6 = TCP), TCP ha la porta (443 = HTTPS).
+È una catena di cartelli che permette di srotolare il pacchetto senza doverlo indovinare.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché ti servirà con le VPN
+  </div>
+  <p>Una VPN fa esattamente questo, ma una volta in più: prende un pacchetto IP già completo e lo
+  <b>reincapsula</b> dentro un altro pacchetto IP cifrato. Due buste IP, una dentro l'altra.</p>
+  <p>La conseguenza è aritmetica: le intestazioni aggiuntive occupano 50–80 byte, che vengono sottratti
+  allo spazio utile. Se il collegamento porta al massimo 1.500 byte e la VPN ne mangia 60, restano 1.440
+  per i dati. Un pacchetto da 1.500 non ci entra più: viene frammentato o scartato.</p>
+  <p>Ecco spiegata, con un mese di studio invece che con tre anni di esperienza, la causa del ticket
+  «dopo aver attivato la VPN alcuni siti non si aprono». Lo affronteremo per bene nella lezione 3-19.</p>
+</div>
+
+<h2>Vederlo con i tuoi occhi</h2>
+
+<p>Non c'è modo migliore di capire l'incapsulamento che guardarlo. Installa <b>Wireshark</b>
+(gratuito, wireshark.org), avvia una cattura, apri un sito e clicca su un pacchetto qualsiasi.
+Nel riquadro centrale vedrai esattamente questo:</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Wireshark · il riquadro dei dettagli</div>
+<pre><span class="c">&gt; Frame 412: 1514 bytes on wire</span>          <span class="c"># il conteggio grezzo</span>
+<span class="k">&gt; Ethernet II</span>, Src: <span class="n">a4:bb:6d:1f:0c:22</span>, Dst: <span class="n">e8:de:27:aa:31:04</span>
+<span class="o">                                          # LIVELLO 2 — il tuo PC e il tuo router</span>
+<span class="k">&gt; Internet Protocol Version 4</span>, Src: <span class="n">10.0.0.25</span>, Dst: <span class="n">142.250.180.99</span>
+<span class="o">                                          # LIVELLO 3 — te e Google, invariati</span>
+<span class="k">&gt; Transmission Control Protocol</span>, Src Port: <span class="n">51844</span>, Dst Port: <span class="n">443</span>
+<span class="o">                                          # LIVELLO 4 — quale programma</span>
+<span class="k">&gt; Transport Layer Security</span>
+<span class="o">                                          # LIVELLO 6/7 — il contenuto, cifrato</span>
+</pre>
+</div>
+
+<p>Guarda bene le due righe evidenziate: il MAC di destinazione è del <b>tuo router</b>, mentre l'IP di
+destinazione è di <b>Google</b>. Se ti torna, hai capito l'incapsulamento meglio di parecchi tecnici con
+anni di esperienza. Se non ti torna, rileggi il diagramma dei tre salti: è tutto lì.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore classico da principiante
+  </div>
+  <p>«Il MAC address non corrisponde al server, quindi il pacchetto è sbagliato.» No: è giusto così.
+  Il MAC descrive solo il prossimo passo, l'IP descrive la destinazione finale. Chi non ha capito questo
+  passa ore a inseguire un problema che non esiste — e ti capiterà di vederlo fare da colleghi che
+  lavorano da anni.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: incapsulamento",
+  "questions": [
+    { "q": "Come si chiama l'unità dati al livello 3?",
+      "a": [ {"t":"Pacchetto","ok":true}, {"t":"Frame","ok":false},
+             {"t":"Segmento","ok":false}, {"t":"Bit","ok":false} ],
+      "e": "Livello 4 = segmento (o datagramma con UDP), livello 3 = <b>pacchetto</b>, livello 2 = frame, livello 1 = bit. Usare il nome giusto comunica immediatamente a che livello stai ragionando." },
+
+    { "q": "Catturi il traffico sul PC di un utente che sta navigando su un sito americano. Il MAC di destinazione che vedi è:",
+      "a": [ {"t":"Quello del router locale, perché il MAC descrive solo il prossimo salto","ok":true},
+             {"t":"Quello del server americano, perché è la destinazione finale","ok":false},
+             {"t":"Quello del provider Internet","ok":false},
+             {"t":"Un MAC di broadcast, perché la destinazione è fuori dalla rete","ok":false} ],
+      "e": "Il MAC vive al livello 2 e descrive un solo tratto fisico. Il pacchetto deve prima arrivare al router, quindi il frame è indirizzato al MAC del router. L'IP di destinazione invece è già quello finale del server americano, e non cambierà per tutto il viaggio." },
+
+    { "q": "Perché l'intestazione IP contiene un campo «protocollo»?",
+      "a": [ {"t":"Per dire al destinatario cosa c'è dentro, così sa a chi passare il contenuto","ok":true},
+             {"t":"Per indicare la velocità della connessione","ok":false},
+             {"t":"Per cifrare il contenuto del pacchetto","ok":false},
+             {"t":"Per contare i salti rimanenti","ok":false} ],
+      "e": "È il cartello che permette di srotolare l'incapsulamento: «dentro di me c'è TCP» (valore 6), oppure UDP (17), oppure ICMP (1). Senza, il livello 3 non saprebbe a chi consegnare il contenuto. Contare i salti è invece il compito del TTL." },
+
+    { "q": "Un frame Ethernet arriva corrotto e il controllo FCS fallisce. Cosa succede?",
+      "a": [ {"t":"Il frame viene scartato in silenzio, e sarà un livello superiore ad accorgersene","ok":true},
+             {"t":"Il livello 2 chiede subito la ritrasmissione al mittente","ok":false},
+             {"t":"Il frame viene passato comunque al livello 3, che lo correggerà","ok":false},
+             {"t":"La porta dello switch viene disattivata","ok":false} ],
+      "e": "Ethernet <b>rileva</b> gli errori ma non li corregge e non chiede nulla: butta e tace. Sarà TCP, al livello 4, a notare che manca un pezzo e a chiederne la ritrasmissione. Con UDP invece non se ne accorge nessuno, ed è esattamente il compromesso che UDP accetta." },
+
+    { "q": "Perché una VPN riduce lo spazio disponibile per i dati in ogni pacchetto?",
+      "a": [ {"t":"Perché aggiunge altre intestazioni attorno al pacchetto già incapsulato","ok":true},
+             {"t":"Perché la cifratura rende i dati più grandi del doppio","ok":false},
+             {"t":"Perché le VPN limitano la banda per motivi di sicurezza","ok":false},
+             {"t":"Perché il traffico viene compresso e poi decompresso","ok":false} ],
+      "e": "La VPN mette il pacchetto IP dentro un altro pacchetto IP, con intestazioni aggiuntive per il tunnel e la cifratura: 50–80 byte in meno per i dati veri. Il limite del collegamento (l'MTU) resta lo stesso, quindi lo spazio utile cala. È la causa del classico «dentro la VPN alcuni siti non si aprono»." },
+
+    { "q": "In che ordine un dispositivo che riceve dei dati apre le buste?",
+      "a": [ {"t":"Dall'esterno verso l'interno: Ethernet, poi IP, poi TCP, poi i dati","ok":true},
+             {"t":"Dall'interno verso l'esterno: prima i dati, poi TCP, poi IP","ok":false},
+             {"t":"Tutte insieme, in parallelo","ok":false},
+             {"t":"Prima IP, poi Ethernet, poi TCP","ok":false} ],
+      "e": "È letteralmente come aprire un pacco: prima il cartone esterno (Ethernet), poi la scatola dentro (IP), poi la busta (TCP), infine il biglietto (i dati). Ogni involucro contiene l'indicazione di cosa aspettarsi in quello successivo." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

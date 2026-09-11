@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Strumenti — NetPath</title>
+<meta name="description" content="Calcolatore di subnet, convertitore binario, generatore infinito di esercizi di subnetting e tabella delle porte.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="strumenti" data-root="">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+
+<main class="wrap" style="padding-top:44px;padding-bottom:70px;max-width:940px">
+
+  <div class="kicker">Strumenti</div>
+  <h1 style="font-size:clamp(1.9rem,1.4rem + 2.2vw,2.7rem);letter-spacing:-.03em;margin-bottom:14px">
+    Strumenti di lavoro</h1>
+  <p class="lead" style="max-width:70ch;margin-bottom:36px">
+    Non sono gadget: sono gli stessi calcoli che farai davanti a un cliente. Usali durante le lezioni per
+    verificare i tuoi ragionamenti, e sul lavoro quando devi rispondere in fretta. Ma un avvertimento:
+    <b>all'inizio fai il calcolo a mano e poi controlla qui</b>. Se usi subito il calcolatore non impari il
+    subnetting, e il subnetting non puoi non saperlo.</p>
+
+  <!-- ===== 1. CALCOLATORE SUBNET ===== -->
+  <div class="tool">
+    <div class="tool__head">
+      <h3>🧮 Calcolatore di subnet IPv4</h3>
+      <p>Inserisci un indirizzo e un prefisso: ti dice tutto quello che devi sapere su quella rete.</p>
+    </div>
+    <div class="tool__body">
+      <div class="inline-fields">
+        <div class="field">
+          <label for="sc-ip">Indirizzo IP</label>
+          <input type="text" id="sc-ip" value="192.168.10.37" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="sc-cidr">Prefisso (CIDR)</label>
+          <select id="sc-cidr"></select>
+        </div>
+      </div>
+      <div id="sc-err" class="callout danger" hidden style="margin:0 0 14px">
+        <div class="callout__head">Indirizzo non valido</div>
+        <p id="sc-err-t"></p>
+      </div>
+      <div class="out-grid" id="sc-out"></div>
+      <div style="margin-top:18px">
+        <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin-bottom:6px">
+          I 32 bit dell'indirizzo — <span style="color:var(--accent-text)">verde/azzurro = parte di rete</span>,
+          <span style="color:var(--lv4)">arancione = parte host</span></div>
+        <div class="bits" id="sc-bits"></div>
+      </div>
+      <p style="font-size:.84rem;color:var(--text-mute);margin-top:16px" id="sc-plain"></p>
+    </div>
+  </div>
+
+  <!-- ===== 2. ESERCIZI DI SUBNETTING ===== -->
+  <div class="tool">
+    <div class="tool__head">
+      <h3>🎯 Palestra di subnetting</h3>
+      <p>Esercizi generati a caso, infiniti. Fanne cinque al giorno per due settimane e il subnetting smette di fare paura.</p>
+    </div>
+    <div class="tool__body">
+      <div id="ex-box"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px">
+        <button class="btn" id="ex-check">Controlla</button>
+        <button class="btn ghost" id="ex-new">Nuovo esercizio</button>
+        <span style="margin-left:auto;font-family:var(--font-mono);font-size:.8rem;color:var(--text-mute)" id="ex-score">0 giusti · 0 sbagliati</span>
+      </div>
+      <div id="ex-fb"></div>
+    </div>
+  </div>
+
+  <!-- ===== 3. CONVERTITORE ===== -->
+  <div class="tool">
+    <div class="tool__head">
+      <h3>🔢 Convertitore binario / decimale / esadecimale</h3>
+      <p>Scrivi in un campo qualsiasi: gli altri si aggiornano. Utile per capire i MAC address e le maschere.</p>
+    </div>
+    <div class="tool__body">
+      <div class="field"><label for="cv-dec">Decimale (0–255 per un ottetto, ma accetta qualsiasi numero)</label>
+        <input type="text" id="cv-dec" value="192" spellcheck="false" autocomplete="off"></div>
+      <div class="field"><label for="cv-bin">Binario</label>
+        <input type="text" id="cv-bin" value="11000000" spellcheck="false" autocomplete="off"></div>
+      <div class="field"><label for="cv-hex">Esadecimale</label>
+        <input type="text" id="cv-hex" value="C0" spellcheck="false" autocomplete="off"></div>
+      <div style="padding:12px 14px;border-radius:var(--r);background:var(--bg-sunken);font-size:.85rem;color:var(--text-soft)">
+        <b>Le otto colonne da tenere in testa:</b>
+        <div class="bits" style="margin-top:8px">
+          <i class="net">128</i><i class="net">64</i><i class="net">32</i><i class="net">16</i>
+          <i class="net">8</i><i class="net">4</i><i class="net">2</i><i class="net">1</i>
+        </div>
+        <p style="margin:8px 0 0;font-size:.85rem">Un byte è la somma delle colonne dove c'è 1.
+        <code>11000000</code> = 128 + 64 = <b>192</b>. Non serve altro: tutta la matematica del networking è questa.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 4. QUANTI HOST MI SERVONO ===== -->
+  <div class="tool">
+    <div class="tool__head">
+      <h3>📐 Che subnet mi serve?</h3>
+      <p>Il calcolo al contrario: ho N dispositivi da collegare, quale prefisso uso?</p>
+    </div>
+    <div class="tool__body">
+      <div class="field" style="max-width:280px">
+        <label for="hs-n">Dispositivi da indirizzare (inclusi gateway, stampanti, AP…)</label>
+        <input type="number" id="hs-n" value="60" min="1" max="16000000">
+      </div>
+      <div id="hs-out"></div>
+    </div>
+  </div>
+
+  <!-- ===== 5. PORTE ===== -->
+  <div class="tool">
+    <div class="tool__head">
+      <h3>🚪 Le porte che incontri davvero</h3>
+      <p>Cerca per numero, per nome o per protocollo. Queste vanno sapute a memoria, le altre si cercano.</p>
+    </div>
+    <div class="tool__body">
+      <input type="text" class="gloss-search" id="pt-search" placeholder="Cerca: 443, SMB, RDP, posta…" style="margin-bottom:14px" autocomplete="off">
+      <div class="table-wrap" style="margin:0">
+        <table><thead><tr><th>Porta</th><th>Proto</th><th>Servizio</th><th>Nota pratica</th></tr></thead>
+        <tbody id="pt-body"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer id="np-footer"></footer>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/glossario-data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ---------- utilità IPv4 ---------- */
+function ipToInt(s) {
+  var p = String(s).trim().split(".");
+  if (p.length !== 4) return null;
+  var n = 0;
+  for (var i = 0; i < 4; i++) {
+    if (!/^\d{1,3}$/.test(p[i])) return null;
+    var v = parseInt(p[i], 10);
+    if (v > 255) return null;
+    n = (n * 256) + v;
+  }
+  return n >>> 0;
+}
+function intToIp(n) {
+  n = n >>> 0;
+  return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+}
+function maskOf(c) { return c === 0 ? 0 : ((0xFFFFFFFF << (32 - c)) >>> 0); }
+function toBits(n) { return (n >>> 0).toString(2).padStart(32, "0"); }
+function fmtNum(n) { return n.toLocaleString("it-IT"); }
+
+function subnetInfo(ip, cidr) {
+  var m = maskOf(cidr);
+  var net = (ip & m) >>> 0;
+  var bc  = (net | (~m >>> 0)) >>> 0;
+  var size = Math.pow(2, 32 - cidr);
+  var usable = cidr >= 31 ? (cidr === 31 ? 2 : 1) : size - 2;
+  return {
+    ip: ip, cidr: cidr, mask: m, net: net, bc: bc, size: size, usable: usable,
+    first: cidr >= 31 ? net : net + 1,
+    last:  cidr >= 31 ? bc  : bc - 1,
+    wildcard: (~m) >>> 0
+  };
+}
+
+window.NP_PAGE_INIT = function () {
+  var NP = window.NetPath;
+
+  /* ---------- 1. calcolatore ---------- */
+  var sel = document.getElementById("sc-cidr");
+  for (var c = 8; c <= 32; c++) {
+    var o = document.createElement("option");
+    o.value = c; o.textContent = "/" + c + "  (" + intToIp(maskOf(c)) + ")";
+    if (c === 24) o.selected = true;
+    sel.appendChild(o);
+  }
+
+  function calc() {
+    var raw = document.getElementById("sc-ip").value.trim();
+    var m = raw.match(/^(.+?)\/(\d+)$/);
+    if (m) {
+      raw = m[1];
+      var cc = parseInt(m[2], 10);
+      if (cc >= 8 && cc <= 32) { sel.value = cc; document.getElementById("sc-ip").value = raw; }
+    }
+    var ip = ipToInt(raw);
+    var err = document.getElementById("sc-err");
+    if (ip === null) {
+      err.hidden = false;
+      document.getElementById("sc-err-t").textContent =
+        '"' + raw + '" non è un indirizzo IPv4. Servono quattro numeri da 0 a 255 separati da punti, tipo 192.168.1.10.';
+      document.getElementById("sc-out").innerHTML = "";
+      document.getElementById("sc-bits").innerHTML = "";
+      document.getElementById("sc-plain").textContent = "";
+      return;
+    }
+    err.hidden = true;
+    var cidr = parseInt(sel.value, 10);
+    var r = subnetInfo(ip, cidr);
+
+    var priv = (ip >>> 24) === 10 ||
+               ((ip >>> 20) === 0xAC1) ||
+               ((ip >>> 16) === 0xC0A8);
+    var tipo = priv ? "privato (RFC 1918)"
+      : (ip >>> 24) === 127 ? "loopback"
+      : ((ip >>> 16) === 0xA9FE) ? "APIPA / link-local"
+      : ((ip >>> 22) === 0x191) ? "CGNAT (100.64/10)"
+      : (ip >>> 28) === 0xE ? "multicast"
+      : "pubblico";
+
+    document.getElementById("sc-out").innerHTML =
+      out("Indirizzo di rete", intToIp(r.net) + "/" + cidr) +
+      out("Subnet mask", intToIp(r.mask)) +
+      out("Broadcast", intToIp(r.bc)) +
+      out("Primo host utilizzabile", intToIp(r.first)) +
+      out("Ultimo host utilizzabile", intToIp(r.last)) +
+      out("Host utilizzabili", fmtNum(r.usable)) +
+      out("Wildcard (per le ACL)", intToIp(r.wildcard)) +
+      out("Tipo di indirizzo", tipo);
+
+    // bit
+    var bits = toBits(ip), h = "";
+    for (var i = 0; i < 32; i++) {
+      if (i > 0 && i % 8 === 0) h += '<span class="sep-dot">.</span>';
+      h += '<i class="' + (i < cidr ? "net" : "host") + '">' + bits[i] + "</i>";
+    }
+    document.getElementById("sc-bits").innerHTML = h;
+
+    document.getElementById("sc-plain").innerHTML =
+      "<b>In parole povere:</b> i primi <b>" + cidr + " bit</b> dicono <em>quale rete</em>, " +
+      "gli ultimi <b>" + (32 - cidr) + " bit</b> dicono <em>quale dispositivo dentro quella rete</em>. " +
+      "Ci stanno " + fmtNum(r.size) + " indirizzi in totale, ma il primo (" + intToIp(r.net) +
+      ") è il nome della rete e l'ultimo (" + intToIp(r.bc) + ") serve per parlare a tutti insieme, " +
+      "quindi ai computer ne restano <b>" + fmtNum(r.usable) + "</b>.";
+  }
+  function out(label, val) {
+    return '<div class="out"><span>' + label + "</span><b>" + val + "</b></div>";
+  }
+  document.getElementById("sc-ip").addEventListener("input", calc);
+  sel.addEventListener("change", calc);
+  calc();
+
+  /* ---------- 2. palestra ---------- */
+  var exState = null, score = { ok: 0, ko: 0 };
+  function newEx() {
+    var bases = [10, 172, 192];
+    var b = bases[Math.floor(Math.random() * 3)];
+    var ip;
+    if (b === 10) ip = ipToInt("10." + rnd(0,255) + "." + rnd(0,255) + "." + rnd(1,254));
+    else if (b === 172) ip = ipToInt("172." + rnd(16,31) + "." + rnd(0,255) + "." + rnd(1,254));
+    else ip = ipToInt("192.168." + rnd(0,255) + "." + rnd(1,254));
+    var cidr = [20,21,22,23,24,25,26,27,28,29,30][Math.floor(Math.random() * 11)];
+    var r = subnetInfo(ip, cidr);
+    var kinds = ["net", "bc", "hosts", "first", "last"];
+    var kind = kinds[Math.floor(Math.random() * kinds.length)];
+    var q = { net: "Qual è l'<b>indirizzo di rete</b>?",
+              bc: "Qual è l'<b>indirizzo di broadcast</b>?",
+              hosts: "Quanti <b>host utilizzabili</b> ci stanno?",
+              first: "Qual è il <b>primo host utilizzabile</b>?",
+              last: "Qual è l'<b>ultimo host utilizzabile</b>?" }[kind];
+    var ans = { net: intToIp(r.net), bc: intToIp(r.bc), hosts: String(r.usable),
+                first: intToIp(r.first), last: intToIp(r.last) }[kind];
+    exState = { r: r, kind: kind, ans: ans };
+    document.getElementById("ex-box").innerHTML =
+      '<div style="padding:16px 18px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-sunken);margin-bottom:14px">' +
+        '<div style="font-family:var(--font-mono);font-size:1.15rem;font-weight:600;color:var(--accent-text);margin-bottom:8px">' +
+          intToIp(ip) + "/" + cidr + "</div>" +
+        '<div style="font-size:.95rem;color:var(--text-soft)">' + q + "</div>" +
+      "</div>" +
+      '<div class="field" style="max-width:320px;margin:0"><label for="ex-in">La tua risposta</label>' +
+      '<input type="text" id="ex-in" placeholder="' + (kind === "hosts" ? "es. 254" : "es. 192.168.1.0") + '" autocomplete="off" spellcheck="false"></div>';
+    document.getElementById("ex-fb").innerHTML = "";
+    var inp = document.getElementById("ex-in");
+    inp.focus();
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+  }
+  function rnd(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+  function check() {
+    if (!exState) return;
+    var v = (document.getElementById("ex-in") || {}).value || "";
+    v = v.trim().replace(/\s/g, "").replace(/\./g, ".");
+    var ok = v === exState.ans || (exState.kind === "hosts" && v.replace(/[.\s]/g, "") === exState.ans);
+    var r = exState.r;
+    if (ok) score.ok++; else score.ko++;
+    document.getElementById("ex-score").textContent = score.ok + " giusti · " + score.ko + " sbagliati";
+
+    var bits = toBits(r.ip), bh = "";
+    for (var i = 0; i < 32; i++) {
+      if (i > 0 && i % 8 === 0) bh += '<span class="sep-dot">.</span>';
+      bh += '<i class="' + (i < r.cidr ? "net" : "host") + '">' + bits[i] + "</i>";
+    }
+    document.getElementById("ex-fb").innerHTML =
+      '<div class="callout ' + (ok ? "tip" : "danger") + '" style="margin-top:16px">' +
+      '<div class="callout__head">' + (ok ? "Giusto" : "Non ci siamo — ma guarda perché") + "</div>" +
+      "<p>La risposta è <b>" + exState.ans + "</b>.</p>" +
+      "<p>Il prefisso è <b>/" + r.cidr + "</b>, quindi i primi " + r.cidr + " bit sono fissi (la rete) e gli ultimi " +
+      (32 - r.cidr) + " sono liberi (gli host):</p>" +
+      '<div class="bits">' + bh + "</div>" +
+      '<div class="out-grid" style="margin-top:12px">' +
+        out("Rete", intToIp(r.net)) + out("Broadcast", intToIp(r.bc)) +
+        out("Range utilizzabile", intToIp(r.first) + " – " + intToIp(r.last)) +
+        out("Host utilizzabili", fmtNum(r.usable)) +
+      "</div></div>";
+  }
+  document.getElementById("ex-check").addEventListener("click", check);
+  document.getElementById("ex-new").addEventListener("click", newEx);
+  newEx();
+
+  /* ---------- 3. convertitore ---------- */
+  var dec = document.getElementById("cv-dec"), bin = document.getElementById("cv-bin"), hex = document.getElementById("cv-hex");
+  function sync(src) {
+    var v = null;
+    if (src === "dec") v = parseInt(dec.value.replace(/\s/g, ""), 10);
+    else if (src === "bin") v = parseInt(bin.value.replace(/[^01]/g, ""), 2);
+    else v = parseInt(hex.value.replace(/[^0-9a-fA-F]/g, ""), 16);
+    if (isNaN(v) || v < 0) return;
+    if (src !== "dec") dec.value = v;
+    if (src !== "bin") bin.value = v.toString(2).padStart(8, "0");
+    if (src !== "hex") hex.value = v.toString(16).toUpperCase().padStart(2, "0");
+  }
+  dec.addEventListener("input", function () { sync("dec"); });
+  bin.addEventListener("input", function () { sync("bin"); });
+  hex.addEventListener("input", function () { sync("hex"); });
+
+  /* ---------- 4. quale subnet ---------- */
+  function hostSize() {
+    var n = parseInt(document.getElementById("hs-n").value, 10);
+    if (isNaN(n) || n < 1) { document.getElementById("hs-out").innerHTML = ""; return; }
+    var c = 32;
+    while (c > 0 && (Math.pow(2, 32 - c) - 2) < n) c--;
+    var size = Math.pow(2, 32 - c), usable = size - 2;
+    var margine = usable - n;
+    document.getElementById("hs-out").innerHTML =
+      '<div class="out-grid">' +
+        out("Prefisso minimo", "/" + c) +
+        out("Subnet mask", intToIp(maskOf(c))) +
+        out("Indirizzi totali", fmtNum(size)) +
+        out("Host utilizzabili", fmtNum(usable)) +
+      "</div>" +
+      '<p style="font-size:.86rem;color:var(--text-mute);margin-top:14px">Ti restano <b>' + fmtNum(margine) +
+      "</b> indirizzi liberi di margine. " +
+      (margine < n * 0.3
+        ? "È poco: in un progetto vero prendi il prefisso subito più grande (<b>/" + (c - 1) +
+          "</b>), perché le reti crescono sempre e riassegnare gli indirizzi dopo è un lavoro infernale."
+        : "Va bene così: hai margine di crescita senza sprecare spazio.") + "</p>";
+  }
+  document.getElementById("hs-n").addEventListener("input", hostSize);
+  hostSize();
+
+  /* ---------- 5. porte ---------- */
+  var PORTS = [
+    ["20-21","TCP","FTP","Trasferimento file in chiaro. Se lo trovi ancora attivo in un cliente, è una cosa da sistemare."],
+    ["22","TCP","SSH / SFTP","Amministrazione remota cifrata. È anche la porta da cui gestisci il MikroTik."],
+    ["23","TCP","Telnet","Amministrazione remota <b>in chiaro</b>. Non usarla mai. Utile solo come strumento per testare se una porta è aperta."],
+    ["25","TCP","SMTP","Invio posta tra server. Spesso bloccata in uscita dagli operatori per limitare lo spam."],
+    ["53","UDP/TCP","DNS","Risoluzione dei nomi. UDP di norma, TCP per risposte grandi e per i trasferimenti di zona."],
+    ["67-68","UDP","DHCP","67 il server, 68 il client. Viaggia in broadcast: per questo serve il relay tra VLAN."],
+    ["69","UDP","TFTP","Trasferimento file minimale, usato per aggiornare firmware e per il boot dei telefoni VoIP."],
+    ["80","TCP","HTTP","Web in chiaro. Ormai solo per redirezione verso HTTPS."],
+    ["88","TCP/UDP","Kerberos","Autenticazione di Active Directory. Se si rompe, nessuno accede a niente."],
+    ["110 / 995","TCP","POP3 / POP3S","Scarico posta (vecchio stile). 995 è la versione cifrata."],
+    ["123","UDP","NTP","Sincronizzazione dell'ora. Un orologio sbagliato rompe Kerberos, i certificati e le VPN."],
+    ["135, 139, 445","TCP","RPC / NetBIOS / SMB","Condivisione file Windows. <b>Mai esposte su Internet</b>: è il vettore di WannaCry."],
+    ["143 / 993","TCP","IMAP / IMAPS","Posta consultata sul server. 993 è la versione cifrata, quella che si usa."],
+    ["161-162","UDP","SNMP","Monitoraggio degli apparati. 161 le interrogazioni, 162 le trap (allarmi spontanei)."],
+    ["389 / 636","TCP","LDAP / LDAPS","Interrogazione della directory (Active Directory). 636 cifrata."],
+    ["443","TCP","HTTPS","Web cifrato. Ormai è anche la porta di mille altre cose: SSL VPN, API, Teams."],
+    ["500 / 4500","UDP","IKE / IPsec NAT-T","Le due porte della VPN IPsec. Se il tunnel non sale, controlla che non siano bloccate."],
+    ["514","UDP","Syslog","Invio dei log al server centrale."],
+    ["587","TCP","SMTP submission","Invio posta dai client autenticati. È la porta corretta per Outlook, non la 25."],
+    ["1194","UDP","OpenVPN","Porta predefinita di OpenVPN."],
+    ["1433","TCP","Microsoft SQL Server","Database. Non va mai esposto: si raggiunge via VPN."],
+    ["1701","UDP","L2TP","Usato con IPsec per le VPN client su Windows."],
+    ["1812-1813","UDP","RADIUS","Autenticazione (1812) e accounting (1813). Il cuore del Wi-Fi enterprise e dell'802.1X."],
+    ["3306","TCP","MySQL / MariaDB","Database. Come sopra: mai su Internet."],
+    ["3389","TCP","RDP","Desktop remoto Windows. <b>Il vettore numero uno dei ransomware</b> quando è esposto."],
+    ["5060-5061","UDP/TCP","SIP","Segnalazione VoIP: avvio e chiusura delle chiamate. L'audio viaggia su RTP, altre porte."],
+    ["10000-20000","UDP","RTP","Il flusso audio/video vero delle chiamate. Range ampio e variabile per centralino."],
+    ["51820","UDP","WireGuard","VPN moderna, leggera e velocissima. Sempre più usata al posto di IPsec per i client."]
+  ];
+  function renderPorts(q) {
+    q = (q || "").toLowerCase().trim();
+    var rows = PORTS.filter(function (p) {
+      return !q || (p[0] + " " + p[1] + " " + p[2] + " " + p[3]).toLowerCase().indexOf(q) >= 0;
+    });
+    document.getElementById("pt-body").innerHTML = rows.length
+      ? rows.map(function (p) {
+          return "<tr><td><code>" + p[0] + "</code></td><td>" + p[1] + "</td><td><b>" + p[2] + "</b></td><td>" + p[3] + "</td></tr>";
+        }).join("")
+      : '<tr><td colspan="4" style="text-align:center;color:var(--text-faint);padding:24px">Nessuna porta trovata.</td></tr>';
+  }
+  document.getElementById("pt-search").addEventListener("input", function () { renderPorts(this.value); });
+  renderPorts("");
+};
+</script>
+</body>
+</html>

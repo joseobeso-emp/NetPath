@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Domini di collisione e di broadcast — NetPath</title>
+<meta name="description" content="Perché una rete piatta da 400 PC muore, e perché la soluzione si chiama VLAN.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l1-11">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l1">Livello 1</a><span class="sep">/</span>
+        <span>Ethernet e switching</span>
+      </nav>
+      <h1 class="lesson-title">Domini di collisione e di broadcast</h1>
+      <div class="lesson-meta">
+        <span class="badge lv1">Livello 1</span>
+        <span class="chip">Lezione 11</span>
+        <span class="chip">18 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere dominio di collisione e dominio di broadcast senza più confonderli</li>
+        <li>Sapere quale apparato divide quale dominio</li>
+        <li>Capire perché esiste un limite pratico alla dimensione di una rete piatta</li>
+        <li>Argomentare con un cliente perché la sua rete va segmentata</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Questi due termini si somigliano, vengono sempre citati insieme, e quasi tutti li
+confondono. Separarli bene è importante perché il secondo — il dominio di broadcast — è la ragione per
+cui esistono le VLAN, cioè metà del lavoro che farai nel livello 2.</p>
+
+<h2>Dominio di collisione: un problema del passato</h2>
+
+<p>Sui vecchi cavi coassiali e con gli hub, tutti condividevano lo stesso filo. Se due dispositivi
+trasmettevano nello stesso istante, i segnali si sovrapponevano e si distruggevano: una
+<strong>collisione</strong>. Entrambi dovevano tacere e riprovare dopo un tempo casuale.</p>
+
+<p>Il <strong>dominio di collisione</strong> è l'insieme dei dispositivi che possono disturbarsi in
+questo modo. Più erano, peggio andava: con trenta dispositivi su un hub la rete passava più tempo a
+gestire collisioni che a trasmettere.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne
+  </div>
+  <p><b>Dominio di collisione</b> = una stanza dove tutti parlano a voce alta. Se due parlano insieme,
+  nessuno capisce niente e devono ripetere. Più gente c'è, più spesso succede.</p>
+  <p><b>Dominio di broadcast</b> = l'insieme delle persone che ti sentono se <em>urli</em>.
+  Anche se ognuno ha la sua stanzetta insonorizzata (niente collisioni), se c'è un impianto di
+  altoparlanti collegato a tutte le stanze, quando uno urla nell'altoparlante lo sentono tutti — e devono
+  tutti fermarsi un attimo ad ascoltare, per capire se l'annuncio riguardava loro.</p>
+  <p>Gli switch hanno dato a ognuno la sua stanzetta insonorizzata. Ma l'impianto di altoparlanti
+  è rimasto acceso per tutti: <b>quello si spegne solo con un router o con una VLAN.</b></p>
+</div>
+
+<p>Con gli switch moderni il problema delle collisioni è <strong>sparito</strong>: ogni porta è un dominio
+di collisione a sé, e in full duplex si può parlare e ascoltare contemporaneamente, quindi collisioni
+non ne esistono proprio. Se mai vedi contatori di collisione che salgono su un apparato moderno, non
+stai guardando una rete affollata: stai guardando un <b>duplex mismatch</b>, cioè il problema della
+lezione 1-05.</p>
+
+<h2>Dominio di broadcast: il problema di oggi</h2>
+
+<p>Il broadcast è un frame indirizzato a <code>FF:FF:FF:FF:FF:FF</code>, cioè a tutti. Serve, eccome:
+ARP lo usa per chiedere «chi ha questo IP?», il DHCP lo usa per chiedere un indirizzo, e decine di
+protocolli lo usano per annunciarsi.</p>
+
+<p>Il problema è che uno switch <strong>non può fare altro</strong> che replicarlo su tutte le porte.
+E ogni dispositivo che lo riceve deve interrompere quello che sta facendo, risalire i livelli, e
+decidere se lo riguarda. Nella grande maggioranza dei casi la risposta è no — ma il tempo l'ha perso.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 340" role="img" aria-label="Confronto tra hub, switch e router rispetto ai domini di collisione e di broadcast">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Chi divide cosa</text>
+
+    <!-- HUB -->
+    <text x="16" y="52" class="dg-label">HUB</text>
+    <rect x="100" y="36" width="540" height="56" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6" stroke-dasharray="5 3"/>
+    <text x="370" y="58" text-anchor="middle" class="dg-mono-sm">1 dominio di collisione   ·   1 dominio di broadcast</text>
+    <text x="370" y="78" text-anchor="middle" class="dg-label-sm">tutti si disturbano e tutti sentono tutto</text>
+
+    <!-- SWITCH -->
+    <text x="16" y="140" class="dg-label">SWITCH</text>
+    <rect x="100" y="112" width="540" height="72" rx="8" fill="none" stroke="var(--dg-3)" stroke-width="1.6" stroke-dasharray="5 3"/>
+    <g stroke-width="1.4">
+      <rect x="116" y="126" width="120" height="30" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="248" y="126" width="120" height="30" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="380" y="126" width="120" height="30" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="512" y="126" width="112" height="30" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <text x="176" y="146" text-anchor="middle" class="dg-mono-sm">porta 1</text>
+    <text x="308" y="146" text-anchor="middle" class="dg-mono-sm">porta 2</text>
+    <text x="440" y="146" text-anchor="middle" class="dg-mono-sm">porta 3</text>
+    <text x="568" y="146" text-anchor="middle" class="dg-mono-sm">porta 4</text>
+    <text x="370" y="174" text-anchor="middle" class="dg-mono-sm">4 domini di collisione (uno per porta)  ·  ma sempre 1 solo dominio di broadcast</text>
+
+    <!-- ROUTER / VLAN -->
+    <text x="16" y="244" class="dg-label">ROUTER</text>
+    <text x="16" y="260" class="dg-label">o VLAN</text>
+    <g stroke-width="1.6" stroke-dasharray="5 3">
+      <rect x="100" y="212" width="256" height="72" rx="8" fill="none" stroke="var(--dg-1)"/>
+      <rect x="384" y="212" width="256" height="72" rx="8" fill="none" stroke="var(--dg-2)"/>
+    </g>
+    <g stroke-width="1.4">
+      <rect x="116" y="226" width="108" height="30" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="234" y="226" width="108" height="30" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="400" y="226" width="108" height="30" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="518" y="226" width="108" height="30" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+    </g>
+    <text x="228" y="274" text-anchor="middle" class="dg-mono-sm">dominio di broadcast A</text>
+    <text x="512" y="274" text-anchor="middle" class="dg-mono-sm">dominio di broadcast B</text>
+    <text x="350" y="312" text-anchor="middle" class="dg-label-sm">Un broadcast in A non arriva mai in B. È questa la separazione che serve davvero oggi.</text>
+    <text x="350" y="330" text-anchor="middle" class="dg-label-sm">Una VLAN ottiene lo stesso risultato del router, senza comprare un apparato in più.</text>
+  </svg>
+  </div>
+  <figcaption><b>Lo switch divide i domini di collisione ma non quelli di broadcast.</b> È la frase da
+  ricordare, e da sola giustifica l'esistenza delle VLAN. Ogni VLAN è un dominio di broadcast separato.</figcaption>
+</figure>
+
+<h2>Quanto è grave davvero il broadcast</h2>
+
+<p>Facciamo i conti, perché è l'unico modo per capire dove sta il limite.</p>
+
+<p>Un dispositivo Windows in una rete aziendale genera tipicamente da <strong>3 a 10 broadcast al
+secondo</strong> — ARP, NetBIOS, mDNS, LLMNR, SSDP, annunci di stampanti, e altro. Chiamiamoli 5 al
+secondo per stare prudenti.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Dispositivi nella rete piatta</th><th>Broadcast/secondo totali</th><th>Che ogni singolo PC deve esaminare</th><th>Situazione</th></tr></thead>
+    <tbody>
+      <tr><td>25</td><td>125</td><td>125/s</td><td>Nessun problema</td></tr>
+      <tr><td>100</td><td>500</td><td>500/s</td><td>Ancora accettabile</td></tr>
+      <tr><td>250</td><td>1.250</td><td>1.250/s</td><td>Inizia a pesare su dispositivi lenti e Wi-Fi</td></tr>
+      <tr><td>500</td><td>2.500</td><td>2.500/s</td><td>Problemi reali: telefoni VoIP, telecamere, PLC</td></tr>
+      <tr><td>1.000</td><td>5.000</td><td>5.000/s</td><td>Rete al limite, guasti inspiegabili quotidiani</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Il punto cruciale, ed è quello che sfugge a tutti: <strong>ogni dispositivo deve esaminare
+i broadcast di tutti gli altri</strong>. Il carico non si distribuisce, si moltiplica. E i dispositivi
+più deboli — telefoni VoIP, telecamere, sensori industriali, stampanti — hanno processori minuscoli e
+sono i primi a cedere.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il sintomo tipico della rete piatta troppo grande
+  </div>
+  <p>«I PC vanno bene, ma i telefoni ogni tanto si riavviano e le telecamere perdono qualche secondo
+  di registrazione.» Nessuno riesce a trovare la causa perché <b>i PC stanno benissimo</b>: hanno
+  processori potenti e i broadcast non li scalfiscono.</p>
+  <p>A cedere sono i dispositivi deboli, e sempre in modo intermittente — il che rende la diagnosi
+  difficilissima se non hai in testa questo ragionamento. La cura è la segmentazione: telefoni in una
+  VLAN, telecamere in un'altra, PC in una terza. Da 800 dispositivi in un solo dominio si passa a tre
+  domini da poche centinaia, e i sintomi spariscono.</p>
+</div>
+
+<h2>La regola pratica sulla dimensione</h2>
+
+<p>Non esiste un numero magico, ma esiste una convenzione condivisa che regge bene:</p>
+
+<ul class="clean">
+  <li><b>Fino a 200–250 dispositivi per dominio di broadcast</b> è la zona comoda. Corrisponde a una
+  subnet <code>/24</code>, che ne ospita 254 — e non è un caso: la convenzione è nata proprio così.</li>
+  <li><b>Oltre 500</b> serve segmentare, non è più una scelta stilistica.</li>
+  <li><b>In Wi-Fi il limite è più basso</b>, perché i broadcast in radio vengono trasmessi alla velocità
+  più bassa supportata, per essere sicuri che tutti li sentano: costano molto di più che su cavo.</li>
+</ul>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Come si vende un progetto di segmentazione
+  </div>
+  <p>Non dire mai «bisogna fare le VLAN». Il cliente sente un costo e non capisce il beneficio.
+  Di' invece una di queste tre cose, che sono tutte vere e tutte comprensibili:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Prestazioni:</b> «oggi ogni dispositivo deve ascoltare il rumore di fondo di altri 400.
+    Separandoli, i telefoni e le telecamere smettono di avere problemi.»</li>
+    <li><b>Sicurezza:</b> «oggi se un PC prende un ransomware, può raggiungere tutto: server, telecamere,
+    macchinari. Separandoli, il danno resta in una stanza sola.»</li>
+    <li><b>Ospiti:</b> «oggi il Wi-Fi dei visitatori sta nella stessa rete della contabilità.»
+    Questa di solito basta da sola.</li>
+  </ul>
+</div>
+
+<h2>Il ponte verso il livello 2 del percorso</h2>
+
+<p>Hai appena capito, da solo, il motivo per cui esistono le VLAN. Tienilo bene a mente, perché nel
+capitolo 2.1 partiremo esattamente da qui: una VLAN è semplicemente un modo per dire allo switch
+«queste porte fanno parte di una rete separata», ottenendo domini di broadcast distinti senza comprare
+un router per ognuno.</p>
+
+<p>E capirai anche perché, una volta separate, per farle comunicare serve per forza qualcosa che lavori
+al livello 3 — un router o uno switch L3. Le VLAN separano; il routing ricollega, in modo controllato.
+Quella è la struttura di ogni rete aziendale che vedrai.</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: domini di collisione e broadcast",
+  "questions": [
+    { "q": "Uno switch a 24 porte, con tutte le porte occupate, quanti domini di broadcast crea?",
+      "a": [ {"t":"Uno solo, se non sono configurate VLAN","ok":true},
+             {"t":"Ventiquattro, uno per porta","ok":false},
+             {"t":"Due, uno in ingresso e uno in uscita","ok":false},
+             {"t":"Nessuno: gli switch non hanno domini di broadcast","ok":false} ],
+      "e": "Lo switch crea 24 domini di <b>collisione</b> (uno per porta) ma un solo dominio di <b>broadcast</b>: un frame a FF:FF:FF:FF:FF:FF esce da tutte le porte. Per dividerlo serve un router o, in pratica, una VLAN." },
+
+    { "q": "Perché le collisioni non sono più un problema nelle reti moderne?",
+      "a": [ {"t":"Perché ogni porta di uno switch è un dominio a sé e si lavora in full duplex","ok":true},
+             {"t":"Perché i cavi moderni sono schermati","ok":false},
+             {"t":"Perché i protocolli le correggono automaticamente","ok":false},
+             {"t":"Perché la banda disponibile è molto maggiore","ok":false} ],
+      "e": "In full duplex un dispositivo può trasmettere e ricevere contemporaneamente su coppie separate: la collisione è fisicamente impossibile. Se su un apparato moderno vedi contatori di collisione salire, non è affollamento — è un <b>duplex mismatch</b>." },
+
+    { "q": "Un cliente ha 600 dispositivi in un'unica rete piatta. I PC funzionano bene ma i telefoni VoIP si riavviano e le telecamere perdono frame. Cosa sospetti?",
+      "a": [ {"t":"Il carico di broadcast: i dispositivi deboli non reggono il rumore di fondo","ok":true},
+             {"t":"La banda Internet è insufficiente","ok":false},
+             {"t":"Gli switch sono troppo lenti","ok":false},
+             {"t":"Serve un firewall più potente","ok":false} ],
+      "e": "600 dispositivi generano qualche migliaio di broadcast al secondo che <b>ogni</b> dispositivo deve esaminare. I PC hanno potenza da vendere e non se ne accorgono; telefoni e telecamere hanno processori minuscoli e cedono per primi. Il fatto che il sintomo colpisca solo i dispositivi deboli è la firma diagnostica di questo problema. La banda Internet non c'entra: è traffico interno." },
+
+    { "q": "Qual è la dimensione ragionevole di un dominio di broadcast in una rete aziendale?",
+      "a": [ {"t":"Fino a circa 200–250 dispositivi","ok":true},
+             {"t":"Fino a 1.000 dispositivi","ok":false},
+             {"t":"Non esiste un limite pratico","ok":false},
+             {"t":"Massimo 50 dispositivi","ok":false} ],
+      "e": "200–250 è la zona comoda e corrisponde non a caso a una subnet /24, che ne ospita 254. Oltre i 500 la segmentazione non è più una scelta estetica. Cinquanta sarebbe invece inutilmente restrittivo e moltiplicherebbe la complessità di gestione senza beneficio." },
+
+    { "q": "Perché i broadcast pesano di più sul Wi-Fi che sul cavo?",
+      "a": [ {"t":"Perché vengono trasmessi alla velocità più bassa supportata, per essere sentiti da tutti","ok":true},
+             {"t":"Perché il Wi-Fi non supporta il broadcast e deve simularlo","ok":false},
+             {"t":"Perché vengono cifrati due volte","ok":false},
+             {"t":"Perché il Wi-Fi ha una MTU più piccola","ok":false} ],
+      "e": "Un broadcast deve raggiungere anche il client più lontano e più lento, quindi l'access point lo manda alla velocità minima: un singolo frame occupa il canale radio per un tempo sproporzionato. Sul cavo quel costo non esiste. È uno dei motivi per cui le reti Wi-Fi vanno segmentate ancora più delle reti cablate." },
+
+    { "q": "Come si spiega a un cliente non tecnico la necessità di segmentare la rete?",
+      "a": [ {"t":"Con un esempio concreto: oggi il Wi-Fi dei visitatori sta nella stessa rete della contabilità","ok":true},
+             {"t":"Spiegando cos'è un dominio di broadcast di livello 2","ok":false},
+             {"t":"Mostrando la configurazione 802.1Q dello switch","ok":false},
+             {"t":"Dicendo che è una buona pratica raccomandata dai vendor","ok":false} ],
+      "e": "Il cliente decide in base a rischi e benefici che capisce, non in base alla terminologia. «Gli ospiti stanno nella stessa rete dei dati contabili» è comprensibile in tre secondi e spesso basta da sola. Le altre risposte sono tutte vere ma non producono una decisione: sono spiegazioni per tecnici." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
