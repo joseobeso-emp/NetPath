@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>802.1Q, trunk e native VLAN — NetPath</title>
+<meta name="description" content="Il tag da 4 byte che cambia tutto, la differenza tra porta access e trunk, e l'errore di native VLAN che fa impazzire i tecnici.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-02">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Segmentare la rete</span>
+      </nav>
+      <h1 class="lesson-title">802.1Q, trunk e native VLAN</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 02</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Descrivere il tag 802.1Q campo per campo</li>
+        <li>Distinguere porta access e porta trunk e sapere quale serve dove</li>
+        <li>Capire cos'è la native VLAN e perché causa guasti misteriosi</li>
+        <li>Tradurre lo stesso concetto nel gergo di MikroTik, Cisco, Fortinet e Sophos</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Nella lezione precedente hai visto <em>perché</em> servono le VLAN. Adesso vediamo
+<em>come</em> funzionano davvero sul cavo — perché è lì che si annidano i guasti che sembrano
+inspiegabili. Il meccanismo è sorprendentemente semplice: quattro byte aggiunti al frame.</p>
+
+<h2>Il problema: un cavo, tante VLAN</h2>
+
+<p>Hai due switch in due armadi diversi, e su entrambi ci sono porte della VLAN 10, della 20 e della 30.
+Come fai a collegarli? Tirare tre cavi, uno per VLAN? Funzionerebbe, ma con sette VLAN servirebbero
+sette cavi, e con dodici switch diventa ingestibile.</p>
+
+<p>La soluzione è far passare <strong>tutte le VLAN su un cavo solo</strong>, scrivendo su ogni frame
+a quale VLAN appartiene. Quel cavo si chiama <span class="term" data-term="trunk">trunk</span>, e
+l'etichetta si chiama <strong>tag 802.1Q</strong>.</p>
+
+<h2>Il tag: quattro byte, e il gioco è fatto</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 290" role="img" aria-label="Frame Ethernet normale confrontato con frame etichettato 802.1Q, con i campi del tag">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dove si infilano i quattro byte</text>
+
+    <text x="16" y="54" class="dg-mono-sm">NORMALE</text>
+    <g stroke-width="1.4">
+      <rect x="110" y="36" width="110" height="32" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="224" y="36" width="110" height="32" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="338" y="36" width="70"  height="32" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="412" y="36" width="200" height="32" rx="5" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="616" y="36" width="54"  height="32" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="165" y="56">MAC dest</text><text x="279" y="56">MAC sorg</text>
+      <text x="373" y="56">tipo</text><text x="512" y="56">dati</text><text x="643" y="56">FCS</text>
+    </g>
+
+    <text x="16" y="118" class="dg-mono-sm">CON TAG</text>
+    <g stroke-width="1.4">
+      <rect x="110" y="100" width="110" height="32" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="224" y="100" width="110" height="32" rx="5" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="338" y="100" width="104" height="32" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2.2"/>
+      <rect x="446" y="100" width="60"  height="32" rx="5" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="510" y="100" width="104" height="32" rx="5" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="618" y="100" width="52"  height="32" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="165" y="120">MAC dest</text><text x="279" y="120">MAC sorg</text>
+      <text x="390" y="120">TAG 802.1Q</text><text x="476" y="120">tipo</text>
+      <text x="562" y="120">dati</text><text x="644" y="120">FCS</text>
+    </g>
+    <path d="M390 132v20" stroke="var(--dg-3)" stroke-width="1.4"/>
+
+    <text x="350" y="172" text-anchor="middle" class="dg-mono-sm">i 4 byte, aperti</text>
+    <g stroke-width="1.5">
+      <rect x="120" y="184" width="180" height="44" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="304" y="184" width="80"  height="44" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="388" y="184" width="60"  height="44" rx="6" fill="var(--dg-line-soft)" stroke="var(--dg-line)"/>
+      <rect x="452" y="184" width="128" height="44" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2.2"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="210" y="202">TPID  0x8100</text><text x="210" y="218">16 bit</text>
+      <text x="344" y="202">PCP</text><text x="344" y="218">3 bit</text>
+      <text x="418" y="202">DEI</text><text x="418" y="218">1 bit</text>
+      <text x="516" y="202">VLAN ID</text><text x="516" y="218">12 bit</text>
+    </g>
+    <g class="dg-label-sm">
+      <text x="120" y="250">«questo frame ha un tag»</text>
+      <text x="304" y="250">priorità (QoS)</text>
+      <text x="452" y="250">il numero della VLAN: 1 – 4094</text>
+    </g>
+    <text x="350" y="278" text-anchor="middle" class="dg-label-sm">12 bit → 4096 valori, meno lo 0 e il 4095 riservati = <tspan font-weight="700">4094 VLAN possibili</tspan>. E il campo priorità è la base della QoS.</text>
+  </svg>
+  </div>
+  <figcaption>Il tag si infila <b>dopo i MAC e prima del tipo</b>. Nota il campo <b>PCP</b>: tre bit di
+  priorità che viaggiano con ogni frame. È il motivo per cui, con le VLAN fatte bene, dare precedenza al
+  traffico voce diventa semplice.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il camion della posta
+  </div>
+  <p>Un unico camion parte dal magazzino centrale e va a un altro magazzino. Dentro ci sono pacchi
+  destinati a tre reparti diversi.</p>
+  <p>Per non confonderli, su ogni pacco si attacca <b>un bollino colorato</b>: rosso = reparto 10,
+  blu = reparto 20, verde = reparto 30. Il camion (il cavo trunk) li porta tutti insieme.</p>
+  <p>Quando il camion arriva, all'ingresso di ogni reparto c'è un addetto che <b>stacca il bollino</b> e
+  consegna il pacco: dentro al reparto il bollino non serve più, tutti lì sono del reparto 10.</p>
+  <p>Ecco le due parole che ti servono:<br>
+  Il <b>trunk</b> è il camion: porta pacchi di tutti i reparti, tutti con il bollino.<br>
+  La porta <b>access</b> è l'ingresso del reparto: stacca il bollino all'entrata e lo riattacca all'uscita.</p>
+  <p>Il computer dell'utente <b>non sa niente di tutto questo</b> e non deve saperlo: riceve pacchi senza
+  bollino, come ha sempre fatto. È per questo che le VLAN si possono introdurre in un'azienda senza
+  toccare un solo PC.</p>
+</div>
+
+<h2>Porta access e porta trunk</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Porta ACCESS</th><th>Porta TRUNK</th></tr></thead>
+    <tbody>
+      <tr><td><b>Quante VLAN</b></td><td>Una sola</td><td>Molte, anche tutte</td></tr>
+      <tr><td><b>I frame hanno il tag?</b></td><td>No, escono ed entrano puliti</td><td>Sì, tutti tranne la native</td></tr>
+      <tr><td><b>Chi ci sta attaccato</b></td><td>PC, stampante, telecamera, telefono</td><td>Un altro switch, il firewall, un access point, un host di virtualizzazione</td></tr>
+      <tr><td><b>Il dispositivo deve saperlo?</b></td><td>No, non sa nemmeno che esistano le VLAN</td><td>Sì, deve saper leggere e scrivere i tag</td></tr>
+      <tr><td><b>Altri nomi</b></td><td>untagged, edge port</td><td>tagged port, uplink</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Dove servono i trunk, in pratica:</p>
+<ul class="clean">
+  <li><b>Switch → switch</b>, per portare tutte le VLAN nell'altro armadio.</li>
+  <li><b>Switch → firewall/router</b>, perché il firewall deve vedere tutte le VLAN per instradare tra loro.</li>
+  <li><b>Switch → access point</b>, perché un solo AP pubblica più SSID mappati su VLAN diverse.</li>
+  <li><b>Switch → host di virtualizzazione</b>, perché le macchine virtuali stanno in VLAN diverse.</li>
+</ul>
+
+<h2>La native VLAN: il campo minato</h2>
+
+<p>Su un trunk c'è una VLAN speciale, la <strong>native VLAN</strong> (Cisco) o <strong>PVID</strong>
+(MikroTik, HPE), i cui frame viaggiano <strong>senza tag</strong>. Esiste per compatibilità storica con
+apparati che il tag non lo sapevano leggere.</p>
+
+<p>Il problema è che <strong>i due lati del trunk devono essere d'accordo su quale sia</strong>. Se non
+lo sono, succede una cosa tanto silenziosa quanto grave.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Due switch con native VLAN diverse: il traffico di una VLAN finisce in un'altra">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Native VLAN diverse ai due capi = due reti fuse insieme</text>
+
+    <rect x="24" y="44" width="180" height="70" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.7"/>
+    <text x="114" y="68" text-anchor="middle" class="dg-label-sm">SWITCH A</text>
+    <text x="114" y="90" text-anchor="middle" class="dg-mono-sm">native VLAN = 1</text>
+    <text x="114" y="106" text-anchor="middle" class="dg-mono-sm">trunk: 1,10,20,30</text>
+
+    <rect x="496" y="44" width="180" height="70" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="586" y="68" text-anchor="middle" class="dg-label-sm">SWITCH B</text>
+    <text x="586" y="90" text-anchor="middle" class="dg-mono-sm">native VLAN = 20</text>
+    <text x="586" y="106" text-anchor="middle" class="dg-mono-sm">trunk: 1,10,20,30</text>
+
+    <line x1="206" y1="80" x2="492" y2="80" stroke="var(--dg-line)" stroke-width="12" stroke-linecap="round"/>
+    <line x1="206" y1="80" x2="492" y2="80" stroke="var(--dg-surface)" stroke-width="7" stroke-linecap="round"/>
+    <rect x="296" y="64" width="108" height="32" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="350" y="84" text-anchor="middle" class="dg-mono-sm">SENZA TAG</text>
+
+    <text x="350" y="146" text-anchor="middle" class="dg-label-sm">A manda un frame della VLAN 1 senza tag (è la sua native).</text>
+    <text x="350" y="166" text-anchor="middle" class="dg-label-sm">B lo riceve senza tag e conclude: «nessun tag → è la mia native → è VLAN <tspan font-weight="700">20</tspan>».</text>
+
+    <rect x="150" y="188" width="400" height="40" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.8"/>
+    <text x="350" y="205" text-anchor="middle" class="dg-label-sm">Risultato: la VLAN 1 di A e la VLAN 20 di B sono diventate <tspan font-weight="700">la stessa rete</tspan>.</text>
+    <text x="350" y="221" text-anchor="middle" class="dg-mono-sm">Nessun errore, nessun allarme. Funziona — male.</text>
+  </svg>
+  </div>
+  <figcaption>Questo è il <b>native VLAN mismatch</b>. Non genera errori: genera due reti che si sono
+  fuse di nascosto. In pratica gli ospiti finiscono nella rete degli uffici, o le telecamere nella rete
+  dei server, e nessuno se ne accorge finché non succede qualcosa di brutto.</figcaption>
+</figure>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La regola che ti evita questa categoria di guasti
+  </div>
+  <p><b>Usa una VLAN «morta» come native su tutti i trunk.</b> Per esempio la VLAN 999, che non esiste
+  da nessuna parte, non ha subnet e non ha nessuna porta assegnata.</p>
+  <p>Così, se un giorno un frame arriva senza tag su un trunk, finisce in una VLAN dove non c'è niente
+  e non fa danni. E siccome ogni VLAN reale viaggia <b>sempre</b> etichettata, un mismatch diventa
+  impossibile.</p>
+  <p>Alcuni apparati permettono anche di rifiutare del tutto i frame senza tag su un trunk: se c'è,
+  attivalo. È la configurazione più pulita.</p>
+</div>
+
+<h3>Il VLAN hopping</h3>
+<p>La native VLAN non è solo una fonte di errori: è anche un vettore d'attacco. Con il
+<em>double tagging</em>, un attaccante mette <strong>due</strong> tag in un frame: il primo corrisponde
+alla native VLAN e viene rimosso dal primo switch, lasciando emergere il secondo — che lo porta in una
+VLAN dove non dovrebbe poter arrivare.</p>
+<p>Le difese sono le stesse buone pratiche di sopra: native VLAN non usata da nessuno, e nessuna porta
+utente lasciata in modalità trunk automatica. Le vedremo meglio nella lezione 2-07.</p>
+
+<h2>Lo stesso concetto, cinque gerghi diversi</h2>
+
+<p>È qui che si perde più tempo passando da un vendor all'altro: le idee sono identiche, cambiano solo
+le parole.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Concetto</th><th>Cisco</th><th>MikroTik</th><th>FortiGate</th><th>Sophos / HPE</th></tr></thead>
+    <tbody>
+      <tr><td><b>Porta di una sola VLAN</b></td><td>switchport mode access</td><td>PVID sulla porta del bridge</td><td>Interfaccia su VLAN</td><td>untagged</td></tr>
+      <tr><td><b>Porta con tutte le VLAN</b></td><td>switchport mode trunk</td><td>tagged nella tabella VLAN</td><td>Interfaccia fisica + sottointerfacce VLAN</td><td>tagged</td></tr>
+      <tr><td><b>VLAN senza tag sul trunk</b></td><td>native vlan</td><td>PVID del trunk</td><td>—</td><td>untagged/PVID</td></tr>
+      <tr><td><b>Interfaccia L3 della VLAN</b></td><td>SVI (interface vlan 10)</td><td>interfaccia VLAN sul bridge</td><td>interfaccia VLAN su porta fisica</td><td>interfaccia VLAN</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Lo stesso trunk, su tre apparati</div>
+<pre><span class="c">═══ CISCO ═══════════════════════════════════════════</span>
+<span class="c"># porta utente, solo VLAN 10</span>
+<span class="p">interface Gi1/0/5</span>
+ <span class="p">switchport mode access</span>
+ <span class="p">switchport access vlan</span> <span class="n">10</span>
+<span class="c"># trunk verso l'altro switch</span>
+<span class="p">interface Gi1/0/24</span>
+ <span class="p">switchport mode trunk</span>
+ <span class="p">switchport trunk allowed vlan</span> <span class="n">10,20,30,99</span>
+ <span class="p">switchport trunk native vlan</span> <span class="n">999</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="c"># il bridge deve filtrare le VLAN, altrimenti non separa nulla</span>
+<span class="p">/interface bridge set br-lan vlan-filtering=</span><span class="s">yes</span>
+<span class="c"># porta utente: tutto ciò che entra senza tag diventa VLAN 10</span>
+<span class="p">/interface bridge port set [find interface=ether5] pvid=</span><span class="n">10</span>
+<span class="c"># quali porte portano quale VLAN, e con o senza tag</span>
+<span class="p">/interface bridge vlan add bridge=</span><span class="s">br-lan</span> <span class="p">vlan-ids=</span><span class="n">10</span> <span class="p">\</span>
+<span class="p">    untagged=</span><span class="s">ether5</span> <span class="p">tagged=</span><span class="s">br-lan,ether1</span>
+
+<span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="c"># sulla porta fisica si creano sottointerfacce, una per VLAN</span>
+<span class="p">config system interface</span>
+  <span class="p">edit</span> <span class="s">"vlan10-uffici"</span>
+    <span class="p">set interface</span> <span class="s">"port2"</span>
+    <span class="p">set vlanid</span> <span class="n">10</span>
+    <span class="p">set ip</span> <span class="n">10.10.10.1 255.255.255.0</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La trappola specifica di MikroTik
+  </div>
+  <p>Su RouterOS puoi creare tutte le VLAN che vuoi, assegnare i PVID, definire le porte tagged e
+  untagged — e <b>non separare assolutamente nulla</b>, se ti dimentichi
+  <code>vlan-filtering=yes</code> sul bridge.</p>
+  <p>Senza quel comando il bridge ignora i tag e si comporta come uno switch piatto: la configurazione
+  <em>sembra</em> giusta, e non lo è. È l'errore che fa perdere più tempo a chi arriva a MikroTik da
+  altri vendor, dove il filtraggio è implicito.</p>
+  <p>E attenzione all'ordine: attivare <code>vlan-filtering</code> <b>prima</b> di aver messo la porta
+  di gestione nella tabella VLAN ti chiude fuori dal router. Si rientra via WinBox sul MAC — vedi il
+  laboratorio 00.</p>
+</div>
+
+<h2>Diagnosticare un trunk</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>Una VLAN funziona, un'altra no, sullo stesso cavo</td><td>Quella VLAN non è nell'elenco consentito del trunk</td></tr>
+      <tr><td>Tutto funziona ma le VLAN non separano niente</td><td>Filtraggio VLAN non attivo (MikroTik), o porte lasciate in VLAN 1</td></tr>
+      <tr><td>Due VLAN si «vedono» tra loro senza router</td><td><b>Native VLAN mismatch</b></td></tr>
+      <tr><td>Il PC prende un indirizzo della VLAN sbagliata</td><td>PVID errato sulla porta access</td></tr>
+      <tr><td>Il telefono VoIP funziona, il PC dietro no</td><td>Voice VLAN configurata ma manca la VLAN dati sulla stessa porta</td></tr>
+      <tr><td>Funziona solo dopo un riavvio, poi si rompe</td><td>Negoziazione automatica del trunk (DTP): va disattivata e impostata a mano</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Vederlo con Wireshark
+  </div>
+  <p>Se catturi su una porta trunk (in mirroring) e filtri con <code>vlan</code>, Wireshark ti mostra il
+  numero della VLAN di ogni frame. È la prova definitiva: ti dice cosa passa davvero su quel cavo,
+  senza doverti fidare della configurazione.</p>
+  <p>Filtro per una VLAN sola: <code>vlan.id == 20</code>.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: 802.1Q e trunk",
+  "questions": [
+    { "q": "Quanti byte aggiunge il tag 802.1Q a un frame Ethernet?",
+      "a": [ {"t":"4","ok":true}, {"t":"2","ok":false}, {"t":"8","ok":false}, {"t":"12","ok":false} ],
+      "e": "Quattro byte: 16 bit di TPID (il valore 0x8100 che segnala «qui c'è un tag»), 3 bit di priorità PCP, 1 bit DEI e 12 bit di VLAN ID. I 12 bit danno 4094 VLAN utilizzabili." },
+
+    { "q": "Su quale tipo di porta si collega un PC di un utente?",
+      "a": [ {"t":"Access: i frame viaggiano senza tag e il PC non sa nulla delle VLAN","ok":true},
+             {"t":"Trunk, così può accedere a tutte le VLAN","ok":false},
+             {"t":"Dipende dalla scheda di rete del PC","ok":false},
+             {"t":"Su una porta dedicata di livello 3","ok":false} ],
+      "e": "La porta access appartiene a una sola VLAN e toglie il tag in uscita. Il PC riceve frame normali e non deve sapere niente: è esattamente per questo che si possono introdurre le VLAN in un'azienda senza toccare un solo computer." },
+
+    { "q": "Switch A ha native VLAN 1, switch B ha native VLAN 20, e sono collegati in trunk. Cosa succede?",
+      "a": [ {"t":"La VLAN 1 di A e la VLAN 20 di B diventano la stessa rete, in silenzio","ok":true},
+             {"t":"Il trunk non si attiva e il link resta giù","ok":false},
+             {"t":"Il traffico delle due VLAN viene scartato","ok":false},
+             {"t":"Gli switch negoziano automaticamente un valore comune","ok":false} ],
+      "e": "I frame della native viaggiano senza tag; l'altro switch, non vedendo tag, li assegna alla <em>propria</em> native. Le due reti si fondono senza alcun errore né allarme. È il motivo per cui conviene usare come native una VLAN «morta» che non esiste da nessuna parte." },
+
+    { "q": "Su MikroTik hai creato le VLAN, impostato i PVID e definito tagged e untagged, ma le VLAN non separano nulla. Cosa manca?",
+      "a": [ {"t":"<code>vlan-filtering=yes</code> sul bridge","ok":true},
+             {"t":"Un riavvio del router","ok":false},
+             {"t":"Le interfacce VLAN di livello 3","ok":false},
+             {"t":"Il DHCP relay","ok":false} ],
+      "e": "Senza il filtraggio attivo il bridge ignora i tag e si comporta come uno switch piatto: la configurazione sembra corretta ma non fa niente. È l'errore più comune di chi arriva a RouterOS da altri vendor, dove il filtraggio è implicito. Attenzione ad attivarlo solo dopo aver messo la porta di gestione nella tabella VLAN, o ti chiudi fuori." },
+
+    { "q": "Perché su un trunk conviene usare come native una VLAN inesistente, per esempio la 999?",
+      "a": [ {"t":"Così un frame senza tag finisce dove non c'è nulla e ogni VLAN reale viaggia sempre etichettata","ok":true},
+             {"t":"Perché le VLAN con numero alto sono più veloci","ok":false},
+             {"t":"Perché lo standard 802.1Q lo richiede","ok":false},
+             {"t":"Per risparmiare banda sul trunk","ok":false} ],
+      "e": "È una misura di sicurezza e di robustezza: elimina alla radice sia il native VLAN mismatch sia gli attacchi di double tagging, perché non esiste più traffico legittimo senza tag. Il numero della VLAN non ha alcun effetto sulle prestazioni." },
+
+    { "q": "Dove serve una porta trunk?",
+      "a": [ {"t":"Tra switch, verso il firewall, verso un access point e verso un host di virtualizzazione","ok":true},
+             {"t":"Solo tra due switch dello stesso modello","ok":false},
+             {"t":"Su ogni porta a cui è collegato un dispositivo","ok":false},
+             {"t":"Solo verso Internet","ok":false} ],
+      "e": "Serve ovunque un singolo cavo debba trasportare più VLAN: tra armadi, verso il firewall che instrada tra le VLAN, verso un AP che pubblica più SSID su VLAN diverse, verso un hypervisor con macchine virtuali in VLAN diverse. Sulle porte dei dispositivi finali si usa sempre access." },
+
+    { "q": "Un PC collegato a una porta access prende un indirizzo della VLAN sbagliata. Cosa controlli?",
+      "a": [ {"t":"Il PVID / la VLAN assegnata a quella porta","ok":true},
+             {"t":"La native VLAN del trunk verso Internet","ok":false},
+             {"t":"Il cavo di rete","ok":false},
+             {"t":"Il numero di serie dello switch","ok":false} ],
+      "e": "Su una porta access è il PVID (o «access vlan») a decidere in quale VLAN finisce il traffico senza tag che entra da lì. Se il PC riceve un indirizzo della VLAN 20 invece che della 10, quella porta è assegnata alla 20." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

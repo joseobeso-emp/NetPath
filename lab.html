@@ -48,6 +48,7 @@
     <b>MikroTik hAP ax²</b> — e i primi due nemmeno su quello: si fanno sul PC che stai usando adesso.
     Ogni passo ha una casella: si salva nel browser, quindi puoi interrompere e riprendere.</p>
 
+
   <div class="callout warn" style="max-width:70ch">
     <div class="callout__head">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
@@ -56,6 +57,120 @@
     <p>Non fare questi laboratori sulla rete di casa in produzione mentre qualcuno lavora o guarda un film.
     Il MikroTik va collegato <b>a valle</b> del router di casa (la sua porta ether1 al router esistente), così
     crei una rete separata e tua, e se la rompi non rompi niente a nessuno.</p>
+  </div>
+
+  <h2 style="font-size:1.55rem;margin:48px 0 10px">La rete di sicurezza: non puoi rompere niente</h2>
+  <p style="color:var(--text-soft);max-width:70ch;margin-bottom:22px">
+    Questa sezione viene prima di tutto il resto, e va letta una volta sola. Serve a toglierti la paura,
+    che è l'unica cosa che davvero impedisce di imparare su un apparato di rete. Con questi tre
+    strumenti <b>non esiste una configurazione da cui non puoi tornare indietro</b>.</p>
+
+  <div class="grid c3" style="margin-bottom:26px">
+    <div class="card">
+      <h3>1 · Safe Mode</h3>
+      <p style="margin-bottom:10px">Il salvavita di RouterOS, e quasi nessuno lo usa. Attivi la modalità
+      provvisoria, fai le tue modifiche, e <b>se perdi il collegamento col router la configurazione torna
+      indietro da sola</b> in pochi secondi.</p>
+      <p style="margin:0"><b>Nel terminale:</b> premi <kbd class="key">Ctrl</kbd>+<kbd class="key">X</kbd>.
+      Compare <code>[Safe Mode]</code>. Rifai <kbd class="key">Ctrl</kbd>+<kbd class="key">X</kbd> per
+      confermare le modifiche.<br>
+      <b>In WinBox:</b> il pulsante <b>Safe Mode</b> in alto a sinistra.</p>
+    </div>
+    <div class="card">
+      <h3>2 · WinBox sul MAC</h3>
+      <p>Anche se sbagli l'indirizzo IP, cancelli il DHCP o ti togli l'interfaccia di gestione, WinBox
+      raggiunge il router <b>via MAC address</b>, senza bisogno che la rete IP funzioni.</p>
+      <p style="margin:0">Scheda <b>Neighbors</b> → clic sul <b>MAC</b>, non sull'IP. Tienilo sempre a
+      mente: è la porta di servizio che resta aperta quando hai chiuso quella principale.</p>
+    </div>
+    <div class="card">
+      <h3>3 · Backup prima di tutto</h3>
+      <p>Trenta secondi che ti restituiscono qualsiasi disastro. Un <b>backup</b> binario per tornare
+      indietro, e un <b>export</b> leggibile per capire cosa hai cambiato.</p>
+      <p style="margin:0">E in ultima istanza c'è il reset totale: il router torna vergine in trenta
+      secondi e ricominci. Non c'è niente di irreversibile.</p>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="code__bar"><span class="dot"></span>RouterOS · la rete di sicurezza, in pratica</div>
+<pre><span class="c"># ── PRIMA di ogni sessione di laboratorio ────────────────────</span>
+<span class="p">/system backup save name=</span><span class="s">prima-lab05</span>      <span class="c"># copia binaria completa</span>
+<span class="p">/export file=</span><span class="s">prima-lab05</span>                  <span class="c"># copia leggibile, per capire</span>
+
+<span class="c"># ── DURANTE: lavora sempre in Safe Mode ──────────────────────</span>
+<span class="c">#   Ctrl+X  →  compare [Safe Mode] nel prompt</span>
+<span class="c">#   se la sessione cade, RouterOS annulla tutto da solo</span>
+<span class="c">#   Ctrl+X di nuovo  →  conferma e esce dalla modalità</span>
+
+<span class="c"># ── SE HAI SBAGLIATO ─────────────────────────────────────────</span>
+<span class="p">/system backup load name=</span><span class="s">prima-lab05</span>      <span class="c"># torna indietro (riavvia)</span>
+
+<span class="c"># ── SE TI SEI PROPRIO CHIUSO FUORI ───────────────────────────</span>
+<span class="c">#   WinBox &gt; Neighbors &gt; clic sul MAC address</span>
+<span class="c">#   oppure reset fisico: tieni premuto il tasto RESET all'accensione</span>
+<span class="p">/system reset-configuration no-defaults=</span><span class="s">yes</span> <span class="p">skip-backup=</span><span class="s">yes</span>
+</pre>
+  </div>
+
+  <div class="callout tip">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+      Il trucco del guinzaglio, per le prove più rischiose
+    </div>
+    <p>Quando stai per fare qualcosa che può tagliarti fuori davvero — attivare il filtraggio VLAN,
+    cambiare l'indirizzo di gestione, riscrivere il firewall — programma in anticipo un ripristino
+    automatico che scatta tra dieci minuti. Se tutto va bene lo cancelli; se ti chiudi fuori, il router
+    si salva da solo.</p>
+    <div class="code" style="margin:12px 0 0">
+      <div class="code__bar"><span class="dot"></span>Guinzaglio a 10 minuti</div>
+<pre><span class="c"># crea il salvagente</span>
+<span class="p">/system scheduler add name=</span><span class="s">guinzaglio</span> <span class="p">interval=</span><span class="n">10m</span> <span class="p">\</span>
+<span class="p">   on-event=</span><span class="s">"/system backup load name=prima-lab05"</span>
+
+<span class="c"># ... fai le tue modifiche ...</span>
+
+<span class="c"># se è andato tutto bene, togli il guinzaglio</span>
+<span class="p">/system scheduler remove</span> <span class="s">guinzaglio</span>
+</pre>
+    </div>
+    <p style="margin-bottom:0">È la stessa tecnica che userai sui firewall dei clienti quando dovrai
+    toccare in remoto qualcosa di delicato. Imparala qui, dove non costa niente sbagliare.</p>
+  </div>
+
+  <h2 style="font-size:1.55rem;margin:48px 0 10px">Da dove comincio</h2>
+  <p style="color:var(--text-soft);max-width:70ch;margin-bottom:20px">
+    I laboratori sono in ordine e ognuno presuppone il precedente. Non serve aver finito tutte le lezioni
+    del livello: accanto a ciascuno trovi quali servono davvero.</p>
+
+  <div class="table-wrap" style="margin-bottom:30px">
+    <table>
+      <thead><tr><th>Lab</th><th>Cosa costruisci</th><th>Durata</th><th>Lezioni che servono</th></tr></thead>
+      <tbody>
+        <tr><td><b>00</b></td><td>Il banco di lavoro: accesso, password, backup, reset pulito</td><td>30 min</td><td>nessuna — <b>parti da qui</b></td></tr>
+        <tr><td><b>01</b></td><td>Leggere la rete che hai già, senza toccare niente</td><td>30 min</td><td>fino alla 1-12</td></tr>
+        <tr><td><b>02</b></td><td>Una rete completa da zero: bridge, IP, DHCP, uscita, NAT</td><td>90 min</td><td>fino alla 1-21</td></tr>
+        <tr><td><b>03</b></td><td>Provocare i sei guasti più comuni e riconoscerli</td><td>60 min</td><td>fino alla 1-21</td></tr>
+        <tr><td><b>04</b></td><td>Vedere i pacchetti veri con Wireshark</td><td>60 min</td><td>fino alla 1-24</td></tr>
+        <tr><td><b>05</b></td><td>Tre VLAN separate e il traffico controllato tra loro</td><td>120 min</td><td>2-01, 2-02, 2-03</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout lab">
+    <div class="callout__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+      La tua prima sessione: trenta minuti, stasera
+    </div>
+    <ol style="margin-bottom:0">
+      <li>Attacca il MikroTik alla corrente e collega <b>ether1</b> al router di casa.</li>
+      <li>Collega il PC a <b>ether2</b> con un cavo.</li>
+      <li>Apri WinBox (o <code>http://192.168.88.1</code> dal browser) ed entra.</li>
+      <li>Metti una password ad admin, fai un backup, e fai il <b>LAB 00</b> fino in fondo.</li>
+    </ol>
+    <p style="margin-top:10px;margin-bottom:0">Alla fine avrai un router vuoto, un backup a cui tornare
+    e la certezza di saperci rientrare comunque. Da quel momento puoi sperimentare senza paura — ed è
+    il punto di partenza di tutto il resto.</p>
   </div>
 
   <h2 style="font-size:1.5rem;margin:44px 0 8px">Come si accede al MikroTik</h2>
@@ -381,11 +496,225 @@ tcp.port == <span class="n">443</span>
 
   <!-- ===== LAB in arrivo ===== -->
   <details class="lab-card" data-lab="lab05">
-    <summary><span class="lab-n">LAB 05</span><h3>Tre VLAN separate e il traffico tra loro</h3>
-      <span class="badge lv2">Livello 2</span><span class="badge soon">in arrivo</span></summary>
+    <summary><span class="lab-n">LAB 05</span><h3>Tre VLAN separate e il traffico controllato tra loro</h3>
+      <span class="badge lv2">Livello 2</span><span class="meta" data-lab-count>0/0</span></summary>
     <div class="lab-body prose">
-      <p>Costruirai tre reti separate sullo stesso router — uffici, ospiti, telecamere — le farai parlare in modo
-      controllato e proverai che una VLAN non vede l'altra. Arriva con il capitolo 2.1.</p>
+      <div class="lab-goal"><b>Obiettivo:</b> costruire tre reti separate sullo stesso router — uffici,
+        ospiti, telecamere — dimostrare che non si vedono tra loro, e poi aprire <em>solo</em> i passaggi
+        che servono. È il laboratorio che trasforma i capitoli 2.1 e 2.2 in qualcosa che hai toccato.
+        Da fare dopo le lezioni 2-01, 2-02 e 2-03.</div>
+
+      <p>Parti dalla configurazione del <b>LAB 02</b> (bridge, DHCP, NAT funzionanti). Se l'hai persa,
+      rifai quel laboratorio: ci metti dieci minuti e serve come base.</p>
+
+      <h4>Il progetto, prima dei comandi</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>VLAN</th><th>Nome</th><th>Porta</th><th>Subnet</th><th>Deve poter…</th></tr></thead>
+          <tbody>
+            <tr><td><b>10</b></td><td>Uffici</td><td>ether2</td><td>10.10.10.0/24</td><td>tutto: Internet e le altre VLAN</td></tr>
+            <tr><td><b>20</b></td><td>Ospiti</td><td>ether3</td><td>10.10.20.0/24</td><td><b>solo Internet.</b> Niente rete interna</td></tr>
+            <tr><td><b>30</b></td><td>Telecamere</td><td>ether4</td><td>10.10.30.0/24</td><td><b>niente.</b> Rispondono solo se interrogate dagli uffici</td></tr>
+            <tr><td>—</td><td><b>Salvataggio</b></td><td>ether5</td><td>192.168.99.0/24</td><td>raggiungere sempre il router, qualunque cosa succeda</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout danger">
+        <div class="callout__head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+          Perché la porta di salvataggio viene per prima
+        </div>
+        <p>Il comando <code>vlan-filtering=yes</code> è quello che ti chiude fuori. Nell'istante in cui lo
+        lanci, il bridge inizia a filtrare i tag: se il tuo PC è su una porta che non hai ancora messo
+        correttamente nella tabella VLAN, <b>perdi il collegamento all'istante</b>.</p>
+        <p>Per questo il passo 1 è tirare <b>ether5 fuori dal bridge</b> e darle una rete tutta sua: quella
+        porta non è toccata dal filtraggio VLAN e resta raggiungibile sempre. È esattamente la stessa
+        logica della porta di gestione dedicata che troverai sui firewall dei clienti.</p>
+      </div>
+
+      <div class="lab-step"><input type="checkbox" id="l05-0"><label for="l05-0">
+        <b>Backup</b> e <b>Safe Mode</b> attivo (<kbd class="key">Ctrl</kbd>+<kbd class="key">X</kbd>).
+        Non saltare questo passo proprio in questo laboratorio.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-1"><label for="l05-1">
+        <b>Porta di salvataggio.</b> Togli ether5 dal bridge, dagli un IP e un DHCP suo. Collega il PC
+        lì e verifica di raggiungere il router su <code>192.168.99.1</code> <b>prima</b> di proseguire.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-2"><label for="l05-2">
+        <b>Tabella VLAN.</b> Dichiari quali VLAN esistono, su quali porte escono senza tag (untagged) e
+        dove viaggiano con tag. Il bridge stesso deve comparire tra i <code>tagged</code>: senza, le
+        interfacce VLAN di livello 3 non ricevono nulla.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-3"><label for="l05-3">
+        <b>PVID.</b> Dici a ogni porta in quale VLAN finisce il traffico che entra senza tag.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-4"><label for="l05-4">
+        <b>Accendi il filtraggio.</b> Questo è il momento delicato: da qui in poi le VLAN separano davvero.
+        Se perdi il collegamento, sei sulla porta di salvataggio e non è successo niente.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-5"><label for="l05-5">
+        <b>Livello 3.</b> Crei un'interfaccia VLAN per ciascuna e le dai l'indirizzo che farà da gateway.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-6"><label for="l05-6">
+        <b>Un DHCP per VLAN.</b> Ogni rete distribuisce i propri indirizzi, con il proprio gateway.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-7"><label for="l05-7">
+        <b>La prova che conta.</b> Sposta il PC da ether2 a ether3 e rinnova l'indirizzo: deve passare da
+        <code>10.10.10.x</code> a <code>10.10.20.x</code> <em>senza che tu tocchi niente sul PC</em>.
+        Quando lo vedi succedere, hai capito le VLAN.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-8"><label for="l05-8">
+        <b>Isolamento.</b> Da ether3 (ospiti): il ping a <code>8.8.8.8</code> deve funzionare, il ping a
+        <code>10.10.10.1</code> <b>no</b>. Se funzionano entrambi, le regole non stanno facendo il loro lavoro.</label></div>
+      <div class="lab-step"><input type="checkbox" id="l05-9"><label for="l05-9">
+        <b>Rompilo di proposito</b> (sezione in fondo) e guarda cosa cambia.</label></div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>PASSO 1 · La porta di salvataggio — fai questo per primo</div>
+<pre><span class="c"># ether5 esce dal bridge: non sarà toccata dal filtraggio VLAN</span>
+<span class="p">/interface bridge port remove [find interface=</span><span class="s">ether5</span><span class="p">]</span>
+<span class="p">/ip address add address=</span><span class="n">192.168.99.1/24</span> <span class="p">interface=</span><span class="s">ether5</span>
+<span class="p">/ip pool add name=</span><span class="s">pool-salv</span> <span class="p">ranges=</span><span class="n">192.168.99.100-192.168.99.110</span>
+<span class="p">/ip dhcp-server add name=</span><span class="s">dhcp-salv</span> <span class="p">interface=</span><span class="s">ether5</span> <span class="p">\</span>
+<span class="p">    address-pool=</span><span class="s">pool-salv</span> <span class="p">disabled=</span><span class="s">no</span>
+<span class="p">/ip dhcp-server network add address=</span><span class="n">192.168.99.0/24</span> <span class="p">gateway=</span><span class="n">192.168.99.1</span>
+
+<span class="c"># ADESSO collega il PC a ether5 e verifica:</span>
+<span class="c">#   ipconfig  →  deve dare 192.168.99.x</span>
+<span class="c">#   ping 192.168.99.1  →  deve rispondere</span>
+<span class="c"># Solo se funziona, vai avanti.</span>
+</pre>
+      </div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>PASSI 2-4 · Tabella VLAN, PVID e filtraggio</div>
+<pre><span class="c"># quali VLAN esistono, dove escono pulite e dove viaggiano etichettate</span>
+<span class="c"># NOTA: br-lan tra i tagged è OBBLIGATORIO, o il livello 3 non vede niente</span>
+<span class="p">/interface bridge vlan</span>
+<span class="p">add bridge=</span><span class="s">br-lan</span> <span class="p">vlan-ids=</span><span class="n">10</span> <span class="p">untagged=</span><span class="s">ether2</span> <span class="p">tagged=</span><span class="s">br-lan</span>
+<span class="p">add bridge=</span><span class="s">br-lan</span> <span class="p">vlan-ids=</span><span class="n">20</span> <span class="p">untagged=</span><span class="s">ether3</span> <span class="p">tagged=</span><span class="s">br-lan</span>
+<span class="p">add bridge=</span><span class="s">br-lan</span> <span class="p">vlan-ids=</span><span class="n">30</span> <span class="p">untagged=</span><span class="s">ether4</span> <span class="p">tagged=</span><span class="s">br-lan</span>
+
+<span class="c"># in quale VLAN finisce ciò che entra senza tag da ogni porta</span>
+<span class="p">/interface bridge port</span>
+<span class="p">set [find interface=</span><span class="s">ether2</span><span class="p">] pvid=</span><span class="n">10</span>
+<span class="p">set [find interface=</span><span class="s">ether3</span><span class="p">] pvid=</span><span class="n">20</span>
+<span class="p">set [find interface=</span><span class="s">ether4</span><span class="p">] pvid=</span><span class="n">30</span>
+
+<span class="c"># ⚠ IL MOMENTO DELICATO: da qui le VLAN separano davvero</span>
+<span class="p">/interface bridge set br-lan vlan-filtering=</span><span class="s">yes</span>
+</pre>
+      </div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>PASSI 5-6 · Gateway e DHCP per ogni VLAN</div>
+<pre><span class="c"># un'interfaccia di livello 3 per ogni VLAN</span>
+<span class="p">/interface vlan</span>
+<span class="p">add name=</span><span class="s">v10-uffici</span>  <span class="p">vlan-id=</span><span class="n">10</span> <span class="p">interface=</span><span class="s">br-lan</span>
+<span class="p">add name=</span><span class="s">v20-ospiti</span>  <span class="p">vlan-id=</span><span class="n">20</span> <span class="p">interface=</span><span class="s">br-lan</span>
+<span class="p">add name=</span><span class="s">v30-telec</span>   <span class="p">vlan-id=</span><span class="n">30</span> <span class="p">interface=</span><span class="s">br-lan</span>
+
+<span class="c"># l'indirizzo del router in ogni rete = il gateway di quella VLAN</span>
+<span class="p">/ip address</span>
+<span class="p">add address=</span><span class="n">10.10.10.1/24</span> <span class="p">interface=</span><span class="s">v10-uffici</span>
+<span class="p">add address=</span><span class="n">10.10.20.1/24</span> <span class="p">interface=</span><span class="s">v20-ospiti</span>
+<span class="p">add address=</span><span class="n">10.10.30.1/24</span> <span class="p">interface=</span><span class="s">v30-telec</span>
+
+<span class="c"># tre distributori di indirizzi indipendenti</span>
+<span class="p">/ip pool</span>
+<span class="p">add name=</span><span class="s">p10</span> <span class="p">ranges=</span><span class="n">10.10.10.100-10.10.10.200</span>
+<span class="p">add name=</span><span class="s">p20</span> <span class="p">ranges=</span><span class="n">10.10.20.100-10.10.20.200</span>
+<span class="p">add name=</span><span class="s">p30</span> <span class="p">ranges=</span><span class="n">10.10.30.100-10.10.30.200</span>
+
+<span class="p">/ip dhcp-server</span>
+<span class="p">add name=</span><span class="s">d10</span> <span class="p">interface=</span><span class="s">v10-uffici</span> <span class="p">address-pool=</span><span class="s">p10</span> <span class="p">disabled=</span><span class="s">no</span>
+<span class="p">add name=</span><span class="s">d20</span> <span class="p">interface=</span><span class="s">v20-ospiti</span> <span class="p">address-pool=</span><span class="s">p20</span> <span class="p">disabled=</span><span class="s">no</span>
+<span class="p">add name=</span><span class="s">d30</span> <span class="p">interface=</span><span class="s">v30-telec</span>  <span class="p">address-pool=</span><span class="s">p30</span> <span class="p">disabled=</span><span class="s">no</span>
+
+<span class="p">/ip dhcp-server network</span>
+<span class="p">add address=</span><span class="n">10.10.10.0/24</span> <span class="p">gateway=</span><span class="n">10.10.10.1</span> <span class="p">dns-server=</span><span class="n">10.10.10.1</span>
+<span class="p">add address=</span><span class="n">10.10.20.0/24</span> <span class="p">gateway=</span><span class="n">10.10.20.1</span> <span class="p">dns-server=</span><span class="n">1.1.1.1</span>
+<span class="p">add address=</span><span class="n">10.10.30.0/24</span> <span class="p">gateway=</span><span class="n">10.10.30.1</span> <span class="p">dns-server=</span><span class="n">10.10.30.1</span>
+</pre>
+      </div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>PASSO 8 · Le regole che fanno valere la separazione</div>
+<pre><span class="c"># Senza queste righe le VLAN esistono ma il router le fa parlare tutte.</span>
+<span class="c"># Ricorda la lezione 2-01: la VLAN crea il confine, le regole lo fanno valere.</span>
+<span class="p">/ip firewall filter</span>
+
+<span class="c"># 1. il traffico di ritorno passa sempre (firewall stateful)</span>
+<span class="p">add chain=</span><span class="s">forward</span> <span class="p">connection-state=</span><span class="s">established,related</span> <span class="p">action=</span><span class="s">accept</span> <span class="p">\</span>
+<span class="p">    comment=</span><span class="s">"risposte alle conversazioni gia aperte"</span>
+
+<span class="c"># 2. OSPITI: possono uscire su Internet...</span>
+<span class="p">add chain=</span><span class="s">forward</span> <span class="p">in-interface=</span><span class="s">v20-ospiti</span> <span class="p">out-interface=</span><span class="s">ether1</span> <span class="p">\</span>
+<span class="p">    action=</span><span class="s">accept</span> <span class="p">comment=</span><span class="s">"ospiti verso Internet: si"</span>
+<span class="c">#    ...e nient'altro</span>
+<span class="p">add chain=</span><span class="s">forward</span> <span class="p">in-interface=</span><span class="s">v20-ospiti</span> <span class="p">action=</span><span class="s">drop</span> <span class="p">\</span>
+<span class="p">    comment=</span><span class="s">"ospiti verso la rete interna: no"</span>
+
+<span class="c"># 3. TELECAMERE: non iniziano niente, ne verso Internet ne verso le altre VLAN</span>
+<span class="c">#    (rispondono comunque, grazie alla regola 1)</span>
+<span class="p">add chain=</span><span class="s">forward</span> <span class="p">in-interface=</span><span class="s">v30-telec</span> <span class="p">action=</span><span class="s">drop</span> <span class="p">\</span>
+<span class="p">    comment=</span><span class="s">"telecamere: parlano solo se interrogate"</span>
+
+<span class="c"># 4. UFFICI: possono tutto (in un cliente vero si stringerebbe)</span>
+<span class="p">add chain=</span><span class="s">forward</span> <span class="p">in-interface=</span><span class="s">v10-uffici</span> <span class="p">action=</span><span class="s">accept</span> <span class="p">\</span>
+<span class="p">    comment=</span><span class="s">"uffici: liberi"</span>
+
+<span class="c"># 5. tutto il resto si butta. Questa riga va SEMPRE per ultima.</span>
+<span class="p">add chain=</span><span class="s">forward</span> <span class="p">action=</span><span class="s">drop</span> <span class="p">comment=</span><span class="s">"chiusura: nega tutto il resto"</span>
+</pre>
+      </div>
+
+      <div class="code">
+        <div class="code__bar"><span class="dot"></span>VERIFICHE · cosa guardare</div>
+<pre><span class="p">/interface bridge vlan print</span>       <span class="c"># la tabella VLAN: tagged e untagged</span>
+<span class="p">/interface bridge port print</span>       <span class="c"># i PVID di ogni porta</span>
+<span class="p">/ip address print</span>                  <span class="c"># i tre gateway</span>
+<span class="p">/ip dhcp-server lease print</span>        <span class="c"># chi ha preso quale indirizzo e in quale rete</span>
+<span class="p">/ip firewall filter print stats</span>   <span class="c"># QUANTI pacchetti ha bloccato ogni regola</span>
+</pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout__head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+          Il comando che ti farà fare bella figura per anni
+        </div>
+        <p><code>/ip firewall filter print stats</code> mostra <b>quanti pacchetti ha intercettato ogni
+        regola</b>. Da lì vedi in un colpo d'occhio se una regola sta lavorando o è morta perché ce n'è
+        un'altra prima che la copre.</p>
+        <p style="margin-bottom:0">È lo stesso ragionamento che userai sui FortiGate e sui Sophos: una
+        regola con zero contatori o è inutile, o è irraggiungibile — e la seconda ipotesi è quella che
+        causa i guasti più difficili da spiegare.</p>
+      </div>
+
+      <h4>Rompilo di proposito</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Guasto da provocare</th><th>Comando</th><th>Cosa deve succedere</th></tr></thead>
+          <tbody>
+            <tr><td><b>Filtraggio VLAN spento</b></td><td><code>/interface bridge set br-lan vlan-filtering=no</code></td>
+                <td>Le VLAN smettono di separare: tutto torna piatto. <b>La configurazione sembra ancora giusta.</b> È l'errore MikroTik per eccellenza.</td></tr>
+            <tr><td><b>Bridge tolto dai tagged</b></td><td>rimuovi <code>br-lan</code> dai tagged della VLAN 10</td>
+                <td>I PC di ether2 prendono ancora l'indirizzo? No: il livello 3 non riceve più i frame. Sintomo: APIPA solo su una VLAN.</td></tr>
+            <tr><td><b>PVID sbagliato</b></td><td><code>set [find interface=ether2] pvid=20</code></td>
+                <td>Un PC di ether2 finisce nella rete ospiti. Nessun errore: solo l'indirizzo sbagliato.</td></tr>
+            <tr><td><b>Regola di chiusura in cima</b></td><td>sposta la regola <code>drop</code> finale al primo posto</td>
+                <td>Non funziona più niente. Dimostra che <b>nel firewall l'ordine è tutto</b>.</td></tr>
+            <tr><td><b>DHCP senza relay</b></td><td>disabilita <code>d30</code></td>
+                <td>Le telecamere prendono 169.254.x.x: il broadcast non attraversa la VLAN. È la lezione 1-19 che torna.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout lab">
+        <div class="callout__head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+          La prova finale
+        </div>
+        <p>Spiega a voce alta, guardando la tua configurazione, <b>che strada fa un pacchetto</b> che parte
+        da un PC in ether3 e va a <code>8.8.8.8</code>: quale PVID gli viene assegnato, su quale interfaccia
+        di livello 3 arriva, quale regola del firewall lo autorizza, dove gli viene fatto il NAT.</p>
+        <p style="margin-bottom:0">Se riesci a raccontarlo senza inceppi, il capitolo 2.1 è tuo — e hai
+        appena descritto l'architettura di rete di metà delle aziende italiane.</p>
+      </div>
     </div>
   </details>
 

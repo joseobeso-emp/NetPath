@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inter-VLAN routing: router-on-a-stick e SVI — NetPath</title>
+<meta name="description" content="Come far parlare due VLAN, con le tre architetture che incontri sul campo e i criteri per scegliere.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-03">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Segmentare la rete</span>
+      </nav>
+      <h1 class="lesson-title">Inter-VLAN routing: router-on-a-stick e SVI</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 03</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire perché due VLAN non si parlano e cosa serve per farlo</li>
+        <li>Distinguere le tre architetture di routing tra VLAN e i loro compromessi</li>
+        <li>Scegliere l'architettura giusta in base alle dimensioni e alle esigenze del cliente</li>
+        <li>Riconoscere il collo di bottiglia prima che diventi un problema</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Hai separato la rete in VLAN. Adesso il PC dell'ufficio non raggiunge più il server,
+perché sono in VLAN diverse — ed è esattamente ciò che volevi. Il passo successivo è ricollegarli
+<em>in modo controllato</em>. Qui si decide l'architettura della rete, ed è una decisione che il cliente
+si porta dietro per anni.</p>
+
+<h2>Perché serve il livello 3</h2>
+
+<p>Due VLAN sono due domini di broadcast, e quindi due <strong>subnet IP diverse</strong>. Quando un PC
+della VLAN 10 (<code>10.10.10.50</code>) vuole raggiungere un server della VLAN 50
+(<code>10.10.50.20</code>), applica la maschera, scopre che la destinazione è remota e manda il pacchetto
+al <strong>proprio gateway</strong>.</p>
+
+<p>Quel gateway deve essere un apparato che: ha un piede in entrambe le VLAN, sa instradare (livello 3),
+e possibilmente sa anche decidere cosa permettere. Le architetture possibili sono tre.</p>
+
+<h2>Architettura 1 — Router on a stick</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 260" role="img" aria-label="Router on a stick: un solo cavo trunk tra switch e router, con sottointerfacce per ogni VLAN">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Un cavo solo, molte sottointerfacce</text>
+
+    <rect x="270" y="38" width="160" height="56" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.8"/>
+    <text x="350" y="60" text-anchor="middle" class="dg-label-sm">ROUTER / FIREWALL</text>
+    <text x="350" y="80" text-anchor="middle" class="dg-mono-sm">.10.1 · .20.1 · .50.1</text>
+
+    <line x1="350" y1="94" x2="350" y2="128" stroke="var(--dg-3)" stroke-width="9" stroke-linecap="round"/>
+    <text x="404" y="116" class="dg-mono-sm">trunk 802.1Q</text>
+
+    <rect x="230" y="128" width="240" height="38" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="350" y="152" text-anchor="middle" class="dg-label-sm">SWITCH (solo livello 2)</text>
+
+    <g stroke-width="1.4">
+      <rect x="60"  y="200" width="140" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="280" y="200" width="140" height="40" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="500" y="200" width="140" height="40" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <text x="130" y="218" text-anchor="middle" class="dg-mono-sm">VLAN 10</text>
+    <text x="130" y="233" text-anchor="middle" class="dg-mono-sm">10.10.10.0/24</text>
+    <text x="350" y="218" text-anchor="middle" class="dg-mono-sm">VLAN 50</text>
+    <text x="350" y="233" text-anchor="middle" class="dg-mono-sm">10.10.50.0/24</text>
+    <text x="570" y="218" text-anchor="middle" class="dg-mono-sm">VLAN 20</text>
+    <text x="570" y="233" text-anchor="middle" class="dg-mono-sm">10.10.20.0/24</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.4" fill="none">
+      <path d="M130 200v-16h120v-18"/><path d="M350 200v-34"/><path d="M570 200v-16H450v-18"/>
+    </g>
+    <path d="M130 190 L 340 100" stroke="var(--dg-3)" stroke-width="1.2" stroke-dasharray="4 3" fill="none"/>
+    <path d="M360 100 L 350 190" stroke="var(--dg-3)" stroke-width="1.2" stroke-dasharray="4 3" fill="none"/>
+    <text x="196" y="182" class="dg-mono-sm" fill="var(--dg-3)">tutto il traffico tra VLAN sale e riscende dallo stesso cavo</text>
+  </svg>
+  </div>
+  <figcaption>Il router ha <b>una sola porta fisica</b> divisa in sottointerfacce, una per VLAN, ognuna
+  con il proprio indirizzo che fa da gateway. Lo switch resta un semplice apparato di livello 2.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Pro</th><th>Contro</th></tr></thead>
+    <tbody>
+      <tr><td>Costa zero: usi il firewall che hai già</td><td><b>Tutto il traffico tra VLAN passa da un solo cavo</b>, e lo attraversa due volte</td></tr>
+      <tr><td>Tutte le regole in un punto solo, facili da leggere</td><td>Quel cavo diventa il collo di bottiglia</td></tr>
+      <tr><td>Ogni pacchetto tra VLAN passa dal firewall, quindi è ispezionabile</td><td>Il firewall lavora anche sul traffico interno, consumando CPU e licenze</td></tr>
+      <tr><td>Semplicissimo da capire e documentare</td><td>Se il firewall si ferma, le VLAN smettono di parlarsi tra loro</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p><b>Quando usarla:</b> fino a circa 100-150 utenti, quando il traffico tra VLAN è modesto (navigazione,
+posta, gestionale leggero) e si vuole che tutto sia ispezionato dal firewall. <strong>È l'architettura
+più diffusa nelle PMI italiane</strong>, ed è quasi sempre la scelta giusta per i tuoi clienti tipici.</p>
+
+<h2>Architettura 2 — Switch di livello 3 con SVI</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 260" role="img" aria-label="Switch layer 3 con interfacce virtuali SVI che instrada localmente tra le VLAN">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Il routing avviene dentro lo switch, a velocità di commutazione</text>
+
+    <rect x="500" y="38" width="170" height="52" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.6"/>
+    <text x="585" y="60" text-anchor="middle" class="dg-label-sm">FIREWALL</text>
+    <text x="585" y="78" text-anchor="middle" class="dg-mono-sm">solo verso Internet</text>
+
+    <rect x="120" y="98" width="340" height="52" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2"/>
+    <text x="290" y="120" text-anchor="middle" class="dg-label-sm">SWITCH DI LIVELLO 3</text>
+    <text x="290" y="138" text-anchor="middle" class="dg-mono-sm">SVI: .10.1 · .20.1 · .50.1 — instrada da solo</text>
+
+    <path d="M460 122h34v-40h6" stroke="var(--dg-line)" stroke-width="1.8" fill="none"/>
+    <text x="470" y="164" class="dg-mono-sm">rotta di default</text>
+
+    <g stroke-width="1.4">
+      <rect x="40"  y="196" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="224" y="196" width="130" height="40" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="408" y="196" width="130" height="40" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <text x="105" y="221" text-anchor="middle" class="dg-mono-sm">VLAN 10</text>
+    <text x="289" y="221" text-anchor="middle" class="dg-mono-sm">VLAN 50</text>
+    <text x="473" y="221" text-anchor="middle" class="dg-mono-sm">VLAN 20</text>
+    <g stroke="var(--dg-line)" stroke-width="1.4" fill="none">
+      <path d="M105 196v-24h80v-22"/><path d="M289 196v-46"/><path d="M473 196v-24h-80v-22"/>
+    </g>
+    <path d="M150 176 q 140 -40 120 0" stroke="var(--dg-5)" stroke-width="1.8" fill="none" marker-end="url(#svA)"/>
+    <defs><marker id="svA" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+      <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-5)"/></marker></defs>
+    <text x="210" y="186" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-5)">traffico tra VLAN: non esce dallo switch</text>
+  </svg>
+  </div>
+  <figcaption>Lo switch ha un'interfaccia virtuale (<b>SVI</b>, Switched Virtual Interface) per ogni VLAN
+  e instrada il traffico interno per conto proprio, a velocità piena e senza uscire. Al firewall arriva
+  solo ciò che è diretto a Internet o alle altre sedi.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Pro</th><th>Contro</th></tr></thead>
+    <tbody>
+      <tr><td><b>Velocissimo:</b> il routing avviene in hardware, a velocità di commutazione</td><td>Costa: serve uno switch L3</td></tr>
+      <tr><td>Nessun collo di bottiglia: niente traffico interno sul firewall</td><td><b>Il traffico tra VLAN non passa dal firewall, quindi non viene ispezionato</b></td></tr>
+      <tr><td>Il firewall resta libero per il suo mestiere vero</td><td>Le regole si sdoppiano: ACL sullo switch + policy sul firewall. Più difficile da documentare</td></tr>
+      <tr><td>Continua a funzionare anche se il firewall è in manutenzione</td><td>Serve competenza in più, e attenzione a non lasciare buchi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p><b>Quando usarla:</b> oltre i 150-200 utenti, con molto traffico interno (server di file, database,
+backup, videosorveglianza verso l'NVR). Nelle reti con più armadi è praticamente obbligatoria.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il compromesso che devi dichiarare al cliente
+  </div>
+  <p>Con lo switch L3, il traffico tra le VLAN <b>non attraversa più il firewall</b>. Significa che
+  antivirus di rete, IPS e controllo applicativo <b>non vedono più il traffico interno</b>: se un PC
+  infetto attacca un server, il firewall non se ne accorge nemmeno.</p>
+  <p>Non è né giusto né sbagliato: è un compromesso tra prestazioni e visibilità, e va scelto
+  consapevolmente. La soluzione ibrida che si usa spesso: <b>far instradare allo switch L3 solo le VLAN
+  che si fidano tra loro</b> (uffici ↔ server, uffici ↔ stampanti) e far passare dal firewall quelle
+  delicate (ospiti, telecamere, IoT). Il meglio dei due mondi, e fa una figura ottima in un documento
+  di progetto.</p>
+</div>
+
+<h2>Architettura 3 — Firewall con una porta per VLAN</h2>
+
+<p>Il firewall ha una porta fisica dedicata a ogni VLAN, senza trunk. È la più semplice da capire,
+ma si scontra subito con il numero di porte disponibili: un firewall da PMI ne ha 5-8, e le VLAN
+diventano presto di più.</p>
+
+<p><b>Quando ha senso:</b> per isolare fisicamente qualcosa di davvero critico — una DMZ, una rete
+industriale, un laboratorio — dove vuoi la certezza che nessun errore di configurazione possa far
+passare traffico dove non deve. La separazione fisica non si sbaglia.</p>
+
+<h2>Il confronto, per decidere</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Router on a stick</th><th>Switch L3</th><th>Porta dedicata</th></tr></thead>
+    <tbody>
+      <tr><td><b>Costo</b></td><td>zero</td><td>medio-alto</td><td>zero (ma porte finite)</td></tr>
+      <tr><td><b>Prestazioni interne</b></td><td>limitate dal firewall</td><td>massime</td><td>limitate dal firewall</td></tr>
+      <tr><td><b>Ispezione del traffico interno</b></td><td>completa</td><td>assente</td><td>completa</td></tr>
+      <tr><td><b>Complessità</b></td><td>bassa</td><td>media</td><td>bassissima</td></tr>
+      <tr><td><b>Dimensione tipica</b></td><td>fino a ~150 utenti</td><td>oltre 150, o molto traffico interno</td><td>poche VLAN critiche</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la portineria
+  </div>
+  <p>Torniamo al capannone con i tramezzi. Come fai passare le persone da una stanza all'altra?</p>
+  <p><b>Router on a stick</b> = c'è <em>un solo corridoio</em> che porta a una portineria centrale.
+  Chiunque voglia andare da una stanza all'altra deve uscire, percorrere il corridoio, farsi controllare
+  dal portiere e tornare indietro. Sicurissimo — il portiere vede tutti — ma se passano in cinquecento
+  insieme, il corridoio si intasa.</p>
+  <p><b>Switch L3</b> = hai aperto <em>porte dirette</em> tra le stanze. Velocissimo, nessuna coda.
+  Ma il portiere non vede più chi passa da una stanza all'altra: controlla solo chi esce dall'edificio.</p>
+  <p><b>Porta dedicata</b> = una stanza ha un <em>ingresso tutto suo</em> con la sua guardia. Costoso in
+  ingressi, ma per il caveau della banca è esattamente quello che vuoi.</p>
+</div>
+
+<h2>Come si configura, in pratica</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Router on a stick · i tre apparati</div>
+<pre><span class="c">═══ FORTIGATE — sottointerfacce VLAN su port2 ══════════</span>
+<span class="p">config system interface</span>
+  <span class="p">edit</span> <span class="s">"v10-uffici"</span>
+    <span class="p">set interface</span> <span class="s">"port2"</span>
+    <span class="p">set vlanid</span> <span class="n">10</span>
+    <span class="p">set ip</span> <span class="n">10.10.10.1 255.255.255.0</span>
+    <span class="p">set allowaccess</span> <span class="s">ping</span>
+  <span class="p">next</span>
+  <span class="p">edit</span> <span class="s">"v50-server"</span>
+    <span class="p">set interface</span> <span class="s">"port2"</span>
+    <span class="p">set vlanid</span> <span class="n">50</span>
+    <span class="p">set ip</span> <span class="n">10.10.50.1 255.255.255.0</span>
+<span class="c"># poi SERVONO le policy: senza, le VLAN non si parlano</span>
+
+<span class="c">═══ MIKROTIK — interfacce VLAN sul bridge ══════════════</span>
+<span class="p">/interface vlan add name=</span><span class="s">v10</span> <span class="p">vlan-id=</span><span class="n">10</span> <span class="p">interface=</span><span class="s">br-lan</span>
+<span class="p">/interface vlan add name=</span><span class="s">v50</span> <span class="p">vlan-id=</span><span class="n">50</span> <span class="p">interface=</span><span class="s">br-lan</span>
+<span class="p">/ip address add address=</span><span class="n">10.10.10.1/24</span> <span class="p">interface=</span><span class="s">v10</span>
+<span class="p">/ip address add address=</span><span class="n">10.10.50.1/24</span> <span class="p">interface=</span><span class="s">v50</span>
+
+<span class="c">═══ CISCO L3 — interfacce SVI ══════════════════════════</span>
+<span class="p">ip routing</span>                      <span class="c"># senza questo non instrada!</span>
+<span class="p">interface vlan</span> <span class="n">10</span>
+ <span class="p">ip address</span> <span class="n">10.10.10.1 255.255.255.0</span>
+<span class="p">interface vlan</span> <span class="n">50</span>
+ <span class="p">ip address</span> <span class="n">10.10.50.1 255.255.255.0</span>
+<span class="p">ip route</span> <span class="n">0.0.0.0 0.0.0.0 10.10.99.254</span>   <span class="c"># default verso il firewall</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Non dimenticare la strada del ritorno
+  </div>
+  <p>Con lo switch L3, il firewall deve sapere che le reti interne si raggiungono <b>tramite lo
+  switch</b>, altrimenti le risposte non tornano indietro. Serve una rotta statica sul firewall:</p>
+  <p><code>10.10.0.0/16 → 10.10.99.1</code> (l'indirizzo dello switch L3)</p>
+  <p>Dimenticarla produce il sintomo classico: <b>il traffico va ma non torna</b>. Da dentro esci su
+  Internet (perché c'è il NAT che ricorda la sessione), ma le VPN e i servizi pubblicati non funzionano.
+  È una delle prime cose da verificare in questa architettura.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: routing tra VLAN",
+  "questions": [
+    { "q": "Perché due dispositivi in VLAN diverse non si parlano da soli?",
+      "a": [ {"t":"Sono in subnet diverse e serve un apparato di livello 3 che instradi tra loro","ok":true},
+             {"t":"Perché il traffico è cifrato in modo diverso","ok":false},
+             {"t":"Perché le porte dello switch sono elettricamente isolate","ok":false},
+             {"t":"Perché il DHCP assegna indirizzi incompatibili","ok":false} ],
+      "e": "Ogni VLAN è un dominio di broadcast e quindi una subnet distinta. Il dispositivo applica la maschera, scopre che la destinazione è remota e la manda al gateway: se non c'è nessuno che instrada tra le due subnet, il traffico si ferma lì. Fisicamente lo switch è lo stesso, ed è proprio questo il punto." },
+
+    { "q": "Nel router on a stick, qual è il limite principale?",
+      "a": [ {"t":"Tutto il traffico tra VLAN attraversa lo stesso cavo due volte, che diventa il collo di bottiglia","ok":true},
+             {"t":"Non si possono avere più di quattro VLAN","ok":false},
+             {"t":"Il firewall non riesce a ispezionare il traffico interno","ok":false},
+             {"t":"Serve uno switch di livello 3","ok":false} ],
+      "e": "Il traffico sale al router e riscende dallo stesso cavo, quindi quel collegamento porta il doppio del traffico tra VLAN. L'ispezione completa è invece il suo <b>vantaggio</b>: è lo switch L3 a perderla. Non ci sono limiti particolari al numero di VLAN." },
+
+    { "q": "Un cliente con 250 utenti ha molto traffico verso i server interni e verso l'NVR delle telecamere. Cosa proponi?",
+      "a": [ {"t":"Switch di livello 3, eventualmente lasciando al firewall le VLAN più delicate","ok":true},
+             {"t":"Router on a stick, che costa meno","ok":false},
+             {"t":"Una porta dedicata del firewall per ogni VLAN","ok":false},
+             {"t":"Eliminare le VLAN per evitare il routing","ok":false} ],
+      "e": "Con quel volume di traffico interno il router on a stick satura il collegamento e il firewall. Lo switch L3 instrada in hardware senza colli di bottiglia. La soluzione migliore è ibrida: routing locale per le VLAN che si fidano (uffici ↔ server), passaggio dal firewall per ospiti, telecamere e IoT. Le porte dedicate non bastano numericamente." },
+
+    { "q": "Quale compromesso introduce lo switch di livello 3?",
+      "a": [ {"t":"Il traffico tra VLAN non passa più dal firewall e quindi non viene ispezionato","ok":true},
+             {"t":"Le VLAN smettono di essere separate","ok":false},
+             {"t":"Il DHCP non funziona più","ok":false},
+             {"t":"Si perde la connettività verso Internet","ok":false} ],
+      "e": "Le VLAN restano perfettamente separate e tutto continua a funzionare, ma antivirus di rete, IPS e controllo applicativo non vedono più il traffico interno: un PC infetto che attacca un server passa inosservato. È un compromesso legittimo tra prestazioni e visibilità, che però va dichiarato al cliente, non subito." },
+
+    { "q": "Hai messo uno switch L3 che instrada le VLAN interne. Da dentro si naviga, ma i servizi pubblicati e le VPN non funzionano. Cosa manca?",
+      "a": [ {"t":"La rotta statica sul firewall verso le reti interne, tramite lo switch L3","ok":true},
+             {"t":"Il DHCP relay","ok":false},
+             {"t":"Il filtraggio VLAN sullo switch","ok":false},
+             {"t":"Un secondo indirizzo pubblico","ok":false} ],
+      "e": "Il firewall conosce solo la rete a cui è direttamente collegato: non sa che 10.10.10.0/24 e 10.10.50.0/24 si raggiungono passando dallo switch L3. La navigazione funziona lo stesso perché il NAT tiene traccia delle sessioni iniziate dall'interno, ma il traffico che <b>inizia</b> dall'esterno non sa come tornare. Serve <code>10.10.0.0/16 → indirizzo dello switch L3</code>." },
+
+    { "q": "In quale caso ha senso dedicare una porta fisica del firewall a una sola VLAN?",
+      "a": [ {"t":"Per isolare qualcosa di davvero critico, dove la separazione fisica non può essere sbagliata","ok":true},
+             {"t":"Sempre: è l'architettura migliore in assoluto","ok":false},
+             {"t":"Quando ci sono più di venti VLAN","ok":false},
+             {"t":"Quando il cliente non ha switch gestiti","ok":false} ],
+      "e": "La separazione fisica non dipende da una configurazione che si può sbagliare, quindi è adatta a DMZ, reti industriali o laboratori. Ma un firewall da PMI ha 5-8 porte: con venti VLAN è impraticabile, ed è proprio il caso in cui servono i trunk." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

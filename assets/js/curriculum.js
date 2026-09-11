@@ -59,9 +59,9 @@ window.NETPATH_CURRICULUM = [
   hours: "90–120 ore",
   chapters: [
     { title: "Segmentare la rete", lessons: [
-      { id:"l2-01", t:"VLAN: perché dividere è la prima difesa", s:"Da una rete piatta a una rete progettata. Il concetto, non i comandi.", m:24, ready:false },
-      { id:"l2-02", t:"802.1Q, trunk e native VLAN", s:"Il tag da 4 byte che cambia tutto, e l'errore di native VLAN che fa impazzire i tecnici.", m:26, ready:false },
-      { id:"l2-03", t:"Inter-VLAN routing: router-on-a-stick e SVI", s:"Come far parlare due VLAN, con le tre architetture che incontri sul campo.", m:26, ready:false },
+      { id:"l2-01", t:"VLAN: perché dividere è la prima difesa", s:"Da una rete piatta a una rete progettata. Il concetto, non i comandi.", m:24, ready:true },
+      { id:"l2-02", t:"802.1Q, trunk e native VLAN", s:"Il tag da 4 byte che cambia tutto, e l'errore di native VLAN che fa impazzire i tecnici.", m:26, ready:true },
+      { id:"l2-03", t:"Inter-VLAN routing: router-on-a-stick e SVI", s:"Come far parlare due VLAN, con le tre architetture che incontri sul campo.", m:26, ready:true },
       { id:"l2-04", t:"Progettare uno schema VLAN per un cliente", s:"Dallo studio del cliente alla tabella VLAN/subnet/nome. Con template riutilizzabile.", m:24, ready:false }
     ]},
     { title: "Resilienza di livello 2", lessons: [

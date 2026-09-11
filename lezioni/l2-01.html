@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VLAN: perché dividere è la prima difesa — NetPath</title>
+<meta name="description" content="Da una rete piatta a una rete progettata. Il concetto prima dei comandi, e lo schema VLAN standard per un'azienda.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-01">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Segmentare la rete</span>
+      </nav>
+      <h1 class="lesson-title">VLAN: perché dividere è la prima difesa</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 01</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Spiegare cos'è una VLAN a un cliente in trenta secondi</li>
+        <li>Capire cosa una VLAN separa davvero e cosa invece non separa</li>
+        <li>Proporre uno schema VLAN sensato per un'azienda tipo</li>
+        <li>Evitare i tre errori che si fanno alla prima VLAN della propria vita</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Nella lezione 1-11 hai capito da solo il problema: uno switch non divide i domini di
+broadcast, quindi una rete piatta grande si soffoca da sola e non ha nessuna separazione interna.
+La VLAN è la risposta. È lo strumento più importante del livello 2 di questo percorso, e probabilmente
+la cosa che più spesso ti chiederanno di progettare.</p>
+
+<h2>Che cos'è una VLAN</h2>
+
+<p>Una <span class="term" data-term="vlan">VLAN</span> è una rete separata <strong>disegnata via
+software dentro gli stessi switch fisici</strong>. Assegni ogni porta a un numero — la VLAN 10, la
+VLAN 20 — e da quel momento lo switch tratta quei gruppi come se fossero <em>switch diversi</em>, che
+non si parlano.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 330" role="img" aria-label="Uno switch fisico diviso in tre switch logici tramite VLAN">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Uno switch fisico → tre switch logici</text>
+
+    <!-- prima -->
+    <text x="16" y="52" class="dg-mono-sm">PRIMA</text>
+    <rect x="90" y="36" width="580" height="34" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="380" y="58" text-anchor="middle" class="dg-mono-sm">un solo dominio di broadcast — tutti sentono tutti</text>
+    <g fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.2">
+      <rect x="104" y="80" width="72" height="24" rx="4"/><rect x="188" y="80" width="72" height="24" rx="4"/>
+      <rect x="272" y="80" width="72" height="24" rx="4"/><rect x="356" y="80" width="72" height="24" rx="4"/>
+      <rect x="440" y="80" width="72" height="24" rx="4"/><rect x="524" y="80" width="72" height="24" rx="4"/>
+      <rect x="608" y="80" width="56" height="24" rx="4"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle" font-size="9">
+      <text x="140" y="96">PC</text><text x="224" y="96">PC</text><text x="308" y="96">telef.</text>
+      <text x="392" y="96">telec.</text><text x="476" y="96">ospite</text><text x="560" y="96">stampante</text><text x="636" y="96">NAS</text>
+    </g>
+
+    <!-- dopo -->
+    <text x="16" y="162" class="dg-mono-sm">DOPO</text>
+    <rect x="90" y="128" width="580" height="26" rx="6" fill="var(--dg-line-soft)" stroke="var(--dg-line)" stroke-width="1.2" opacity=".5"/>
+    <text x="380" y="146" text-anchor="middle" class="dg-mono-sm">lo stesso switch, fisicamente identico</text>
+
+    <g stroke-width="1.6">
+      <rect x="90"  y="176" width="180" height="80" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="284" y="176" width="180" height="80" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="478" y="176" width="192" height="80" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <text x="180" y="196" text-anchor="middle" class="dg-label-sm">VLAN 10 · Uffici</text>
+    <text x="374" y="196" text-anchor="middle" class="dg-label-sm">VLAN 30 · Telecamere</text>
+    <text x="574" y="196" text-anchor="middle" class="dg-label-sm">VLAN 20 · Ospiti</text>
+    <g fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.1">
+      <rect x="104" y="212" width="66" height="24" rx="4"/><rect x="182" y="212" width="66" height="24" rx="4"/>
+      <rect x="298" y="212" width="66" height="24" rx="4"/><rect x="376" y="212" width="66" height="24" rx="4"/>
+      <rect x="492" y="212" width="66" height="24" rx="4"/><rect x="570" y="212" width="66" height="24" rx="4"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle" font-size="9">
+      <text x="137" y="228">PC</text><text x="215" y="228">stampante</text>
+      <text x="331" y="228">telec.</text><text x="409" y="228">NVR</text>
+      <text x="525" y="228">ospite</text><text x="603" y="228">ospite</text>
+    </g>
+    <text x="180" y="250" text-anchor="middle" class="dg-mono-sm">10.10.10.0/24</text>
+    <text x="374" y="250" text-anchor="middle" class="dg-mono-sm">10.10.30.0/24</text>
+    <text x="574" y="250" text-anchor="middle" class="dg-mono-sm">10.10.20.0/24</text>
+
+    <text x="350" y="286" text-anchor="middle" class="dg-label-sm">Tre domini di broadcast separati. Un ospite non «vede» nemmeno l'esistenza dei PC dell'ufficio.</text>
+    <text x="350" y="308" text-anchor="middle" class="dg-label-sm">Per farli comunicare serve qualcosa che instradi — router, firewall o switch L3 — e quindi si può <tspan font-weight="700">decidere cosa permettere</tspan>.</text>
+  </svg>
+  </div>
+  <figcaption>Nessun cavo è stato spostato, nessun apparato comprato. È cambiata solo la configurazione —
+  e con essa la struttura logica della rete. <b>Ogni VLAN ha la sua subnet IP</b>: sono due cose
+  distinte che nella pratica vanno sempre in coppia.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il capannone e i tramezzi
+  </div>
+  <p>Immagina un capannone enorme dove lavorano cento persone: contabilità, magazzino, i visitatori che
+  aspettano, e le telecamere di sorveglianza. Tutti nello stesso stanzone.</p>
+  <p>Problemi: c'è un <b>rumore</b> continuo, perché quando qualcuno urla lo sentono tutti e tutti devono
+  fermarsi a capire se riguardava loro. E c'è un problema di <b>riservatezza</b>: un visitatore che
+  aspetta può alzarsi e leggere i documenti della contabilità.</p>
+  <p>La soluzione ovvia è <b>tirare su dei tramezzi</b>: una stanza per la contabilità, una per il
+  magazzino, una sala d'attesa per i visitatori. Costa poco, non serve un altro capannone, e risolve
+  entrambi i problemi in un colpo solo.</p>
+  <p>La VLAN è il tramezzo. E la cosa importante è la <b>porta</b> tra una stanza e l'altra: mettendocene
+  una sola, sorvegliata, decidi tu chi può passare da dove a dove. Quella porta sorvegliata è il router
+  o il firewall.</p>
+</div>
+
+<h2>Cosa risolve davvero</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Problema</th><th>Come lo risolve la VLAN</th></tr></thead>
+    <tbody>
+      <tr><td><b>Prestazioni</b></td>
+          <td>Ogni VLAN è un dominio di broadcast separato. Da 600 dispositivi che si urlano addosso a
+          tre gruppi da 200. I dispositivi deboli — telefoni, telecamere, PLC — smettono di soffrire.</td></tr>
+      <tr><td><b>Sicurezza</b></td>
+          <td>Un PC infettato da ransomware raggiunge solo la sua VLAN. Senza segmentazione arriva a
+          server, telecamere, macchinari e backup. <b>È la differenza tra un incidente e un disastro.</b></td></tr>
+      <tr><td><b>Ospiti</b></td>
+          <td>Il Wi-Fi dei visitatori esce su Internet senza vedere nulla dell'azienda. Da solo giustifica
+          il progetto agli occhi di qualsiasi cliente.</td></tr>
+      <tr><td><b>Ordine e diagnosi</b></td>
+          <td>Guardi un indirizzo e sai cos'è. Un problema circoscritto a una VLAN ti dice già dove cercare.</td></tr>
+      <tr><td><b>Qualità del servizio</b></td>
+          <td>Dare priorità al traffico voce diventa banale: è tutto in una VLAN identificabile.</td></tr>
+      <tr><td><b>Conformità</b></td>
+          <td>Molte normative e assicurazioni informatiche richiedono che i sistemi sensibili siano
+          separati dalla rete generale. Senza VLAN non è dimostrabile.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Cosa una VLAN NON fa
+  </div>
+  <p>Va detto chiaramente, perché è un equivoco che porta a false sicurezze:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Non cifra niente.</b> Dentro una VLAN il traffico è in chiaro come prima.</li>
+    <li><b>Non protegge da sola.</b> Separa, ma se poi nel firewall metti una regola «da tutte a tutte»,
+    hai fatto il lavoro e buttato via il risultato. <b>La VLAN crea il confine; le regole lo fanno valere.</b></li>
+    <li><b>Non protegge dentro la stessa VLAN.</b> Due PC nella stessa VLAN si parlano liberamente: un
+    ransomware si diffonde benissimo lì dentro. Per isolare anche i vicini servono altri strumenti
+    (port isolation, private VLAN, microsegmentazione).</li>
+    <li><b>Non sostituisce l'antivirus, i backup e gli aggiornamenti.</b> È un livello di difesa, non la difesa.</li>
+  </ul>
+</div>
+
+<h2>Lo schema VLAN standard per un'azienda</h2>
+
+<p>Questo schema copre la stragrande maggioranza delle piccole e medie aziende italiane. Usalo come punto
+di partenza e adattalo: avere uno standard tuo, riusato su tutti i clienti, vale moltissimo.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>VLAN</th><th>Nome</th><th>Subnet</th><th>Cosa ci va</th><th>Può parlare con…</th></tr></thead>
+    <tbody>
+      <tr><td><b>10</b></td><td>Uffici</td><td>10.10.<b>10</b>.0/24</td><td>PC, portatili dei dipendenti</td><td>Server, stampanti, Internet</td></tr>
+      <tr><td><b>20</b></td><td>Ospiti</td><td>10.10.<b>20</b>.0/24</td><td>Wi-Fi visitatori, dispositivi personali</td><td><b>Solo Internet.</b> Nient'altro.</td></tr>
+      <tr><td><b>30</b></td><td>Videosorveglianza</td><td>10.10.<b>30</b>.0/24</td><td>Telecamere IP, NVR</td><td>Nessuno. L'NVR si raggiunge dagli uffici, non il contrario.</td></tr>
+      <tr><td><b>40</b></td><td>Voce</td><td>10.10.<b>40</b>.0/24</td><td>Telefoni VoIP, centralino</td><td>Centralino e operatore. Con priorità QoS.</td></tr>
+      <tr><td><b>50</b></td><td>Server</td><td>10.10.<b>50</b>.0/24</td><td>Server fisici e virtuali, NAS</td><td>Riceve dagli uffici sulle porte che servono</td></tr>
+      <tr><td><b>60</b></td><td>Stampanti / IoT</td><td>10.10.<b>60</b>.0/24</td><td>Stampanti, termostati, allarmi, badge</td><td>Riceve dagli uffici. In uscita quasi nulla.</td></tr>
+      <tr><td><b>99</b></td><td>Gestione</td><td>10.10.<b>99</b>.0/24</td><td>Interfacce di switch, AP, firewall, UPS</td><td><b>Solo dai PC degli amministratori.</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Tre convenzioni che ti semplificano la vita per anni
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Numero della VLAN dentro l'indirizzo.</b> VLAN 30 → <code>10.10.30.0/24</code>. Guardi un IP e
+    sai subito dove sei, senza aprire nessuna documentazione. Vale oro alle due di notte.</li>
+    <li><b>Numeri a multipli di dieci.</b> Lasciano spazio per infilarne una in mezzo senza rifare tutto.</li>
+    <li><b>La VLAN di gestione sempre 99</b> (o 999). Sta in fondo, è la più delicata, e averla sempre
+    nello stesso posto su tutti i clienti riduce gli errori.</li>
+  </ul>
+</div>
+
+<h2>La VLAN 1 e perché non si usa</h2>
+
+<p>Tutti gli switch nascono con tutte le porte nella <strong>VLAN 1</strong>. È la VLAN predefinita, ed è
+anche quella che per impostazione predefinita trasporta i protocolli di servizio degli apparati
+(spanning tree, scoperta dei vicini).</p>
+
+<p>Lasciare i dati degli utenti nella VLAN 1 è considerato una cattiva pratica da tutti i vendor,
+per due motivi concreti: è <strong>prevedibile</strong> — un attaccante la trova per prima — e
+<strong>mescola il traffico degli utenti con quello di servizio degli apparati</strong>, il che rende
+più difficile diagnosticare e più facile sbagliare.</p>
+
+<p>La regola: <strong>nessun dispositivo utente resta nella VLAN 1</strong>. Si spostano tutte le porte
+nelle VLAN previste, e la VLAN 1 resta vuota e inutilizzata.</p>
+
+<h2>I tre errori della prima VLAN della tua vita</h2>
+
+<h3>1. Creare le VLAN e dimenticare le subnet</h3>
+<p>Una VLAN senza un indirizzamento IP proprio non serve a niente: i dispositivi restano nella stessa
+subnet e continuano a non potersi parlare, ma senza che nessuno capisca perché. <b>Ogni VLAN vuole la
+sua subnet, il suo gateway e il suo campo DHCP.</b> Vanno sempre insieme.</p>
+
+<h3>2. Dimenticare che il DHCP non attraversa i router</h3>
+<p>Crei la VLAN 30 per le telecamere, ma il server DHCP sta nella VLAN 10. Le telecamere non ricevono
+nessun indirizzo, perché il DHCP Discover è un broadcast e si ferma al confine della VLAN.
+<b>Serve un DHCP relay</b> (o un campo DHCP separato sul firewall). È il problema numero uno alla prima
+VLAN, e adesso lo sai in anticipo.</p>
+
+<h3>3. Segmentare e poi permettere tutto</h3>
+<p>Dopo aver diviso la rete in sette VLAN, si scrive una regola «any → any» perché «così intanto
+funziona, poi stringiamo». Poi non si stringe mai. Il risultato è una rete più complicata di prima e
+altrettanto insicura. <b>Se non hai tempo di scrivere le regole, non hai tempo di fare le VLAN:</b>
+sono la stessa attività.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Come si vende a un cliente
+  </div>
+  <p>Non parlare di VLAN, domini di broadcast o 802.1Q: il cliente non compra concetti, compra la
+  soluzione di un problema che riconosce. Tre frasi che funzionano davvero:</p>
+  <ul style="margin-bottom:0">
+    <li>«Oggi il Wi-Fi dei visitatori è nella stessa rete dei vostri dati contabili.» — Spesso basta questa.</li>
+    <li>«Oggi se un PC prende un virus, quel virus arriva anche al vostro gestionale, alle telecamere e
+    ai backup. Dopo l'intervento resta chiuso in una stanza sola.»</li>
+    <li>«Le telecamere sono apparecchi cinesi che si aggiornano raramente e parlano su Internet. Adesso
+    stanno nella stessa rete dei vostri PC.» — Con questa, di solito, il preventivo lo firmano.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Poi aggiungi quanto costa: tipicamente <b>zero in
+  hardware</b> se gli switch sono già gestiti, e una o due giornate di lavoro. Il rapporto tra costo e
+  rischio evitato è tra i migliori che puoi proporre.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il concetto di VLAN",
+  "questions": [
+    { "q": "Cosa separa una VLAN?",
+      "a": [ {"t":"I domini di broadcast: i dispositivi di VLAN diverse non si parlano senza un router","ok":true},
+             {"t":"Le porte fisiche, che diventano elettricamente isolate","ok":false},
+             {"t":"Il traffico cifrandolo separatamente per ogni gruppo","ok":false},
+             {"t":"Le velocità, assegnando banda diversa a ogni gruppo","ok":false} ],
+      "e": "La VLAN crea domini di broadcast logici distinti dentro lo stesso hardware. Non cambia nulla di elettrico, non cifra niente e non assegna banda — per quello serve la QoS, che è tutt'altra cosa." },
+
+    { "q": "Hai creato la VLAN 30 per le telecamere, ma nessuna riceve un indirizzo IP. Il server DHCP è nella VLAN 10. Perché?",
+      "a": [ {"t":"Il DHCP Discover è un broadcast e non attraversa il confine della VLAN: serve un relay","ok":true},
+             {"t":"Le telecamere non supportano il DHCP","ok":false},
+             {"t":"La VLAN 30 ha un numero troppo alto","ok":false},
+             {"t":"Manca un secondo switch","ok":false} ],
+      "e": "È l'errore numero uno alla prima VLAN. Il broadcast si ferma al confine del dominio, quindi il server non riceve mai la richiesta. Si risolve con un DHCP relay («IP helper») sull'interfaccia della VLAN 30, che inoltra la richiesta in unicast al server, oppure con un campo DHCP dedicato sul firewall." },
+
+    { "q": "Perché non si lasciano i dispositivi degli utenti nella VLAN 1?",
+      "a": [ {"t":"È prevedibile e mescola il traffico utenti con quello di servizio degli apparati","ok":true},
+             {"t":"Perché la VLAN 1 supporta al massimo 50 dispositivi","ok":false},
+             {"t":"Perché è riservata al traffico cifrato","ok":false},
+             {"t":"Perché non permette il DHCP","ok":false} ],
+      "e": "La VLAN 1 è quella predefinita ovunque, quindi è la prima che un attaccante prova, e di norma trasporta i protocolli di gestione degli apparati. Tenerci i dati degli utenti mescola due tipi di traffico che è meglio separare, sia per sicurezza sia per poterli diagnosticare. Non ha limiti di dispositivi particolari." },
+
+    { "q": "Un cliente ti chiede: «ma con le VLAN siamo al sicuro dai virus?». Cosa rispondi?",
+      "a": [ {"t":"Limitano il danno a una sola area, ma non impediscono il contagio né sostituiscono antivirus e backup","ok":true},
+             {"t":"Sì, una VLAN blocca la propagazione dei malware","ok":false},
+             {"t":"No, le VLAN non hanno alcun effetto sulla sicurezza","ok":false},
+             {"t":"Dipende dal numero di VLAN che si creano","ok":false} ],
+      "e": "Le VLAN sono un <b>contenimento</b>: un PC infetto raggiunge solo la sua VLAN, e questa è la differenza tra un incidente e un disastro. Ma dentro la stessa VLAN il contagio è libero, e la separazione vale solo se le regole tra VLAN sono scritte davvero. Promettere di più sarebbe vendere male e prepararsi una brutta telefonata." },
+
+    { "q": "Qual è il vantaggio di far coincidere il numero di VLAN con il terzo ottetto dell'indirizzo?",
+      "a": [ {"t":"Guardando un indirizzo capisci subito in quale VLAN sei, senza consultare documentazione","ok":true},
+             {"t":"Migliora le prestazioni dello switch","ok":false},
+             {"t":"È obbligatorio secondo lo standard 802.1Q","ok":false},
+             {"t":"Permette di usare meno indirizzi IP","ok":false} ],
+      "e": "È solo una convenzione, ma rende la rete leggibile: <code>10.10.30.47</code> dice immediatamente «VLAN 30, videosorveglianza». Alle due di notte, davanti a un log pieno di indirizzi, è la differenza tra capire subito e aprire cinque documenti. Non ha alcun effetto tecnico." },
+
+    { "q": "Dopo aver segmentato una rete in sette VLAN, si scrive una regola «tutto verso tutto» per far funzionare le cose in fretta. Che risultato si ottiene?",
+      "a": [ {"t":"Il beneficio di prestazioni resta, quello di sicurezza viene annullato","ok":true},
+             {"t":"Nessun beneficio: le VLAN diventano inutili","ok":false},
+             {"t":"La rete torna esattamente come prima","ok":false},
+             {"t":"La sicurezza resta comunque garantita dalla separazione","ok":false} ],
+      "e": "I domini di broadcast restano separati, quindi il guadagno di prestazioni c'è ancora. Ma il confine di sicurezza esiste solo se qualcosa lo fa rispettare: con una regola permissiva il traffico attraversa liberamente. La VLAN crea il confine, le regole lo fanno valere — sono due metà dello stesso lavoro." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
