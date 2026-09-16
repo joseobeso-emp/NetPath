@@ -1,0 +1,216 @@
+#id: l2-25
+#title: Log, SNMP, syslog e NetFlow
+#min: 24
+#level: 2
+#chapter: Servizi e osservabilità
+#desc: Come si costruisce visibilità su una rete che non hai progettato tu, e cosa monitorare davvero.
+#obj: Distinguere i tre tipi di dato — stato, eventi, flussi — e sapere a cosa serve ciascuno
+#obj: Impostare un monitoraggio che segnala i problemi veri e tace sul resto
+#obj: Conservare i log abbastanza a lungo da essere utili quando servono
+#obj: Sapere cosa guardare quando un cliente dice «la rete va lenta»
+---
+<p class="lead">Senza visibilità, ogni diagnosi è un'ipotesi. Con la visibilità giusta, molti problemi
+li vedi <em>prima</em> che il cliente chiami — ed è la differenza tra un fornitore che aspetta i ticket
+e uno che il cliente considera indispensabile.</p>
+
+<h2>Tre tipi di dato, tre scopi diversi</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>SNMP</th><th>Syslog</th><th>NetFlow / IPFIX</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cosa raccoglie</b></td><td>Lo <b>stato</b>: CPU, memoria, traffico per porta, temperatura</td>
+          <td>Gli <b>eventi</b>: «la porta 5 è andata giù», «utente autenticato»</td>
+          <td>I <b>flussi</b>: chi ha parlato con chi, quanto e su quale porta</td></tr>
+      <tr><td><b>Come funziona</b></td><td>Il sistema di monitoraggio <em>interroga</em> gli apparati a intervalli</td>
+          <td>Gli apparati <em>mandano</em> i messaggi quando succede qualcosa</td>
+          <td>Gli apparati mandano <em>riassunti</em> delle conversazioni</td></tr>
+      <tr><td><b>Risponde a</b></td><td>«Quanto è carico? Va tutto?»</td><td>«Cos'è successo e quando?»</td><td>«Chi sta consumando la banda?»</td></tr>
+      <tr><td><b>Serve per</b></td><td>Grafici, soglie, allarmi</td><td>Diagnosi e sicurezza</td><td>Capacità e traffico anomalo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: i tre modi di sapere cosa fa un'auto
+  </div>
+  <p><b>SNMP</b> è il cruscotto: guardi e vedi velocità, giri del motore, temperatura, benzina. Ti dice
+  <em>com'è adesso</em>, e se guardi spesso puoi farci un grafico.</p>
+  <p><b>Syslog</b> è la spia che si accende: «olio basso», «portiera aperta». Non te lo devi andare a
+  cercare, è l'auto che te lo dice quando succede qualcosa.</p>
+  <p><b>NetFlow</b> è il diario di bordo: non registra il viaggio filmandolo, ma annota «da Brescia a
+  Verona, 60 km, un'ora, alle 14:30». Non sai <em>cosa</em> è successo dentro l'auto, ma sai tutti gli
+  spostamenti.</p>
+  <p style="margin-bottom:0">Servono tutti e tre e non si sostituiscono: il cruscotto non ti dice che
+  ieri sei andato a Verona, e il diario non ti avvisa che l'olio è basso adesso.</p>
+</div>
+
+<h2>SNMP: cosa monitorare davvero</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa</th><th>Soglia indicativa</th><th>Perché conta</th></tr></thead>
+    <tbody>
+      <tr><td><b>Stato delle interfacce</b></td><td>qualsiasi cambiamento</td><td>Un link che cade è il primo segnale di molti guasti</td></tr>
+      <tr><td><b>Traffico per porta</b></td><td>&gt; 70% sostenuto</td><td>Individua saturazioni prima che diventino lamentele</td></tr>
+      <tr><td><b>Errori e scarti per porta</b></td><td>qualsiasi crescita continua</td><td><b>La metrica più sottovalutata:</b> rivela problemi di cablaggio (lezione 1-05)</td></tr>
+      <tr><td><b>CPU e memoria</b></td><td>&gt; 80% sostenuto</td><td>Un firewall al limite rallenta tutto senza segnalare nulla</td></tr>
+      <tr><td><b>Sessioni attive</b></td><td>&gt; 70% del massimo</td><td>Anticipa l'esaurimento della tabella (lezione 2-12)</td></tr>
+      <tr><td><b>Temperatura e alimentatori</b></td><td>secondo il produttore</td><td>Previene guasti estivi e di alimentazione</td></tr>
+      <tr><td><b>Budget PoE</b></td><td>&gt; 80%</td><td>Evita che aggiungere un AP spenga una telecamera</td></tr>
+      <tr><td><b>Stato dei tunnel VPN</b></td><td>giù</td><td>Te ne accorgi prima del cliente</td></tr>
+      <tr><td><b>Certificati in scadenza</b></td><td>30 giorni prima</td><td>Evita il disservizio più stupido e più frequente</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    SNMPv3, e mai v2c
+  </div>
+  <p>SNMP v1 e v2c usano una «community string» che viaggia <b>in chiaro</b> ed è, di fatto, una
+  password. Molti impianti la lasciano al valore predefinito <code>public</code>: chiunque sia in rete
+  può interrogare gli apparati e ricostruire l'intera topologia.</p>
+  <p style="margin-bottom:0"><b>Usa sempre SNMPv3</b>, con autenticazione e cifratura. E in ogni caso
+  limita l'accesso SNMP alla sola VLAN di gestione e al solo indirizzo del sistema di monitoraggio:
+  è una riga di configurazione che toglie di mezzo un'intera categoria di ricognizione.</p>
+</div>
+
+<h2>Syslog: il valore sta nella conservazione</h2>
+
+<p>La memoria locale di un firewall conserva pochi giorni di log, e si azzera al riavvio. Ma i log
+servono <strong>proprio quando c'è stato un incidente</strong>, e un incidente si scopre spesso
+settimane dopo.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa</th><th>Conservazione consigliata</th><th>Perché</th></tr></thead>
+    <tbody>
+      <tr><td>Log del firewall (traffico, blocchi)</td><td>6–12 mesi</td><td>Ricostruire un incidente e rispondere alle richieste</td></tr>
+      <tr><td>Autenticazioni (VPN, Wi-Fi, AD)</td><td>12 mesi</td><td>Capire chi è entrato, da dove e quando</td></tr>
+      <tr><td>Eventi degli apparati</td><td>3–6 mesi</td><td>Correlare guasti ricorrenti</td></tr>
+      <tr><td>Traduzioni NAT</td><td>secondo il contesto normativo</td><td>Risalire a chi stava usando un indirizzo pubblico in un certo istante</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    L'ora giusta su tutto
+  </div>
+  <p>Log con orari sbagliati sono log inutili: non puoi correlare l'evento del firewall con quello del
+  server se i due orologi differiscono di dieci minuti.</p>
+  <p style="margin-bottom:0"><b>NTP su ogni apparato</b>, e lo stesso riferimento per tutti. È una
+  configurazione da trenta secondi che fa la differenza il giorno in cui devi ricostruire una sequenza
+  di eventi — e ricorda che un'ora sbagliata rompe anche Kerberos, i certificati e le VPN.</p>
+</div>
+
+<h2>NetFlow: chi consuma la banda</h2>
+
+<p>NetFlow non registra il contenuto: registra <strong>chi ha parlato con chi, quanto, quando e su quale
+porta</strong>. Occupa pochissimo spazio rispetto a una cattura e risponde alle domande che i clienti
+fanno davvero:</p>
+
+<ul class="clean">
+  <li>«Chi ha saturato la linea ieri alle 15?»</li>
+  <li>«Quanto traffico va verso il cloud rispetto a Internet generico?»</li>
+  <li>«Ci sono dispositivi che parlano con destinazioni strane di notte?»</li>
+  <li>«La linea da 200 Mbps basta ancora o serve un aumento?» — con i dati, non a sensazione</li>
+</ul>
+
+<p>L'ultimo punto è quello che genera lavoro: presentarsi da un cliente con un grafico che mostra la
+saturazione ricorrente della linea è un modo molto più efficace di proporre un aumento di banda che
+dirgli «secondo me serve».</p>
+
+<h2>Che cosa allarmare</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il monitoraggio che manda troppi allarmi non esiste
+  </div>
+  <p>È il problema numero uno dei sistemi di monitoraggio negli MSP: si attivano tutte le soglie, si
+  ricevono duecento notifiche al giorno, e nel giro di due settimane <b>nessuno le guarda più</b>.
+  A quel punto il monitoraggio costa e non serve a niente, e l'allarme vero passa inosservato in mezzo
+  al rumore.</p>
+  <p><b>Il criterio:</b> un allarme deve corrispondere a un'azione. Se ricevendolo non fai nulla, non
+  deve essere un allarme — al massimo una voce in un rapporto settimanale.</p>
+  <p style="margin-bottom:0"><b>Da allarmare sul serio:</b> apparato irraggiungibile, link principale
+  giù, tunnel VPN giù, alimentatore o ventola guasti, spazio disco esaurito, backup fallito, certificato
+  in scadenza, tentativi di accesso falliti oltre soglia. <b>Da mettere in rapporto, non in allarme:</b>
+  picchi di traffico, CPU alta momentanea, singolo riavvio di un access point.</p>
+</div>
+
+<h2>Da dove partire con un cliente</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il minimo indispensabile, in ordine di valore
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Raggiungibilità</b> di firewall, switch, server e access point. Semplicissimo e intercetta
+    la maggior parte dei guasti gravi.</li>
+    <li><b>Syslog centralizzato</b> del firewall, con conservazione adeguata. Costa poco e il giorno
+    dell'incidente vale enormemente.</li>
+    <li><b>Traffico ed errori</b> sulle porte principali e sulla WAN. Ti dà i grafici da mostrare al
+    cliente.</li>
+    <li><b>Allarmi sui pochi eventi che richiedono un'azione.</b></li>
+    <li><b>NetFlow</b>, quando i primi quattro sono stabili e il cliente inizia a fare domande sulla
+    capacità.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">I primi due si mettono in piedi in mezza giornata e
+  cambiano completamente il modo in cui gestisci quel cliente: smetti di scoprire i guasti dalle sue
+  telefonate.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: monitoraggio e log",
+  "questions": [
+    { "q": "Quale tecnologia risponde alla domanda «chi ha saturato la linea ieri alle 15»?",
+      "a": [ {"t":"NetFlow / IPFIX","ok":true}, {"t":"SNMP","ok":false},
+             {"t":"Syslog","ok":false}, {"t":"Una cattura Wireshark","ok":false} ],
+      "e": "NetFlow registra chi ha parlato con chi, quanto e su quale porta, occupando pochissimo spazio: è l'unico dei tre che conserva lo storico delle conversazioni. SNMP direbbe solo che la linea era satura, senza dire da parte di chi; syslog registra eventi, non traffico; una cattura sarebbe ingestibile come archivio." },
+
+    { "q": "Perché SNMPv2c è da evitare?",
+      "a": [ {"t":"La community string viaggia in chiaro ed è di fatto una password, spesso lasciata al valore predefinito","ok":true},
+             {"t":"Non supporta i firewall moderni","ok":false},
+             {"t":"Consuma troppa banda","ok":false},
+             {"t":"Non permette di leggere i contatori delle interfacce","ok":false} ],
+      "e": "Chiunque sia in rete può leggerla e interrogare gli apparati, ricostruendo l'intera topologia. SNMPv3 aggiunge autenticazione e cifratura. In ogni caso l'accesso SNMP va limitato alla VLAN di gestione e al solo indirizzo del sistema di monitoraggio." },
+
+    { "q": "Perché il syslog va centralizzato invece di lasciare i log sull'apparato?",
+      "a": [ {"t":"La memoria locale conserva pochi giorni e si azzera al riavvio, ma i log servono settimane dopo","ok":true},
+             {"t":"Perché gli apparati non hanno spazio disco","ok":false},
+             {"t":"Per ridurre il carico della CPU","ok":false},
+             {"t":"Perché il syslog locale non è leggibile","ok":false} ],
+      "e": "Un incidente si scopre spesso molto tempo dopo che è avvenuto, e a quel punto i log locali non ci sono più — soprattutto se l'apparato è stato riavviato, cosa che spesso fa parte proprio della risposta al problema. Il valore del syslog centralizzato è quasi tutto nella conservazione." },
+
+    { "q": "Qual è il criterio per decidere se qualcosa deve generare un allarme?",
+      "a": [ {"t":"Deve corrispondere a un'azione: se ricevendolo non fai nulla, non è un allarme","ok":true},
+             {"t":"Tutto ciò che è misurabile va allarmato","ok":false},
+             {"t":"Solo gli eventi di sicurezza","ok":false},
+             {"t":"Dipende dal contratto con il cliente","ok":false} ],
+      "e": "Il problema numero uno dei sistemi di monitoraggio è il rumore: con duecento notifiche al giorno nessuno le guarda più, e l'allarme vero passa inosservato. Picchi di traffico e CPU momentaneamente alta vanno in un rapporto; apparato giù, tunnel giù, backup fallito e certificato in scadenza sono allarmi." },
+
+    { "q": "Quale metrica SNMP rivela problemi di cablaggio?",
+      "a": [ {"t":"Il contatore degli errori e degli scarti per porta","ok":true},
+             {"t":"L'utilizzo della CPU","ok":false},
+             {"t":"Il numero di sessioni attive","ok":false},
+             {"t":"La temperatura dell'apparato","ok":false} ],
+      "e": "Gli errori CRC e gli scarti crescenti su una porta significano che i frame arrivano fisicamente corrotti: cavo, connettore, lunghezza eccessiva o disturbi. È la metrica più sottovalutata e una delle poche che dà una certezza diagnostica quasi immediata." },
+
+    { "q": "Perché l'NTP è importante per il monitoraggio?",
+      "a": [ {"t":"Senza orologi allineati non si possono correlare eventi provenienti da apparati diversi","ok":true},
+             {"t":"Perché SNMP non funziona senza NTP","ok":false},
+             {"t":"Perché riduce il traffico di syslog","ok":false},
+             {"t":"Perché serve a cifrare i log","ok":false} ],
+      "e": "Ricostruire una sequenza di eventi richiede che gli orari siano confrontabili: con dieci minuti di scarto tra firewall e server la correlazione diventa impossibile. In più un'ora sbagliata rompe Kerberos, la validazione dei certificati e le VPN: è una configurazione da trenta secondi con conseguenze sproporzionate." }
+  ]
+}
+</script>

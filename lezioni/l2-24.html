@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DNS avanzato: record, forwarder e split-brain — NetPath</title>
+<meta name="description" content="A, CNAME, MX, SRV, TXT. Il DNS interno di Active Directory e i suoi tranelli, e i record che decidono se le tue mail arrivano.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-24">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Servizi e osservabilità</span>
+      </nav>
+      <h1 class="lesson-title">DNS avanzato: record, forwarder e split-brain</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 24</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Scegliere il tipo di record giusto per ogni esigenza</li>
+        <li>Configurare forwarder e zone condizionali senza rompere Active Directory</li>
+        <li>Capire SPF, DKIM e DMARC e perché riguardano la rete</li>
+        <li>Diagnosticare i problemi DNS più insidiosi</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Nella lezione 1-20 hai visto come funziona una risoluzione. Qui vediamo cosa si
+configura davvero: i record che userai, il DNS interno che regge Active Directory, e i tre record di
+testo da cui dipende se le mail di un cliente finiscono nella posta in arrivo o nello spam.</p>
+
+<h2>I record, con l'uso pratico</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Record</th><th>Quando usarlo</th><th>Attenzione</th></tr></thead>
+    <tbody>
+      <tr><td><b>A</b> / <b>AAAA</b></td><td>Puntare un nome a un indirizzo IPv4 / IPv6</td><td>Se cambia l'indirizzo, vanno modificati tutti</td></tr>
+      <tr><td><b>CNAME</b></td><td>Alias verso un altro nome</td>
+          <td><b>Non può coesistere</b> con altri record sullo stesso nome, e <b>non si usa mai sul dominio radice</b> (<code>azienda.it</code> senza prefisso)</td></tr>
+      <tr><td><b>MX</b></td><td>Dove consegnare la posta del dominio</td><td>Ha una priorità: il numero più basso vince. Deve puntare a un nome, non a un IP</td></tr>
+      <tr><td><b>TXT</b></td><td>SPF, DKIM, DMARC, verifiche di proprietà</td><td>Un solo record SPF per dominio: due si annullano a vicenda</td></tr>
+      <tr><td><b>SRV</b></td><td>Dove sta un certo servizio, con porta e priorità</td><td><b>Il cuore di Active Directory.</b> Anche Teams e i centralini SIP li usano</td></tr>
+      <tr><td><b>NS</b></td><td>Delegare una zona ad altri server</td><td>Devono corrispondere a quelli registrati presso il registrar</td></tr>
+      <tr><td><b>PTR</b></td><td>Dall'indirizzo al nome</td><td>Lo gestisce chi possiede l'indirizzo, cioè <b>l'operatore</b>: va chiesto a loro</td></tr>
+      <tr><td><b>CAA</b></td><td>Quali autorità possono emettere certificati per il dominio</td><td>Poco usato, ma è una buona pratica facile</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il DNS interno di Active Directory</h2>
+
+<p>In un dominio Windows, il DNS non è un servizio accessorio: è <strong>l'infrastruttura su cui AD si
+regge</strong>. I PC trovano i domain controller interrogando record SRV del tipo
+<code>_ldap._tcp.dc._msdcs.azienda.local</code>. Se quella risoluzione non funziona, non funziona niente:
+accesso al dominio, criteri di gruppo, cartelle condivise, autenticazione.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le tre regole non negoziabili del DNS in un dominio
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>I client puntano solo ai domain controller.</b> Mai 8.8.8.8 o 1.1.1.1, nemmeno come
+    secondario. Il PC alterna i server configurati: la volta che interroga quello pubblico, il nome
+    interno non esiste e partono sintomi intermittenti e incomprensibili.</li>
+    <li><b>I domain controller puntano a sé stessi e tra loro</b>, e risolvono Internet tramite
+    <b>forwarder</b> configurati su di loro. È lì che va il DNS pubblico.</li>
+    <li><b>Il dominio interno non deve coincidere con un dominio pubblico reale</b> che non controlli.
+    Usare <code>azienda.it</code> internamente quando esiste anche il sito pubblico
+    <code>azienda.it</code> crea conflitti permanenti tra ciò che risolvono i client interni e quelli
+    esterni.</li>
+  </ol>
+</div>
+
+<h3>Forwarder e zone condizionali</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Forwarder</th><th>Zona di inoltro condizionale</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cosa fa</b></td><td>«Tutto ciò che non conosco, chiedilo a questo server»</td><td>«Per <em>questo dominio preciso</em>, chiedi a quel server»</td></tr>
+      <tr><td><b>Uso tipico</b></td><td>Risolvere Internet dal DNS interno</td><td>Risolvere i nomi del dominio di un'azienda collegata via VPN</td></tr>
+      <tr><td><b>Esempio</b></td><td>tutto → 1.1.1.1</td><td><code>filiale.local</code> → 10.20.50.10</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>La zona condizionale è lo strumento giusto quando due sedi o due aziende collegate da VPN devono
+risolversi i rispettivi nomi interni: ciascun DNS inoltra all'altro solo le richieste per il dominio
+dell'altro, senza unire le due infrastrutture.</p>
+
+<h2>Split-brain: lo stesso nome, due risposte</h2>
+
+<p>Visto già nella lezione 1-20 come soluzione all'hairpin NAT. Vale la pena ribadire il criterio,
+perché è una delle configurazioni più utili e meno usate:</p>
+
+<p>Si crea nel DNS <strong>interno</strong> una zona per il dominio pubblico (per esempio
+<code>azienda.it</code>) contenente solo i record che devono rispondere diversamente da dentro.
+<code>portale.azienda.it</code> risolve <code>10.10.50.20</code> in ufficio e l'indirizzo pubblico
+da fuori.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il tranello dello split-brain
+  </div>
+  <p>Creando la zona <code>azienda.it</code> nel DNS interno, quel server diventa <b>autoritativo per
+  tutto il dominio</b>: se un record esiste solo nel DNS pubblico e tu non l'hai copiato dentro, dalla
+  rete interna <b>non si risolve più</b>.</p>
+  <p style="margin-bottom:0">Sintomo tipico: dopo l'intervento il sito <code>www.azienda.it</code>
+  smette di aprirsi dall'ufficio, o le mail verso il proprio dominio non partono più perché l'MX non
+  si risolve. <b>La regola:</b> quando crei la zona interna, copiaci <em>tutti</em> i record pubblici
+  che servono, non solo quello che ti interessava.</p>
+</div>
+
+<h2>SPF, DKIM e DMARC: i tre record che decidono se le mail arrivano</h2>
+
+<p>Non sono argomenti «da sistemisti di posta»: sono record DNS, e sempre più spesso è a te che verrà
+chiesto perché le mail di un cliente finiscono nello spam.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Record</th><th>Risponde alla domanda</th><th>Che aspetto ha</th></tr></thead>
+    <tbody>
+      <tr><td><b>SPF</b></td><td>Quali server sono autorizzati a mandare posta per questo dominio?</td>
+          <td><code>v=spf1 include:spf.protection.outlook.com ip4:203.0.113.7 -all</code></td></tr>
+      <tr><td><b>DKIM</b></td><td>Il messaggio è stato firmato dal mittente e non alterato?</td>
+          <td>Una chiave pubblica in un record TXT su un selettore</td></tr>
+      <tr><td><b>DMARC</b></td><td>Cosa fare se SPF o DKIM falliscono, e dove mandare i rapporti?</td>
+          <td><code>v=DMARC1; p=quarantine; rua=mailto:report@azienda.it</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Gli errori che trovi nei clienti
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Due record SPF</b> sullo stesso dominio: si annullano a vicenda e la verifica fallisce.
+    Ne deve esistere <b>uno solo</b>, che include tutte le fonti.</li>
+    <li><b>SPF che non elenca tutte le fonti:</b> il gestionale che manda fatture, la stampante
+    multifunzione che invia le scansioni, la piattaforma di newsletter. Ognuna va inclusa, o le sue
+    mail falliranno.</li>
+    <li><b>SPF che termina con <code>~all</code></b> (softfail) invece di <code>-all</code>: molto più
+    permissivo. Si parte da <code>~all</code> per non rompere nulla, si verifica con i rapporti DMARC
+    e poi si stringe.</li>
+    <li><b>DMARC a <code>p=none</code> per sempre:</b> non protegge, serve solo a raccogliere rapporti.
+    È corretto come punto di partenza, sbagliato come punto di arrivo.</li>
+    <li><b>Record PTR mancante</b> sull'indirizzo pubblico del server di posta: va chiesto
+    all'operatore, non si configura da soli. Se manca, molti destinatari rifiutano a priori.</li>
+  </ul>
+</div>
+
+<h2>Diagnosticare</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Le verifiche che userai</div>
+<pre><span class="c"># i record di posta di un dominio</span>
+<span class="p">nslookup -type=MX azienda.it</span> <span class="n">1.1.1.1</span>
+<span class="p">nslookup -type=TXT azienda.it</span> <span class="n">1.1.1.1</span>
+<span class="p">nslookup -type=TXT _dmarc.azienda.it</span> <span class="n">1.1.1.1</span>
+
+<span class="c"># i record SRV che reggono Active Directory</span>
+<span class="p">nslookup -type=SRV _ldap._tcp.dc._msdcs.azienda.local</span>
+
+<span class="c"># il percorso completo, dai root server</span>
+<span class="p">dig +trace www.azienda.it</span>
+
+<span class="c"># il PTR di un indirizzo pubblico</span>
+<span class="p">nslookup</span> <span class="n">203.0.113.7</span>
+
+<span class="c"># su Windows Server: cosa c'è in cache e svuotarla</span>
+<span class="p">Show-DnsServerCache</span>
+<span class="p">Clear-DnsServerCache</span>
+<span class="p">Get-DnsServerForwarder</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>«Impossibile contattare il dominio», a intermittenza</td><td>DNS pubblici configurati sui client</td></tr>
+      <tr><td>Dopo l'intervento il sito aziendale non si apre dall'ufficio</td><td>Zona split-brain creata senza copiare tutti i record</td></tr>
+      <tr><td>Le mail verso il proprio dominio non partono</td><td>MX non risolvibile dall'interno, stessa causa di sopra</td></tr>
+      <tr><td>Le mail finiscono nello spam</td><td>SPF incompleto, DKIM assente, o PTR mancante</td></tr>
+      <tr><td>Un solo PC vede un sito diverso</td><td>File hosts</td></tr>
+      <tr><td>Dopo una migrazione alcuni vedono il vecchio server</td><td>TTL alto non abbassato prima</td></tr>
+      <tr><td>Le due sedi in VPN non si risolvono i nomi</td><td>Manca la zona di inoltro condizionale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: DNS avanzato",
+  "questions": [
+    { "q": "In un dominio Active Directory, quali server DNS vanno configurati sui client?",
+      "a": [ {"t":"Solo i domain controller; il DNS pubblico va come forwarder sui DC","ok":true},
+             {"t":"I domain controller come primario e 8.8.8.8 come secondario","ok":false},
+             {"t":"Solo DNS pubblici, che sono più veloci","ok":false},
+             {"t":"Il firewall aziendale","ok":false} ],
+      "e": "I client trovano i domain controller tramite record SRV che esistono solo nel DNS interno. Mettere un DNS pubblico come secondario non è una rete di sicurezza: il client alterna i server e, quando capita su quello pubblico, il nome interno non esiste. Ne derivano guasti intermittenti difficilissimi da diagnosticare." },
+
+    { "q": "Hai creato una zona <code>azienda.it</code> nel DNS interno per lo split-brain e il sito pubblico non si apre più dall'ufficio. Perché?",
+      "a": [ {"t":"Il DNS interno è ora autoritativo per tutto il dominio e non ha il record www","ok":true},
+             {"t":"Il firewall blocca il traffico verso il sito","ok":false},
+             {"t":"Il TTL è troppo alto","ok":false},
+             {"t":"Serve riavviare i client","ok":false} ],
+      "e": "Creando la zona, quel server smette di chiedere all'esterno per <em>qualsiasi</em> nome di quel dominio: risponde solo con ciò che ha dentro. Tutti i record pubblici che servono — www, MX, e quanto altro — vanno copiati nella zona interna, non solo quello che ti interessava." },
+
+    { "q": "Quando si usa una zona di inoltro condizionale?",
+      "a": [ {"t":"Per risolvere i nomi interni di un'altra sede o azienda collegata via VPN","ok":true},
+             {"t":"Per risolvere Internet dal DNS interno","ok":false},
+             {"t":"Per pubblicare un servizio verso l'esterno","ok":false},
+             {"t":"Per bilanciare il carico tra due DNS","ok":false} ],
+      "e": "Inoltra al DNS dell'altra parte solo le richieste per il suo dominio, senza unire le due infrastrutture. Risolvere Internet è invece compito del <b>forwarder</b> generico, che vale per tutto ciò che il server non conosce." },
+
+    { "q": "Un cliente ha due record SPF sul proprio dominio. Cosa comporta?",
+      "a": [ {"t":"Si annullano a vicenda e la verifica fallisce","ok":true},
+             {"t":"Vengono applicati entrambi, aumentando le fonti autorizzate","ok":false},
+             {"t":"Vince quello con priorità più bassa","ok":false},
+             {"t":"Nessun effetto","ok":false} ],
+      "e": "Lo standard prevede un solo record SPF per dominio: trovandone due, i server destinatari considerano la verifica non valida. Tutte le fonti — server di posta, gestionale che invia fatture, multifunzione, piattaforma di newsletter — vanno incluse in un unico record." },
+
+    { "q": "Perché un record CNAME non si usa sul dominio radice?",
+      "a": [ {"t":"Non può coesistere con altri record sullo stesso nome, e la radice deve avere almeno NS e MX","ok":true},
+             {"t":"Perché è più lento da risolvere","ok":false},
+             {"t":"Perché non è supportato dai DNS pubblici","ok":false},
+             {"t":"Perché vale solo per i sottodomini di terzo livello","ok":false} ],
+      "e": "Un CNAME esclude qualsiasi altro record sullo stesso nome, ma il dominio radice deve necessariamente avere i record NS e quasi sempre l'MX. Alcuni provider offrono soluzioni proprietarie che simulano il comportamento, ma il CNAME standard sulla radice non è ammesso." },
+
+    { "q": "Chi configura il record PTR dell'indirizzo pubblico di un server di posta?",
+      "a": [ {"t":"L'operatore che possiede l'indirizzo: va chiesto a loro","ok":true},
+             {"t":"Il cliente, nel proprio pannello DNS","ok":false},
+             {"t":"Si configura sul firewall","ok":false},
+             {"t":"È automatico e non va configurato","ok":false} ],
+      "e": "La risoluzione inversa appartiene a chi possiede il blocco di indirizzi, quindi all'operatore: non si può configurare dal pannello del proprio dominio. È una richiesta da aprire con loro, e se il PTR manca molti destinatari rifiutano la posta a priori — spesso senza che nessuno colleghi la causa." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

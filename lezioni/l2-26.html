@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QoS: dare la precedenza a chi serve — NetPath</title>
+<meta name="description" content="DSCP, code, shaping e policing. Il VoIP che gracchia e come si sistema davvero.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-26">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Servizi e osservabilità</span>
+      </nav>
+      <h1 class="lesson-title">QoS: dare la precedenza a chi serve</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 26</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire quando la QoS serve e quando è inutile</li>
+        <li>Distinguere marcatura, accodamento, shaping e policing</li>
+        <li>Configurare una QoS che protegga la voce senza rompere il resto</li>
+        <li>Sapere perché la QoS su Internet non funziona come in azienda</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">La QoS è una delle cose che i clienti chiedono per nome — «mettiamo la QoS» — spesso
+sbagliando problema. Serve a decidere <em>chi passa per primo quando non c'è posto per tutti</em>.
+Se il posto c'è, non serve a niente; se manca, è l'unica cosa che salva le telefonate.</p>
+
+<h2>Il concetto</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la corsia d'emergenza
+  </div>
+  <p>Su un'autostrada libera, un'ambulanza arriva in ospedale alla stessa velocità di tutti. La corsia
+  d'emergenza non serve a niente: <b>non c'è coda</b>.</p>
+  <p>Quando c'è traffico, invece, la corsia d'emergenza è l'unica cosa che permette all'ambulanza di
+  passare. Non rende l'autostrada più grande: decide <b>chi passa prima</b> quando lo spazio è finito.</p>
+  <p>La QoS è esattamente questo. E ne discendono due conseguenze che devi saper dire a un cliente:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Se la linea non è satura, la QoS non cambia niente.</b> Se il cliente ha problemi con la
+    linea scarica, il problema è un altro e la QoS non lo risolve.</li>
+    <li><b>La QoS non aggiunge banda.</b> Dà la precedenza a qualcuno <em>a scapito</em> di qualcun
+    altro: è una scelta, non un guadagno.</li>
+  </ul>
+</div>
+
+<h2>Le quattro operazioni</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Operazione</th><th>Cosa fa</th><th>Dove si applica</th></tr></thead>
+    <tbody>
+      <tr><td><b>Classificazione</b></td><td>Riconoscere a quale categoria appartiene il traffico</td>
+          <td>Il più vicino possibile alla sorgente</td></tr>
+      <tr><td><b>Marcatura</b></td><td>Scrivere l'etichetta di priorità nel pacchetto (DSCP) o nel frame (CoS)</td>
+          <td>Una volta sola, all'ingresso della rete</td></tr>
+      <tr><td><b>Accodamento</b></td><td>Mettere i pacchetti in code diverse e servirle con priorità diverse</td>
+          <td>Dove c'è il collo di bottiglia: tipicamente l'uscita WAN</td></tr>
+      <tr><td><b>Shaping / policing</b></td><td>Limitare la velocità di una categoria</td>
+          <td>Shaping ritarda, policing scarta</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Shaping</th><th>Policing</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cosa fa col traffico in eccesso</b></td><td>Lo mette in coda e lo rallenta</td><td>Lo scarta</td></tr>
+      <tr><td><b>Effetto su TCP</b></td><td>TCP rallenta ordinatamente</td><td>TCP interpreta lo scarto come congestione e crolla</td></tr>
+      <tr><td><b>Quando usarlo</b></td><td><b>Quasi sempre</b>, in uscita verso la WAN</td><td>Limitare in modo rigido, per esempio la rete ospiti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Le etichette: DSCP</h2>
+
+<p>Sei bit nell'intestazione IP dicono «questo pacchetto è di questa categoria». Il valore da conoscere
+è uno solo: <strong>EF (46) è la voce</strong>. Gli altri seguono una logica di classi.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>DSCP</th><th>Nome</th><th>Cosa ci va</th></tr></thead>
+    <tbody>
+      <tr><td><b>46</b></td><td><b>EF</b> — Expedited Forwarding</td><td><b>Voce (RTP).</b> Priorità assoluta, banda limitata</td></tr>
+      <tr><td>34</td><td>AF41</td><td>Video interattivo, videoconferenze</td></tr>
+      <tr><td>26</td><td>AF31</td><td>Segnalazione delle chiamate (SIP), applicazioni critiche</td></tr>
+      <tr><td>18</td><td>AF21</td><td>Applicazioni aziendali importanti</td></tr>
+      <tr><td>0</td><td>BE — Best Effort</td><td>Tutto il resto: navigazione, posta</td></tr>
+      <tr><td>8</td><td>CS1 / scavenger</td><td>Traffico meno importante del normale: backup, aggiornamenti, ospiti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le marcature valgono solo se qualcuno le rispetta
+  </div>
+  <p>Marcare un pacchetto EF non gli dà nessun privilegio di per sé: è solo un'etichetta. Serve che
+  <b>ogni apparato lungo il percorso</b> sia configurato per trattare quella etichetta con priorità.</p>
+  <p>Conseguenza importantissima: <b>su Internet le tue marcature non contano nulla.</b> Gli operatori
+  in genere le azzerano o le ignorano. La QoS che configuri funziona sulla <em>tua</em> rete e sulla
+  <em>tua</em> uscita: appena il pacchetto entra in Internet, è traffico come tutti gli altri.</p>
+  <p style="margin-bottom:0">Questo spiega perché la QoS risolve il VoIP verso il centralino interno o
+  dentro un tunnel tra sedi, e non risolve una videochiamata verso un partecipante dall'altra parte del
+  mondo su una linea congestionata a metà percorso.</p>
+</div>
+
+<h2>Dove serve davvero</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 220" role="img" aria-label="La QoS serve nel punto dove la banda si restringe, tipicamente l'uscita verso Internet">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Il collo di bottiglia è dove serve la QoS</text>
+
+    <rect x="20" y="60" width="150" height="50" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <text x="95" y="82" text-anchor="middle" class="dg-label-sm">LAN</text>
+    <text x="95" y="99" text-anchor="middle" class="dg-mono-sm">1 Gbps</text>
+
+    <rect x="275" y="60" width="150" height="50" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.8"/>
+    <text x="350" y="82" text-anchor="middle" class="dg-label-sm">FIREWALL</text>
+    <text x="350" y="99" text-anchor="middle" class="dg-mono-sm">qui si accodano</text>
+
+    <rect x="530" y="60" width="150" height="50" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="605" y="82" text-anchor="middle" class="dg-label-sm">WAN</text>
+    <text x="605" y="99" text-anchor="middle" class="dg-mono-sm">50 Mbps in upload</text>
+
+    <path d="M174 85h96" stroke="var(--dg-line)" stroke-width="10"/>
+    <path d="M429 85h96" stroke="var(--dg-line)" stroke-width="3"/>
+
+    <text x="350" y="146" text-anchor="middle" class="dg-label-sm">Da 1 Gbps a 50 Mbps: il traffico si accumula qui, e qui si decide chi passa prima.</text>
+    <text x="350" y="172" text-anchor="middle" class="dg-label-sm">Dentro la LAN, con collegamenti a 1 Gbps e switch non saturi, <tspan font-weight="700">la QoS non serve</tspan>.</text>
+    <text x="350" y="198" text-anchor="middle" class="dg-label-sm">Eccezione: il Wi-Fi, che è sempre un mezzo condiviso e quindi un collo di bottiglia potenziale.</text>
+  </svg>
+  </div>
+  <figcaption>La QoS si configura <b>in uscita</b> sul punto stretto. Sul traffico in ingresso puoi fare
+  molto poco: i pacchetti sono già arrivati e hanno già occupato la linea. Per l'ingresso l'unico
+  intervento reale è chiedere all'operatore, o limitare le sorgenti interne che generano le richieste.</figcaption>
+</figure>
+
+<h2>Una QoS che funziona, in pratica</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Lo schema tipico per una PMI con VoIP</div>
+<pre><span class="c">1. CLASSIFICA E MARCA il più vicino alla sorgente</span>
+   voce (RTP dai telefoni, VLAN 40)      → DSCP 46 (EF)
+   segnalazione SIP                       → DSCP 26 (AF31)
+   videoconferenze (Teams, Meet)          → DSCP 34 (AF41)
+   gestionale e applicazioni critiche     → DSCP 18 (AF21)
+   navigazione, posta                     → DSCP 0  (BE)
+   backup, aggiornamenti, rete ospiti     → DSCP 8  (CS1)
+
+<span class="c">2. ACCODA in uscita sulla WAN</span>
+   coda prioritaria (EF)   → max 30% della banda, servita per prima
+   coda garantita (AF)     → 40% garantito, può prendere di più se libero
+   coda normale (BE)       → 25%
+   coda bassa (CS1)        → 5%, prende il resto solo se avanza
+
+<span class="c">3. LIMITA la banda a poco sotto quella reale</span>
+   Se la linea ha 50 Mbps in upload, imposta lo shaping a 45-47 Mbps.
+   Serve perché la coda deve formarsi SUL TUO FIREWALL, dove decidi tu,
+   e non sull'apparato dell'operatore, dove non decidi niente.
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il punto 3 è quello che quasi nessuno fa, ed è quello che fa funzionare tutto
+  </div>
+  <p>Se non limiti la banda sotto quella reale della linea, la coda si forma <b>nell'apparato
+  dell'operatore</b>, dove la tua QoS non ha alcun effetto: i pacchetti sono già usciti dal tuo firewall
+  e la priorità non è più applicabile.</p>
+  <p style="margin-bottom:0">Impostando lo shaping al 90-95% della banda reale, il punto di congestione
+  si sposta <em>dentro</em> il tuo firewall, dove le code le governi tu. È una riga di configurazione
+  che trasforma una QoS decorativa in una QoS che funziona.</p>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La coda prioritaria va limitata
+  </div>
+  <p>Una coda a priorità assoluta serve la voce prima di tutto il resto. Se però non le metti un tetto,
+  un traffico marcato EF per errore — o di proposito — può occupare l'intera linea e <b>affamare tutto
+  il resto</b>, backup e navigazione compresi.</p>
+  <p style="margin-bottom:0">Si limita al 30% circa della banda, che è largamente sufficiente: una
+  chiamata VoIP consuma tra 30 e 100 kbps, quindi anche cinquanta chiamate contemporanee stanno in
+  pochi Mbps. E <b>non fidarti delle marcature che arrivano dai PC degli utenti</b>: azzerale
+  all'ingresso e rimarca tu, in base alla VLAN o all'applicazione riconosciuta.</p>
+</div>
+
+<h2>Il ticket «il VoIP gracchia»</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Prima di configurare la QoS, verifica che sia il problema giusto
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>La linea è satura quando succede?</b> Guarda i grafici. Se il problema capita a linea
+    scarica, la QoS non c'entra.</li>
+    <li><b>Misura perdita e jitter</b> verso il centralino. La voce tollera fino a circa l'1% di perdita
+    e 30 ms di jitter: oltre, si sente.</li>
+    <li><b>È solo in Wi-Fi?</b> Allora è un problema radio, non di banda: vedi lezione 2-21.</li>
+    <li><b>È solo su alcune chiamate?</b> Potrebbe essere NAT e SIP ALG (lezione 1-21), non QoS.</li>
+    <li><b>Succede quando partono i backup?</b> Allora sì, è QoS — o più semplicemente una finestra
+    oraria diversa per i backup, che costa zero.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0"><b>Molto spesso la soluzione giusta non è la QoS</b> ma
+  spostare i backup di notte o aumentare l'upload. Proporre la soluzione semplice quando esiste è ciò
+  che ti fa guadagnare fiducia.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: QoS",
+  "questions": [
+    { "q": "Quando la QoS è utile?",
+      "a": [ {"t":"Solo quando la linea è satura: decide chi passa prima quando lo spazio è finito","ok":true},
+             {"t":"Sempre: migliora le prestazioni in ogni condizione","ok":false},
+             {"t":"Solo sulle reti Wi-Fi","ok":false},
+             {"t":"Solo per il traffico in ingresso","ok":false} ],
+      "e": "Come la corsia d'emergenza su un'autostrada libera, se non c'è coda la QoS non cambia nulla. E non aggiunge banda: dà la precedenza a qualcuno a scapito di qualcun altro. Se un cliente ha problemi a linea scarica, la causa è un'altra." },
+
+    { "q": "Perché la QoS va configurata limitando la banda a poco sotto quella reale della linea?",
+      "a": [ {"t":"Così la coda si forma sul tuo firewall, dove governi le priorità, e non sull'apparato dell'operatore","ok":true},
+             {"t":"Per lasciare banda di riserva agli aggiornamenti","ok":false},
+             {"t":"Perché gli operatori penalizzano chi satura la linea","ok":false},
+             {"t":"Per ridurre il consumo di CPU del firewall","ok":false} ],
+      "e": "Se il firewall consegna a piena velocità, la congestione avviene a valle, nell'apparato dell'operatore, dove la tua QoS non ha più alcun effetto: i pacchetti sono già usciti. Limitando al 90-95% il punto di congestione si sposta dentro il tuo apparato. È il passaggio che quasi nessuno fa e che fa la differenza." },
+
+    { "q": "Le marcature DSCP che imposti valgono anche su Internet?",
+      "a": [ {"t":"No: gli operatori in genere le azzerano o le ignorano","ok":true},
+             {"t":"Sì, sono uno standard rispettato ovunque","ok":false},
+             {"t":"Solo se si usa IPv6","ok":false},
+             {"t":"Solo per il traffico marcato EF","ok":false} ],
+      "e": "La marcatura è solo un'etichetta: vale se chi la riceve è configurato per rispettarla. Sulla tua rete e sulla tua uscita funziona; appena il pacchetto entra in Internet diventa traffico come tutti gli altri. Per questo la QoS risolve i problemi verso il centralino interno o dentro un tunnel tra sedi, non verso un partecipante dall'altra parte del mondo." },
+
+    { "q": "Qual è la differenza tra shaping e policing?",
+      "a": [ {"t":"Lo shaping accoda e rallenta, il policing scarta il traffico in eccesso","ok":true},
+             {"t":"Lo shaping vale in ingresso, il policing in uscita","ok":false},
+             {"t":"Lo shaping riguarda il Wi-Fi, il policing il cavo","ok":false},
+             {"t":"Sono sinonimi","ok":false} ],
+      "e": "Lo shaping ritarda e TCP rallenta ordinatamente; il policing scarta, e TCP interpreta la perdita come congestione grave riducendo drasticamente la velocità. In uscita verso la WAN si usa quasi sempre lo shaping; il policing ha senso per imporre un tetto rigido, per esempio alla rete ospiti." },
+
+    { "q": "Perché la coda a priorità assoluta va limitata come banda?",
+      "a": [ {"t":"Altrimenti traffico marcato EF per errore può affamare tutto il resto","ok":true},
+             {"t":"Perché altrimenti la voce consuma troppa CPU","ok":false},
+             {"t":"Perché gli apparati non supportano code illimitate","ok":false},
+             {"t":"Per lasciare spazio al traffico in ingresso","ok":false} ],
+      "e": "Una coda prioritaria senza tetto può occupare l'intera linea e bloccare navigazione e backup. Il 30% è abbondante: una chiamata consuma 30-100 kbps, quindi cinquanta chiamate stanno in pochi Mbps. E le marcature che arrivano dai PC degli utenti non vanno mai considerate affidabili: si azzerano all'ingresso e si rimarca in base alla VLAN o all'applicazione." },
+
+    { "q": "Un cliente dice che il VoIP gracchia. Cosa verifichi prima di configurare la QoS?",
+      "a": [ {"t":"Se la linea è davvero satura nei momenti in cui accade, e se il problema è solo in Wi-Fi","ok":true},
+             {"t":"Quale modello di telefoni ha comprato","ok":false},
+             {"t":"La versione del firmware del centralino","ok":false},
+             {"t":"Il numero di utenti dell'azienda","ok":false} ],
+      "e": "Se il problema capita a linea scarica, la QoS non c'entra: potrebbe essere radio (Wi-Fi), NAT e SIP ALG, o un problema del centralino. Se invece coincide con i backup notturni, spesso la soluzione giusta non è nemmeno la QoS ma spostare la finestra dei backup — proporre la soluzione semplice quando esiste è ciò che costruisce fiducia." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

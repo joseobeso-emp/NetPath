@@ -1,0 +1,191 @@
+#id: l2-23
+#title: DHCP avanzato: relay, option e riservazioni
+#min: 22
+#level: 2
+#chapter: Servizi e osservabilità
+#desc: Option 43, 66 e 150, relay tra VLAN, alta disponibilità e i casi che vedi con telefoni e access point.
+#obj: Configurare un relay e capire cosa aggiunge alla richiesta
+#obj: Usare le option per far funzionare telefoni, access point e avvio da rete
+#obj: Progettare un DHCP che non si ferma quando cade un server
+#obj: Diagnosticare i casi in cui il DHCP funziona per alcuni e non per altri
+---
+<p class="lead">Nella lezione 1-19 hai visto DORA e i guasti di base. Qui vediamo quello che serve
+quando la rete ha più VLAN, telefoni che devono trovare il centralino e access point che devono trovare
+il controller — cioè la situazione normale di qualsiasi cliente aziendale.</p>
+
+<h2>Il relay: come una richiesta attraversa le VLAN</h2>
+
+<p>Un DHCP Discover è un broadcast e si ferma al confine del dominio. Il <span class="term" data-term="dhcp-relay">relay</span>
+lo raccoglie sull'interfaccia della VLAN e lo rispedisce <strong>in unicast</strong> al server, che sta
+altrove.</p>
+
+<p>Il pezzo interessante è come fa il server a sapere <em>quale</em> campo di indirizzi usare, visto che
+la richiesta ora arriva in unicast: il relay <strong>inserisce nel pacchetto l'indirizzo
+dell'interfaccia da cui ha raccolto la richiesta</strong> (il campo <em>giaddr</em>). Il server lo legge,
+capisce «questa viene dalla VLAN 30» e assegna un indirizzo del campo giusto.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Relay sui tre apparati</div>
+<pre><span class="c">═══ CISCO — sull'interfaccia SVI della VLAN ═════════</span>
+<span class="p">interface vlan</span> <span class="n">30</span>
+ <span class="p">ip address</span> <span class="n">10.10.30.1 255.255.255.0</span>
+ <span class="p">ip helper-address</span> <span class="n">10.10.50.10</span>      <span class="c"># l'indirizzo del server DHCP</span>
+
+<span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="p">config system interface</span>
+  <span class="p">edit</span> <span class="s">"v30-telecamere"</span>
+    <span class="p">set dhcp-relay-service</span> <span class="s">enable</span>
+    <span class="p">set dhcp-relay-ip</span> <span class="s">"10.10.50.10"</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/ip dhcp-relay add name=</span><span class="s">relay-v30</span> <span class="p">interface=</span><span class="s">v30-telec</span> <span class="p">\</span>
+<span class="p">    dhcp-server=</span><span class="n">10.10.50.10</span> <span class="p">local-address=</span><span class="n">10.10.30.1</span> <span class="p">disabled=</span><span class="s">no</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il relay funziona solo se esiste un campo per quella subnet
+  </div>
+  <p>Errore frequentissimo: si configura il relay, si verifica che la richiesta arrivi al server, e
+  nessuno riceve comunque un indirizzo.</p>
+  <p>Causa: sul server non esiste un ambito (scope) per la subnet <code>10.10.30.0/24</code>. Il server
+  riceve la richiesta, legge da dove viene, non trova niente che corrisponda e <b>non risponde</b> —
+  senza generare un errore evidente.</p>
+  <p style="margin-bottom:0"><b>Sequenza corretta:</b> prima crei l'ambito sul server, poi accendi il
+  relay. E ricorda che serve anche la <b>rotta di ritorno</b>: il server deve poter raggiungere
+  l'indirizzo del relay per rispondergli.</p>
+</div>
+
+<h2>Le option: informazioni oltre l'indirizzo</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Option</th><th>Cosa comunica</th><th>Dove serve</th></tr></thead>
+    <tbody>
+      <tr><td><b>3</b></td><td>Gateway predefinito</td><td>Sempre</td></tr>
+      <tr><td><b>6</b></td><td>Server DNS</td><td>Sempre</td></tr>
+      <tr><td><b>15</b></td><td>Suffisso DNS del dominio</td><td>Indispensabile con Active Directory</td></tr>
+      <tr><td><b>42</b></td><td>Server NTP</td><td>Utile ovunque: l'ora sbagliata rompe Kerberos e i certificati</td></tr>
+      <tr><td><b>43</b></td><td>Informazioni specifiche del produttore</td><td><b>Access point che devono trovare il controller</b></td></tr>
+      <tr><td><b>66</b></td><td>Nome del server TFTP</td><td><b>Telefoni VoIP</b> che scaricano la configurazione</td></tr>
+      <tr><td><b>67</b></td><td>Nome del file di avvio</td><td>Avvio da rete (PXE)</td></tr>
+      <tr><td><b>150</b></td><td>Server TFTP (variante Cisco)</td><td>Telefoni Cisco</td></tr>
+      <tr><td><b>119</b></td><td>Elenco domini di ricerca</td><td>Reti con più domini interni</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    «I telefoni nuovi non si configurano da soli»
+  </div>
+  <p>Un caso che incontrerai installando un centralino. I telefoni prendono l'indirizzo IP
+  correttamente, ma restano con la configurazione di fabbrica e non si registrano.</p>
+  <p>Causa: manca l'<b>option 66</b> (o la 150, a seconda del produttore) che dice loro dove scaricare
+  la propria configurazione. Il telefono ha l'indirizzo, ma non sa a chi chiedere il resto.</p>
+  <p style="margin-bottom:0">Stessa dinamica con gli access point gestiti da controller: senza
+  l'<b>option 43</b> configurata con l'indirizzo del controller, l'AP si accende, prende l'indirizzo e
+  resta lì «orfano», senza mai adottare la configurazione aziendale. Sono due casi in cui, sapendo dove
+  guardare, risolvi in cinque minuti quello che altrimenti diventa mezza giornata.</p>
+</div>
+
+<h2>Alta disponibilità del DHCP</h2>
+
+<p>Se il DHCP si ferma, per qualche ora non se ne accorge nessuno — i lease esistenti reggono — ma poi
+l'azienda si blocca progressivamente. Vale la pena renderlo ridondante, e ci sono tre modi:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Metodo</th><th>Come</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td><b>Failover DHCP</b> (Windows Server)</td><td>Due server si sincronizzano i lease</td>
+          <td>La soluzione pulita in ambiente Microsoft. Modalità <em>load balance</em> o <em>hot standby</em></td></tr>
+      <tr><td><b>Split scope</b></td><td>Due server con campi complementari (per esempio 80% e 20%)</td>
+          <td>Metodo antico ma funzionante ovunque. Attenzione a non farli sovrapporre</td></tr>
+      <tr><td><b>DHCP sul firewall</b></td><td>Il firewall distribuisce direttamente gli indirizzi</td>
+          <td>Semplicissimo e, se il firewall è in HA, ridondante di suo. Perde però l'integrazione con AD e la registrazione automatica dei nomi nel DNS</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Quale scegliere in una PMI
+  </div>
+  <p>Se il cliente ha Active Directory, <b>DHCP su Windows Server con failover</b>: si integra con il
+  DNS (i nomi dei PC si registrano da soli), si gestisce da un punto solo e supporta tutte le option.</p>
+  <p style="margin-bottom:0">Se il cliente non ha server, <b>DHCP sul firewall</b> è la scelta giusta e
+  non c'è niente di male: è affidabile e, con il firewall in alta disponibilità, ridondante. L'importante
+  è non avere <em>entrambi</em> attivi per la stessa VLAN, che è un modo creativo per creare conflitti.</p>
+</div>
+
+<h2>I guasti che vedrai</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>Una VLAN non riceve indirizzi, le altre sì</td><td>Relay mancante su quella VLAN, o ambito inesistente sul server</td></tr>
+      <tr><td>Il relay c'è ma non arriva niente</td><td>Manca la rotta di ritorno dal server verso la subnet del relay</td></tr>
+      <tr><td>Indirizzi assegnati ma con gateway sbagliato</td><td>Option 3 errata nell'ambito, o due ambiti sovrapposti</td></tr>
+      <tr><td>I telefoni prendono l'IP ma non si registrano</td><td>Manca l'option 66 o 150</td></tr>
+      <tr><td>Gli access point restano senza configurazione</td><td>Manca l'option 43</td></tr>
+      <tr><td>Alcuni PC prendono indirizzi di un'altra rete</td><td>DHCP abusivo: serve DHCP snooping (lezione 2-07)</td></tr>
+      <tr><td>Il pool si esaurisce a metà giornata</td><td>Lease troppo lunghi per un ambiente ad alto ricambio</td></tr>
+      <tr><td>Conflitti di indirizzo ricorrenti</td><td>Statici dentro il campo dinamico: rivedi la ripartizione</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: DHCP avanzato",
+  "questions": [
+    { "q": "Come fa il server DHCP a sapere da quale VLAN proviene una richiesta inoltrata da un relay?",
+      "a": [ {"t":"Il relay inserisce nel pacchetto l'indirizzo dell'interfaccia da cui l'ha raccolta","ok":true},
+             {"t":"Dall'indirizzo MAC del client","ok":false},
+             {"t":"Dal numero di VLAN scritto nel tag 802.1Q","ok":false},
+             {"t":"Il server prova tutti i campi finché uno funziona","ok":false} ],
+      "e": "Il relay compila il campo <em>giaddr</em> con il proprio indirizzo su quella VLAN. Il server lo legge, individua l'ambito corrispondente e assegna un indirizzo del campo giusto. Il tag 802.1Q non arriva al server, perché la richiesta viaggia in unicast attraverso il routing normale." },
+
+    { "q": "Hai configurato il relay, la richiesta arriva al server, ma nessuno riceve indirizzi. Cosa manca?",
+      "a": [ {"t":"Un ambito (scope) per quella subnet sul server DHCP","ok":true},
+             {"t":"Il DHCP snooping sugli switch","ok":false},
+             {"t":"L'option 43","ok":false},
+             {"t":"Un secondo server DHCP","ok":false} ],
+      "e": "Senza un ambito che corrisponda alla subnet indicata dal relay, il server non trova niente da assegnare e semplicemente <b>non risponde</b>, senza errori evidenti. Prima si crea l'ambito, poi si accende il relay — e va verificata anche la rotta di ritorno verso la subnet del relay." },
+
+    { "q": "Dei telefoni VoIP prendono l'indirizzo IP ma restano con la configurazione di fabbrica. Cosa manca?",
+      "a": [ {"t":"L'option 66 o 150, che indica dove scaricare la configurazione","ok":true},
+             {"t":"L'option 42 del server NTP","ok":false},
+             {"t":"Il DHCP relay","ok":false},
+             {"t":"Una VLAN voce dedicata","ok":false} ],
+      "e": "Il telefono ha l'indirizzo ma non sa a chi chiedere il resto: l'option 66 (o la 150 per alcuni produttori) gli dice qual è il server da cui scaricare la propria configurazione. Se il relay mancasse non avrebbero nemmeno l'indirizzo IP." },
+
+    { "q": "Degli access point gestiti da controller si accendono, prendono l'indirizzo e restano «orfani». Cosa sospetti?",
+      "a": [ {"t":"Manca l'option 43 che comunica l'indirizzo del controller","ok":true},
+             {"t":"Il PoE non fornisce abbastanza potenza","ok":false},
+             {"t":"Gli AP sono nella VLAN sbagliata","ok":false},
+             {"t":"Il firmware è troppo vecchio","ok":false} ],
+      "e": "L'AP ha connettività ma non sa dove sia il controller da cui prendere la configurazione. L'option 43 glielo comunica. Se il PoE fosse insufficiente non si accenderebbero affatto, e se fossero nella VLAN sbagliata non prenderebbero un indirizzo coerente." },
+
+    { "q": "In una PMI con Active Directory, dove conviene mettere il DHCP?",
+      "a": [ {"t":"Su Windows Server con failover, per l'integrazione con DNS e AD","ok":true},
+             {"t":"Sul firewall, sempre","ok":false},
+             {"t":"Su ogni switch di piano","ok":false},
+             {"t":"Sia sul server sia sul firewall, per ridondanza","ok":false} ],
+      "e": "Con AD, il DHCP su Windows Server registra automaticamente i nomi dei PC nel DNS, supporta tutte le option e si gestisce da un punto solo, con il failover integrato per la ridondanza. Metterlo <b>sia</b> sul server sia sul firewall per la stessa VLAN non è ridondanza: è un modo creativo per creare conflitti di indirizzo." },
+
+    { "q": "Perché un guasto del DHCP non si manifesta subito?",
+      "a": [ {"t":"I lease già assegnati restano validi finché non scadono","ok":true},
+             {"t":"Perché i PC memorizzano l'indirizzo in modo permanente","ok":false},
+             {"t":"Perché il firewall assegna indirizzi di riserva","ok":false},
+             {"t":"Perché interviene automaticamente l'APIPA","ok":false} ],
+      "e": "Chi ha già un indirizzo continua a lavorare fino alla scadenza del lease, quindi il guasto emerge in modo progressivo — prima i nuovi dispositivi, poi via via gli altri. È insidioso perché al momento della segnalazione il problema può essere già in corso da ore, e i sintomi sembrano casuali." }
+  ]
+}
+</script>

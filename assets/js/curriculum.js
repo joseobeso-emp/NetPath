@@ -93,10 +93,10 @@ window.NETPATH_CURRICULUM = [
       { id:"l2-22", t:"Wi-Fi enterprise: WPA2/3-Enterprise e RADIUS", s:"Autenticazione con le credenziali aziendali, certificati, VLAN dinamiche.", m:26, ready:true }
     ]},
     { title: "Servizi e osservabilità", lessons: [
-      { id:"l2-23", t:"DHCP avanzato: relay, option, riservazioni", s:"Option 43, 66, 150, relay tra VLAN e i casi che vedi con telefoni e AP.", m:22, ready:false },
-      { id:"l2-24", t:"DNS avanzato: record, forwarder, split-brain", s:"A, AAAA, CNAME, MX, SRV, TXT. DNS interno di Active Directory e i suoi tranelli.", m:28, ready:false },
-      { id:"l2-25", t:"Log, SNMP, syslog e NetFlow", s:"Come si costruisce visibilità su una rete che non hai progettato tu.", m:24, ready:false },
-      { id:"l2-26", t:"QoS: dare la precedenza a chi serve", s:"DSCP, code, shaping, policing. Il VoIP che gracchia e come si sistema.", m:26, ready:false }
+      { id:"l2-23", t:"DHCP avanzato: relay, option, riservazioni", s:"Option 43, 66, 150, relay tra VLAN e i casi che vedi con telefoni e AP.", m:22, ready:true },
+      { id:"l2-24", t:"DNS avanzato: record, forwarder, split-brain", s:"A, AAAA, CNAME, MX, SRV, TXT. DNS interno di Active Directory e i suoi tranelli.", m:28, ready:true },
+      { id:"l2-25", t:"Log, SNMP, syslog e NetFlow", s:"Come si costruisce visibilità su una rete che non hai progettato tu.", m:24, ready:true },
+      { id:"l2-26", t:"QoS: dare la precedenza a chi serve", s:"DSCP, code, shaping, policing. Il VoIP che gracchia e come si sistema.", m:26, ready:true }
     ]},
     { title: "IPv6 e documentazione", lessons: [
       { id:"l2-27", t:"IPv6 senza paura", s:"Indirizzi, SLAAC, NDP, dual stack. Perché non è 'IPv4 con più numeri'.", m:30, ready:false },
