@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Policy routing e route leaking — NetPath</title>
+<meta name="description" content="Quando la destinazione non basta a decidere la strada: instradare in base a chi parla, non solo a dove va.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-11">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Routing</span>
+      </nav>
+      <h1 class="lesson-title">Policy routing e route leaking</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 11</span>
+        <span class="chip">22 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire quando il routing normale non basta e serve una politica</li>
+        <li>Instradare traffico diverso su linee diverse in base alla sorgente o all'applicazione</li>
+        <li>Riconoscere i tranelli del policy routing: NAT, ritorno, stateful</li>
+        <li>Sapere cos'è il route leaking tra tabelle separate</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Fin qui il router ha deciso in base a <em>una sola informazione</em>: l'indirizzo di
+destinazione. Nella realtà capita spesso di dover decidere anche in base a <em>chi</em> sta parlando.
+Il policy routing fa esattamente questo — ed è la tecnologia su cui è costruita l'SD-WAN che venderai
+ai clienti.</p>
+
+<h2>Il problema</h2>
+
+<p>Un cliente ha due linee: una fibra veloce e una FWA con traffico limitato. Vuole che:</p>
+
+<ul class="clean">
+  <li>Il <b>gestionale e la posta</b> escano sempre dalla fibra, perché sono critici.</li>
+  <li>La <b>rete ospiti</b> esca dalla FWA, per non consumare la banda buona.</li>
+  <li>Il <b>traffico dei backup notturni</b> esca dalla FWA, che di notte è scarica.</li>
+</ul>
+
+<p>Con il routing tradizionale è impossibile: tutte e tre queste categorie hanno la stessa destinazione
+— «Internet», cioè <code>0.0.0.0/0</code> — e la tabella di routing sa scegliere solo in base a quella.
+Serve qualcosa che guardi <strong>da dove viene</strong> il traffico, non solo dove va.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 270" role="img" aria-label="Il policy routing manda traffico con la stessa destinazione su linee diverse in base alla sorgente">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Stessa destinazione, strade diverse</text>
+
+    <g stroke-width="1.5">
+      <rect x="16" y="50"  width="160" height="38" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="16" y="102" width="160" height="38" rx="7" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="16" y="154" width="160" height="38" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="32" y="74">VLAN 10 uffici</text>
+      <text x="32" y="126">VLAN 20 ospiti</text>
+      <text x="32" y="178">backup, di notte</text>
+    </g>
+
+    <rect x="250" y="88" width="170" height="66" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.9"/>
+    <text x="335" y="114" text-anchor="middle" class="dg-label-sm">MOTORE DI POLITICA</text>
+    <text x="335" y="134" text-anchor="middle" class="dg-mono-sm">guarda CHI parla</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.5" fill="none">
+      <path d="M180 69h40v40h26"/><path d="M180 121h66"/><path d="M180 173h40v-40h26"/>
+    </g>
+
+    <g stroke-width="1.6">
+      <rect x="500" y="64" width="184" height="42" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="500" y="136" width="184" height="42" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <text x="592" y="82" text-anchor="middle" class="dg-label-sm">WAN1 · fibra</text>
+    <text x="592" y="98" text-anchor="middle" class="dg-mono-sm">veloce, illimitata</text>
+    <text x="592" y="154" text-anchor="middle" class="dg-label-sm">WAN2 · FWA</text>
+    <text x="592" y="170" text-anchor="middle" class="dg-mono-sm">a consumo</text>
+
+    <path d="M424 108 L 496 86" stroke="var(--dg-5)" stroke-width="2" fill="none"/>
+    <path d="M424 130 L 496 152" stroke="var(--dg-3)" stroke-width="2" fill="none"/>
+
+    <text x="350" y="222" text-anchor="middle" class="dg-label-sm">La tabella di routing direbbe «0.0.0.0/0 → WAN1» per tutti e tre.</text>
+    <text x="350" y="244" text-anchor="middle" class="dg-label-sm">La politica viene consultata <tspan font-weight="700">prima</tspan> della tabella e può scavalcarla.</text>
+  </svg>
+  </div>
+  <figcaption>Il policy routing (o <b>PBR</b>, Policy-Based Routing) aggiunge una domanda prima di quella
+  solita: non solo «dove va?» ma anche «da chi viene, su quale porta, da quale interfaccia?».</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: le due corsie del casello
+  </div>
+  <p>A un casello autostradale tutte le macchine vanno nella stessa direzione: Milano. Il cartello dice
+  «Milano, di qua» e basterebbe.</p>
+  <p>Ma c'è un addetto che, prima del cartello, guarda <b>chi sei</b>: «le ambulanze a sinistra, i
+  camion a destra, tutti gli altri seguite il cartello». La destinazione è identica per tutti, ma la
+  corsia cambia in base a chi arriva.</p>
+  <p>Quell'addetto è il policy routing. E nota l'ordine: <b>viene prima del cartello</b>. Se dice
+  qualcosa, il cartello non viene nemmeno guardato. Ecco perché una politica sbagliata «rompe» il
+  routing anche se la tabella è perfetta: l'addetto ha già mandato la macchina da un'altra parte.</p>
+</div>
+
+<h2>Su cosa si può decidere</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Criterio</th><th>Esempio d'uso reale</th></tr></thead>
+    <tbody>
+      <tr><td><b>Indirizzo o rete sorgente</b></td><td>Gli ospiti escono dalla linea secondaria</td></tr>
+      <tr><td><b>Interfaccia di ingresso</b></td><td>Tutto ciò che arriva dalla VLAN telecamere va al solo NVR</td></tr>
+      <tr><td><b>Porta di destinazione</b></td><td>Il traffico SIP del centralino esce sempre dalla fibra</td></tr>
+      <tr><td><b>Protocollo</b></td><td>ICMP di prova instradato su una linea specifica</td></tr>
+      <tr><td><b>Applicazione riconosciuta</b><br><span style="font-size:.85em;color:var(--text-mute)">solo firewall L7</span></td>
+          <td>Microsoft 365 esce dalla fibra, YouTube dalla FWA</td></tr>
+      <tr><td><b>Utente autenticato</b></td><td>I dirigenti hanno priorità sulla linea buona</td></tr>
+      <tr><td><b>Orario</b></td><td>I backup usano la FWA solo dalle 22 alle 6</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Policy routing sui tre apparati</div>
+<pre><span class="c">═══ MIKROTIK — marcatura + tabella dedicata ═════════</span>
+<span class="c"># 1. marchio il traffico degli ospiti</span>
+<span class="p">/ip firewall mangle add chain=</span><span class="s">prerouting</span> <span class="p">\</span>
+<span class="p">    src-address=</span><span class="n">10.10.20.0/24</span> <span class="p">action=</span><span class="s">mark-routing</span> <span class="p">\</span>
+<span class="p">    new-routing-mark=</span><span class="s">via-fwa</span> <span class="p">passthrough=</span><span class="s">no</span>
+<span class="c"># 2. una rotta di default valida SOLO per quel marchio</span>
+<span class="p">/ip route add dst-address=</span><span class="n">0.0.0.0/0</span> <span class="p">gateway=</span><span class="n">192.168.8.1</span> <span class="p">\</span>
+<span class="p">    routing-mark=</span><span class="s">via-fwa</span> <span class="p">check-gateway=</span><span class="s">ping</span>
+
+<span class="c">═══ FORTIGATE — policy route ════════════════════════</span>
+<span class="p">config router policy</span>
+  <span class="p">edit</span> <span class="n">1</span>
+    <span class="p">set input-device</span> <span class="s">"v20-ospiti"</span>
+    <span class="p">set srcaddr</span> <span class="s">"rete-ospiti"</span>
+    <span class="p">set dstaddr</span> <span class="s">"all"</span>
+    <span class="p">set output-device</span> <span class="s">"wan2"</span>
+    <span class="p">set gateway</span> <span class="n">192.168.8.1</span>
+
+<span class="c">═══ CISCO — route-map su interfaccia ════════════════</span>
+<span class="p">access-list</span> <span class="n">10</span> <span class="p">permit</span> <span class="n">10.10.20.0 0.0.0.255</span>
+<span class="p">route-map PBR-OSPITI permit</span> <span class="n">10</span>
+ <span class="p">match ip address</span> <span class="n">10</span>
+ <span class="p">set ip next-hop</span> <span class="n">192.168.8.1</span>
+<span class="p">interface vlan</span> <span class="n">20</span>
+ <span class="p">ip policy route-map PBR-OSPITI</span>
+</pre>
+</div>
+
+<h2>I quattro tranelli del policy routing</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le quattro cose che ti faranno perdere un pomeriggio
+  </div>
+  <p><b>1. Il NAT deve corrispondere all'uscita.</b> Se mandi il traffico fuori da WAN2 ma il NAT
+  sostituisce l'indirizzo con quello di WAN1, i pacchetti partono con un mittente che appartiene a
+  un'altra linea: le risposte torneranno sulla linea sbagliata o non torneranno affatto. <b>Ogni policy
+  route vuole la sua regola di NAT coerente.</b></p>
+  <p><b>2. La politica scavalca il controllo attivo.</b> Una policy route «manda gli ospiti su WAN2»
+  continua a mandarli lì <em>anche quando WAN2 è giù</em>, perché la politica viene consultata prima
+  della tabella. Serve dire esplicitamente all'apparato di disattivare la politica se l'uscita non è
+  raggiungibile: su FortiGate è l'opzione di controllo dello stato del gateway, su MikroTik si ottiene
+  con <code>check-gateway</code> sulla rotta marcata.</p>
+  <p><b>3. Il traffico di ritorno non è governato dalla politica.</b> Le risposte tornano seguendo le
+  sessioni già aperte, ma il traffico che <em>inizia</em> dall'esterno segue la tabella normale.
+  È la fonte tipica del routing asimmetrico della lezione precedente.</p>
+  <p><b>4. La politica riguarda solo il traffico che attraversa.</b> Il traffico generato
+  <em>dall'apparato stesso</em> — aggiornamenti, log, controlli attivi, tunnel VPN — spesso non passa
+  dal policy routing. Se un tunnel deve uscire da una linea precisa, va configurato sul tunnel stesso,
+  non con una politica.</p>
+</div>
+
+<h2>Route leaking: tabelle separate che si parlano</h2>
+
+<p>Alcuni apparati permettono di avere <strong>più tabelle di routing indipendenti</strong> sullo stesso
+dispositivo: si chiamano VRF (Virtual Routing and Forwarding) su Cisco, VDOM su FortiGate, tabelle
+di routing con marcatura su MikroTik.</p>
+
+<p>Servono a tenere davvero separati due mondi che devono coesistere sullo stesso apparato: la rete di
+produzione e quella di un'azienda ospitata, o la rete aziendale e quella industriale. Due tabelle
+separate significa che <strong>anche se qualcuno sbaglia una rotta, il traffico non può passare
+dall'una all'altra</strong>: la separazione non dipende da una regola che si può dimenticare.</p>
+
+<p>Il <strong>route leaking</strong> è l'operazione controllata di far conoscere <em>alcune</em> rotte da
+una tabella all'altra — tipicamente per condividere un servizio comune (un server DNS, una stampante,
+l'uscita Internet) senza unire i due mondi.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Quando incontrerai davvero le VRF
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Reti industriali</b> (OT) separate da quelle d'ufficio (IT): il requisito di separazione
+    spesso arriva da una norma o da un'assicurazione, e va dimostrato — non basta «c'è una regola».</li>
+    <li><b>Aziende che ospitano altre aziende</b> nello stesso edificio con indirizzamenti che si
+    sovrappongono.</li>
+    <li><b>Fornitori con accesso remoto</b> a un solo macchinario, che non devono poter vedere altro.</li>
+    <li><b>Fusioni aziendali</b> in cui due reti usano lo stesso indirizzamento e non si può
+    rinumerare subito.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">In una PMI tipica non le userai quasi mai. Ma sapere che
+  esistono ti permette di riconoscere il caso in cui sono la risposta giusta invece di inventare
+  soluzioni contorte con le regole del firewall.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il ponte verso l'SD-WAN
+  </div>
+  <p>Quello che hai appena visto è l'antenato manuale dell'SD-WAN. La differenza è che l'SD-WAN
+  <b>misura in continuazione</b> latenza, perdita e jitter di ogni linea, e sposta le applicazioni da
+  sola quando una si degrada — senza aspettare che cada del tutto.</p>
+  <p style="margin-bottom:0">Il policy routing dice «gli ospiti sempre su WAN2». L'SD-WAN dice «il
+  traffico voce sulla linea che in questo momento ha meno di 150 ms di latenza e meno dell'1% di
+  perdita». Stesso meccanismo sotto, decisione dinamica sopra. Lo vedremo nella lezione 3-05.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: policy routing",
+  "questions": [
+    { "q": "Perché il routing tradizionale non basta a mandare gli ospiti su una linea e gli uffici su un'altra?",
+      "a": [ {"t":"Perché entrambi hanno la stessa destinazione, 0.0.0.0/0, e la tabella decide solo su quella","ok":true},
+             {"t":"Perché le due linee hanno velocità diverse","ok":false},
+             {"t":"Perché serve prima configurare il NAT","ok":false},
+             {"t":"Perché le VLAN impediscono il routing differenziato","ok":false} ],
+      "e": "La tabella di routing guarda solo l'indirizzo di destinazione: per entrambi i gruppi la destinazione è «Internet», quindi la scelta sarebbe identica. Il policy routing aggiunge la possibilità di decidere anche in base alla sorgente, all'interfaccia di ingresso, alla porta o all'applicazione." },
+
+    { "q": "Hai creato una policy route che manda gli ospiti su WAN2, ma non hai toccato il NAT. Cosa succede?",
+      "a": [ {"t":"I pacchetti escono da WAN2 con l'indirizzo di WAN1 e le risposte non tornano correttamente","ok":true},
+             {"t":"Funziona tutto regolarmente","ok":false},
+             {"t":"La policy route viene ignorata","ok":false},
+             {"t":"Il firewall si riavvia","ok":false} ],
+      "e": "Il traffico esce dall'interfaccia giusta ma con un mittente appartenente a un'altra linea: le risposte vengono instradate verso WAN1, o scartate perché l'operatore non riconosce quell'indirizzo come proprio. Ogni policy route richiede una regola di NAT coerente con l'uscita che impone." },
+
+    { "q": "Una policy route manda gli ospiti su WAN2, che si guasta. Cosa succede se non è configurato il controllo dello stato?",
+      "a": [ {"t":"Gli ospiti restano senza Internet: la politica continua a mandarli su una linea morta","ok":true},
+             {"t":"Passano automaticamente su WAN1","ok":false},
+             {"t":"Il traffico viene messo in coda finché WAN2 torna","ok":false},
+             {"t":"La politica si disabilita da sola dopo pochi minuti","ok":false} ],
+      "e": "La politica viene consultata <b>prima</b> della tabella di routing e la scavalca: il meccanismo delle rotte di riserva non entra nemmeno in gioco. Va detto esplicitamente all'apparato di disattivare la politica quando l'uscita non è raggiungibile, altrimenti il failover che hai configurato non protegge quel traffico." },
+
+    { "q": "Su cosa NON può decidere un policy routing su un firewall di livello 4?",
+      "a": [ {"t":"Sull'applicazione specifica, per esempio distinguere Microsoft 365 da YouTube","ok":true},
+             {"t":"Sulla rete sorgente","ok":false},
+             {"t":"Sulla porta di destinazione","ok":false},
+             {"t":"Sull'interfaccia di ingresso","ok":false} ],
+      "e": "Riconoscere l'applicazione richiede ispezione di livello 7: al livello 4 esistono solo indirizzi e numeri di porta, e sia Microsoft 365 sia YouTube usano la 443. Sorgente, porta e interfaccia di ingresso sono invece informazioni disponibili ai livelli 3 e 4." },
+
+    { "q": "A cosa serve una VRF?",
+      "a": [ {"t":"Ad avere più tabelle di routing indipendenti sullo stesso apparato, con separazione strutturale","ok":true},
+             {"t":"Ad aumentare il numero di rotte memorizzabili","ok":false},
+             {"t":"A cifrare il traffico tra due reti","ok":false},
+             {"t":"A bilanciare il carico tra due linee","ok":false} ],
+      "e": "Due tabelle separate significano che il traffico non può passare dall'una all'altra nemmeno per errore di configurazione: la separazione non dipende da una regola che si può dimenticare. Si usa per reti industriali separate da quelle d'ufficio, per aziende ospitate con indirizzamenti sovrapposti, o per accessi di fornitori limitati a un solo sistema." },
+
+    { "q": "Qual è la differenza principale tra policy routing e SD-WAN?",
+      "a": [ {"t":"L'SD-WAN misura in continuazione la qualità delle linee e sposta il traffico da sola","ok":true},
+             {"t":"L'SD-WAN funziona solo su fibra","ok":false},
+             {"t":"Il policy routing non richiede configurazione","ok":false},
+             {"t":"Sono la stessa cosa con nomi commerciali diversi","ok":false} ],
+      "e": "Il policy routing è una decisione statica: «gli ospiti sempre su WAN2». L'SD-WAN misura latenza, perdita e jitter in tempo reale e sposta le applicazioni quando una linea si degrada, senza aspettare che cada del tutto. Il meccanismo sottostante è lo stesso; cambia che la decisione è dinamica e basata su misure." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

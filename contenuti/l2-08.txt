@@ -1,0 +1,309 @@
+#id: l2-08
+#title: La tabella di routing in profondità
+#min: 26
+#level: 2
+#chapter: Routing
+#desc: Longest prefix match, route connesse, statiche e di default: come si legge davvero una tabella di routing e come si capisce quale riga verrà usata.
+#obj: Riconoscere ogni tipo di riga di una tabella di routing e da dove viene
+#obj: Applicare il longest prefix match anche nei casi che sembrano ambigui
+#obj: Capire la risoluzione ricorsiva del next-hop e perché a volte fallisce
+#obj: Usare i comandi che dicono con certezza quale strada prenderà un pacchetto
+---
+<p class="lead">Nella lezione 1-18 hai visto la tabella di routing di un PC. Quella di un router o di un
+firewall è la stessa cosa, con più righe e più tipi. Saperla leggere bene è la competenza che ti permette
+di rispondere alla domanda più frequente del mestiere: <em>«perché questo traffico va lì invece che là?»</em></p>
+
+<h2>Anatomia di una riga</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 220" role="img" aria-label="Una riga di tabella di routing con i suoi campi spiegati uno per uno">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Una riga, sei informazioni</text>
+
+    <g stroke-width="1.5">
+      <rect x="14"  y="40" width="140" height="36" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="158" y="40" width="130" height="36" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="292" y="40" width="110" height="36" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="406" y="40" width="90"  height="36" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="500" y="40" width="90"  height="36" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="594" y="40" width="92"  height="36" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" opacity=".7"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="84"  y="63">10.20.0.0/16</text>
+      <text x="223" y="63">10.10.99.2</text>
+      <text x="347" y="63">port3</text>
+      <text x="451" y="63">[10/0]</text>
+      <text x="545" y="63">statica</text>
+      <text x="640" y="63">attiva</text>
+    </g>
+    <g class="dg-label-sm">
+      <text x="14"  y="104">DESTINAZIONE</text>
+      <text x="14"  y="120" fill="var(--dg-text-soft)">quale rete</text>
+      <text x="14"  y="134" fill="var(--dg-text-soft)">so raggiungere</text>
+
+      <text x="158" y="104">NEXT HOP</text>
+      <text x="158" y="120" fill="var(--dg-text-soft)">a chi consegno</text>
+      <text x="158" y="134" fill="var(--dg-text-soft)">il pacchetto</text>
+
+      <text x="292" y="104">INTERFACCIA</text>
+      <text x="292" y="120" fill="var(--dg-text-soft)">da quale porta</text>
+      <text x="292" y="134" fill="var(--dg-text-soft)">esce</text>
+
+      <text x="406" y="104">DISTANZA/</text>
+      <text x="406" y="120">METRICA</text>
+      <text x="406" y="134" fill="var(--dg-text-soft)">chi vince</text>
+
+      <text x="500" y="104">ORIGINE</text>
+      <text x="500" y="120" fill="var(--dg-text-soft)">chi l'ha messa</text>
+      <text x="500" y="134" fill="var(--dg-text-soft)">in tabella</text>
+
+      <text x="594" y="104">STATO</text>
+      <text x="594" y="120" fill="var(--dg-text-soft)">è utilizzabile</text>
+      <text x="594" y="134" fill="var(--dg-text-soft)">adesso?</text>
+    </g>
+    <rect x="14" y="160" width="672" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <text x="350" y="176" text-anchor="middle" class="dg-label-sm">Si legge così: «per raggiungere qualsiasi indirizzo di 10.20.0.0/16, consegna a 10.10.99.2</text>
+    <text x="350" y="192" text-anchor="middle" class="dg-label-sm">uscendo da port3. È una rotta statica, ha distanza 10, ed è attiva.»</text>
+  </svg>
+  </div>
+  <figcaption>Tutti i router del mondo hanno queste sei informazioni, con nomi diversi. Imparare a
+  leggerle una volta significa saper leggere la tabella di un FortiGate, di un MikroTik, di un Cisco
+  e di Azure.</figcaption>
+</figure>
+
+<h2>Da dove arrivano le righe</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Chi la crea</th><th>Che aspetto ha</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td><b>Connessa</b><br><span style="font-size:.85em;color:var(--text-mute)">connected / directly connected</span></td>
+          <td>Automatica: appare quando dai un IP a un'interfaccia</td>
+          <td><code>C 10.10.10.0/24 is directly connected, port2</code></td>
+          <td>Non si cancella e non si configura. Se manca, l'interfaccia è giù o senza indirizzo.</td></tr>
+      <tr><td><b>Locale</b><br><span style="font-size:.85em;color:var(--text-mute)">local</span></td>
+          <td>Automatica: l'indirizzo esatto del router</td>
+          <td><code>L 10.10.10.1/32</code></td>
+          <td>Serve al router per riconoscere il traffico destinato a sé stesso.</td></tr>
+      <tr><td><b>Statica</b></td><td>Tu, a mano</td>
+          <td><code>S 10.20.0.0/16 [10/0] via 10.10.99.2</code></td>
+          <td>Il 90% del routing nelle PMI è fatto di queste.</td></tr>
+      <tr><td><b>Dinamica</b></td><td>Un protocollo: OSPF, BGP, RIP</td>
+          <td><code>O 10.30.0.0/24 [110/20] via ...</code></td>
+          <td>La lettera dice il protocollo: O = OSPF, B = BGP, D = EIGRP.</td></tr>
+      <tr><td><b>Di default</b></td><td>Tu, o il DHCP dell'operatore</td>
+          <td><code>S* 0.0.0.0/0 via 88.1.2.254</code></td>
+          <td>«Per tutto il resto del mondo, di qua.»</td></tr>
+      <tr><td><b>Blackhole</b></td><td>Tu, a mano</td>
+          <td><code>S 192.168.50.0/24 is a summary, Null0</code></td>
+          <td>Butta via il traffico in silenzio. Utile, vedi lezione 2-09.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Longest prefix match: la regola che decide tutto</h2>
+
+<p>Quando più righe corrispondono alla destinazione, <strong>vince sempre quella con il prefisso più
+lungo</strong>, cioè la più specifica. Non la prima in elenco, non quella con la metrica migliore:
+prima si guarda la <em>specificità</em>, e solo tra righe ugualmente specifiche intervengono distanza
+e metrica.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 260" role="img" aria-label="Quattro rotte che corrispondono alla stessa destinazione, e come viene scelta la più specifica">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Destinazione: 10.20.30.40 — quattro righe corrispondono</text>
+
+    <g stroke-width="1.5">
+      <rect x="30" y="40"  width="640" height="34" rx="6" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".55"/>
+      <rect x="30" y="82"  width="640" height="34" rx="6" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".75"/>
+      <rect x="30" y="124" width="640" height="34" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="30" y="166" width="640" height="34" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="2.4"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="48" y="62">0.0.0.0/0</text>       <text x="200" y="62">via firewall</text>   <text x="430" y="62">prefisso 0</text>
+      <text x="48" y="104">10.0.0.0/8</text>     <text x="200" y="104">via router-A</text>  <text x="430" y="104">prefisso 8</text>
+      <text x="48" y="146">10.20.0.0/16</text>   <text x="200" y="146">via router-B</text>  <text x="430" y="146">prefisso 16</text>
+      <text x="48" y="188">10.20.30.0/24</text>  <text x="200" y="188">via router-C</text>  <text x="430" y="188">prefisso 24</text>
+    </g>
+    <g class="dg-label-sm" fill="var(--dg-text-soft)">
+      <text x="546" y="62">più generica</text>
+      <text x="546" y="104">↓</text>
+      <text x="546" y="146">↓</text>
+    </g>
+    <text x="546" y="188" class="dg-label-sm" fill="var(--dg-5)">VINCE</text>
+
+    <rect x="120" y="216" width="460" height="32" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.5"/>
+    <text x="350" y="236" text-anchor="middle" class="dg-label-sm">Il pacchetto va a <tspan font-family="var(--font-mono)">router-C</tspan>. Le altre tre righe non vengono nemmeno considerate.</text>
+  </svg>
+  </div>
+  <figcaption>La rotta di default è quella che corrisponde <b>sempre</b>, ed è per questo che è anche
+  quella che perde sempre: ha prefisso zero. Serve solo quando non c'è nient'altro.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: le istruzioni della nonna
+  </div>
+  <p>Devi consegnare un pacco a «Marco Bianchi, via Roma 12, Brescia». Hai quattro foglietti:</p>
+  <ul>
+    <li>«Per qualsiasi cosa, chiedi all'ufficio postale» — vale sempre, ma è vago.</li>
+    <li>«Per la Lombardia, prendi l'autostrada A4»</li>
+    <li>«Per Brescia, esci a Brescia Ovest»</li>
+    <li>«Per via Roma, gira dopo il semaforo»</li>
+  </ul>
+  <p>Quale segui? <b>Il più preciso che si applica al tuo caso.</b> Non è che gli altri siano sbagliati:
+  sono solo meno utili, perché ti portano nella direzione giusta ma non a destinazione.</p>
+  <p>E nota una cosa importante: <b>i foglietti generici non spariscono</b>. Servono per tutte le altre
+  consegne, quelle per cui non hai un'istruzione precisa. Ecco perché ogni router tiene la rotta di
+  default anche quando ha mille rotte specifiche.</p>
+</div>
+
+<h3>Il caso che confonde: la rotta specifica che «ruba» il traffico</h3>
+
+<p>Un firewall ha la rotta di default verso Internet e una rotta <code>10.0.0.0/8 → tunnel VPN</code>
+perché la sede centrale usa indirizzi 10.x. Un giorno il cliente aggiunge un servizio cloud che risponde
+su <code>10.50.x.x</code> raggiungibile via Internet.</p>
+
+<p>Quel traffico <strong>non uscirà mai su Internet</strong>: la rotta <code>/8</code> è più specifica
+della default e lo manda nel tunnel, dove si perde. Il sintomo è «quel servizio non funziona solo dalla
+sede», e la causa è una riga scritta due anni prima da qualcun altro.</p>
+
+<h2>La risoluzione ricorsiva del next-hop</h2>
+
+<p>Quando una rotta dice «via 10.10.99.2» senza indicare l'interfaccia, il router deve fare un
+<strong>secondo giro</strong>: cerca in tabella come si raggiunge 10.10.99.2, trova che è su una rete
+connessa a port3, e solo allora sa da dove uscire.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Perché una rotta «c'è ma non funziona»
+  </div>
+  <p>Se il next-hop non è raggiungibile — perché l'interfaccia verso di lui è giù, o perché non esiste
+  nessuna rotta che ci arrivi — <b>la rotta viene disattivata</b>. Resta scritta in configurazione ma
+  sparisce dalla tabella attiva.</p>
+  <p>È la causa del classico «ho messo la rotta e non funziona»: la rotta c'è, ma il router non sa
+  raggiungere il suo next-hop. Si verifica con un ping al next-hop stesso, che è sempre la prima cosa
+  da provare.</p>
+  <p style="margin-bottom:0"><b>Caso particolarmente insidioso:</b> una rotta di default il cui next-hop
+  si raggiunge solo grazie alla rotta di default stessa. Il router non riesce a risolverla e la scarta.
+  Si chiama <em>recursive routing loop</em> e capita tipicamente configurando male i tunnel VPN.</p>
+</div>
+
+<h2>RIB e FIB: due tabelle, non una</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>RIB (Routing Information Base)</th><th>FIB (Forwarding Information Base)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cos'è</b></td><td>Tutto quello che il router <em>sa</em>: tutte le rotte da tutte le origini</td>
+          <td>Solo le rotte <em>migliori</em>, quelle effettivamente usate</td></tr>
+      <tr><td><b>Dove vive</b></td><td>In memoria, gestita dal software</td><td>In hardware, per decidere alla massima velocità</td></tr>
+      <tr><td><b>Comando</b></td><td><code>get router info routing-table all</code></td><td><code>diagnose ip route list</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Perché ti interessa: può capitare che una rotta sia <strong>presente nella RIB ma non nella FIB</strong>
+— per esempio perché è stata scartata a favore di una migliore. Guardando solo la RIB sembra tutto a
+posto, mentre il traffico prende un'altra strada. Quando i conti non tornano, si guarda la FIB.</p>
+
+<h2>I comandi che rispondono con certezza</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Leggere la tabella</div>
+<pre><span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="p">get router info routing-table all</span>          <span class="c"># la RIB</span>
+<span class="p">get router info routing-table details</span> <span class="n">10.20.30.40</span>
+<span class="p">diagnose ip route list</span>                      <span class="c"># la FIB</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/ip route print</span>
+<span class="p">/ip route print where dst-address in</span> <span class="n">10.20.30.40</span>
+<span class="p">/ip route check</span> <span class="n">10.20.30.40</span>                <span class="c"># che strada prende?</span>
+
+<span class="c">═══ CISCO ═══════════════════════════════════════════</span>
+<span class="p">show ip route</span>
+<span class="p">show ip route</span> <span class="n">10.20.30.40</span>                 <span class="c"># la riga che vincerà</span>
+<span class="p">show ip cef</span> <span class="n">10.20.30.40</span>                   <span class="c"># la FIB</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il comando che vale tutta la lezione
+  </div>
+  <p>Non leggere la tabella intera cercando di applicare il longest prefix match a mente: <b>chiedi al
+  router</b>. Tutti hanno un comando che risponde «per questa destinazione userei questa riga».</p>
+  <p><code>show ip route 10.20.30.40</code> · <code>/ip route check 10.20.30.40</code> ·
+  <code>get router info routing-table details 10.20.30.40</code></p>
+  <p style="margin-bottom:0">Ti dà la risposta esatta in un secondo e senza possibilità di errore.
+  Su FortiGate esiste anche <code>diagnose sys session list</code>, che mostra per ogni sessione attiva
+  quale interfaccia sta effettivamente usando: è la verità definitiva.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    «Il traffico va dove non deve»: il metodo in quattro mosse
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Chiedi al router quale rotta userebbe</b> per quella destinazione esatta. Non indovinare.</li>
+    <li>Se la riga non è quella che ti aspetti, <b>cerca chi è più specifico</b>: c'è quasi sempre una
+    rotta <code>/8</code> o <code>/16</code> messa anni prima per una VPN.</li>
+    <li>Se la riga è giusta ma il traffico non passa, <b>verifica che il next-hop risponda</b> al ping.</li>
+    <li>Se tutto torna ma il comportamento no, <b>guarda la FIB e le sessioni attive</b>: la tabella
+    dice cosa il router <em>sa</em>, le sessioni dicono cosa <em>fa</em>.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la tabella di routing",
+  "questions": [
+    { "q": "In tabella ci sono <code>0.0.0.0/0</code>, <code>10.0.0.0/8</code> e <code>10.20.0.0/16</code>. Dove va un pacchetto per 10.20.30.40?",
+      "a": [ {"t":"Secondo la rotta 10.20.0.0/16, la più specifica che corrisponde","ok":true},
+             {"t":"Secondo la rotta di default","ok":false},
+             {"t":"Secondo 10.0.0.0/8","ok":false},
+             {"t":"Viene scartato per ambiguità","ok":false} ],
+      "e": "Longest prefix match: tra le righe che corrispondono vince quella con il prefisso più lungo, cioè la più precisa. Distanza e metrica intervengono solo per scegliere <em>tra righe ugualmente specifiche</em>." },
+
+    { "q": "Hai aggiunto una rotta statica ma non compare nella tabella attiva. Perché?",
+      "a": [ {"t":"Il next-hop non è raggiungibile, quindi la rotta viene disattivata","ok":true},
+             {"t":"Serve riavviare il router","ok":false},
+             {"t":"Le rotte statiche hanno bisogno di un protocollo dinamico","ok":false},
+             {"t":"La maschera dev'essere /24","ok":false} ],
+      "e": "Una rotta è utilizzabile solo se il router sa come raggiungere il proprio next-hop: se l'interfaccia verso di lui è giù o manca una rotta che ci arrivi, la riga resta in configurazione ma sparisce dalla tabella attiva. Primo controllo: un ping al next-hop." },
+
+    { "q": "Un cliente non raggiunge un servizio cloud su 10.50.1.10, mentre da casa funziona. In sede c'è una rotta <code>10.0.0.0/8 → tunnel VPN</code>. Cosa succede?",
+      "a": [ {"t":"La rotta /8 è più specifica della default e dirotta il traffico nel tunnel, dove si perde","ok":true},
+             {"t":"Il firewall blocca la porta del servizio","ok":false},
+             {"t":"Il DNS risolve un indirizzo sbagliato","ok":false},
+             {"t":"Il NAT non è configurato per quella destinazione","ok":false} ],
+      "e": "Un classico che incontrerai davvero. La rotta /8 è stata scritta per raggiungere la sede centrale, ma copre l'intero spazio 10.x — incluso un servizio pubblico che per caso usa quegli indirizzi. Si risolve con una rotta più specifica per quella destinazione che punti all'uscita Internet." },
+
+    { "q": "Qual è la differenza tra RIB e FIB?",
+      "a": [ {"t":"La RIB contiene tutto ciò che il router sa, la FIB solo le rotte effettivamente usate","ok":true},
+             {"t":"La RIB è per IPv4, la FIB per IPv6","ok":false},
+             {"t":"La RIB è statica, la FIB è dinamica","ok":false},
+             {"t":"Sono due nomi per la stessa tabella","ok":false} ],
+      "e": "La RIB è la conoscenza completa, gestita dal software; la FIB contiene solo le rotte migliori ed è realizzata in hardware per decidere alla massima velocità. Una rotta può esistere nella RIB ma non nella FIB perché ne è stata scelta una migliore: se i conti non tornano, si guarda la FIB." },
+
+    { "q": "Qual è il modo più affidabile per sapere quale strada prenderà un pacchetto?",
+      "a": [ {"t":"Chiedere al router con il comando che interroga una destinazione specifica","ok":true},
+             {"t":"Leggere tutta la tabella e applicare le regole a mente","ok":false},
+             {"t":"Fare un traceroute dalla propria postazione","ok":false},
+             {"t":"Guardare l'ordine delle righe in configurazione","ok":false} ],
+      "e": "<code>show ip route 10.20.30.40</code>, <code>/ip route check</code> o l'equivalente del tuo vendor danno la risposta esatta in un secondo, senza rischio di errore. Leggere a mente una tabella di cinquanta righe è il modo migliore per sbagliare, e l'ordine in configurazione non conta nulla per il routing." },
+
+    { "q": "Cos'è una rotta «connessa»?",
+      "a": [ {"t":"Una riga creata automaticamente quando si assegna un indirizzo a un'interfaccia","ok":true},
+             {"t":"Una rotta imparata da un protocollo dinamico","ok":false},
+             {"t":"Una rotta scritta a mano con priorità alta","ok":false},
+             {"t":"La rotta di default ricevuta dall'operatore","ok":false} ],
+      "e": "Appare da sola quando dai un IP a un'interfaccia e dice al router «questa rete è attaccata direttamente a me». Non si configura e non si cancella: se manca, significa che l'interfaccia è giù o priva di indirizzo — ed è un'informazione diagnostica immediata." }
+  ]
+}
+</script>

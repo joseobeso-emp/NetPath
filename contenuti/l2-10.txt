@@ -1,0 +1,302 @@
+#id: l2-10
+#title: OSPF: il primo routing dinamico
+#min: 30
+#level: 2
+#chapter: Routing
+#desc: Aree, adiacenze, LSA e costi, spiegati con una città e le sue strade. E la domanda vera: serve davvero al tuo cliente?
+#obj: Capire cosa risolve un protocollo di routing dinamico e cosa costa
+#obj: Descrivere come due router OSPF diventano vicini e perché a volte non ci riescono
+#obj: Sapere cos'è un'area e perché esiste l'area 0
+#obj: Decidere onestamente se a un cliente serve OSPF o bastano le rotte statiche
+---
+<p class="lead">Le rotte statiche funzionano benissimo finché la rete è piccola. Quando le sedi diventano
+dieci e i percorsi si moltiplicano, scriverle e mantenerle a mano diventa impossibile. OSPF è la
+risposta standard — ma prima di studiarlo va detta una cosa che i corsi non dicono: <strong>alla maggior
+parte dei tuoi clienti non serve</strong>. Capire quando serve è più prezioso di saperlo configurare.</p>
+
+<h2>Il problema che risolve</h2>
+
+<p>Con tre sedi e rotte statiche servono poche righe. Con dieci sedi, ciascuna che deve raggiungere le
+altre nove, le righe diventano novanta — e ogni volta che aggiungi una rete devi toccare dieci
+apparati. Basta dimenticarne uno e nascono guasti che si manifestano settimane dopo.</p>
+
+<p>Peggio: se un collegamento cade, le rotte statiche <strong>non lo sanno</strong> e continuano a
+mandare traffico in un buco nero, a meno di configurare un controllo attivo su ognuna.</p>
+
+<p>Un protocollo di routing dinamico risolve entrambi i problemi: i router <strong>si raccontano da soli
+quali reti conoscono</strong> e <strong>ricalcolano i percorsi quando qualcosa cambia</strong>.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la mappa contro il passaparola
+  </div>
+  <p>Immagina una città dove ogni incrocio ha un vigile.</p>
+  <p><b>Con le rotte statiche</b>, ogni vigile ha un foglietto scritto a mano dal sindaco: «per il
+  centro, manda a destra». Se una strada viene chiusa per lavori, il foglietto continua a dire
+  «a destra» e le macchine finiscono contro le transenne. Qualcuno deve andare a riscrivere tutti i
+  foglietti, uno per uno.</p>
+  <p><b>Con OSPF</b>, ogni vigile <b>descrive ai colleghi le strade che vede dal suo incrocio</b>:
+  «da me partono via Roma verso nord e via Verdi verso est, e sono lunghe così». Tutti i vigili
+  raccolgono le descrizioni di tutti gli altri e <b>si disegnano in testa la mappa completa della
+  città</b>. Poi, ognuno per conto suo, calcola il percorso più breve verso ogni destinazione.</p>
+  <p>Quando una strada viene chiusa, il vigile di quell'incrocio lo dice a tutti, <b>tutti aggiornano
+  la mappa e ricalcolano</b>. In pochi secondi la città intera usa percorsi alternativi, senza che
+  nessuno debba riscrivere niente.</p>
+  <p>Questo è il senso di «link-state»: non ci si passa la <em>conclusione</em> («per il centro vai a
+  destra»), ci si passa la <em>descrizione della realtà</em> («da me parte questa strada») e ognuno
+  trae le sue conclusioni.</p>
+</div>
+
+<h2>Come due router diventano vicini</h2>
+
+<p>Prima di scambiarsi qualsiasi informazione, due router OSPF devono diventare <strong>adiacenti</strong>.
+È una procedura in più passaggi, e conoscerla serve perché <strong>il 90% dei problemi OSPF è
+un'adiacenza che non si forma</strong>.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 280" role="img" aria-label="Le fasi con cui due router OSPF formano un'adiacenza e i parametri che devono coincidere">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dalla presentazione allo scambio della mappa</text>
+
+    <rect x="20" y="42" width="130" height="42" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="85" y="68" text-anchor="middle" class="dg-mono-sm">ROUTER A</text>
+    <rect x="550" y="42" width="130" height="42" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="615" y="68" text-anchor="middle" class="dg-mono-sm">ROUTER B</text>
+    <line x1="85" y1="84" x2="85" y2="238" stroke="var(--dg-line-soft)" stroke-dasharray="4 4"/>
+    <line x1="615" y1="84" x2="615" y2="238" stroke="var(--dg-line-soft)" stroke-dasharray="4 4"/>
+
+    <defs><marker id="os1" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-1)"/></marker>
+      <marker id="os2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-2)"/></marker></defs>
+
+    <path d="M89 110h518" stroke="var(--dg-1)" stroke-width="1.7" marker-end="url(#os1)"/>
+    <text x="350" y="104" text-anchor="middle" class="dg-mono-sm">1 · HELLO</text>
+    <text x="350" y="126" text-anchor="middle" class="dg-label-sm">«ci sono, sono nell'area 0, i miei timer sono 10/40»</text>
+
+    <path d="M611 156H93" stroke="var(--dg-2)" stroke-width="1.7" marker-end="url(#os2)"/>
+    <text x="350" y="150" text-anchor="middle" class="dg-mono-sm">2 · HELLO di risposta</text>
+    <text x="350" y="172" text-anchor="middle" class="dg-label-sm">se i parametri coincidono → stato TWO-WAY</text>
+
+    <path d="M89 202h518" stroke="var(--dg-5)" stroke-width="1.7" marker-end="url(#os1)"/>
+    <path d="M611 216H93" stroke="var(--dg-5)" stroke-width="1.7" marker-end="url(#os2)"/>
+    <text x="350" y="196" text-anchor="middle" class="dg-mono-sm">3 · Scambio dei database (LSA)</text>
+    <text x="350" y="238" text-anchor="middle" class="dg-label-sm">si scambiano la mappa completa → stato FULL → si calcolano i percorsi</text>
+
+    <rect x="120" y="254" width="460" height="22" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.3"/>
+    <text x="350" y="269" text-anchor="middle" class="dg-mono-sm">se resta in INIT o TWO-WAY: qualche parametro non coincide</text>
+  </svg>
+  </div>
+  <figcaption>Gli stati che vedrai nei comandi di verifica: <b>INIT</b> (sento l'altro ma lui non sente
+  me), <b>TWO-WAY</b> (ci sentiamo a vicenda), <b>FULL</b> (ci siamo scambiati tutto ed è tutto a posto).
+  Qualsiasi cosa diversa da FULL, su un collegamento punto-punto, è un problema.</figcaption>
+</figure>
+
+<h3>I parametri che devono coincidere</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parametro</th><th>Se non coincide</th></tr></thead>
+    <tbody>
+      <tr><td><b>Area</b></td><td>Nessuna adiacenza. È l'errore più comune di tutti.</td></tr>
+      <tr><td><b>Subnet e maschera</b></td><td>Nessuna adiacenza: i due non si considerano nemmeno sullo stesso segmento.</td></tr>
+      <tr><td><b>Timer hello e dead</b></td><td>Nessuna adiacenza. Attenzione: i valori predefiniti differiscono tra vendor.</td></tr>
+      <tr><td><b>Autenticazione</b></td><td>Nessuna adiacenza, e spesso senza un messaggio chiaro nel log.</td></tr>
+      <tr><td><b>MTU</b></td><td>Si blocca in <b>EXSTART/EXCHANGE</b>. È il guasto più subdolo: l'adiacenza parte e poi si pianta a metà.</td></tr>
+      <tr><td><b>Tipo di rete</b> (broadcast, point-to-point)</td><td>Adiacenza instabile o assente.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'adiacenza bloccata in EXSTART: ricordati l'MTU
+  </div>
+  <p>Se due router restano fermi in <code>EXSTART</code> o <code>EXCHANGE</code>, il sospetto numero uno
+  è un <b>MTU diverso</b> sulle due interfacce. Lo scambio dei database usa pacchetti grandi: se uno dei
+  due non riesce a riceverli, la procedura si ferma esattamente lì.</p>
+  <p>Capita spessissimo dentro i tunnel VPN, dove l'MTU è ridotta. È anche un buon promemoria di quanto
+  l'MTU della lezione 1-04 continui a tornare: la rivedremo per bene nella lezione 3-19.</p>
+</div>
+
+<h2>Le aree e l'area 0</h2>
+
+<p>In una rete grande, far conoscere a ogni router la mappa completa di tutto costa memoria e CPU, e
+ogni minimo cambiamento fa ricalcolare tutti. OSPF divide allora la rete in <strong>aree</strong>:
+dentro un'area tutti conoscono tutto nel dettaglio, tra aree si scambiano solo riassunti.</p>
+
+<p>La regola strutturale: <strong>tutte le aree devono essere collegate all'area 0</strong>, detta
+<em>backbone</em>. Non si può andare dall'area 1 all'area 2 senza passare dalla 0.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Quante aree servono al tuo cliente? Quasi sempre una.
+  </div>
+  <p>Le aree servono oltre i 50-100 router. Una rete aziendale con dieci sedi sta comodissima in
+  <b>una sola area, la 0</b>, ed è la configurazione giusta: dividere in aree una rete piccola aggiunge
+  complessità e possibilità di errore senza nessun beneficio misurabile.</p>
+  <p style="margin-bottom:0">Se un fornitore ti propone un progetto OSPF multi-area per un cliente con
+  otto sedi, sta complicando il lavoro. Metti tutto in area 0 e dormi tranquillo.</p>
+</div>
+
+<h2>Il costo: come OSPF sceglie la strada</h2>
+
+<p>OSPF assegna a ogni collegamento un <strong>costo</strong> inversamente proporzionale alla banda,
+e sceglie il percorso con la somma dei costi più bassa. La formula predefinita è
+<code>costo = banda di riferimento ÷ banda dell'interfaccia</code>, con banda di riferimento
+100 Mbps.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il difetto della banda di riferimento a 100 Mbps
+  </div>
+  <p>Con il valore predefinito, <b>tutto ciò che è 100 Mbps o più veloce ha costo 1</b>: un
+  collegamento a 100 Mbps, uno a 1 Gbps e uno a 10 Gbps sono considerati <em>equivalenti</em>.</p>
+  <p>Risultato: OSPF può mandare il traffico su un vecchio link a 100 Mbps invece che sulla fibra a
+  10 Gbps, e nessuno capisce perché la rete va lenta.</p>
+  <p><b>La correzione, da fare sempre:</b> alza la banda di riferimento a 100.000 Mbps
+  (<code>auto-cost reference-bandwidth 100000</code>) e <b>impostala identica su tutti i router</b>.
+  Se la cambi solo su alcuni, i calcoli diventano incoerenti e il traffico prende strade assurde.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>OSPF minimo, su tre apparati</div>
+<pre><span class="c">═══ CISCO ═══════════════════════════════════════════</span>
+<span class="p">router ospf</span> <span class="n">1</span>
+ <span class="p">router-id</span> <span class="n">10.10.99.1</span>                      <span class="c"># fissalo sempre a mano</span>
+ <span class="p">auto-cost reference-bandwidth</span> <span class="n">100000</span>
+ <span class="p">passive-interface default</span>                <span class="c"># nessun hello verso gli utenti</span>
+ <span class="p">no passive-interface GigabitEthernet0/1</span>   <span class="c"># tranne verso gli altri router</span>
+ <span class="p">network</span> <span class="n">10.10.0.0 0.0.255.255</span> <span class="p">area</span> <span class="n">0</span>
+
+<span class="c">═══ MIKROTIK (RouterOS 7) ═══════════════════════════</span>
+<span class="p">/routing ospf instance add name=</span><span class="s">ospf1</span> <span class="p">router-id=</span><span class="n">10.10.99.1</span>
+<span class="p">/routing ospf area add name=</span><span class="s">backbone</span> <span class="p">area-id=</span><span class="n">0.0.0.0</span> <span class="p">instance=</span><span class="s">ospf1</span>
+<span class="p">/routing ospf interface-template add area=</span><span class="s">backbone</span> <span class="p">\</span>
+<span class="p">    networks=</span><span class="n">10.10.99.0/24</span> <span class="p">type=</span><span class="s">ptp</span>
+
+<span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="p">config router ospf</span>
+  <span class="p">set router-id</span> <span class="n">10.10.99.1</span>
+  <span class="p">config area</span>
+    <span class="p">edit</span> <span class="n">0.0.0.0</span>
+  <span class="p">config network</span>
+    <span class="p">edit</span> <span class="n">1</span>
+      <span class="p">set prefix</span> <span class="n">10.10.99.0 255.255.255.0</span>
+      <span class="p">set area</span> <span class="n">0.0.0.0</span>
+
+<span class="c">═══ VERIFICARE ══════════════════════════════════════</span>
+<span class="p">show ip ospf neighbor</span>              <span class="c"># deve dire FULL</span>
+<span class="p">show ip ospf interface brief</span>
+<span class="p">get router info ospf neighbor</span>       <span class="c"># FortiGate</span>
+<span class="p">/routing ospf neighbor print</span>        <span class="c"># MikroTik</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Due accorgimenti che separano una configurazione fatta bene
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Fissa il router-id a mano.</b> Se non lo fai, viene scelto dall'indirizzo più alto presente:
+    il giorno che aggiungi un'interfaccia, il router-id cambia al riavvio successivo e tutte le
+    adiacenze si rifanno da capo. Usa un indirizzo di loopback o quello di gestione.</li>
+    <li><b>Metti tutte le interfacce in passive tranne quelle verso gli altri router.</b> Altrimenti il
+    router manda messaggi OSPF anche sulle VLAN degli utenti: è traffico inutile e, soprattutto,
+    permette a chiunque di collegarsi e iniettare rotte false.</li>
+  </ul>
+</div>
+
+<h2>La domanda onesta: serve al tuo cliente?</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Situazione</th><th>Cosa usare</th></tr></thead>
+    <tbody>
+      <tr><td>Sede singola, anche con dieci VLAN</td><td><b>Rotte statiche.</b> OSPF non aggiunge nulla.</td></tr>
+      <tr><td>2-4 sedi con un tunnel ciascuna verso la centrale</td><td><b>Rotte statiche</b> con controllo attivo. Poche righe, prevedibili.</td></tr>
+      <tr><td>5+ sedi con percorsi alternativi tra loro</td><td><b>OSPF</b> inizia ad avere senso.</td></tr>
+      <tr><td>Molte reti che cambiano spesso</td><td><b>OSPF</b>: il vantaggio è non dover toccare più nulla.</td></tr>
+      <tr><td>Due firewall in alta disponibilità</td><td>Dipende: spesso basta il meccanismo di HA del vendor.</td></tr>
+      <tr><td>Connessioni verso più operatori con IP propri</td><td><b>BGP</b>, non OSPF. È la lezione 3-04.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché studiarlo anche se non lo configurerai spesso
+  </div>
+  <p>Tre motivi molto concreti:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Lo trovi già configurato</b> in clienti che hai ereditato, e devi saperci mettere mano senza
+    rompere niente.</li>
+    <li><b>È la base di SD-WAN.</b> Fortinet, Meraki e gli altri usano protocolli dinamici sotto il
+    cofano: capire OSPF ti fa capire cosa sta facendo davvero la loro magia.</li>
+    <li><b>Azure e il cloud lo usano.</b> Quando collegherai una rete on-premise ad Azure con un
+    VPN Gateway in modalità dinamica, quello che scambia rotte è BGP — ma il modo di ragionare è lo
+    stesso che stai imparando qui.</li>
+  </ul>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: OSPF",
+  "questions": [
+    { "q": "Cosa si scambiano i router OSPF tra loro?",
+      "a": [ {"t":"La descrizione dei collegamenti che vedono, da cui ognuno calcola la mappa e i percorsi","ok":true},
+             {"t":"Le proprie tabelle di routing già pronte","ok":false},
+             {"t":"Solo la rotta di default","ok":false},
+             {"t":"Gli indirizzi MAC dei vicini","ok":false} ],
+      "e": "È un protocollo <b>link-state</b>: non ci si passa la conclusione («per quella rete vai di là») ma la descrizione della realtà («da me parte questo collegamento, con questo costo»). Ogni router costruisce la mappa completa e calcola da solo il percorso più breve. Passarsi le tabelle già pronte è invece il comportamento dei protocolli distance-vector come RIP." },
+
+    { "q": "Due router OSPF restano bloccati nello stato EXSTART. Qual è il sospetto principale?",
+      "a": [ {"t":"MTU diversa sulle due interfacce","ok":true},
+             {"t":"Area diversa","ok":false},
+             {"t":"Router-id duplicato","ok":false},
+             {"t":"Autenticazione diversa","ok":false} ],
+      "e": "Lo scambio dei database usa pacchetti grandi: se un lato non riesce a riceverli, la procedura si ferma esattamente a metà. Area diversa o autenticazione diversa impediscono invece l'adiacenza <b>fin dall'inizio</b>, lasciandola in INIT o senza nemmeno comparire. È un guasto frequente dentro i tunnel VPN, dove l'MTU è ridotta." },
+
+    { "q": "Perché conviene alzare la banda di riferimento di OSPF?",
+      "a": [ {"t":"Con il valore predefinito tutto ciò che supera 100 Mbps ha costo 1 e i link veloci sembrano equivalenti ai lenti","ok":true},
+             {"t":"Per ridurre il traffico di controllo","ok":false},
+             {"t":"Per accelerare la convergenza","ok":false},
+             {"t":"Per aumentare il numero di aree supportate","ok":false} ],
+      "e": "La formula è banda di riferimento ÷ banda dell'interfaccia, con riferimento 100 Mbps: un link a 1 Gbps e uno a 10 Gbps ricevono entrambi costo 1, quindi OSPF può preferire una vecchia linea a 100 Mbps. Va alzata a 100000 e impostata <b>identica su tutti i router</b>, altrimenti i calcoli diventano incoerenti." },
+
+    { "q": "Un cliente ha tre sedi, ciascuna con un tunnel verso la centrale. Cosa proponi?",
+      "a": [ {"t":"Rotte statiche con controllo attivo: poche righe e comportamento prevedibile","ok":true},
+             {"t":"OSPF multi-area, per essere pronti alla crescita","ok":false},
+             {"t":"BGP tra le sedi","ok":false},
+             {"t":"OSPF in area 0 su tutte le sedi","ok":false} ],
+      "e": "Con una topologia a stella e nessun percorso alternativo, un protocollo dinamico non ha niente da calcolare: aggiunge complessità, un altro servizio che può rompersi e un'altra cosa da diagnosticare. Le statiche con controllo attivo danno lo stesso risultato restando leggibili. OSPF inizia ad avere senso da cinque sedi con percorsi alternativi tra loro." },
+
+    { "q": "Perché si fissa a mano il router-id?",
+      "a": [ {"t":"Altrimenti cambia se si aggiungono interfacce, e al riavvio tutte le adiacenze si rifanno","ok":true},
+             {"t":"Perché è obbligatorio per formare le adiacenze","ok":false},
+             {"t":"Per aumentare la priorità del router","ok":false},
+             {"t":"Per ridurre il numero di LSA scambiati","ok":false} ],
+      "e": "Senza un valore esplicito viene derivato dagli indirizzi presenti, tipicamente il più alto: aggiungere un'interfaccia lo cambia, e al riavvio successivo l'intera topologia si ricostruisce. Si usa un indirizzo di loopback o quello di gestione, che non cambieranno mai." },
+
+    { "q": "Cosa significa mettere un'interfaccia in «passive» in OSPF?",
+      "a": [ {"t":"Le sue reti vengono annunciate, ma non vengono mandati messaggi OSPF su quel segmento","ok":true},
+             {"t":"L'interfaccia viene esclusa completamente da OSPF","ok":false},
+             {"t":"L'interfaccia accetta rotte ma non ne annuncia","ok":false},
+             {"t":"L'interfaccia funziona solo in ricezione","ok":false} ],
+      "e": "La rete continua a essere pubblicata agli altri router, ma su quel segmento non vengono inviati né accettati hello. Si mette su tutte le VLAN degli utenti: evita traffico inutile e, soprattutto, impedisce che chiunque si colleghi e inietti rotte false nella rete." },
+
+    { "q": "Qual è la regola strutturale delle aree OSPF?",
+      "a": [ {"t":"Tutte le aree devono essere collegate all'area 0","ok":true},
+             {"t":"Ogni area può avere al massimo dieci router","ok":false},
+             {"t":"Le aree devono avere numeri consecutivi","ok":false},
+             {"t":"Ogni sede deve avere la propria area","ok":false} ],
+      "e": "L'area 0 è il backbone e tutto il traffico tra aree diverse ci passa attraverso: non si può andare dall'area 1 alla 2 senza transitare dalla 0. Detto questo, le aree servono oltre i 50-100 router: una rete con dieci sedi sta comodissima in una sola area 0, ed è la scelta corretta." }
+  ]
+}
+</script>

@@ -1,0 +1,278 @@
+#id: l2-09
+#title: Route statiche, metriche e distanza amministrativa
+#min: 24
+#level: 2
+#chapter: Routing
+#desc: Perché due rotte per la stessa destinazione non sono un errore, chi vince, e come si costruisce un backup automatico della linea.
+#obj: Capire la differenza tra distanza amministrativa e metrica
+#obj: Costruire una rotta di riserva che entra in funzione da sola quando la principale cade
+#obj: Sapere perché una rotta di backup senza controllo attivo non funziona
+#obj: Usare le rotte blackhole e riconoscere il routing asimmetrico
+---
+<p class="lead">Nella maggior parte delle reti aziendali italiane <strong>tutto il routing è fatto di
+rotte statiche</strong>. Non è un ripiego: sono prevedibili, si leggono, e non si rompono da sole.
+Ma vanno scritte sapendo due cose che quasi nessuno spiega: chi vince quando ce ne sono due, e come si
+fa in modo che una riserva entri davvero in funzione.</p>
+
+<h2>Distanza amministrativa: quanto mi fido di chi me l'ha detto</h2>
+
+<p>Quando due rotte per la stessa identica destinazione arrivano da <strong>origini diverse</strong>,
+il router deve scegliere di chi fidarsi. Usa la <strong>distanza amministrativa</strong>: un numero che
+esprime l'affidabilità della fonte. <strong>Vince il numero più basso.</strong></p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Origine</th><th>Distanza</th><th>Perché quel valore</th></tr></thead>
+    <tbody>
+      <tr><td><b>Interfaccia connessa</b></td><td><b>0</b></td><td>Lo vedo con i miei occhi: è attaccato a me</td></tr>
+      <tr><td><b>Rotta statica</b></td><td><b>1</b></td><td>L'ha scritta un umano, che presumibilmente sapeva quel che faceva</td></tr>
+      <tr><td>eBGP</td><td>20</td><td>Viene da un altro operatore</td></tr>
+      <tr><td>OSPF</td><td>110</td><td>Calcolata da un protocollo interno</td></tr>
+      <tr><td>RIP</td><td>120</td><td>Protocollo vecchio e rozzo</td></tr>
+      <tr><td>iBGP</td><td>200</td><td>Interno al proprio sistema autonomo</td></tr>
+      <tr><td><b>Non raggiungibile</b></td><td><b>255</b></td><td>Convenzione: non usare mai questa rotta</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Distanza e metrica, spiegate a un dodicenne
+  </div>
+  <p>Devi andare a Milano e chiedi indicazioni a tre persone.</p>
+  <p>La <b>distanza amministrativa</b> è <em>quanto ti fidi di chi parla</em>. Se te lo dice tuo padre
+  che ci va ogni giorno, gli credi. Se te lo dice uno sconosciuto al bar, meno. Non stai confrontando
+  le strade: stai confrontando <b>le fonti</b>.</p>
+  <p>La <b>metrica</b> è <em>quanto è lunga la strada</em>. Ma ha senso confrontarla solo tra
+  indicazioni della <b>stessa</b> persona: se tuo padre ti dice «puoi fare la A4 in 50 minuti oppure la
+  statale in 80», scegli i 50. Non ha invece senso confrontare «50 minuti secondo tuo padre» con
+  «40 minuti secondo lo sconosciuto», perché i due misurano in modi diversi.</p>
+  <p>Ecco perché il router fa sempre <b>due confronti in quest'ordine</b>: prima la fonte (distanza
+  amministrativa), e solo tra rotte della stessa fonte guarda la lunghezza (metrica).</p>
+</div>
+
+<h2>L'ordine completo delle decisioni</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="I tre criteri con cui un router sceglie una rotta, in ordine">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Come il router sceglie, in tre passaggi</text>
+    <g stroke-width="1.7">
+      <rect x="30" y="40"  width="640" height="52" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="30" y="102" width="640" height="52" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="30" y="164" width="640" height="52" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="52" y="62">1 · PREFISSO PIÙ LUNGO</text>
+      <text x="52" y="80" fill="var(--dg-text-soft)">la rotta più specifica vince sempre, qualunque sia la sua origine</text>
+      <text x="52" y="124">2 · DISTANZA AMMINISTRATIVA PIÙ BASSA</text>
+      <text x="52" y="142" fill="var(--dg-text-soft)">a parità di specificità, vince la fonte più affidabile</text>
+      <text x="52" y="186">3 · METRICA PIÙ BASSA</text>
+      <text x="52" y="204" fill="var(--dg-text-soft)">a parità di fonte, vince il percorso più corto</text>
+    </g>
+    <text x="350" y="240" text-anchor="middle" class="dg-label-sm">Se anche la metrica è uguale, molti apparati usano entrambe le rotte insieme (ECMP) e distribuiscono il traffico.</text>
+  </svg>
+  </div>
+  <figcaption>L'ordine conta: una rotta statica <code>/24</code> batte una rotta OSPF <code>/16</code>
+  <b>non</b> perché è statica, ma perché è più specifica. Il passaggio 1 viene sempre prima.</figcaption>
+</figure>
+
+<h2>La rotta di riserva (floating static)</h2>
+
+<p>Il caso più utile e più richiesto: il cliente ha una fibra e una connessione di riserva (4G, FWA,
+ADSL). Vuoi che il traffico esca dalla fibra e che passi automaticamente alla riserva se la fibra cade.</p>
+
+<p>Si scrivono <strong>due rotte di default</strong>, dando alla seconda una distanza amministrativa
+<em>peggiore</em>. Finché la prima è valida, la seconda resta dormiente; quando la prima sparisce, la
+seconda entra in tabella da sola.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Due rotte di default, una dormiente</div>
+<pre><span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="c"># principale: fibra, distanza 1</span>
+<span class="p">/ip route add dst-address=</span><span class="n">0.0.0.0/0</span> <span class="p">gateway=</span><span class="n">88.1.2.254</span> <span class="p">\</span>
+<span class="p">    distance=</span><span class="n">1</span> <span class="p">check-gateway=</span><span class="s">ping</span> <span class="p">comment=</span><span class="s">"WAN1 fibra"</span>
+<span class="c"># riserva: 4G, distanza 10 — dorme finché la prima è viva</span>
+<span class="p">/ip route add dst-address=</span><span class="n">0.0.0.0/0</span> <span class="p">gateway=</span><span class="n">192.168.8.1</span> <span class="p">\</span>
+<span class="p">    distance=</span><span class="n">10</span> <span class="p">check-gateway=</span><span class="s">ping</span> <span class="p">comment=</span><span class="s">"WAN2 backup 4G"</span>
+
+<span class="c">═══ CISCO ═══════════════════════════════════════════</span>
+<span class="p">ip route</span> <span class="n">0.0.0.0 0.0.0.0 88.1.2.254</span>
+<span class="p">ip route</span> <span class="n">0.0.0.0 0.0.0.0 192.168.8.1 10</span>    <span class="c"># il 10 finale è la distanza</span>
+
+<span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="p">config router static</span>
+  <span class="p">edit</span> <span class="n">1</span>
+    <span class="p">set gateway</span> <span class="n">88.1.2.254</span>
+    <span class="p">set device</span> <span class="s">"wan1"</span>
+    <span class="p">set distance</span> <span class="n">10</span>
+  <span class="p">next</span>
+  <span class="p">edit</span> <span class="n">2</span>
+    <span class="p">set gateway</span> <span class="n">192.168.8.1</span>
+    <span class="p">set device</span> <span class="s">"wan2"</span>
+    <span class="p">set distance</span> <span class="n">20</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il backup che non è mai entrato in funzione
+  </div>
+  <p>Ecco il punto che rende inutile il 90% dei backup di linea configurati nelle PMI, ed è una
+  telefonata che riceverai.</p>
+  <p>Una rotta statica sparisce dalla tabella <b>solo se l'interfaccia va giù</b>. Ma quando un
+  operatore ha un guasto, quasi sempre <b>la porta resta accesa</b>: il modem è vivo, il link è up,
+  semplicemente non passa traffico. Per il router non è cambiato niente, la rotta principale resta
+  valida, e la riserva <b>non entra mai in funzione</b>.</p>
+  <p>Il cliente resta senza Internet per quattro ore con il 4G di backup pagato e mai usato.</p>
+  <p><b>La soluzione è il controllo attivo:</b> il router deve verificare periodicamente che dall'altra
+  parte si raggiunga davvero qualcosa. Se il controllo fallisce, la rotta viene tolta e la riserva
+  subentra.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Controllo attivo della linea — la parte che conta</div>
+<pre><span class="c">═══ MIKROTIK — check-gateway ════════════════════════</span>
+<span class="c"># ping continuo al gateway: se non risponde, la rotta sparisce</span>
+<span class="p">/ip route set [find comment=</span><span class="s">"WAN1 fibra"</span><span class="p">] check-gateway=</span><span class="s">ping</span>
+
+<span class="c"># meglio ancora: verifica un bersaglio SU INTERNET, non il gateway</span>
+<span class="c"># (il gateway dell'operatore risponde anche quando la sua rete è guasta)</span>
+<span class="p">/ip route add dst-address=</span><span class="n">1.1.1.1/32</span> <span class="p">gateway=</span><span class="n">88.1.2.254</span> <span class="p">scope=</span><span class="n">10</span>
+<span class="p">/ip route add dst-address=</span><span class="n">0.0.0.0/0</span> <span class="p">gateway=</span><span class="n">1.1.1.1</span> <span class="p">\</span>
+<span class="p">    check-gateway=</span><span class="s">ping</span> <span class="p">target-scope=</span><span class="n">11</span> <span class="p">distance=</span><span class="n">1</span>
+
+<span class="c">═══ FORTIGATE — link monitor ════════════════════════</span>
+<span class="p">config system link-monitor</span>
+  <span class="p">edit</span> <span class="s">"wan1-check"</span>
+    <span class="p">set srcintf</span> <span class="s">"wan1"</span>
+    <span class="p">set server</span> <span class="s">"1.1.1.1"</span> <span class="s">"8.8.8.8"</span>     <span class="c"># due bersagli, non uno</span>
+    <span class="p">set gateway-ip</span> <span class="n">88.1.2.254</span>
+    <span class="p">set interval</span> <span class="n">5</span>
+    <span class="p">set failtime</span> <span class="n">3</span>                      <span class="c"># 3 fallimenti = giù</span>
+    <span class="p">set recoverytime</span> <span class="n">5</span>                  <span class="c"># 5 successi = torna su</span>
+    <span class="p">set update-static-route</span> <span class="s">enable</span>      <span class="c"># TOGLIE la rotta se fallisce</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Tre regole per un backup che funziona davvero
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Controlla un bersaglio su Internet, non il gateway dell'operatore.</b> Il gateway risponde
+    al ping anche quando la rete dell'operatore è guasta a monte: è il caso più frequente in assoluto.</li>
+    <li><b>Usa due bersagli diversi e di proprietari diversi</b> (per esempio 1.1.1.1 e 8.8.8.8).
+    Se uno dei due ha un disservizio suo, non vuoi che il tuo cliente faccia un failover inutile.</li>
+    <li><b>Provalo davvero.</b> Stacca fisicamente il cavo della fibra davanti al cliente e cronometra
+    quanto ci mette a ripartire. Un backup mai testato non è un backup: è una speranza. E provarlo
+    davanti al cliente vale come dimostrazione del lavoro fatto.</li>
+  </ul>
+</div>
+
+<h2>Le rotte blackhole</h2>
+
+<p>Una rotta che manda il traffico nel nulla, scartandolo in silenzio. Sembra inutile, e invece ha tre
+usi molto concreti:</p>
+
+<ul class="clean">
+  <li><b>Evitare che il traffico interno esca su Internet.</b> Se hai <code>10.0.0.0/8</code> come
+  spazio aziendale e qualcuno cerca <code>10.99.99.99</code> che non esiste, senza blackhole quel
+  pacchetto segue la rotta di default e finisce dall'operatore. Con una blackhole su
+  <code>10.0.0.0/8</code> a distanza alta, viene scartato in casa.</li>
+  <li><b>Fermare un attacco</b> o isolare un host compromesso con una riga sola.</li>
+  <li><b>Impedire i loop di routing</b> quando si riassumono le rotte.</li>
+</ul>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Blackhole</div>
+<pre><span class="p">/ip route add dst-address=</span><span class="n">10.0.0.0/8</span> <span class="p">type=</span><span class="s">blackhole</span> <span class="p">distance=</span><span class="n">250</span>   <span class="c"># MikroTik</span>
+<span class="p">ip route</span> <span class="n">10.0.0.0 255.0.0.0 Null0</span> <span class="n">250</span>                       <span class="c"># Cisco</span>
+</pre>
+</div>
+
+<h2>Il routing asimmetrico</h2>
+
+<p>Il traffico va per una strada e torna per un'altra. Su una rete senza firewall funziona benissimo.
+Con un firewall stateful nel mezzo <strong>è quasi sempre un guasto</strong>: il firewall vede solo metà
+conversazione — per esempio solo le risposte, senza aver mai visto la richiesta — e le scarta perché non
+corrispondono a nessuna sessione aperta.</p>
+
+<p><b>Sintomo:</b> «da una sede funziona, dall'altra no», oppure «funziona solo in una direzione».
+<b>Causa tipica:</b> rotte incoerenti tra due apparati, o una rotta di ritorno dimenticata dopo
+l'introduzione di uno switch L3. <b>Verifica:</b> cattura su entrambi i lati e confronta — se vedi il
+SYN da una parte e il SYN-ACK dall'altra, hai trovato.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Gli errori che vedrai nelle configurazioni dei clienti
+  </div>
+  <div class="table-wrap" style="margin:8px 0 0">
+    <table>
+      <thead><tr><th>Errore</th><th>Sintomo</th></tr></thead>
+      <tbody>
+        <tr><td><b>Rotta di ritorno mancante</b></td><td>Funziona in una direzione sola. Il caso più comune quando si aggiunge una rete nuova.</td></tr>
+        <tr><td><b>Backup senza controllo attivo</b></td><td>Il failover non avviene mai, perché il link resta up.</td></tr>
+        <tr><td><b>Due rotte con la stessa distanza per sbaglio</b></td><td>Il traffico si distribuisce a caso su due percorsi: prestazioni incoerenti e sessioni che cadono.</td></tr>
+        <tr><td><b>Rotta /8 o /16 troppo larga per una VPN</b></td><td>Dirotta nel tunnel traffico che doveva uscire su Internet.</td></tr>
+        <tr><td><b>Rotte statiche mai rimosse</b></td><td>Puntano a un apparato sostituito tre anni fa. Restano disattivate e nessuno le tocca «per non rompere niente».</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Regola da senior:</b> ogni rotta statica deve avere un
+  <b>commento</b> che dice perché esiste e chi l'ha chiesta. Costa cinque secondi e rende possibile,
+  tra due anni, cancellare quelle che non servono più — cosa che altrimenti nessuno oserà mai fare.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: rotte statiche e distanze",
+  "questions": [
+    { "q": "Cosa distingue la distanza amministrativa dalla metrica?",
+      "a": [ {"t":"La distanza confronta l'affidabilità delle fonti, la metrica la lunghezza dei percorsi della stessa fonte","ok":true},
+             {"t":"Sono la stessa cosa, con nomi diversi a seconda del vendor","ok":false},
+             {"t":"La distanza si misura in salti, la metrica in millisecondi","ok":false},
+             {"t":"La distanza vale per le statiche, la metrica per le dinamiche","ok":false} ],
+      "e": "Il router fa due confronti in ordine: prima «di chi mi fido di più» (distanza amministrativa), poi, solo tra rotte della stessa origine, «quale strada è più corta» (metrica). Confrontare metriche di protocolli diversi non avrebbe senso, perché le calcolano in modi incomparabili." },
+
+    { "q": "Un cliente ha fibra e 4G di backup, con due rotte di default a distanze diverse. La fibra si guasta ma il modem resta acceso. Cosa succede?",
+      "a": [ {"t":"Il backup non entra in funzione: la rotta principale resta valida perché il link è up","ok":true},
+             {"t":"Il backup subentra automaticamente dopo pochi secondi","ok":false},
+             {"t":"Il traffico si distribuisce su entrambe le linee","ok":false},
+             {"t":"Il router si riavvia e riparte dal backup","ok":false} ],
+      "e": "È il difetto che rende inutile la maggior parte dei backup configurati nelle PMI. Una rotta statica sparisce solo se l'interfaccia va giù, ma nei guasti degli operatori il link resta quasi sempre attivo. Serve un <b>controllo attivo</b> che verifichi la raggiungibilità reale e tolga la rotta quando fallisce." },
+
+    { "q": "Su cosa conviene fare il controllo attivo della linea?",
+      "a": [ {"t":"Su due bersagli pubblici di proprietari diversi, non sul gateway dell'operatore","ok":true},
+             {"t":"Solo sul gateway dell'operatore, che è il più vicino","ok":false},
+             {"t":"Sull'indirizzo del proprio firewall","ok":false},
+             {"t":"Su un indirizzo interno della LAN","ok":false} ],
+      "e": "Il gateway dell'operatore risponde al ping anche quando la sua rete è guasta a monte: è proprio il caso più frequente, quindi controllarlo non rileva nulla. Due bersagli pubblici indipendenti (per esempio 1.1.1.1 e 8.8.8.8) evitano invece sia i falsi negativi sia i failover inutili dovuti al disservizio di un singolo servizio." },
+
+    { "q": "In tabella c'è una rotta statica <code>/16</code> e una rotta OSPF <code>/24</code> che copre la stessa destinazione. Quale vince?",
+      "a": [ {"t":"La rotta OSPF /24, perché il prefisso più lungo viene valutato prima della distanza","ok":true},
+             {"t":"La statica /16, perché ha distanza amministrativa 1","ok":false},
+             {"t":"Nessuna: c'è conflitto e il traffico viene scartato","ok":false},
+             {"t":"Entrambe, in bilanciamento","ok":false} ],
+      "e": "L'ordine dei criteri è: prefisso più lungo, poi distanza amministrativa, poi metrica. La distanza interviene solo <em>tra rotte ugualmente specifiche</em>. Una statica non batte una dinamica per principio: la batte solo a parità di specificità." },
+
+    { "q": "A cosa serve una rotta blackhole su <code>10.0.0.0/8</code> con distanza alta?",
+      "a": [ {"t":"A scartare in casa il traffico verso indirizzi interni inesistenti, invece di mandarlo all'operatore","ok":true},
+             {"t":"A bloccare tutto il traffico della rete interna","ok":false},
+             {"t":"A creare un tunnel verso le altre sedi","ok":false},
+             {"t":"A velocizzare il routing interno","ok":false} ],
+      "e": "Con distanza alta viene usata solo quando non esiste nessuna rotta più specifica, cioè quando la destinazione interna non esiste davvero. Senza, quel pacchetto seguirebbe la rotta di default e uscirebbe su Internet, dove non ha senso. Le rotte interne reali, essendo più specifiche, continuano a vincere." },
+
+    { "q": "«Funziona solo in una direzione» tra due sedi. Cosa sospetti?",
+      "a": [ {"t":"Routing asimmetrico o rotta di ritorno mancante","ok":true},
+             {"t":"Un problema di DNS","ok":false},
+             {"t":"Cavi difettosi","ok":false},
+             {"t":"Il DHCP configurato male","ok":false} ],
+      "e": "È la firma della rotta di ritorno dimenticata o di percorsi diversi all'andata e al ritorno. Con un firewall stateful nel mezzo il traffico asimmetrico viene scartato, perché il firewall vede solo metà conversazione. Si conferma catturando su entrambi i lati: se il SYN si vede da una parte e il SYN-ACK dall'altra, hai trovato." }
+  ]
+}
+</script>

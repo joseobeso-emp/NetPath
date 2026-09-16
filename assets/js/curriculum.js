@@ -70,10 +70,10 @@ window.NETPATH_CURRICULUM = [
       { id:"l2-07", t:"Port security, storm control, loop protection", s:"Le protezioni che accendi il primo giorno e che nessuno accende mai.", m:20, ready:true }
     ]},
     { title: "Routing", lessons: [
-      { id:"l2-08", t:"La tabella di routing in profondità", s:"Longest prefix match, route connesse, statiche, di default: come si legge una routing table vera.", m:26, ready:false },
-      { id:"l2-09", t:"Route statiche, metriche, distanza amministrativa", s:"Perché due route per la stessa destinazione non sono un errore, e chi vince.", m:22, ready:false },
-      { id:"l2-10", t:"OSPF: il primo routing dinamico", s:"Aree, adiacenze, LSA, costi. Spiegato con una città e le sue strade.", m:30, ready:false },
-      { id:"l2-11", t:"Policy routing e route leaking", s:"Quando la destinazione non basta a decidere la strada.", m:22, ready:false }
+      { id:"l2-08", t:"La tabella di routing in profondità", s:"Longest prefix match, route connesse, statiche, di default: come si legge una routing table vera.", m:26, ready:true },
+      { id:"l2-09", t:"Route statiche, metriche, distanza amministrativa", s:"Perché due route per la stessa destinazione non sono un errore, e chi vince.", m:22, ready:true },
+      { id:"l2-10", t:"OSPF: il primo routing dinamico", s:"Aree, adiacenze, LSA, costi. Spiegato con una città e le sue strade.", m:30, ready:true },
+      { id:"l2-11", t:"Policy routing e route leaking", s:"Quando la destinazione non basta a decidere la strada.", m:22, ready:true }
     ]},
     { title: "Firewall e NAT", lessons: [
       { id:"l2-12", t:"Firewall stateful: come ragiona davvero", s:"La tabella delle sessioni, il traffico di ritorno, e perché 'ho aperto la porta' spesso non basta.", m:28, ready:false },
