@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IPsec spiegato: IKE fase 1 e fase 2 — NetPath</title>
+<meta name="description" content="SA, proposte, PFS, gruppi Diffie-Hellman e rekey. Perché i due lati devono dire esattamente la stessa cosa.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-16">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>VPN</span>
+      </nav>
+      <h1 class="lesson-title">IPsec spiegato: IKE fase 1 e fase 2</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 16</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire cosa fa IPsec e quali garanzie offre davvero</li>
+        <li>Distinguere fase 1 e fase 2 e sapere quali parametri appartengono a ciascuna</li>
+        <li>Capire il rekey e perché è la causa dei tunnel che cadono a orari regolari</li>
+        <li>Leggere una configurazione IPsec e confrontarla con quella dell'altro lato</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">IPsec ha la fama di essere ostico, e la ragione è una sola: è fatto di due negoziazioni
+annidate con una ventina di parametri che devono coincidere <em>esattamente</em> ai due capi. Chi lo trova
+difficile in genere non ha in testa la struttura. Una volta che ce l'hai, diventa meccanico — e i guasti
+diventano leggibili.</p>
+
+<h2>Il problema</h2>
+
+<p>Due sedi devono scambiarsi dati attraverso Internet, che è un mezzo pubblico dove chiunque lungo il
+percorso può leggere e modificare ciò che passa. Servono quattro garanzie:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Garanzia</th><th>Risponde alla domanda</th><th>Come la ottiene IPsec</th></tr></thead>
+    <tbody>
+      <tr><td><b>Autenticazione</b></td><td>Sto parlando davvero con l'altra sede?</td><td>Chiave condivisa o certificato</td></tr>
+      <tr><td><b>Riservatezza</b></td><td>Qualcuno può leggere quello che passa?</td><td>Cifratura (AES)</td></tr>
+      <tr><td><b>Integrità</b></td><td>Qualcuno ha modificato i dati in transito?</td><td>Impronta crittografica (SHA)</td></tr>
+      <tr><td><b>Anti-replay</b></td><td>Qualcuno può registrare e rimandare i pacchetti?</td><td>Numeri di sequenza</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>La struttura: due negoziazioni, non una</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 330" role="img" aria-label="Le due fasi di IKE: prima si crea un canale di servizio sicuro, poi si negozia la protezione del traffico vero">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Prima si costruisce il tavolo delle trattative, poi si tratta</text>
+
+    <rect x="20" y="42" width="140" height="44" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.7"/>
+    <text x="90" y="62" text-anchor="middle" class="dg-label-sm">FIREWALL A</text>
+    <text x="90" y="78" text-anchor="middle" class="dg-mono-sm">sede centrale</text>
+    <rect x="540" y="42" width="140" height="44" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="610" y="62" text-anchor="middle" class="dg-label-sm">FIREWALL B</text>
+    <text x="610" y="78" text-anchor="middle" class="dg-mono-sm">filiale</text>
+
+    <rect x="180" y="104" width="340" height="82" rx="10" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="2"/>
+    <text x="350" y="126" text-anchor="middle" class="dg-mono-sm">FASE 1 · IKE SA</text>
+    <text x="350" y="146" text-anchor="middle" class="dg-label-sm">«Chi sei? Che algoritmi sai usare?»</text>
+    <text x="350" y="164" text-anchor="middle" class="dg-label-sm">Si autenticano e creano un canale sicuro</text>
+    <text x="350" y="180" text-anchor="middle" class="dg-label-sm">di SERVIZIO — non ci passano ancora i dati</text>
+
+    <path d="M162 64 L 200 100" stroke="var(--dg-line)" stroke-width="1.6" fill="none"/>
+    <path d="M538 64 L 500 100" stroke="var(--dg-line)" stroke-width="1.6" fill="none"/>
+    <path d="M350 188v18" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#ike1)"/>
+    <defs><marker id="ike1" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+      <path d="M4 8L0 0h8z" fill="var(--dg-line)"/></marker></defs>
+
+    <rect x="180" y="212" width="340" height="82" rx="10" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="2"/>
+    <text x="350" y="234" text-anchor="middle" class="dg-mono-sm">FASE 2 · IPsec SA</text>
+    <text x="350" y="254" text-anchor="middle" class="dg-label-sm">«Quali reti protteggiamo, e come?»</text>
+    <text x="350" y="272" text-anchor="middle" class="dg-label-sm">Qui nascono le chiavi che cifrano</text>
+    <text x="350" y="288" text-anchor="middle" class="dg-label-sm">il traffico VERO tra le due sedi</text>
+
+    <text x="350" y="318" text-anchor="middle" class="dg-label-sm">Se la fase 1 non si completa, la fase 2 non parte nemmeno. Da qui si parte sempre nella diagnosi.</text>
+  </svg>
+  </div>
+  <figcaption>Le SA (Security Association) sono gli accordi negoziati. Sono <b>unidirezionali</b>: per
+  ogni tunnel ne esistono due in fase 2, una per direzione. Vederne una sola attiva è un sintomo
+  diagnostico preciso.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: i due incontri
+  </div>
+  <p>Due aziende devono scambiarsi documenti riservati e non si sono mai viste.</p>
+  <p><b>Primo incontro (fase 1).</b> I due rappresentanti si incontrano in un posto neutro. Si mostrano
+  i documenti d'identità — «sei davvero chi dici di essere?» — e si mettono d'accordo su <em>come</em>
+  parleranno d'ora in poi: che lingua, che codice segreto useranno per le comunicazioni future.
+  In questo incontro <b>non si scambia nessun documento</b>: si costruisce solo la fiducia e il canale.</p>
+  <p><b>Secondo incontro (fase 2).</b> Adesso che c'è un canale sicuro, si mettono d'accordo sui
+  dettagli operativi: <em>quali</em> documenti si scambieranno, con quale cassaforte li chiuderanno, e
+  ogni quanto cambieranno la combinazione.</p>
+  <p>Ecco perché le fasi sono due e non una: la prima serve a poter fare la seconda in sicurezza.
+  E il fatto che si cambi periodicamente la combinazione — il <b>rekey</b> — è ciò che impedisce a
+  qualcuno che registrasse tutto di decifrarlo anni dopo.</p>
+</div>
+
+<h2>I parametri della fase 1</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parametro</th><th>Cosa decide</th><th>Valori sensati oggi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Versione IKE</b></td><td>Il protocollo di negoziazione</td><td><b>IKEv2</b>, sempre che l'altro lato lo supporti</td></tr>
+      <tr><td><b>Cifratura</b></td><td>Come si protegge il canale di servizio</td><td>AES-256</td></tr>
+      <tr><td><b>Autenticazione / hash</b></td><td>Come si verifica l'integrità</td><td>SHA-256 o superiore. <b>Mai MD5 o SHA-1</b></td></tr>
+      <tr><td><b>Gruppo Diffie-Hellman</b></td><td>La forza dello scambio delle chiavi</td><td>14 (2048 bit) come minimo, meglio 19/20</td></tr>
+      <tr><td><b>Metodo di autenticazione</b></td><td>Chiave condivisa o certificato</td><td>Chiave condivisa lunga e casuale, o certificati</td></tr>
+      <tr><td><b>Durata (lifetime)</b></td><td>Ogni quanto si rinnova il canale</td><td>86400 s (24 h) è tipico</td></tr>
+      <tr><td><b>Identificatore locale/remoto</b></td><td>Come ciascuno si presenta</td><td>Indirizzo IP, o un nome se si è dietro NAT</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Main mode e aggressive mode (solo IKEv1)</h3>
+<p><b>Main mode</b> usa sei messaggi e protegge le identità. <b>Aggressive mode</b> ne usa tre ma manda
+le identità in chiaro: è più veloce e serve quando un lato ha indirizzo dinamico, ma è più debole.
+Con IKEv2 questa distinzione non esiste più — un altro motivo per preferirlo.</p>
+
+<h2>I parametri della fase 2</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parametro</th><th>Cosa decide</th><th>Valori sensati</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cifratura</b></td><td>Come si protegge il traffico vero</td><td>AES-256-GCM se disponibile, altrimenti AES-256-CBC</td></tr>
+      <tr><td><b>Autenticazione</b></td><td>Integrità del traffico</td><td>SHA-256 (con GCM è incluso)</td></tr>
+      <tr><td><b>PFS</b></td><td>Se generare chiavi nuove e indipendenti a ogni rinnovo</td><td><b>Attivo</b>, con lo stesso gruppo DH su entrambi i lati</td></tr>
+      <tr><td><b>Durata</b></td><td>Ogni quanto si rinnovano le chiavi del traffico</td><td>3600 s (1 h) è tipico</td></tr>
+      <tr><td><b>Selettori di traffico</b></td><td><b>Quali reti</b> passano nel tunnel</td><td>Devono essere speculari tra i due lati</td></tr>
+      <tr><td><b>Protocollo</b></td><td>ESP o AH</td><td><b>ESP</b>: cifra. AH autentica soltanto ed è di fatto inutile oggi</td></tr>
+      <tr><td><b>Modalità</b></td><td>Tunnel o transport</td><td><b>Tunnel</b> per collegare reti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    I selettori di traffico devono essere speculari
+  </div>
+  <p>Se il lato A dichiara «locale 10.10.0.0/16, remoto 10.20.0.0/16», il lato B deve dichiarare
+  l'esatto opposto: «locale 10.20.0.0/16, remoto 10.10.0.0/16».</p>
+  <p>Una differenza anche minima — un <code>/16</code> da una parte e un <code>/24</code> dall'altra —
+  fa fallire la fase 2 <b>anche se la fase 1 è salita perfettamente</b>. È uno dei sintomi più
+  caratteristici: «il tunnel risulta su ma non passa traffico».</p>
+  <p style="margin-bottom:0">Nota che alcuni vendor gestiscono i selettori in modo diverso: FortiGate
+  con le VPN in modalità <em>interface</em> usa spesso <code>0.0.0.0/0</code> per entrambi e governa il
+  traffico con le rotte e le policy. Se i due lati usano filosofie diverse, vanno allineati.</p>
+</div>
+
+<h2>Il rekey: la causa dei tunnel che cadono a orari regolari</h2>
+
+<p>Le chiavi non durano per sempre: alla scadenza della durata negoziata, i due lati ne creano di nuove.
+Si chiama <strong>rekey</strong>, e in condizioni normali è trasparente — avviene un po' prima della
+scadenza, senza interrompere il traffico.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Il tunnel cade ogni otto ore» — questa è la lezione che ti serve
+  </div>
+  <p>Se un tunnel funziona benissimo e poi cade a intervalli regolari — ogni ora, ogni otto ore, ogni
+  giorno — <b>il sospetto numero uno è il rekey</b>. Il tempo tra una caduta e l'altra coincide con una
+  delle durate configurate, ed è l'indizio che ti porta dritto alla causa.</p>
+  <p>Le cause tipiche del rekey che fallisce:</p>
+  <ul>
+    <li><b>Durate diverse sui due lati.</b> Non impediscono al tunnel di salire, ma creano
+    rinegoziazioni sfasate: uno rinnova mentre l'altro ha ancora la vecchia SA valida, e per qualche
+    secondo si perdono pacchetti. Nei casi peggiori le SA si disallineano del tutto.</li>
+    <li><b>PFS attivo da un lato e no dall'altro.</b> La fase 1 sale, la prima fase 2 pure, e il primo
+    rekey fallisce.</li>
+    <li><b>Gruppi DH diversi per il PFS.</b> Stesso effetto.</li>
+    <li><b>Implementazioni diverse</b> tra vendor su chi deve iniziare il rekey: entrambi provano a
+    rinnovare contemporaneamente e si creano SA duplicate, con il traffico che finisce in quella
+    sbagliata.</li>
+  </ul>
+  <p style="margin-bottom:0"><b>Come si conferma:</b> guarda nei log l'orario esatto delle cadute e
+  confrontalo con le durate configurate. Se coincidono, hai trovato. Poi confronta <b>riga per riga</b>
+  i parametri di fase 1 e fase 2 dei due lati: la differenza c'è sempre.</p>
+</div>
+
+<h2>NAT-Traversal</h2>
+
+<p>IPsec protegge l'intestazione dei pacchetti con un'impronta crittografica. Ma il NAT, per definizione,
+<strong>modifica</strong> quell'intestazione: il risultato è che l'impronta non torna più e il pacchetto
+viene scartato.</p>
+
+<p>La soluzione è il <strong>NAT-Traversal</strong>: i pacchetti IPsec vengono incapsulati dentro UDP
+sulla porta <strong>4500</strong>, che il NAT può tradurre senza rompere nulla. I due lati si accorgono
+da soli della presenza di un NAT durante la fase 1 e attivano NAT-T automaticamente.</p>
+
+<p><b>Conseguenza pratica:</b> perché un tunnel funzioni devono essere raggiungibili <strong>UDP 500</strong>
+(negoziazione) e <strong>UDP 4500</strong> (NAT-T). Se un operatore o un firewall a monte blocca la
+4500, il tunnel sale e poi non passa traffico — un altro sintomo caratteristico.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Cosa guardare per confrontare due lati</div>
+<pre><span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="p">diagnose vpn ike gateway list</span>          <span class="c"># stato fase 1</span>
+<span class="p">diagnose vpn tunnel list</span>               <span class="c"># stato fase 2 e contatori</span>
+<span class="p">show vpn ipsec phase1-interface</span>        <span class="c"># i parametri configurati</span>
+<span class="p">show vpn ipsec phase2-interface</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/ip ipsec active-peers print</span>
+<span class="p">/ip ipsec installed-sa print</span>           <span class="c"># devono essercene DUE per tunnel</span>
+<span class="p">/ip ipsec profile print</span>                <span class="c"># fase 1</span>
+<span class="p">/ip ipsec proposal print</span>               <span class="c"># fase 2</span>
+<span class="p">/ip ipsec policy print</span>                 <span class="c"># i selettori</span>
+
+<span class="c">═══ SOPHOS / LINUX (strongSwan) ═════════════════════</span>
+<span class="p">ipsec statusall</span>
+<span class="p">swanctl --list-sas</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il foglio di confronto: l'abitudine che ti fa risolvere i tunnel in dieci minuti
+  </div>
+  <p>Prima di toccare qualsiasi cosa, prendi un foglio e scrivi <b>due colonne</b>, una per lato, con
+  tutti i parametri: versione IKE, cifratura e hash di fase 1, gruppo DH, metodo di autenticazione,
+  identificatori, durata di fase 1, cifratura e hash di fase 2, PFS e suo gruppo, durata di fase 2,
+  selettori di traffico.</p>
+  <p style="margin-bottom:0">Nel 90% dei casi la differenza salta all'occhio in due minuti. È un metodo
+  banale e lo usano pochissimi, perché la tentazione è quella di cambiare parametri a caso finché non
+  sale — che è esattamente il modo per ritrovarsi con un tunnel che funziona e nessuno sa perché.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: IPsec e IKE",
+  "questions": [
+    { "q": "A cosa serve la fase 1 di IKE?",
+      "a": [ {"t":"Ad autenticare i due lati e creare un canale sicuro di servizio per negoziare il resto","ok":true},
+             {"t":"A cifrare il traffico tra le due reti","ok":false},
+             {"t":"A scegliere quali reti passeranno nel tunnel","ok":false},
+             {"t":"A verificare la raggiungibilità dei due firewall","ok":false} ],
+      "e": "La fase 1 costruisce il tavolo delle trattative: i due si riconoscono e concordano come comunicheranno. Il traffico vero non ci passa. È la fase 2 a decidere quali reti proteggere e con quali chiavi — e se la fase 1 non si completa, la fase 2 non parte nemmeno." },
+
+    { "q": "Un tunnel risulta attivo ma non passa traffico tra le due reti. Cosa controlli per primo?",
+      "a": [ {"t":"I selettori di traffico: devono essere speculari tra i due lati","ok":true},
+             {"t":"La chiave condivisa","ok":false},
+             {"t":"Il gruppo Diffie-Hellman di fase 1","ok":false},
+             {"t":"La versione di IKE","ok":false} ],
+      "e": "Se la fase 1 è salita, chiave, gruppo DH e versione IKE sono già corretti: sono parametri di fase 1. Un tunnel «su» che non passa traffico punta alla fase 2, e la causa più comune è un disallineamento dei selettori — per esempio un /16 da una parte e un /24 dall'altra." },
+
+    { "q": "Un tunnel funziona bene e cade puntualmente ogni otto ore. Cosa sospetti?",
+      "a": [ {"t":"Un problema di rekey: parametri di rinnovo disallineati tra i due lati","ok":true},
+             {"t":"Un guasto della linea dell'operatore","ok":false},
+             {"t":"Un problema di MTU","ok":false},
+             {"t":"La chiave condivisa sbagliata","ok":false} ],
+      "e": "La regolarità dell'intervallo è l'indizio: coincide con una delle durate configurate. Le cause tipiche sono durate diverse sui due lati, PFS attivo da una parte sola, o gruppi DH diversi per il PFS. Una chiave sbagliata impedirebbe al tunnel di salire del tutto; l'MTU darebbe problemi continui, non puntuali." },
+
+    { "q": "Cos'è il PFS e perché va impostato uguale sui due lati?",
+      "a": [ {"t":"Genera chiavi nuove e indipendenti a ogni rinnovo; se un lato lo usa e l'altro no, il rekey fallisce","ok":true},
+             {"t":"È un metodo di compressione del traffico nel tunnel","ok":false},
+             {"t":"È il protocollo che rileva la presenza di un NAT","ok":false},
+             {"t":"Definisce quali reti passano nel tunnel","ok":false} ],
+      "e": "Perfect Forward Secrecy: ogni rinnovo produce chiavi non derivate dalle precedenti, così chi avesse registrato il traffico e rubasse una chiave non potrebbe decifrare il passato. Va attivo o disattivo su entrambi i lati, con lo <b>stesso</b> gruppo DH: altrimenti il primo rekey fallisce e il tunnel cade a intervalli regolari." },
+
+    { "q": "Perché IPsec ha bisogno del NAT-Traversal?",
+      "a": [ {"t":"Il NAT modifica l'intestazione che IPsec protegge con un'impronta, che quindi non torna più","ok":true},
+             {"t":"Perché il NAT non supporta il protocollo UDP","ok":false},
+             {"t":"Perché serve a cifrare anche l'indirizzo sorgente","ok":false},
+             {"t":"Perché il NAT rallenta la cifratura","ok":false} ],
+      "e": "IPsec verifica l'integrità dell'intestazione; il NAT per definizione la riscrive, quindi la verifica fallisce e il pacchetto viene scartato. Il NAT-T incapsula tutto dentro UDP 4500, che il NAT può tradurre senza rompere nulla. Per questo devono essere raggiungibili sia la UDP 500 sia la UDP 4500." },
+
+    { "q": "Qual è il metodo più efficiente per diagnosticare un tunnel che non sale?",
+      "a": [ {"t":"Confrontare riga per riga i parametri dei due lati su due colonne","ok":true},
+             {"t":"Provare a cambiare cifratura finché non funziona","ok":false},
+             {"t":"Riavviare entrambi i firewall","ok":false},
+             {"t":"Aumentare le durate di fase 1 e fase 2","ok":false} ],
+      "e": "IPsec richiede che una ventina di parametri coincidano esattamente: nel 90% dei casi il confronto su due colonne fa saltare all'occhio la differenza in due minuti. Cambiare valori a tentativi porta, nella migliore delle ipotesi, a un tunnel che funziona senza che nessuno sappia perché — e che tornerà a rompersi." },
+
+    { "q": "Quante SA di fase 2 esistono per un singolo tunnel funzionante?",
+      "a": [ {"t":"Due, una per direzione","ok":true},
+             {"t":"Una sola, bidirezionale","ok":false},
+             {"t":"Quattro, due per lato","ok":false},
+             {"t":"Dipende dal numero di reti coinvolte","ok":false} ],
+      "e": "Le Security Association sono unidirezionali, quindi ne servono due. Vederne una sola negli elenchi è un sintomo diagnostico preciso: la negoziazione si è completata in un senso solo, tipicamente per selettori disallineati o per un blocco del traffico in una direzione." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

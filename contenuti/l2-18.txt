@@ -1,0 +1,217 @@
+#id: l2-18
+#title: VPN client: SSL VPN, IKEv2 e WireGuard
+#min: 24
+#level: 2
+#chapter: VPN
+#desc: Le tre famiglie, i loro compromessi, e le scelte che contano davvero: tunnel completo o parziale, autenticazione, DNS.
+#obj: Scegliere la tecnologia VPN client adatta al cliente e al suo parco dispositivi
+#obj: Decidere tra tunnel completo e parziale sapendo cosa comporta
+#obj: Configurare l'autenticazione in modo che regga davvero
+#obj: Evitare i due problemi che generano più ticket: DNS e reti sovrapposte
+---
+<p class="lead">La VPN per gli utenti in mobilità è diventata infrastruttura critica: quando non
+funziona, le persone non lavorano. Le tre tecnologie che incontrerai hanno compromessi diversi, e la
+scelta giusta dipende più dal parco dispositivi del cliente che dalla teoria.</p>
+
+<h2>Le tre famiglie</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>SSL VPN</th><th>IKEv2 / IPsec</th><th>WireGuard</th></tr></thead>
+    <tbody>
+      <tr><td><b>Su cosa viaggia</b></td><td>TLS, porta 443</td><td>UDP 500 e 4500</td><td>UDP, porta a scelta</td></tr>
+      <tr><td><b>Passa da reti ostili</b></td><td><b>Quasi sempre:</b> sembra traffico web</td><td>Spesso bloccata da Wi-Fi pubblici e reti d'albergo</td><td>Spesso passa, ma non è garantito</td></tr>
+      <tr><td><b>Client</b></td><td>Software del vendor</td><td><b>Già nel sistema operativo</b> di Windows, macOS, iOS, Android</td><td>App leggera, gratuita, multipiattaforma</td></tr>
+      <tr><td><b>Prestazioni</b></td><td>Le più basse</td><td>Buone</td><td><b>Le migliori</b>, con largo margine</td></tr>
+      <tr><td><b>Riconnessione cambiando rete</b></td><td>Lenta, spesso serve rifare il login</td><td>Buona (con MOBIKE)</td><td><b>Istantanea:</b> non ha il concetto di sessione</td></tr>
+      <tr><td><b>Autenticazione utente</b></td><td>Ricca: AD, RADIUS, SAML, MFA</td><td>Buona: certificati, EAP, RADIUS</td><td><b>Limitata:</b> solo chiavi, l'identità va gestita a parte</td></tr>
+      <tr><td><b>Superficie esposta</b></td><td>Un portale web sempre raggiungibile</td><td>Risponde solo a chi conosce i parametri</td><td>Non risponde a chi non ha la chiave giusta</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il punto delicato della SSL VPN
+  </div>
+  <p>La SSL VPN è comodissima perché passa ovunque, ma comporta un fatto strutturale: espone
+  <b>un servizio web sempre raggiungibile da tutto Internet</b>, che è il punto di ingresso alla rete
+  aziendale. È quindi un bersaglio naturale, e negli ultimi anni i concentratori SSL VPN di praticamente
+  tutti i produttori sono stati oggetto di vulnerabilità gravi sfruttate attivamente.</p>
+  <p><b>Non significa non usarla</b> — spesso è l'unica che funziona per utenti che si collegano da
+  alberghi, aeroporti e reti di clienti. Significa trattarla come un sistema critico:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Aggiornamenti rapidi</b>, non «quando capita». Metti in calendario il controllo mensile del
+    firmware e iscriviti agli avvisi di sicurezza del vendor.</li>
+    <li><b>Autenticazione a più fattori obbligatoria</b>, senza eccezioni per i dirigenti.</li>
+    <li><b>Limita l'accesso al portale</b> per area geografica, e se possibile per indirizzo.</li>
+    <li><b>Controlla periodicamente gli accessi</b>: utenti che non esistono più, orari anomali,
+    provenienze inattese.</li>
+  </ul>
+</div>
+
+<h2>Tunnel completo o parziale</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Confronto tra tunnel completo, dove tutto passa dall'azienda, e tunnel parziale">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dove passa il traffico dell'utente in mobilità</text>
+
+    <text x="175" y="46" text-anchor="middle" class="dg-label-sm">TUNNEL COMPLETO</text>
+    <rect x="20" y="58" width="60" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <text x="50" y="79" text-anchor="middle" class="dg-mono-sm">PC</text>
+    <rect x="130" y="58" width="90" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.4"/>
+    <text x="175" y="79" text-anchor="middle" class="dg-mono-sm">azienda</text>
+    <rect x="260" y="58" width="70" height="34" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4"/>
+    <text x="295" y="79" text-anchor="middle" class="dg-mono-sm">Internet</text>
+    <path d="M84 75h42M224 75h32" stroke="var(--dg-line)" stroke-width="1.6"/>
+    <text x="175" y="112" text-anchor="middle" class="dg-label-sm">Tutto passa dall'azienda, anche YouTube</text>
+    <text x="175" y="128" text-anchor="middle" class="dg-label-sm">+ filtri e log aziendali su tutto</text>
+    <text x="175" y="144" text-anchor="middle" class="dg-label-sm">+ nessuna fuga verso reti locali ostili</text>
+    <text x="175" y="160" text-anchor="middle" class="dg-label-sm">− consuma banda della sede</text>
+    <text x="175" y="176" text-anchor="middle" class="dg-label-sm">− videochiamate peggiori (giro più lungo)</text>
+
+    <text x="525" y="46" text-anchor="middle" class="dg-label-sm">TUNNEL PARZIALE</text>
+    <rect x="370" y="58" width="60" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <text x="400" y="79" text-anchor="middle" class="dg-mono-sm">PC</text>
+    <rect x="490" y="40" width="90" height="30" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.4"/>
+    <text x="535" y="60" text-anchor="middle" class="dg-mono-sm">azienda</text>
+    <rect x="490" y="82" width="90" height="30" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4"/>
+    <text x="535" y="102" text-anchor="middle" class="dg-mono-sm">Internet</text>
+    <path d="M434 70h52M434 82h52" stroke="var(--dg-line)" stroke-width="1.6"/>
+    <text x="525" y="134" text-anchor="middle" class="dg-label-sm">Solo le reti aziendali passano nel tunnel</text>
+    <text x="525" y="150" text-anchor="middle" class="dg-label-sm">+ videochiamate ottime, banda risparmiata</text>
+    <text x="525" y="166" text-anchor="middle" class="dg-label-sm">− nessun filtro sulla navigazione</text>
+    <text x="525" y="182" text-anchor="middle" class="dg-label-sm">− il PC è su due reti insieme</text>
+
+    <rect x="120" y="204" width="460" height="34" rx="7" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.5"/>
+    <text x="350" y="219" text-anchor="middle" class="dg-label-sm">Scelta tipica oggi: <tspan font-weight="700">parziale</tspan>, con protezione sull'endpoint e servizi in cloud,</text>
+    <text x="350" y="233" text-anchor="middle" class="dg-label-sm">perché Microsoft 365 e Teams funzionano molto meglio uscendo direttamente.</text>
+  </svg>
+  </div>
+  <figcaption>La domanda decisiva è: <b>il filtro della navigazione deve valere anche fuori
+  dall'ufficio?</b> Se sì, tunnel completo (o meglio, un agente di sicurezza sull'endpoint). Se il
+  cliente ha già protezione sui dispositivi, il tunnel parziale è quasi sempre la scelta giusta.</figcaption>
+</figure>
+
+<h2>Le due cause di ticket più frequenti</h2>
+
+<h3>1. Il DNS</h3>
+<p>L'utente si collega, il ping a <code>10.10.50.20</code> funziona, ma <code>\\srv-file</code> no.
+Causa: il client non sta usando il DNS aziendale, quindi i nomi interni non si risolvono.</p>
+<p>Va configurato nel profilo VPN: <strong>server DNS interni</strong> e <strong>suffisso di ricerca</strong>
+del dominio. Con il tunnel parziale serve attenzione in più, perché il sistema operativo può preferire
+il DNS della rete locale: su Windows si usa la risoluzione per nome di dominio (NRPT), che manda al DNS
+aziendale solo le richieste per il dominio interno.</p>
+
+<h3>2. Le reti sovrapposte</h3>
+<p>L'utente è a casa su <code>192.168.1.0/24</code> e l'azienda usa la stessa rete: il PC non saprà mai
+distinguere la stampante di casa dal server aziendale. È lo stesso problema della lezione precedente,
+e ha la stessa soluzione: <strong>l'azienda non deve usare le reti predefinite dei router domestici</strong>.
+Se il cliente ce l'ha già, è un ottimo argomento per proporre la rinumerazione.</p>
+
+<h2>L'autenticazione: dove si gioca la sicurezza vera</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Metodo</th><th>Robustezza</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>Utenti locali sul firewall</td><td>Bassa</td><td>Nessuna revoca centralizzata: quando uno se ne va, bisogna ricordarsi di cancellarlo</td></tr>
+      <tr><td>LDAP / Active Directory</td><td>Media</td><td>Credenziali aziendali, revoca immediata. <b>Il minimo accettabile</b></td></tr>
+      <tr><td>RADIUS (NPS) verso AD</td><td>Media-alta</td><td>Aggiunge criteri di accesso per gruppo, orario, tipo di dispositivo</td></tr>
+      <tr><td>+ <b>Autenticazione a più fattori</b></td><td><b>Alta</b></td><td>La misura singola più efficace: rende inutili le password rubate</td></tr>
+      <tr><td>Certificato sul dispositivo</td><td>Alta</td><td>Solo i dispositivi aziendali possono collegarsi, indipendentemente da chi conosce la password</td></tr>
+      <tr><td>Certificato + MFA</td><td>Molto alta</td><td>Serve il dispositivo giusto, l'utente giusto e il secondo fattore</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Se proponi una sola cosa a un cliente, proponi l'MFA sulla VPN
+  </div>
+  <p>Le credenziali rubate — con phishing, con malware, o comprate — sono il modo più comune in cui
+  qualcuno entra in una rete aziendale. Un secondo fattore rende quelle credenziali inutili da sole.</p>
+  <p style="margin-bottom:0">Costa poco (spesso è già incluso nelle licenze Microsoft o del firewall),
+  si implementa in mezza giornata, e riduce un rischio concreto molto più di qualsiasi altra misura di
+  pari costo. È il consiglio più facile da dare e più difficile da rimpiangere.</p>
+</div>
+
+<h2>Come scegliere, in pratica</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Situazione</th><th>Scelta</th></tr></thead>
+    <tbody>
+      <tr><td>Utenti che si collegano da alberghi, aeroporti, reti di clienti</td><td><b>SSL VPN</b>, tenuta aggiornata e con MFA</td></tr>
+      <tr><td>Parco dispositivi misto senza voglia di installare software</td><td><b>IKEv2</b>, già presente in tutti i sistemi operativi</td></tr>
+      <tr><td>Pochi utenti tecnici, si vuole il massimo delle prestazioni</td><td><b>WireGuard</b></td></tr>
+      <tr><td>Serve integrazione con AD, gruppi e criteri d'accesso</td><td><b>SSL VPN</b> o IKEv2 con RADIUS</td></tr>
+      <tr><td>Accesso di un fornitore a un solo sistema</td><td>Né l'una né l'altra: <b>accesso applicativo</b> limitato e temporaneo</td></tr>
+      <tr><td>Il cliente è in cloud con Microsoft 365</td><td>Valutare se la VPN serva ancora: spesso basta l'accesso condizionale e la protezione sull'endpoint</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La domanda che vale la pena fare al cliente
+  </div>
+  <p>«Quando un dipendente se ne va, in quanto tempo perde l'accesso alla VPN?»</p>
+  <p style="margin-bottom:0">Se la risposta è «quando ce ne ricordiamo», hai trovato un problema reale
+  e un lavoro da proporre: autenticazione centralizzata su Active Directory, così disattivare l'utente
+  chiude tutto in un colpo solo. È una conversazione che porta valore al cliente e che nessuno gli ha
+  mai fatto.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: VPN client",
+  "questions": [
+    { "q": "Un commerciale si collega spesso dal Wi-Fi di alberghi e clienti. Quale tecnologia conviene?",
+      "a": [ {"t":"SSL VPN, perché viaggia su TLS/443 e passa praticamente ovunque","ok":true},
+             {"t":"IKEv2, perché è già nel sistema operativo","ok":false},
+             {"t":"WireGuard, perché è la più veloce","ok":false},
+             {"t":"Indifferente: passano tutte allo stesso modo","ok":false} ],
+      "e": "Molte reti pubbliche bloccano UDP 500 e 4500, quindi IKEv2 spesso non si collega proprio. La SSL VPN sembra traffico web e passa quasi sempre. Il prezzo è che espone un portale web permanente: va tenuta aggiornata e protetta con MFA." },
+
+    { "q": "Un utente in VPN raggiunge i server per indirizzo IP ma non per nome. Cosa manca?",
+      "a": [ {"t":"I server DNS interni e il suffisso di ricerca nel profilo VPN","ok":true},
+             {"t":"Una rotta verso la rete aziendale","ok":false},
+             {"t":"La policy firewall","ok":false},
+             {"t":"Il NAT sul tunnel","ok":false} ],
+      "e": "Se l'IP risponde, rotte e policy funzionano: manca solo la traduzione dei nomi. Il client sta usando il DNS della rete da cui si collega, che non conosce i nomi interni. Con il tunnel parziale serve attenzione in più, perché il sistema può preferire il DNS locale: su Windows si usa la risoluzione per dominio (NRPT)." },
+
+    { "q": "Qual è il compromesso principale del tunnel parziale (split tunnel)?",
+      "a": [ {"t":"La navigazione dell'utente non passa dai filtri aziendali","ok":true},
+             {"t":"Le prestazioni sono peggiori","ok":false},
+             {"t":"Non si possono raggiungere i server interni","ok":false},
+             {"t":"Non supporta l'autenticazione a più fattori","ok":false} ],
+      "e": "Con il tunnel parziale solo le reti aziendali passano nel tunnel: tutto il resto esce direttamente, quindi senza filtro web né registrazione. In compenso videochiamate e servizi cloud funzionano molto meglio e non si consuma la banda della sede. Oggi è la scelta più comune, a patto che ci sia protezione sull'endpoint." },
+
+    { "q": "Perché conviene autenticare la VPN su Active Directory invece che con utenti locali sul firewall?",
+      "a": [ {"t":"Disattivando l'utente in AD si chiude immediatamente anche l'accesso VPN","ok":true},
+             {"t":"Perché è più veloce","ok":false},
+             {"t":"Perché supporta più utenti contemporanei","ok":false},
+             {"t":"Perché cifra meglio il traffico","ok":false} ],
+      "e": "Gli utenti locali vivono in un elenco separato che qualcuno deve ricordarsi di aggiornare: quando una persona lascia l'azienda, il suo accesso VPN spesso resta attivo per mesi. Con l'autenticazione centralizzata la revoca è immediata e automatica. È il minimo accettabile, e l'MFA è il passo successivo." },
+
+    { "q": "Un utente lavora da casa su 192.168.1.0/24 e l'azienda usa la stessa rete. Cosa succede?",
+      "a": [ {"t":"Il PC non distingue le risorse di casa da quelle aziendali e la VPN non funziona correttamente","ok":true},
+             {"t":"La VPN non si collega affatto","ok":false},
+             {"t":"Funziona, ma più lentamente","ok":false},
+             {"t":"Il firewall assegna automaticamente indirizzi diversi","ok":false} ],
+      "e": "La VPN risulta connessa, il che rende la diagnosi confusa, ma il PC considera locali gli indirizzi 192.168.1.x e non li manda nel tunnel: la stampante di casa e il server aziendale diventano indistinguibili. È il motivo per cui in azienda non si usano mai le reti predefinite dei router domestici." },
+
+    { "q": "Qual è la misura singola più efficace per proteggere una VPN client?",
+      "a": [ {"t":"L'autenticazione a più fattori","ok":true},
+             {"t":"Cambiare la porta del servizio","ok":false},
+             {"t":"Usare password più lunghe","ok":false},
+             {"t":"Limitare il numero di connessioni contemporanee","ok":false} ],
+      "e": "Le credenziali rubate sono il modo più comune in cui qualcuno entra in una rete aziendale, e nessuna politica di password le rende inutili. Un secondo fattore sì. Costa poco, spesso è già incluso nelle licenze, e si implementa in mezza giornata: è il consiglio più facile da dare e più difficile da rimpiangere." }
+  ]
+}
+</script>

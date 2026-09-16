@@ -82,10 +82,10 @@ window.NETPATH_CURRICULUM = [
       { id:"l2-15", t:"Pubblicare un servizio senza aprire un buco", s:"Port forward fatto bene: restrizioni sorgente, geo-IP, IPS, certificati.", m:24, ready:true }
     ]},
     { title: "VPN", lessons: [
-      { id:"l2-16", t:"IPsec spiegato: IKE fase 1 e fase 2", s:"SA, proposte, PFS, DH group. Perché i due lati devono dire esattamente la stessa cosa.", m:30, ready:false },
-      { id:"l2-17", t:"Site-to-site: far parlare due sedi", s:"Dal disegno alla configurazione, con il selettore di traffico spiegato bene.", m:28, ready:false },
-      { id:"l2-18", t:"VPN client: SSL VPN, IKEv2, WireGuard", s:"Le tre famiglie, i loro compromessi e quando scegliere quale.", m:24, ready:false },
-      { id:"l2-19", t:"Diagnosticare un tunnel che non sale", s:"Il metodo in 6 passi che risolve il 90% dei casi, con i log da leggere su ogni vendor.", m:26, ready:false }
+      { id:"l2-16", t:"IPsec spiegato: IKE fase 1 e fase 2", s:"SA, proposte, PFS, DH group. Perché i due lati devono dire esattamente la stessa cosa.", m:30, ready:true },
+      { id:"l2-17", t:"Site-to-site: far parlare due sedi", s:"Dal disegno alla configurazione, con il selettore di traffico spiegato bene.", m:28, ready:true },
+      { id:"l2-18", t:"VPN client: SSL VPN, IKEv2, WireGuard", s:"Le tre famiglie, i loro compromessi e quando scegliere quale.", m:24, ready:true },
+      { id:"l2-19", t:"Diagnosticare un tunnel che non sale", s:"Il metodo in 6 passi che risolve il 90% dei casi, con i log da leggere su ogni vendor.", m:26, ready:true }
     ]},
     { title: "Wireless", lessons: [
       { id:"l2-20", t:"Radiofrequenza per chi non è ingegnere", s:"Onde, dB, attenuazione, interferenza: il minimo per non dire sciocchezze.", m:26, ready:false },

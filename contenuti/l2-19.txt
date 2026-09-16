@@ -1,0 +1,277 @@
+#id: l2-19
+#title: Diagnosticare un tunnel che non sale
+#min: 26
+#level: 2
+#chapter: VPN
+#desc: Il metodo in sei passi che risolve il 90% dei casi, con i messaggi di errore tradotti e i log da leggere su ogni vendor.
+#obj: Applicare una sequenza diagnostica invece di cambiare parametri a caso
+#obj: Tradurre i messaggi di errore più comuni nella causa reale
+#obj: Distinguere «non sale», «sale e cade», «sale ma non passa traffico»
+#obj: Sapere dove guardare su FortiGate, MikroTik e Sophos
+---
+<p class="lead">Un tunnel che non funziona è la chiamata più frequente dopo «non va Internet». La
+differenza tra chi ci mette dieci minuti e chi ci mette un pomeriggio non è la conoscenza di IPsec:
+è avere una <strong>sequenza</strong> invece di cambiare parametri sperando.</p>
+
+<h2>Prima di tutto: quale dei tre problemi è?</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Dove sta il problema</th><th>Vai al passo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Il tunnel non sale affatto</b></td><td>Raggiungibilità o fase 1</td><td>1 → 3</td></tr>
+      <tr><td><b>Fase 1 sì, fase 2 no</b></td><td>Parametri di fase 2 o selettori</td><td>4</td></tr>
+      <tr><td><b>Sale e passa traffico, poi cade a intervalli regolari</b></td><td>Rekey</td><td>5</td></tr>
+      <tr><td><b>Sale ma non passa traffico</b></td><td>Rotte, policy, NAT o MTU</td><td>6</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Questa prima distinzione ti fa saltare l'80% delle verifiche inutili. Farla richiede trenta secondi:
+basta guardare lo stato delle due fasi.</p>
+
+<h2>I sei passi</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 270" role="img" aria-label="I sei passi della diagnosi di un tunnel IPsec, dal più basso al più alto">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dal basso verso l'alto, come sempre</text>
+    <g stroke-width="1.5">
+      <rect x="30" y="38"  width="640" height="34" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="30" y="78"  width="640" height="34" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" opacity=".8"/>
+      <rect x="30" y="118" width="640" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="30" y="158" width="640" height="34" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="30" y="198" width="640" height="34" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="48" y="59">1 · I due firewall si vedono? Ping all'IP pubblico dell'altro lato</text>
+      <text x="48" y="99">2 · UDP 500 e 4500 passano? Nessun operatore o firewall a monte che filtra?</text>
+      <text x="48" y="139">3 · FASE 1: si autenticano? — chiave, ID, versione IKE, DH, cifratura</text>
+      <text x="48" y="179">4 · FASE 2: concordano cosa proteggere? — selettori, PFS, cifratura</text>
+      <text x="48" y="219">5-6 · Rekey stabile? Rotte, policy, esclusione dal NAT, MTU</text>
+    </g>
+    <text x="350" y="256" text-anchor="middle" class="dg-label-sm">Ogni passo presuppone il precedente: se il passo 3 fallisce, i parametri di fase 2 sono irrilevanti.</text>
+  </svg>
+  </div>
+  <figcaption>È la stessa scala della lezione 1-03 applicata alle VPN. Saltare i passi bassi è il modo
+  più rapido per passare un'ora sui parametri di cifratura mentre l'operatore sta filtrando la UDP 4500.</figcaption>
+</figure>
+
+<h3>Passo 1-2 — La raggiungibilità</h3>
+<p>Sembra banale ed è il primo sospetto quando un tunnel <em>ha sempre funzionato</em> e smette
+all'improvviso. L'indirizzo pubblico di un lato è cambiato? L'operatore ha messo il cliente dietro
+<span class="term" data-term="cgnat">CGNAT</span>? Un firewall a monte filtra la UDP 4500?</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Verificare che i pacchetti IKE arrivino davvero</div>
+<pre><span class="c">═══ FORTIGATE — vedo arrivare qualcosa? ═════════════</span>
+<span class="p">diagnose sniffer packet any</span> <span class="s">"host 203.0.113.20 and (port 500 or port 4500)"</span> <span class="n">4 0 a</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/tool sniffer quick port=</span><span class="n">500,4500</span>
+
+<span class="c">Se non vedi NIENTE in arrivo: il problema è fuori dal tuo firewall.</span>
+<span class="c">Se vedi partire e non tornare: qualcuno filtra a monte.</span>
+</pre>
+</div>
+
+<h3>Passo 3 — La fase 1</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Messaggio nel log</th><th>Significa quasi sempre</th></tr></thead>
+    <tbody>
+      <tr><td><code>no proposal chosen</code><br><code>NO_PROPOSAL_CHOSEN</code></td>
+          <td>Gli algoritmi non coincidono: cifratura, hash, gruppo DH o durata. <b>Il messaggio più comune in assoluto.</b></td></tr>
+      <tr><td><code>invalid ID information</code><br><code>peer identifier mismatch</code></td>
+          <td>Gli identificatori non corrispondono. Tipico quando un lato è dietro NAT e si presenta con un IP diverso da quello atteso.</td></tr>
+      <tr><td><code>authentication failed</code><br><code>AUTHENTICATION_FAILED</code></td>
+          <td>Chiave condivisa diversa. Attenzione a spazi finali copiati per sbaglio e a caratteri accentati.</td></tr>
+      <tr><td><code>no response / retransmitting</code></td>
+          <td>L'altro lato non risponde affatto: torna ai passi 1-2.</td></tr>
+      <tr><td><code>received notify: INVALID_SPI</code></td>
+          <td>Un lato ha ancora in memoria una SA che l'altro ha buttato. Si risolve azzerando il tunnel da entrambe le parti.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Passo 4 — La fase 2</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Messaggio</th><th>Significa</th></tr></thead>
+    <tbody>
+      <tr><td><code>no proposal chosen</code> in fase 2</td><td>Cifratura, hash, PFS o durata di fase 2 diversi</td></tr>
+      <tr><td><code>TS_UNACCEPTABLE</code><br><code>invalid traffic selector</code></td>
+          <td><b>I selettori non sono speculari.</b> È il messaggio che punta dritto alla causa</td></tr>
+      <tr><td>Il tunnel risulta su, ma una sola SA installata</td><td>La negoziazione è riuscita in una direzione sola</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Passo 5 — Il rekey</h3>
+<p>Se le cadute sono a intervalli regolari, confronta l'intervallo con le durate configurate. Poi
+verifica che <strong>durate, PFS e gruppo DH del PFS</strong> siano identici sui due lati. È la
+casistica vista nella lezione 2-16.</p>
+
+<h3>Passo 6 — Sale ma non passa traffico</h3>
+<p>Qui il tunnel è a posto e il problema è attorno. Nell'ordine:</p>
+<ol>
+  <li><b>C'è la rotta</b> verso la rete remota, e punta al tunnel?</li>
+  <li><b>C'è la policy</b> nelle due direzioni?</li>
+  <li><b>Il NAT è escluso</b> per il traffico diretto nel tunnel?</li>
+  <li><b>I contatori del tunnel salgono?</b> Se salgono in uscita e non in ingresso, il problema è
+  dall'altra parte.</li>
+  <li><b>Il ping grande passa?</b> Se il ping piccolo sì e quello grande no, è MTU.</li>
+</ol>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    I contatori dicono da che parte guardare
+  </div>
+  <p>Ogni tunnel ha due contatori: byte inviati e byte ricevuti. Leggerli ti dice immediatamente dove
+  concentrarti:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Entrambi a zero</b> → il traffico non arriva nemmeno al tunnel: manca la rotta, o la policy
+    lo blocca prima.</li>
+    <li><b>Inviati salgono, ricevuti fermi</b> → il tuo lato manda correttamente; il problema è
+    dall'altra parte (policy, rotta di ritorno, o NAT non escluso da loro).</li>
+    <li><b>Entrambi salgono ma il servizio non funziona</b> → il tunnel fa il suo lavoro: guarda MTU,
+    DNS, o il servizio stesso.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Tre righe di lettura e hai diviso il problema a metà —
+  e soprattutto sai se devi chiamare il collega dall'altro lato o no.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>I comandi di diagnosi, per vendor</div>
+<pre><span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="p">diagnose vpn ike gateway list</span>         <span class="c"># stato fase 1</span>
+<span class="p">diagnose vpn tunnel list</span>              <span class="c"># fase 2 + contatori</span>
+<span class="c"># il debug che racconta la negoziazione in diretta:</span>
+<span class="p">diagnose vpn ike log filter dst-addr4</span> <span class="n">203.0.113.20</span>
+<span class="p">diagnose debug application ike</span> <span class="n">-1</span>
+<span class="p">diagnose debug enable</span>
+<span class="c"># ... fai risalire il tunnel e leggi ...</span>
+<span class="p">diagnose debug disable</span>
+<span class="p">diagnose debug reset</span>
+<span class="c"># forzare la rinegoziazione:</span>
+<span class="p">diagnose vpn tunnel flush</span> <span class="s">nome-tunnel</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/ip ipsec active-peers print</span>
+<span class="p">/ip ipsec installed-sa print</span>          <span class="c"># DUE per tunnel funzionante</span>
+<span class="p">/system logging add topics=</span><span class="s">ipsec</span> <span class="p">action=</span><span class="s">memory</span>
+<span class="p">/log print where topics~</span><span class="s">"ipsec"</span>
+<span class="p">/ip ipsec installed-sa flush</span>          <span class="c"># azzera e rinegozia</span>
+
+<span class="c">═══ SOPHOS / strongSwan ═════════════════════════════</span>
+<span class="p">ipsec statusall</span>
+<span class="p">swanctl --list-sas</span>
+<span class="p">journalctl -u strongswan -f</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Leggi il log del lato che INIZIA
+  </div>
+  <p>Nella negoziazione IPsec, il lato che riceve spesso scrive messaggi generici («negoziazione
+  fallita»), mentre <b>il lato che inizia</b> ha il dettaglio di cosa ha proposto e cosa gli è stato
+  rifiutato.</p>
+  <p style="margin-bottom:0">Se hai accesso a un solo lato e i log non dicono nulla di utile, forza
+  quel lato a iniziare la negoziazione — su FortiGate con <code>diagnose vpn tunnel flush</code>, su
+  MikroTik svuotando le SA — e rileggi. Spesso il messaggio utile compare solo così.</p>
+</div>
+
+<h2>I casi che risolverai più spesso</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Caso</th><th>Causa</th><th>Verifica rapida</th></tr></thead>
+    <tbody>
+      <tr><td>Tunnel nuovo che non sale</td><td>Parametri disallineati</td><td>Foglio di confronto a due colonne</td></tr>
+      <tr><td>Tunnel esistente che smette di colpo</td><td>Indirizzo pubblico cambiato, o CGNAT</td><td>Ping all'IP remoto e verifica dell'IP WAN attuale</td></tr>
+      <tr><td>Cade a intervalli regolari</td><td>Rekey</td><td>Confronta l'intervallo con le durate</td></tr>
+      <tr><td>Su ma non passa nulla</td><td>Rotta o policy mancante</td><td>Contatori del tunnel</td></tr>
+      <tr><td>Passa il ping, non i file</td><td>MTU</td><td><code>ping -l 1400 -f</code></td></tr>
+      <tr><td>Funziona in una direzione sola</td><td>Policy o rotta di ritorno mancante dall'altro lato</td><td>Contatori: inviati salgono, ricevuti no</td></tr>
+      <tr><td>L'altro lato vede l'IP del firewall</td><td>NAT non escluso</td><td>Ordine delle regole di NAT</td></tr>
+      <tr><td>Sale solo se inizia un lato preciso</td><td>Un lato è dietro NAT o ha IP dinamico</td><td>Configura quel lato come iniziatore e usa un identificatore esplicito</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Quando l'altro lato non è tuo
+  </div>
+  <p>Capita spesso: il tunnel va verso il fornitore di un gestionale, o verso un'altra società di
+  informatica che gestisce l'altra sede. Non hai accesso al loro firewall e devi collaborare con un
+  tecnico che non conosci.</p>
+  <p><b>Come si fa bene:</b></p>
+  <ul style="margin-bottom:0">
+    <li><b>Manda una tabella, non una frase.</b> «Non sale» non serve a nessuno. Manda i tuoi parametri
+    su due colonne e chiedi i loro: nel 90% dei casi la differenza salta fuori senza nemmeno una
+    telefonata.</li>
+    <li><b>Concorda chi inizia.</b> Se entrambi i lati provano a iniziare contemporaneamente si creano
+    SA duplicate. Decidete un iniziatore e scrivetelo.</li>
+    <li><b>Allegate l'orario esatto</b> dei tentativi, così ciascuno cerca nei propri log il momento
+    giusto.</li>
+    <li><b>Metti per iscritto lo schema concordato</b> — reti, selettori, parametri, chi inizia — e
+    tienilo nella documentazione del cliente. Tra due anni, quando quel tunnel si romperà, sarà l'unica
+    cosa che ti salverà.</li>
+  </ul>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: diagnosi dei tunnel",
+  "questions": [
+    { "q": "Un tunnel ha sempre funzionato e smette di colpo, senza che nessuno abbia toccato niente. Primo sospetto?",
+      "a": [ {"t":"L'indirizzo pubblico di un lato è cambiato, o l'operatore ha messo il cliente dietro CGNAT","ok":true},
+             {"t":"I parametri di cifratura sono cambiati","ok":false},
+             {"t":"Il PFS si è disattivato","ok":false},
+             {"t":"L'MTU è cambiata","ok":false} ],
+      "e": "Se i parametri non li ha toccati nessuno, non possono essere disallineati all'improvviso. Quello che cambia da solo è l'indirizzo pubblico — rinnovo del contratto, sostituzione del router dell'operatore, passaggio a CGNAT. Si verifica in trenta secondi guardando l'IP WAN attuale e provando a raggiungere quello remoto." },
+
+    { "q": "Nel log compare <code>no proposal chosen</code> durante la fase 1. Cosa significa?",
+      "a": [ {"t":"Gli algoritmi proposti non coincidono: cifratura, hash, gruppo DH o durata","ok":true},
+             {"t":"La chiave condivisa è sbagliata","ok":false},
+             {"t":"I selettori di traffico non corrispondono","ok":false},
+             {"t":"L'altro lato non è raggiungibile","ok":false} ],
+      "e": "È il messaggio più comune in assoluto: i due si parlano ma non trovano una combinazione di algoritmi accettabile per entrambi. Una chiave sbagliata darebbe <code>authentication failed</code>; selettori disallineati darebbero <code>TS_UNACCEPTABLE</code>, e comunque in fase 2." },
+
+    { "q": "Il tunnel è attivo. I byte inviati salgono, quelli ricevuti restano a zero. Cosa concludi?",
+      "a": [ {"t":"Il tuo lato manda correttamente: il problema è dall'altra parte","ok":true},
+             {"t":"Manca la rotta sul tuo firewall","ok":false},
+             {"t":"La fase 2 non è negoziata","ok":false},
+             {"t":"È un problema di MTU","ok":false} ],
+      "e": "Se i byte inviati salgono, rotta e policy del tuo lato funzionano e il traffico entra nel tunnel. Il silenzio in ricezione indica che dall'altra parte qualcosa lo blocca o non sa come rispondere: policy mancante, rotta di ritorno assente, o NAT non escluso da loro. È anche l'informazione che ti dice se devi chiamare il collega dall'altro lato." },
+
+    { "q": "Perché conviene leggere i log del lato che inizia la negoziazione?",
+      "a": [ {"t":"Ha il dettaglio di cosa ha proposto e cosa gli è stato rifiutato; chi riceve scrive messaggi generici","ok":true},
+             {"t":"Perché è l'unico che registra gli eventi IPsec","ok":false},
+             {"t":"Perché il lato ricevente non ha log","ok":false},
+             {"t":"Perché i log del ricevente sono cifrati","ok":false} ],
+      "e": "Chi riceve spesso scrive solo «negoziazione fallita», mentre l'iniziatore sa esattamente quali proposte ha mandato e quale rifiuto ha ricevuto. Se hai accesso a un solo lato e i log non dicono nulla, forzalo a iniziare — svuotando le SA — e rileggi." },
+
+    { "q": "Un tunnel cade puntualmente ogni ora. Dove guardi?",
+      "a": [ {"t":"Durata, PFS e gruppo DH del PFS di fase 2, confrontati tra i due lati","ok":true},
+             {"t":"La raggiungibilità dell'IP pubblico remoto","ok":false},
+             {"t":"L'MTU del tunnel","ok":false},
+             {"t":"Le policy del firewall","ok":false} ],
+      "e": "La regolarità dell'intervallo è l'indizio, e un'ora è la durata tipica di fase 2: è un rekey che fallisce. Le cause sono durate diverse, PFS attivo da un lato solo, o gruppi DH diversi per il PFS. Problemi di raggiungibilità o di MTU non producono cadute così puntuali." },
+
+    { "q": "Devi far salire un tunnel verso un fornitore a cui non hai accesso. Qual è l'approccio più efficace?",
+      "a": [ {"t":"Mandare i propri parametri in tabella e chiedere i loro, concordando anche chi inizia","ok":true},
+             {"t":"Provare combinazioni di cifratura finché non sale","ok":false},
+             {"t":"Chiedere di disattivare temporaneamente il firewall","ok":false},
+             {"t":"Usare i parametri predefiniti e sperare che coincidano","ok":false} ],
+      "e": "IPsec richiede che una ventina di valori coincidano: il confronto scritto su due colonne fa emergere la differenza nel 90% dei casi senza nemmeno una telefonata. Vale la pena concordare anche l'iniziatore, perché se entrambi provano a iniziare si creano SA duplicate — e mettere per iscritto lo schema concordato, che tra due anni sarà l'unica cosa a salvarti." }
+  ]
+}
+</script>

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Site-to-site: far parlare due sedi — NetPath</title>
+<meta name="description" content="Dal disegno alla configurazione, con la distinzione tra VPN basate su policy e su rotte che cambia tutto.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-17">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>VPN</span>
+      </nav>
+      <h1 class="lesson-title">Site-to-site: far parlare due sedi</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 17</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere VPN policy-based e route-based e sapere quale conviene</li>
+        <li>Progettare l'indirizzamento prima di configurare qualsiasi cosa</li>
+        <li>Scrivere rotte e policy perché il traffico passi davvero nel tunnel</li>
+        <li>Prevedere MTU e ridondanza fin dall'inizio</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Un tunnel site-to-site è la richiesta più comune dopo «apri una porta». Farlo salire è
+la parte facile; farlo funzionare bene — con il traffico giusto, le prestazioni giuste e un piano B —
+è quello che distingue un lavoro fatto da un tecnico da uno fatto da un professionista.</p>
+
+<h2>Prima di configurare: tre decisioni</h2>
+
+<h3>1. Quali reti devono parlarsi davvero</h3>
+<p>La tentazione è far passare tutto: <code>10.10.0.0/16</code> ↔ <code>10.20.0.0/16</code>, e via.
+È comodo e sbagliato. Un tunnel è un ponte tra due reti: se una delle due prende un ransomware,
+il ponte è la strada per l'altra.</p>
+<p>Torna la <b>matrice di comunicazione</b> della lezione 2-04: la filiale ha bisogno del gestionale e
+del file server, non delle telecamere della centrale né della VLAN di gestione. Il tunnel trasporta
+solo quello che serve.</p>
+
+<h3>2. Gli indirizzi non devono sovrapporsi</h3>
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due sedi con la stessa subnet: il problema che non si risolve bene
+  </div>
+  <p>Se entrambe le sedi usano <code>192.168.1.0/24</code> — cosa frequentissima, perché è il valore
+  predefinito di ogni router — <b>il tunnel non può funzionare</b>: ogni dispositivo considera quegli
+  indirizzi locali e non li manda mai al firewall.</p>
+  <p>Le uniche vere soluzioni sono due, e nessuna è indolore:</p>
+  <ul>
+    <li><b>Rinumerare una delle due sedi.</b> È la risposta corretta, e va fatta prima o poi.</li>
+    <li><b>NAT dentro il tunnel:</b> ogni lato vede l'altro con indirizzi fittizi. Funziona, ma rende
+    tutto più difficile da capire, da diagnosticare e da documentare — e i log diventano ingannevoli.</li>
+  </ul>
+  <p style="margin-bottom:0"><b>Da qui la regola della lezione 1-16:</b> scegli fin dall'inizio uno
+  schema <code>10.sede.vlan.0/24</code>. Costa zero il primo giorno e ti evita questa situazione per
+  sempre.</p>
+</div>
+
+<h3>3. Policy-based o route-based</h3>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 280" role="img" aria-label="Confronto tra VPN basata su policy e VPN basata su rotte con interfaccia virtuale">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Due modi di costruire lo stesso tunnel</text>
+
+    <text x="175" y="48" text-anchor="middle" class="dg-label-sm">POLICY-BASED</text>
+    <rect x="20" y="58" width="310" height="92" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="175" y="82" text-anchor="middle" class="dg-mono-sm">se sorgente=10.10.x e dest=10.20.x</text>
+    <text x="175" y="102" text-anchor="middle" class="dg-mono-sm">→ cifra e manda nel tunnel</text>
+    <text x="175" y="128" text-anchor="middle" class="dg-label-sm">Il tunnel non è un'interfaccia:</text>
+    <text x="175" y="142" text-anchor="middle" class="dg-label-sm">è una regola di corrispondenza</text>
+
+    <text x="525" y="48" text-anchor="middle" class="dg-label-sm">ROUTE-BASED</text>
+    <rect x="370" y="58" width="310" height="92" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="525" y="82" text-anchor="middle" class="dg-mono-sm">esiste un'interfaccia virtuale «tun-filiale»</text>
+    <text x="525" y="102" text-anchor="middle" class="dg-mono-sm">rotta: 10.20.0.0/16 → tun-filiale</text>
+    <text x="525" y="128" text-anchor="middle" class="dg-label-sm">Il tunnel si comporta come</text>
+    <text x="525" y="142" text-anchor="middle" class="dg-label-sm">un cavo virtuale tra le due sedi</text>
+
+    <g class="dg-label-sm">
+      <text x="30" y="180">− difficile da estendere: ogni coppia di reti è una voce in più</text>
+      <text x="30" y="198">− niente protocolli dinamici, niente rotte di riserva</text>
+      <text x="30" y="216">− diagnosi più oscura: il tunnel non ha contatori propri</text>
+      <text x="30" y="234">+ unica scelta con certi apparati vecchi o di altri fornitori</text>
+
+      <text x="380" y="180">+ si aggiungono reti scrivendo una rotta, senza toccare la VPN</text>
+      <text x="380" y="198">+ supporta OSPF/BGP, rotte di riserva, tunnel ridondanti</text>
+      <text x="380" y="216">+ ha contatori e stato propri: molto più facile da diagnosticare</text>
+      <text x="380" y="234">+ policy scritte sull'interfaccia, come per qualsiasi altra rete</text>
+    </g>
+    <rect x="370" y="248" width="310" height="24" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.5"/>
+    <text x="525" y="265" text-anchor="middle" class="dg-mono-sm">Scegli questa, quando puoi</text>
+  </svg>
+  </div>
+  <figcaption>Su FortiGate si chiama <b>interface mode</b>, su MikroTik lo si ottiene con un'interfaccia
+  IPsec o un tunnel GRE/WireGuard sopra IPsec. Con la route-based il tunnel diventa un'interfaccia
+  normale, e tutto ciò che sai su rotte e policy si applica tale e quale.</figcaption>
+</figure>
+
+<h2>Le quattro cose che servono perché il traffico passi</h2>
+
+<p>Far salire il tunnel non basta. Perché due PC in due sedi si parlino servono <strong>quattro</strong>
+pezzi, e dimenticarne uno è il motivo più comune di «il tunnel è su ma non funziona niente».</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Pezzo</th><th>Se manca</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Fase 1 e fase 2 negoziate</b></td><td>Il tunnel non sale affatto</td></tr>
+      <tr><td>2</td><td><b>Una rotta</b> che mandi la rete remota dentro il tunnel</td><td>Il traffico esce su Internet invece che nel tunnel</td></tr>
+      <tr><td>3</td><td><b>Policy firewall</b> da LAN a tunnel <em>e</em> da tunnel a LAN</td><td>Il traffico arriva al firewall e viene bloccato</td></tr>
+      <tr><td>4</td><td><b>Nessun NAT</b> sul traffico del tunnel</td><td>L'altro lato vede arrivare l'indirizzo del firewall e le risposte si perdono</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il NAT che rompe il tunnel
+  </div>
+  <p>Il quarto punto è quello che sfugge più spesso. La regola generale di masquerade — «tutto ciò che
+  esce viene mascherato» — si applica anche al traffico diretto nel tunnel, se non la escludi.</p>
+  <p>Risultato: la filiale vede arrivare connessioni dall'indirizzo interno del firewall della centrale
+  invece che dai PC reali. A volte funziona lo stesso, il che è peggio, perché i log diventano
+  inservibili e le regole per indirizzo non funzionano più.</p>
+  <p style="margin-bottom:0"><b>Si risolve</b> mettendo <em>sopra</em> la regola di masquerade
+  un'eccezione: «se la destinazione è la rete remota, non fare NAT». Su MikroTik è una regola
+  <code>accept</code> in <code>srcnat</code>; su FortiGate basta non attivare il NAT nella policy verso
+  il tunnel.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Il tunnel completo — MikroTik, lato centrale</div>
+<pre><span class="c">── 1. FASE 1 (profilo) e credenziali ────────────────</span>
+<span class="p">/ip ipsec profile add name=</span><span class="s">p1-filiale</span> <span class="p">\</span>
+<span class="p">    enc-algorithm=</span><span class="s">aes-256</span> <span class="p">hash-algorithm=</span><span class="s">sha256</span> <span class="p">dh-group=</span><span class="s">modp2048</span> <span class="p">\</span>
+<span class="p">    lifetime=</span><span class="n">1d</span>
+<span class="p">/ip ipsec peer add name=</span><span class="s">filiale</span> <span class="p">address=</span><span class="n">203.0.113.20</span> <span class="p">\</span>
+<span class="p">    profile=</span><span class="s">p1-filiale</span> <span class="p">exchange-mode=</span><span class="s">ike2</span>
+<span class="p">/ip ipsec identity add peer=</span><span class="s">filiale</span> <span class="p">secret=</span><span class="s">"chiave-lunga-e-casuale"</span>
+
+<span class="c">── 2. FASE 2 (proposal) e selettori ─────────────────</span>
+<span class="p">/ip ipsec proposal add name=</span><span class="s">p2-filiale</span> <span class="p">\</span>
+<span class="p">    enc-algorithms=</span><span class="s">aes-256-cbc</span> <span class="p">auth-algorithms=</span><span class="s">sha256</span> <span class="p">\</span>
+<span class="p">    pfs-group=</span><span class="s">modp2048</span> <span class="p">lifetime=</span><span class="n">1h</span>
+<span class="p">/ip ipsec policy add peer=</span><span class="s">filiale</span> <span class="p">proposal=</span><span class="s">p2-filiale</span> <span class="p">tunnel=</span><span class="s">yes</span> <span class="p">\</span>
+<span class="p">    src-address=</span><span class="n">10.10.10.0/24</span> <span class="p">dst-address=</span><span class="n">10.20.10.0/24</span>
+
+<span class="c">── 3. NIENTE NAT sul traffico del tunnel ────────────</span>
+<span class="c">   ATTENZIONE: questa regola va SOPRA il masquerade</span>
+<span class="p">/ip firewall nat add chain=</span><span class="s">srcnat</span> <span class="p">place-before=</span><span class="n">0</span> <span class="p">\</span>
+<span class="p">    src-address=</span><span class="n">10.10.10.0/24</span> <span class="p">dst-address=</span><span class="n">10.20.10.0/24</span> <span class="p">\</span>
+<span class="p">    action=</span><span class="s">accept</span> <span class="p">comment=</span><span class="s">"no NAT verso filiale"</span>
+
+<span class="c">── 4. PERMETTI il traffico nelle due direzioni ──────</span>
+<span class="p">/ip firewall filter add chain=</span><span class="s">forward</span> <span class="p">\</span>
+<span class="p">    src-address=</span><span class="n">10.10.10.0/24</span> <span class="p">dst-address=</span><span class="n">10.20.10.0/24</span> <span class="p">action=</span><span class="s">accept</span>
+<span class="p">/ip firewall filter add chain=</span><span class="s">forward</span> <span class="p">\</span>
+<span class="p">    src-address=</span><span class="n">10.20.10.0/24</span> <span class="p">dst-address=</span><span class="n">10.10.10.0/24</span> <span class="p">action=</span><span class="s">accept</span>
+
+<span class="c">── 5. MSS clamping: quasi sempre necessario ─────────</span>
+<span class="p">/ip firewall mangle add chain=</span><span class="s">forward</span> <span class="p">protocol=</span><span class="s">tcp</span> <span class="p">tcp-flags=</span><span class="s">syn</span> <span class="p">\</span>
+<span class="p">    dst-address=</span><span class="n">10.20.10.0/24</span> <span class="p">action=</span><span class="s">change-mss</span> <span class="p">new-mss=</span><span class="n">1350</span>
+</pre>
+</div>
+
+<h2>L'MTU: il problema che si manifesta dopo</h2>
+
+<p>Il tunnel aggiunge intestazioni: il pacchetto che entra con 1500 byte ne occupa 1560 una volta
+incapsulato, e non passa più. Il risultato è il sintomo più famoso delle VPN:
+<strong>«il tunnel funziona, ma alcune cose non vanno»</strong>.</p>
+
+<p>Tipicamente: il ping funziona (pacchetti piccoli), l'accesso alle cartelle condivise si blocca a metà
+(pacchetti grandi), certi siti interni non si aprono, il gestionale carica le schermate ma non i
+report.</p>
+
+<p>La cura è l'<strong>MSS clamping</strong>: il firewall interviene sull'handshake TCP e dice alle due
+parti «usate segmenti da 1350 byte al massimo». Vale la pena metterlo <b>sempre</b> su un tunnel,
+anche prima che il problema si manifesti: non fa danni e previene ore di diagnosi. Lo approfondiremo
+nella lezione 3-19.</p>
+
+<h2>Ridondanza</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Livello</th><th>Come</th><th>Quando</th></tr></thead>
+    <tbody>
+      <tr><td><b>Nessuna</b></td><td>Un tunnel, una linea per lato</td><td>Filiali piccole, disservizio tollerabile</td></tr>
+      <tr><td><b>Doppia linea su un lato</b></td><td>Due tunnel dalla filiale verso la centrale, uno per linea, con rotte a distanze diverse</td><td>Il caso più comune e più conveniente</td></tr>
+      <tr><td><b>Doppia linea su entrambi</b></td><td>Fino a quattro tunnel, gestiti con rotte o con un protocollo dinamico</td><td>Sedi importanti</td></tr>
+      <tr><td><b>SD-WAN</b></td><td>I tunnel esistono tutti e il traffico viene spostato in base alle misure di qualità</td><td>Multi-sede con requisiti di continuità. Lezione 3-05</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Con la VPN route-based, la ridondanza è semplice: due interfacce tunnel e due rotte con distanze
+diverse, esattamente come le rotte di riserva della lezione 2-09 — <strong>controllo attivo compreso</strong>,
+perché anche qui un tunnel può risultare «su» mentre non passa nulla.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il collaudo che devi fare prima di andartene
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Ping da PC a PC</b>, non da firewall a firewall: verifica tutta la catena, rotte e policy comprese.</li>
+    <li><b>Ping con pacchetti grandi</b>: <code>ping -l 1400 -f</code> su Windows. Se fallisce, hai un
+    problema di MTU da risolvere adesso e non tra tre settimane.</li>
+    <li><b>Prova il servizio vero</b> — apri il gestionale, copia un file grosso — non solo il ping.</li>
+    <li><b>Prova nelle due direzioni.</b> Funziona da A a B non implica da B ad A.</li>
+    <li><b>Stacca la linea principale</b> e verifica che il backup subentri, cronometrando.</li>
+    <li><b>Lascia passare una notte</b> e ricontrolla il giorno dopo: è il modo per intercettare i
+    problemi di rekey prima che li scopra il cliente.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: VPN site-to-site",
+  "questions": [
+    { "q": "Due sedi usano entrambe 192.168.1.0/24. Cosa comporta per il tunnel?",
+      "a": [ {"t":"Non può funzionare: ogni dispositivo considera quegli indirizzi locali e non li manda al firewall","ok":true},
+             {"t":"Funziona, ma con prestazioni ridotte","ok":false},
+             {"t":"Funziona solo in una direzione","ok":false},
+             {"t":"Serve solo aumentare la maschera a /23","ok":false} ],
+      "e": "Un PC che vuole raggiungere 192.168.1.50 applica la maschera, conclude che è nella propria rete e fa ARP invece di rivolgersi al gateway: il traffico non arriva nemmeno al tunnel. Le soluzioni sono rinumerare una sede o fare NAT dentro il tunnel — e la seconda rende tutto più difficile da diagnosticare." },
+
+    { "q": "Perché conviene una VPN route-based rispetto a una policy-based?",
+      "a": [ {"t":"Il tunnel diventa un'interfaccia: si aggiungono reti con una rotta e si possono usare protocolli dinamici e tunnel ridondanti","ok":true},
+             {"t":"È più veloce nella cifratura","ok":false},
+             {"t":"Non richiede la fase 2","ok":false},
+             {"t":"Non ha bisogno di policy firewall","ok":false} ],
+      "e": "Con l'interfaccia virtuale tutto ciò che sai su rotte e policy si applica al tunnel come a qualsiasi altra rete: aggiungere una rete è una riga, la ridondanza si fa con le distanze, e il tunnel ha contatori e stato propri che rendono la diagnosi molto più chiara. La cifratura è identica nei due casi." },
+
+    { "q": "Il tunnel è attivo, le fasi negoziate, ma la filiale vede arrivare le connessioni dall'indirizzo del firewall centrale invece che dai PC. Perché?",
+      "a": [ {"t":"La regola generale di masquerade si applica anche al traffico del tunnel","ok":true},
+             {"t":"I selettori di traffico sono sbagliati","ok":false},
+             {"t":"Manca il NAT-Traversal","ok":false},
+             {"t":"L'MTU è troppo alta","ok":false} ],
+      "e": "Il traffico diretto nel tunnel viene mascherato come qualsiasi altro traffico in uscita, se non si esclude esplicitamente. A volte funziona lo stesso, il che è peggio: i log della filiale diventano inservibili e le regole per indirizzo non si possono più scrivere. Serve un'eccezione posta <b>sopra</b> la regola di masquerade." },
+
+    { "q": "Dentro un tunnel il ping funziona ma l'accesso alle cartelle condivise si blocca a metà. Cosa sospetti?",
+      "a": [ {"t":"MTU: i pacchetti grandi non passano, quelli piccoli sì","ok":true},
+             {"t":"La chiave condivisa è sbagliata","ok":false},
+             {"t":"Manca la policy firewall","ok":false},
+             {"t":"Il DNS non risolve","ok":false} ],
+      "e": "Il tunnel aggiunge intestazioni e riduce lo spazio utile: il ping usa pacchetti minuscoli e passa, il trasferimento file usa pacchetti al massimo della dimensione e viene scartato. La cura è l'MSS clamping, che conviene configurare sempre su un tunnel, anche prima che il problema si manifesti. Se mancasse la policy non passerebbe nemmeno il ping." },
+
+    { "q": "Quali sono i quattro pezzi necessari perché il traffico passi davvero in un tunnel?",
+      "a": [ {"t":"Fasi negoziate, rotta verso la rete remota, policy nelle due direzioni, esclusione dal NAT","ok":true},
+             {"t":"Solo fase 1 e fase 2 correttamente configurate","ok":false},
+             {"t":"Tunnel attivo e DNS configurato","ok":false},
+             {"t":"Tunnel attivo e indirizzi pubblici fissi sui due lati","ok":false} ],
+      "e": "Far salire il tunnel è solo il primo dei quattro. Senza rotta il traffico esce su Internet; senza policy viene bloccato dal firewall; con il NAT attivo le risposte si perdono o i log diventano inutili. «Il tunnel è su ma non funziona niente» significa quasi sempre che manca uno degli altri tre." },
+
+    { "q": "Qual è il collaudo che intercetta i problemi di MTU prima che lo faccia il cliente?",
+      "a": [ {"t":"Un ping con pacchetti grandi e non frammentabili attraverso il tunnel","ok":true},
+             {"t":"Un ping normale da firewall a firewall","ok":false},
+             {"t":"Verificare lo stato delle fasi 1 e 2","ok":false},
+             {"t":"Controllare i contatori del tunnel","ok":false} ],
+      "e": "Un ping normale usa 32 byte e passa sempre: non dimostra nulla sull'MTU. Con <code>ping -l 1400 -f</code> si forza un pacchetto grande e non frammentabile: se fallisce, il problema esiste e va risolto subito invece di riemergere fra tre settimane come «il gestionale ogni tanto si blocca»." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
