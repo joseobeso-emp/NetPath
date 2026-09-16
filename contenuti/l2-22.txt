@@ -1,0 +1,239 @@
+#id: l2-22
+#title: Wi-Fi enterprise: WPA2/3-Enterprise e RADIUS
+#min: 26
+#level: 2
+#chapter: Wireless
+#desc: Autenticazione con le credenziali aziendali, certificati, VLAN dinamiche e rete ospiti fatta bene.
+#obj: Spiegare perché la password condivisa non è gestibile in azienda
+#obj: Capire il ruolo dei tre attori dell'autenticazione 802.1X
+#obj: Scegliere il metodo EAP adatto al parco dispositivi
+#obj: Progettare una rete ospiti che non crei problemi
+---
+<p class="lead">Una password Wi-Fi condivisa da sessanta persone non è una misura di sicurezza: è un
+segreto di Pulcinella scritto su un post-it in reception. WPA-Enterprise risolve il problema alla
+radice — ogni utente entra con le proprie credenziali — e apre la porta a cose che senza non si possono
+fare, come assegnare la VLAN in base a chi si collega.</p>
+
+<h2>Personal e Enterprise</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>WPA2/3-Personal (PSK)</th><th>WPA2/3-Enterprise (802.1X)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Come ci si autentica</b></td><td>Una password uguale per tutti</td><td>Credenziali personali o certificato del dispositivo</td></tr>
+      <tr><td><b>Se una persona se ne va</b></td><td>Bisogna cambiare la password <b>a tutti</b></td><td>Si disattiva il suo utente e basta</td></tr>
+      <tr><td><b>Si sa chi è connesso?</b></td><td>No, solo indirizzi MAC</td><td>Sì, per nome utente</td></tr>
+      <tr><td><b>VLAN diversa per gruppo</b></td><td>No</td><td><b>Sì, assegnata dinamicamente</b></td></tr>
+      <tr><td><b>Chiavi di cifratura</b></td><td>Derivate dalla stessa password</td><td>Diverse per ogni sessione di ogni utente</td></tr>
+      <tr><td><b>Cosa serve</b></td><td>Niente</td><td>Un server RADIUS (in ambiente Microsoft: NPS)</td></tr>
+      <tr><td><b>Quando usarlo</b></td><td>Casa, rete ospiti, dispositivi che non supportano altro</td><td><b>Rete aziendale, sempre che sia possibile</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la chiave sotto lo zerbino
+  </div>
+  <p>In un ufficio con sessanta dipendenti c'è <b>una sola chiave</b> della porta d'ingresso, e tutti ne
+  hanno una copia. Funziona, finché non succede una di queste cose: qualcuno la perde, qualcuno la dà a
+  un amico, oppure una persona se ne va arrabbiata.</p>
+  <p>A quel punto l'unico rimedio è <b>cambiare la serratura e rifare sessanta copie</b>. Costa una
+  giornata di lavoro e dà fastidio a tutti, quindi nella pratica non si fa mai — e la vecchia chiave
+  resta in giro per anni.</p>
+  <p>WPA-Enterprise è il badge personale: ognuno ha il suo, il sistema sa chi entra e a che ora, e
+  quando una persona se ne va <b>si disattiva il suo badge e basta</b>. Gli altri cinquantanove non se
+  ne accorgono nemmeno.</p>
+</div>
+
+<h2>I tre attori</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="I tre attori dell'autenticazione 802.1X: supplicant, authenticator e server RADIUS">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Chi parla con chi</text>
+
+    <rect x="20" y="52" width="150" height="56" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.7"/>
+    <text x="95" y="74" text-anchor="middle" class="dg-label-sm">SUPPLICANT</text>
+    <text x="95" y="92" text-anchor="middle" class="dg-mono-sm">il PC o il telefono</text>
+
+    <rect x="275" y="52" width="150" height="56" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="350" y="74" text-anchor="middle" class="dg-label-sm">AUTHENTICATOR</text>
+    <text x="350" y="92" text-anchor="middle" class="dg-mono-sm">l'access point</text>
+
+    <rect x="530" y="52" width="150" height="56" rx="9" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.7"/>
+    <text x="605" y="74" text-anchor="middle" class="dg-label-sm">SERVER RADIUS</text>
+    <text x="605" y="92" text-anchor="middle" class="dg-mono-sm">NPS + Active Directory</text>
+
+    <path d="M174 80h96" stroke="var(--dg-line)" stroke-width="1.8"/>
+    <path d="M429 80h96" stroke="var(--dg-line)" stroke-width="1.8"/>
+    <text x="222" y="72" text-anchor="middle" class="dg-mono-sm">EAP</text>
+    <text x="477" y="72" text-anchor="middle" class="dg-mono-sm">RADIUS</text>
+
+    <rect x="60" y="140" width="580" height="88" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.3"/>
+    <g class="dg-label-sm">
+      <text x="80" y="162">1 · Il PC si presenta all'access point, che non lo lascia passare</text>
+      <text x="80" y="180">2 · L'AP fa da tramite: inoltra le credenziali al RADIUS senza poterle leggere</text>
+      <text x="80" y="198">3 · Il RADIUS verifica su Active Directory e risponde sì o no</text>
+      <text x="80" y="216">4 · Se sì, può anche dire <tspan font-weight="700">in quale VLAN</tspan> mettere quell'utente</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>L'access point non conosce le password e non decide nulla: è solo un <b>tramite</b>
+  che apre o chiude la porta in base alla risposta del RADIUS. È lo stesso schema dell'802.1X su cavo,
+  che vedremo nella lezione 3-14.</figcaption>
+</figure>
+
+<h2>I metodi EAP</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Metodo</th><th>Come si autentica l'utente</th><th>Robustezza</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td><b>PEAP-MSCHAPv2</b></td><td>Utente e password di dominio</td><td>Media</td>
+          <td>Il più usato perché è il più semplice. <b>Richiede che i client verifichino il certificato del server</b>, altrimenti è vulnerabile</td></tr>
+      <tr><td><b>EAP-TTLS</b></td><td>Utente e password, dentro un tunnel TLS</td><td>Media</td><td>Simile a PEAP, più diffuso fuori dal mondo Microsoft</td></tr>
+      <tr><td><b>EAP-TLS</b></td><td><b>Certificato sul dispositivo</b>, nessuna password</td><td><b>Alta</b></td>
+          <td>Il più sicuro. Richiede una PKI e la distribuzione dei certificati: più lavoro iniziale, zero password da rubare</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    PEAP senza validazione del certificato è una falsa sicurezza
+  </div>
+  <p>Con PEAP-MSCHAPv2 il client dovrebbe verificare il certificato del server RADIUS <b>prima</b> di
+  mandargli le credenziali. Se questa verifica è disattivata — e per comodità viene disattivata
+  spessissimo, perché «così si collegano tutti subito» — chiunque può accendere un access point con lo
+  stesso nome di rete, farsi mandare le credenziali di dominio degli utenti e riutilizzarle.</p>
+  <p style="margin-bottom:0"><b>Quindi:</b> se usi PEAP, la validazione del certificato va imposta via
+  criteri di gruppo su tutti i dispositivi aziendali, indicando anche il nome esatto del server RADIUS
+  atteso. Se il cliente ha una PKI e i dispositivi sono gestiti, <b>EAP-TLS</b> elimina il problema
+  alla radice perché non c'è nessuna password da farsi rubare.</p>
+</div>
+
+<h2>Le VLAN dinamiche</h2>
+
+<p>La parte più elegante di 802.1X: il RADIUS, insieme al «sì», può restituire <strong>in quale VLAN
+mettere l'utente</strong>. Stesso SSID, stesso access point, ma un dipendente finisce nella VLAN uffici,
+un tecnico esterno in una VLAN limitata, un tablet di produzione nella VLAN dei macchinari.</p>
+
+<p>Si configura sul RADIUS assegnando gli attributi di tunnel della VLAN in base al gruppo di Active
+Directory dell'utente. È il modo pulito per avere <strong>un solo SSID</strong> invece di cinque — e
+meno SSID significa meno traffico di gestione radio, quindi rete più veloce per tutti.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Meno SSID è meglio
+  </div>
+  <p>Ogni SSID pubblicato manda i propri annunci periodici <b>alla velocità più bassa</b>, su tutti gli
+  access point. Cinque SSID su dieci AP significano una quantità sorprendente di canale sprecato prima
+  ancora che qualcuno trasmetta un dato.</p>
+  <p style="margin-bottom:0">Regola pratica: <b>massimo tre SSID</b>. Tipicamente uno aziendale
+  (Enterprise, con VLAN dinamica), uno ospiti, e al massimo uno per i dispositivi che non supportano
+  802.1X. Se ne trovi otto in un cliente, ridurli è un intervento a costo zero che migliora le
+  prestazioni.</p>
+</div>
+
+<h2>La rete ospiti fatta bene</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Requisito</th><th>Come si realizza</th></tr></thead>
+    <tbody>
+      <tr><td><b>Isolamento totale dalla rete aziendale</b></td><td>VLAN dedicata + regola firewall «solo verso Internet»</td></tr>
+      <tr><td><b>Gli ospiti non si vedono tra loro</b></td><td><em>Client isolation</em> sull'SSID: due telefoni collegati non possono parlarsi</td></tr>
+      <tr><td><b>Non consuma la banda dell'azienda</b></td><td>Limite di banda per client, o uscita su una seconda linea</td></tr>
+      <tr><td><b>DNS e filtro</b></td><td>DNS pubblico con filtro dei contenuti, così non usa quello aziendale</td></tr>
+      <tr><td><b>Identificazione minima</b></td><td>Portale con accesso a tempo, o password che si cambia periodicamente</td></tr>
+      <tr><td><b>Lease brevi</b></td><td>1–4 ore, o il pool si esaurisce (lezione 1-19)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il portale ospiti e i MAC casuali
+  </div>
+  <p>I telefoni moderni cambiano MAC address per ogni rete, e alcuni lo cambiano periodicamente
+  (lezione 1-09). Per un portale ospiti che «ricorda» chi si è già autenticato in base al MAC, questo
+  significa che <b>l'utente deve riautenticarsi in continuazione</b>.</p>
+  <p style="margin-bottom:0">Non c'è una soluzione perfetta. Le due strade praticabili sono: sessioni
+  più lunghe sul portale, oppure una password condivisa che il cliente cambia ogni tanto — più rozza,
+  ma spesso meno fastidiosa per i visitatori. Va comunque detto al cliente prima, altrimenti diventa
+  un reclamo.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il percorso realistico per un cliente che oggi ha una password condivisa
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Separa la rete ospiti</b> in una VLAN sua con accesso solo a Internet. Nessun impatto sugli
+    utenti, beneficio immediato, ed è l'argomento che convince il cliente.</li>
+    <li><b>Metti in piedi il RADIUS</b> (NPS su un server esistente, nessuna licenza aggiuntiva in
+    ambiente Microsoft) e configura il certificato del server.</li>
+    <li><b>Crea l'SSID Enterprise in parallelo</b> a quello esistente, e sposta un reparto pilota.</li>
+    <li><b>Distribuisci il profilo via criteri di gruppo</b>, con la validazione del certificato
+    imposta: gli utenti non devono configurare nulla a mano.</li>
+    <li><b>Sposta gli altri reparti</b>, poi spegni il vecchio SSID.</li>
+    <li><b>Aggiungi le VLAN dinamiche</b> quando tutto è stabile.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">Ogni passo è reversibile e nessuno ferma l'azienda: è
+  esattamente la logica di migrazione della lezione 2-04, applicata al Wi-Fi.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: Wi-Fi enterprise",
+  "questions": [
+    { "q": "Qual è il vantaggio principale di WPA-Enterprise rispetto alla password condivisa?",
+      "a": [ {"t":"Ogni utente ha credenziali proprie: revocarne una non tocca gli altri","ok":true},
+             {"t":"Il segnale radio arriva più lontano","ok":false},
+             {"t":"La velocità di connessione è maggiore","ok":false},
+             {"t":"Non serve più il server DHCP","ok":false} ],
+      "e": "Con la password condivisa, quando una persona se ne va bisognerebbe cambiarla a tutti — quindi non si fa mai, e la vecchia chiave resta in giro per anni. Con 802.1X si disattiva l'utente e basta. In più si sa chi è connesso per nome e si può assegnare la VLAN in base al gruppo." },
+
+    { "q": "Nel modello 802.1X, che ruolo ha l'access point?",
+      "a": [ {"t":"Authenticator: fa da tramite verso il RADIUS e apre o chiude in base alla risposta","ok":true},
+             {"t":"Verifica direttamente le credenziali degli utenti","ok":false},
+             {"t":"Conserva una copia delle password","ok":false},
+             {"t":"Assegna gli indirizzi IP","ok":false} ],
+      "e": "L'AP non conosce le password e non decide nulla: inoltra le credenziali al server RADIUS, che verifica su Active Directory e risponde. È lo stesso schema dell'802.1X su cavo, dove il ruolo di authenticator lo fa lo switch." },
+
+    { "q": "Perché PEAP-MSCHAPv2 senza validazione del certificato è pericoloso?",
+      "a": [ {"t":"Chiunque può creare una rete con lo stesso nome e farsi mandare le credenziali di dominio","ok":true},
+             {"t":"Perché le password viaggiano in chiaro","ok":false},
+             {"t":"Perché non funziona con Active Directory","ok":false},
+             {"t":"Perché rallenta l'autenticazione","ok":false} ],
+      "e": "Il client dovrebbe verificare l'identità del server <b>prima</b> di mandargli le credenziali. Senza quella verifica — spesso disattivata «perché così si collegano tutti subito» — un access point fasullo con lo stesso SSID raccoglie le credenziali di dominio degli utenti. Si impone via criteri di gruppo, indicando anche il nome atteso del server." },
+
+    { "q": "Cosa permettono di fare le VLAN dinamiche?",
+      "a": [ {"t":"Assegnare la VLAN in base a chi si autentica, con un solo SSID per tutti","ok":true},
+             {"t":"Cambiare canale automaticamente in base al traffico","ok":false},
+             {"t":"Creare una VLAN nuova per ogni dispositivo","ok":false},
+             {"t":"Far comunicare VLAN diverse senza router","ok":false} ],
+      "e": "Il RADIUS, insieme all'autorizzazione, restituisce la VLAN da assegnare in base al gruppo dell'utente: dipendenti, tecnici esterni e dispositivi di produzione finiscono in reti diverse pur collegandosi allo stesso SSID. È il modo pulito per ridurre il numero di SSID, il che migliora anche le prestazioni radio." },
+
+    { "q": "Perché conviene limitare il numero di SSID pubblicati?",
+      "a": [ {"t":"Ogni SSID manda annunci periodici alla velocità più bassa, consumando tempo di canale","ok":true},
+             {"t":"Perché gli access point supportano al massimo tre SSID","ok":false},
+             {"t":"Perché ogni SSID richiede una licenza","ok":false},
+             {"t":"Perché confonde gli utenti","ok":false} ],
+      "e": "Gli annunci di ogni SSID vengono trasmessi su tutti gli AP alla velocità minima, per essere sentiti da tutti: con cinque SSID su dieci access point si spreca una quantità sorprendente di canale prima ancora che passi un dato utile. Tre è un buon limite pratico." },
+
+    { "q": "Quale requisito impedisce a due ospiti collegati allo stesso Wi-Fi di vedersi tra loro?",
+      "a": [ {"t":"Client isolation sull'SSID","ok":true},
+             {"t":"Una VLAN dedicata","ok":false},
+             {"t":"Un limite di banda per client","ok":false},
+             {"t":"Lease DHCP brevi","ok":false} ],
+      "e": "La VLAN dedicata isola gli ospiti dalla rete aziendale, ma <b>dentro</b> la stessa VLAN i dispositivi si parlano liberamente: il portatile infetto di un visitatore potrebbe attaccare il telefono di un altro. La client isolation blocca il traffico tra client dello stesso SSID ed è una spunta che costa nulla." }
+  ]
+}
+</script>

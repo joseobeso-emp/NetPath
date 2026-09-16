@@ -1,0 +1,237 @@
+#id: l2-20
+#title: Radiofrequenza per chi non è ingegnere
+#min: 26
+#level: 2
+#chapter: Wireless
+#desc: Onde, dB, attenuazione e interferenza: il minimo indispensabile per non dire sciocchezze e per capire perché il Wi-Fi va male.
+#obj: Capire perché il Wi-Fi è un mezzo condiviso e cosa comporta
+#obj: Leggere i valori di segnale e rumore e sapere quali sono accettabili
+#obj: Distinguere le bande e sapere quale usare dove
+#obj: Spiegare a un cliente perché aggiungere access point a volte peggiora le cose
+---
+<p class="lead">Il Wi-Fi è la parte di rete su cui riceverai più lamentele e su cui si dicono più
+sciocchezze. La causa è che tutti lo trattano come un cavo invisibile, mentre è una cosa
+profondamente diversa: <strong>un mezzo condiviso, in cui parla uno per volta</strong>. Capito questo,
+metà dei problemi diventa prevedibile.</p>
+
+<h2>La differenza fondamentale col cavo</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la stanza e i corridoi
+  </div>
+  <p>Una rete <b>cablata</b> è come un palazzo di corridoi privati: ogni persona ha il suo corridoio,
+  tutti possono camminare contemporaneamente e nessuno disturba nessuno.</p>
+  <p>Il <b>Wi-Fi</b> è una stanza sola dove tutti parlano a voce. Può parlare <b>una persona alla
+  volta</b>: se due parlano insieme, nessuno capisce niente e devono ripetere. Prima di parlare bisogna
+  ascoltare se c'è silenzio, e aspettare il proprio turno.</p>
+  <p>Da qui discende tutto:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Più gente c'è, meno tocca a ciascuno.</b> La banda si divide, non si somma.</li>
+    <li><b>Chi parla lentamente ruba tempo a tutti.</b> Un vecchio dispositivo che trasmette piano
+    occupa la stanza molto più a lungo per dire la stessa cosa.</li>
+    <li><b>Se c'è rumore di fondo, bisogna urlare o ripetere.</b> Un forno a microonde, un altro Wi-Fi
+    vicino, un motore: tutto aggiunge rumore.</li>
+    <li><b>Il muro non ferma la voce, la attenua.</b> Più muri attraversi, più la voce arriva debole —
+    e più devi ripetere.</li>
+  </ul>
+</div>
+
+<h2>I decibel: leggere i numeri giusti</h2>
+
+<p>Il segnale radio si misura in <strong>dBm</strong>, una scala logaritmica con valori negativi.
+Più il numero è vicino a zero, più il segnale è forte. Non serve saperla calcolare: serve saper leggere.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Segnale (RSSI)</th><th>Qualità</th><th>Cosa ci fai</th></tr></thead>
+    <tbody>
+      <tr><td><b>−30 … −50 dBm</b></td><td>Eccellente</td><td>Sei praticamente sotto l'access point</td></tr>
+      <tr><td><b>−50 … −60 dBm</b></td><td>Ottimo</td><td>Tutto funziona, anche video e voce</td></tr>
+      <tr><td><b>−60 … −67 dBm</b></td><td>Buono</td><td><b>Il valore minimo da progettare</b> per voce e video</td></tr>
+      <tr><td><b>−67 … −75 dBm</b></td><td>Scarso</td><td>Naviga, ma velocità bassa e roaming problematico</td></tr>
+      <tr><td><b>sotto −75 dBm</b></td><td>Inutilizzabile</td><td>Connessione instabile, disconnessioni</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il valore che conta di più non è il segnale: è il rapporto col rumore
+  </div>
+  <p>Un segnale a −55 dBm sembra ottimo. Ma se nella stessa zona c'è un rumore di fondo a −60 dBm,
+  la differenza è di soli 5 dB: il dispositivo fatica a distinguere la voce dal brusio.</p>
+  <p>Quella differenza si chiama <b>SNR</b> (rapporto segnale/rumore) e si misura in dB:</p>
+  <ul style="margin-bottom:0">
+    <li><b>SNR sopra 25 dB</b> → ottimo, si usano le velocità alte</li>
+    <li><b>SNR 20–25 dB</b> → buono, è l'obiettivo minimo di progetto</li>
+    <li><b>SNR 15–20 dB</b> → si naviga, ma la voce inizia a soffrire</li>
+    <li><b>SNR sotto 15 dB</b> → instabile</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">È il motivo per cui in un capannone con macchinari il
+  Wi-Fi può andare male <em>anche con il segnale pieno</em>: il rumore è altissimo. E aumentare la
+  potenza non aiuta, perché alza la voce ma non il silenzio.</p>
+</div>
+
+<h2>Le bande</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>2,4 GHz</th><th>5 GHz</th><th>6 GHz (Wi-Fi 6E/7)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Portata</b></td><td>La migliore: attraversa i muri</td><td>Media</td><td>La peggiore</td></tr>
+      <tr><td><b>Velocità</b></td><td>Bassa</td><td>Alta</td><td>Altissima</td></tr>
+      <tr><td><b>Canali non sovrapposti</b></td><td><b>Tre</b> (1, 6, 11)</td><td>Circa 20</td><td>Molti di più</td></tr>
+      <tr><td><b>Affollamento</b></td><td>Altissimo: ci sono anche Bluetooth, microonde, telecomandi, sensori</td><td>Moderato</td><td>Quasi nullo, per ora</td></tr>
+      <tr><td><b>Quando usarla</b></td><td>Copertura estesa, dispositivi vecchi, sensori e macchinari</td><td><b>La banda principale</b> per PC e telefoni</td><td>Aree ad alta densità con dispositivi recenti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    I soli tre canali dei 2,4 GHz
+  </div>
+  <p>Sulla banda 2,4 GHz i canali disponibili sono 13, ma <b>si sovrappongono</b>: ogni canale occupa
+  una larghezza che invade i vicini. Gli unici tre che non si disturbano tra loro sono
+  <b>1, 6 e 11</b>.</p>
+  <p>Conseguenza pratica: in un condominio o in un palazzo di uffici, dove ci sono venti reti Wi-Fi,
+  quei tre canali sono tutti occupati da qualcun altro. Non esiste configurazione che risolva: il
+  mezzo è saturo per costruzione.</p>
+  <p style="margin-bottom:0"><b>Cosa fare:</b> spostare tutto ciò che può stare sui 5 GHz, e lasciare
+  i 2,4 GHz solo ai dispositivi che non supportano altro — tipicamente sensori, stampanti vecchie e
+  macchinari. Impostare la larghezza di canale a <b>20 MHz</b> sui 2,4 GHz, mai 40: la larghezza
+  maggiore peggiora l'affollamento senza dare velocità utile.</p>
+</div>
+
+<h2>Cosa attenua il segnale</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Ostacolo</th><th>Attenuazione indicativa</th><th>Nota pratica</th></tr></thead>
+    <tbody>
+      <tr><td>Cartongesso</td><td>3–5 dB</td><td>Trascurabile</td></tr>
+      <tr><td>Muro in mattoni</td><td>6–10 dB</td><td>Uno si assorbe, due iniziano a pesare</td></tr>
+      <tr><td>Cemento armato</td><td>10–20 dB</td><td>Un solaio spesso taglia fuori il piano sotto</td></tr>
+      <tr><td>Vetro normale</td><td>2–4 dB</td><td>Trascurabile</td></tr>
+      <tr><td><b>Vetro a controllo solare</b></td><td>20–30 dB</td><td>Blocca quasi tutto: attenzione negli uffici moderni</td></tr>
+      <tr><td>Porta antincendio / metallo</td><td>25–40 dB</td><td>Barriera quasi totale</td></tr>
+      <tr><td>Scaffali pieni di merce</td><td>10–20 dB</td><td><b>Il magazzino pieno è un altro ambiente radio</b> rispetto a quello vuoto</td></tr>
+      <tr><td>Persone</td><td>3–5 dB ciascuna</td><td>Una sala riunioni piena attenua molto più di una vuota</td></tr>
+      <tr><td>Acqua / liquidi</td><td>alta</td><td>Serbatoi, bottiglie su bancali, celle frigorifere</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    «Funzionava, poi hanno riempito il magazzino»
+  </div>
+  <p>Un caso che incontrerai: il Wi-Fi del magazzino è stato collaudato ad agosto, con gli scaffali
+  vuoti, e funzionava benissimo. A novembre, con il magazzino pieno, i terminali dei magazzinieri
+  perdono la connessione tra una corsia e l'altra.</p>
+  <p style="margin-bottom:0">Non si è rotto niente: <b>è cambiato l'ambiente radio</b>. Bancali di
+  carta, liquidi e metallo attenuano molto più dell'aria. È il motivo per cui un sopralluogo radio in
+  un magazzino va fatto <b>a magazzino pieno</b>, e per cui nel preventivo conviene prevedere una
+  verifica successiva.</p>
+</div>
+
+<h2>Perché aggiungere access point può peggiorare</h2>
+
+<p>È la cosa più controintuitiva del Wi-Fi, e devi saperla spiegare a un cliente che ti chiede
+«mettiamone un altro».</p>
+
+<p>Ogni access point che accendi <strong>occupa un canale</strong>. Se i canali disponibili sono già
+tutti usati, il nuovo AP non aggiunge capacità: <strong>aggiunge un altro partecipante alla stessa
+conversazione</strong>. Tutti devono aspettare anche lui, e le prestazioni scendono per tutti.</p>
+
+<p>Peggio ancora se l'AP nuovo viene messo a potenza massima «per coprire meglio»: sentirà e disturberà
+gli altri AP anche a distanza, e i dispositivi resteranno agganciati a lui anche quando sarebbero
+serviti meglio da un altro.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La potenza al massimo è quasi sempre l'errore
+  </div>
+  <p>L'istinto dice: segnale debole → alzo la potenza. Ma la comunicazione è <b>bidirezionale</b>:
+  l'access point urla più forte, il telefono nella tasca dell'utente no. Il dispositivo sente benissimo
+  l'AP, resta agganciato a lui da lontano, e le sue risposte non arrivano.</p>
+  <p>Risultato: il telefono mostra tre tacche piene e la connessione non funziona — il sintomo più
+  frustrante e più diffuso che esista.</p>
+  <p style="margin-bottom:0"><b>La regola è l'opposta:</b> potenza <em>moderata</em> su tutti gli AP
+  (tipicamente 8–14 dBm sui 5 GHz), così ogni dispositivo si aggancia a quello davvero più vicino e
+  cambia AP quando si sposta. Meno potenza e più access point ben posizionati batte sempre pochi AP
+  che urlano.</p>
+</div>
+
+<h2>Il dispositivo lento che rallenta tutti</h2>
+
+<p>Un vecchio terminale che trasmette a 6 Mbps occupa il canale per <strong>molto più tempo</strong> di
+un dispositivo moderno che trasmette a 400 Mbps, per mandare la stessa quantità di dati. E in una stanza
+dove parla uno per volta, quel tempo lo rubano a tutti gli altri.</p>
+
+<p>È il motivo per cui si disattivano le velocità più basse (i <em>data rate</em> a 1, 2, 5,5 e 11 Mbps):
+si obbligano i dispositivi a stare più vicini per collegarsi, ma si impedisce a un singolo apparecchio
+lontano e lento di penalizzare l'intera cella. È una delle prime ottimizzazioni da fare su una rete
+Wi-Fi che «va lenta con tanti utenti».</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: radiofrequenza",
+  "questions": [
+    { "q": "Qual è la differenza fondamentale tra Wi-Fi e rete cablata?",
+      "a": [ {"t":"Il Wi-Fi è un mezzo condiviso in cui può trasmettere uno per volta","ok":true},
+             {"t":"Il Wi-Fi è più lento per natura","ok":false},
+             {"t":"Il Wi-Fi non supporta le VLAN","ok":false},
+             {"t":"Il Wi-Fi non è cifrato","ok":false} ],
+      "e": "Su cavo ogni dispositivo ha il suo collegamento dedicato e in full duplex; in radio c'è una sola «stanza» dove si parla a turno. Da qui derivano tutte le conseguenze: la banda si divide invece di sommarsi, i dispositivi lenti penalizzano tutti, e il rumore ambientale conta quanto il segnale." },
+
+    { "q": "Un utente ha segnale a −55 dBm ma la connessione è instabile. Cosa controlli?",
+      "a": [ {"t":"Il rumore di fondo: con SNR basso un segnale forte non basta","ok":true},
+             {"t":"La potenza dell'access point, che va alzata","ok":false},
+             {"t":"La lunghezza del cavo dell'access point","ok":false},
+             {"t":"Il numero di SSID pubblicati","ok":false} ],
+      "e": "−55 dBm è un ottimo segnale, ma se il rumore è a −60 dBm il rapporto è di soli 5 dB e il dispositivo fatica a distinguere il segnale dal brusio. L'obiettivo di progetto è un SNR di almeno 20–25 dB. Alzare la potenza non aiuta: aumenta la voce, non il silenzio." },
+
+    { "q": "Perché sui 2,4 GHz si usano solo i canali 1, 6 e 11?",
+      "a": [ {"t":"Sono gli unici tre che non si sovrappongono tra loro","ok":true},
+             {"t":"Sono gli unici consentiti in Italia","ok":false},
+             {"t":"Sono i più veloci","ok":false},
+             {"t":"Gli altri sono riservati al Bluetooth","ok":false} ],
+      "e": "I canali disponibili sono tredici ma ognuno occupa una larghezza che invade i vicini: solo 1, 6 e 11 sono davvero indipendenti. In un palazzo con venti reti Wi-Fi sono comunque tutti occupati, ed è il motivo per cui conviene spostare sui 5 GHz tutto ciò che può starci." },
+
+    { "q": "Un cliente chiede di aggiungere access point perché «il Wi-Fi va lento». Cosa può succedere?",
+      "a": [ {"t":"Se i canali sono già tutti occupati, si aggiunge un altro partecipante alla stessa conversazione e peggiora","ok":true},
+             {"t":"Migliora sempre, perché aumenta la copertura","ok":false},
+             {"t":"Non cambia nulla","ok":false},
+             {"t":"Migliora solo se sono dello stesso produttore","ok":false} ],
+      "e": "Ogni AP occupa un canale: se non ce ne sono di liberi, il nuovo apparato non aggiunge capacità ma competizione, e tutti devono aspettare anche lui. La soluzione a «va lento» passa prima da canali, potenze e velocità minime, e solo dopo dall'aggiunta di apparati — che vanno comunque posizionati con un criterio." },
+
+    { "q": "Perché mettere gli access point alla potenza massima è quasi sempre un errore?",
+      "a": [ {"t":"La comunicazione è bidirezionale: il dispositivo sente l'AP da lontano ma le sue risposte non arrivano","ok":true},
+             {"t":"Perché consuma troppa corrente","ok":false},
+             {"t":"Perché è vietato dalle normative","ok":false},
+             {"t":"Perché riduce la durata dell'apparato","ok":false} ],
+      "e": "L'AP urla più forte, il telefono in tasca no. Il dispositivo resta agganciato a un AP lontano perché lo «sente» bene, mostra tre tacche piene e non funziona. Potenza moderata su più apparati ben posizionati fa sì che ognuno si colleghi a quello davvero più vicino e cambi AP quando si sposta." },
+
+    { "q": "Il Wi-Fi di un magazzino è stato collaudato ad agosto e a novembre non funziona più. Cosa è cambiato?",
+      "a": [ {"t":"Il magazzino si è riempito: merce, liquidi e metallo attenuano molto più dell'aria","ok":true},
+             {"t":"Gli access point si sono guastati","ok":false},
+             {"t":"Il firmware si è aggiornato","ok":false},
+             {"t":"È cambiata la temperatura","ok":false} ],
+      "e": "L'ambiente radio è cambiato: bancali di carta, liquidi su pallet e scaffalature metalliche assorbono il segnale in modo drastico. È il motivo per cui un sopralluogo radio in un magazzino va fatto a magazzino pieno, e per cui conviene prevedere in preventivo una verifica successiva." },
+
+    { "q": "Perché si disattivano le velocità di trasmissione più basse?",
+      "a": [ {"t":"Un dispositivo lento occupa il canale a lungo e ruba tempo a tutti gli altri","ok":true},
+             {"t":"Per risparmiare energia","ok":false},
+             {"t":"Per aumentare la portata","ok":false},
+             {"t":"Perché non sono più supportate dagli standard","ok":false} ],
+      "e": "In un mezzo dove parla uno per volta, un apparecchio che trasmette a 6 Mbps impiega decine di volte il tempo di uno moderno per dire la stessa cosa. Disattivando le velocità minime si obbligano i dispositivi a stare più vicini, ma si impedisce a uno lontano e lento di penalizzare l'intera cella." }
+  ]
+}
+</script>

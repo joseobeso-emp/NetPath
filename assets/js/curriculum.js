@@ -88,9 +88,9 @@ window.NETPATH_CURRICULUM = [
       { id:"l2-19", t:"Diagnosticare un tunnel che non sale", s:"Il metodo in 6 passi che risolve il 90% dei casi, con i log da leggere su ogni vendor.", m:26, ready:true }
     ]},
     { title: "Wireless", lessons: [
-      { id:"l2-20", t:"Radiofrequenza per chi non è ingegnere", s:"Onde, dB, attenuazione, interferenza: il minimo per non dire sciocchezze.", m:26, ready:false },
-      { id:"l2-21", t:"Canali, potenza, roaming e site survey", s:"Perché alzare la potenza peggiora le cose, e come si progetta una copertura.", m:28, ready:false },
-      { id:"l2-22", t:"Wi-Fi enterprise: WPA2/3-Enterprise e RADIUS", s:"Autenticazione con le credenziali aziendali, certificati, VLAN dinamiche.", m:26, ready:false }
+      { id:"l2-20", t:"Radiofrequenza per chi non è ingegnere", s:"Onde, dB, attenuazione, interferenza: il minimo per non dire sciocchezze.", m:26, ready:true },
+      { id:"l2-21", t:"Canali, potenza, roaming e site survey", s:"Perché alzare la potenza peggiora le cose, e come si progetta una copertura.", m:28, ready:true },
+      { id:"l2-22", t:"Wi-Fi enterprise: WPA2/3-Enterprise e RADIUS", s:"Autenticazione con le credenziali aziendali, certificati, VLAN dinamiche.", m:26, ready:true }
     ]},
     { title: "Servizi e osservabilità", lessons: [
       { id:"l2-23", t:"DHCP avanzato: relay, option, riservazioni", s:"Option 43, 66, 150, relay tra VLAN e i casi che vedi con telefoni e AP.", m:22, ready:false },

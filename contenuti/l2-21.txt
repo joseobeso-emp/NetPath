@@ -1,0 +1,233 @@
+#id: l2-21
+#title: Canali, potenza, roaming e site survey
+#min: 28
+#level: 2
+#chapter: Wireless
+#desc: Come si progetta una copertura, perché il roaming lo decide il client e non l'access point, e cosa si misura davvero in un sopralluogo.
+#obj: Pianificare canali e potenze invece di lasciarli in automatico
+#obj: Capire chi decide il roaming e come si può influenzarlo
+#obj: Sapere cosa si misura in un site survey e con cosa
+#obj: Diagnosticare i problemi Wi-Fi più comuni con criterio
+---
+<p class="lead">Nella lezione precedente hai visto perché il Wi-Fi è difficile. Qui vediamo come si
+progetta bene — e soprattutto il concetto che spiega la maggior parte delle lamentele:
+<strong>il roaming lo decide il dispositivo dell'utente, non tu</strong>.</p>
+
+<h2>Il piano dei canali</h2>
+
+<p>Access point vicini che usano lo stesso canale si disturbano a vicenda. La regola è assegnarli in
+modo che <strong>celle adiacenti non condividano il canale</strong>, come le tessere di un mosaico.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Banda</th><th>Larghezza di canale consigliata</th><th>Perché</th></tr></thead>
+    <tbody>
+      <tr><td><b>2,4 GHz</b></td><td><b>20 MHz</b>, sempre</td><td>Ci sono solo tre canali indipendenti: allargare li riduce a uno</td></tr>
+      <tr><td><b>5 GHz</b>, uffici densi</td><td><b>20 o 40 MHz</b></td><td>Più canali indipendenti = meno interferenza tra celle</td></tr>
+      <tr><td><b>5 GHz</b>, pochi AP e poca gente</td><td>80 MHz</td><td>Più velocità di picco, ma meno canali disponibili</td></tr>
+      <tr><td><b>6 GHz</b></td><td>80 o 160 MHz</td><td>C'è spazio abbondante, per ora</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Canali larghi: il compromesso che quasi tutti sbagliano
+  </div>
+  <p>L'istinto dice: canale più largo = più veloce. È vero per un dispositivo solo in una stanza vuota.
+  In un ufficio con dieci access point è l'opposto: <b>ogni raddoppio della larghezza dimezza il numero
+  di canali indipendenti</b>, quindi gli AP iniziano a pestarsi i piedi e la capacità complessiva cala.</p>
+  <p style="margin-bottom:0">Regola pratica: <b>in ambienti densi, canali stretti</b>. È meglio avere
+  dieci celle da 300 Mbps che non si disturbano, che dieci celle da 800 Mbps che si aspettano a vicenda.</p>
+</div>
+
+<h3>I canali DFS</h3>
+<p>Buona parte della banda 5 GHz è condivisa con i radar (meteorologici, aeroportuali, militari). Su quei
+canali gli access point devono attivare il <strong>DFS</strong>: se rilevano un radar, sono obbligati a
+liberare il canale immediatamente e a spostarsi altrove.</p>
+<p>Vantaggio: molti più canali disponibili. Svantaggio: uno spostamento improvviso interrompe le
+connessioni per qualche secondo, e alcuni dispositivi vecchi non supportano affatto i canali DFS.
+<b>In una sede vicino a un aeroporto o a un radar meteo, conviene escluderli.</b></p>
+
+<h2>Il roaming: il concetto che spiega tutto</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il roaming lo decide il client, non l'access point
+  </div>
+  <p>Questa frase va imparata a memoria, perché ribalta l'intuizione di tutti — clienti compresi.</p>
+  <p>L'access point <b>non può</b> ordinare a un telefono di passare a un altro AP. È il dispositivo che
+  decide quando cambiare, in base a criteri suoi, diversi da produttore a produttore e spesso molto
+  conservativi: molti client cambiano solo quando il segnale scende sotto −75 dBm, cioè quando ormai
+  la connessione è già pessima.</p>
+  <p><b>Il sintomo classico:</b> l'utente cammina dalla sala riunioni alla sua scrivania e resta
+  agganciato all'access point della sala per tutto il tragitto, con una tacca di segnale, mentre ne ha
+  uno sopra la testa. Si chiama <em>sticky client</em>.</p>
+  <p style="margin-bottom:0"><b>Quello che puoi fare</b> è rendere la decisione più facile: potenze
+  moderate (così il segnale cala davvero quando ci si allontana), disattivazione delle velocità minime
+  (così un segnale debole non è più utilizzabile) e i protocolli di roaming assistito qui sotto.</p>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Standard</th><th>Cosa fa</th><th>Serve per</th></tr></thead>
+    <tbody>
+      <tr><td><b>802.11k</b></td><td>L'AP fornisce al client la lista dei vicini e dei loro canali</td><td>Il client sa dove guardare invece di cercare alla cieca</td></tr>
+      <tr><td><b>802.11v</b></td><td>L'AP può <em>suggerire</em> al client di spostarsi</td><td>Attenua il problema degli sticky client</td></tr>
+      <tr><td><b>802.11r</b></td><td>Riautenticazione rapida sul nuovo AP</td><td><b>Indispensabile per la voce</b>: senza, ogni cambio taglia l'audio</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Vanno attivati tutti e tre dove ci sono telefoni VoIP o terminali in movimento. Attenzione però:
+alcuni dispositivi vecchi gestiscono male l'802.11r e non si collegano più. Si attiva e si verifica,
+non si attiva e si va via.</p>
+
+<h2>Progettare la copertura</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Ambiente</th><th>Obiettivo di segnale</th><th>Densità indicativa</th></tr></thead>
+    <tbody>
+      <tr><td>Uffici, navigazione e posta</td><td>−67 dBm</td><td>1 AP ogni 150–250 m²</td></tr>
+      <tr><td>Uffici con voce e video</td><td>−65 dBm, con sovrapposizione del 15–20%</td><td>1 AP ogni 100–150 m²</td></tr>
+      <tr><td>Sale riunioni e aule</td><td>−65 dBm</td><td>Dimensionare sul <b>numero di dispositivi</b>, non sui metri quadri</td></tr>
+      <tr><td>Magazzini con terminali</td><td>−65 dBm <b>a magazzino pieno</b></td><td>Dipende dalle corsie: servono misure reali</td></tr>
+      <tr><td>Aree esterne</td><td>−70 dBm</td><td>Apparati da esterno, attenzione alle normative sulla potenza</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Densità o copertura? Sono due progetti diversi
+  </div>
+  <p>Coprire 1.000 m² di uffici con poche persone e coprire una sala congressi da 200 posti sono
+  problemi opposti.</p>
+  <p><b>Copertura:</b> pochi AP, potenza più alta, canali larghi. L'obiettivo è che il segnale arrivi
+  ovunque.</p>
+  <p style="margin-bottom:0"><b>Densità:</b> molti AP, potenza <em>bassa</em>, canali stretti, celle
+  piccole. L'obiettivo è che ogni AP serva poche decine di dispositivi. In una sala congressi si
+  arriva a orientare le antenne verso il basso e a ridurre la potenza al minimo, proprio per rimpicciolire
+  le celle.</p>
+</div>
+
+<h2>Il site survey</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Quando</th><th>Cosa produce</th></tr></thead>
+    <tbody>
+      <tr><td><b>Predittivo</b></td><td>Prima di installare</td><td>Una simulazione su planimetria, con materiali dei muri. Utile per il preventivo, <b>da verificare sempre sul campo</b></td></tr>
+      <tr><td><b>Passivo</b></td><td>Su impianto esistente</td><td>Si cammina misurando segnale, rumore, canali e reti vicine. Fotografa la situazione reale</td></tr>
+      <tr><td><b>Attivo</b></td><td>Collaudo</td><td>Ci si collega davvero e si misurano velocità, perdita e roaming mentre ci si sposta</td></tr>
+      <tr><td><b>AP-on-a-stick</b></td><td>Prima di acquistare</td><td>Si mette un AP su un'asta con una batteria e si misura la copertura reale in quel punto. Il metodo più onesto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Gli strumenti vanno da app gratuite per telefono (utili per una prima idea) a software professionali
+con planimetria e mappe di calore. Per un MSP, il compromesso ragionevole è un buon software su
+portatile con scheda dedicata: costa qualche centinaio di euro e si ripaga al primo progetto in cui
+eviti di sbagliare il numero di apparati.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Cosa chiedere prima di preventivare un impianto Wi-Fi
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Quante persone e quanti dispositivi</b>, e dove si concentrano nelle ore di punta.</li>
+    <li><b>Cosa ci fanno:</b> navigazione, o anche voce e video? La voce cambia completamente i requisiti.</li>
+    <li><b>Ci sono terminali in movimento?</b> Magazzinieri, carrelli, palmari: serve roaming vero.</li>
+    <li><b>Ci sono dispositivi vecchi</b> che supportano solo i 2,4 GHz o non reggono l'802.11r?</li>
+    <li><b>Che muri ci sono?</b> Chiedi le planimetrie e vai a vedere di persona: i vetri a controllo
+    solare e le porte antincendio non si vedono su una piantina.</li>
+    <li><b>Serve rete ospiti?</b> Con quale autenticazione e quali limiti?</li>
+    <li><b>Ci sono cavi dove servono gli AP?</b> Spesso il costo vero non sono gli apparati: è il
+    cablaggio da tirare.</li>
+  </ol>
+</div>
+
+<h2>I problemi Wi-Fi più comuni e la loro causa</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>Tacche piene ma non naviga</td><td>Potenza troppo alta: sente l'AP ma le sue risposte non arrivano</td></tr>
+      <tr><td>Cade camminando tra le stanze</td><td>Sticky client, o copertura con buchi</td></tr>
+      <tr><td>Va bene la mattina, male il pomeriggio</td><td>Densità: troppi dispositivi sulla stessa cella nelle ore di punta</td></tr>
+      <tr><td>Va bene sui PC, male sui telefoni</td><td>I telefoni hanno antenne più piccole: servono celle più fitte</td></tr>
+      <tr><td>Disconnessioni casuali di pochi secondi</td><td>DFS: un radar ha costretto l'AP a cambiare canale</td></tr>
+      <tr><td>Lento solo in una zona</td><td>Interferenza locale: microonde, macchinario, rete di un vicino</td></tr>
+      <tr><td>La voce si interrompe cambiando stanza</td><td>Manca l'802.11r</td></tr>
+      <tr><td>Un solo dispositivo va male ovunque</td><td>Scheda o driver del dispositivo, non la rete</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Da fare sul tuo MikroTik
+  </div>
+  <p>L'hAP ax² ha il Wi-Fi: accendilo e usa lo strumento di scansione per vedere <b>tutte le reti
+  intorno a te</b>, con canale e potenza. Poi apri una app di analisi sul telefono e cammina per casa
+  misurando il segnale del tuo SSID.</p>
+  <p style="margin-bottom:0">In venti minuti capisci più di radiofrequenza che in due ore di lettura:
+  vedrai quanti vicini occupano i canali 1, 6 e 11, quanto cala il segnale attraversando un muro, e
+  quanto ci mette il telefono a mollare un AP debole.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: progettazione Wi-Fi",
+  "questions": [
+    { "q": "Chi decide quando un dispositivo passa da un access point a un altro?",
+      "a": [ {"t":"Il dispositivo stesso, in base a criteri suoi","ok":true},
+             {"t":"L'access point a cui è collegato","ok":false},
+             {"t":"Il controller Wi-Fi","ok":false},
+             {"t":"Il server RADIUS","ok":false} ],
+      "e": "L'infrastruttura non può ordinare a un telefono di spostarsi: può solo rendere la decisione più facile con potenze moderate, velocità minime disattivate e i protocolli 802.11k/v/r. È il motivo per cui esistono gli sticky client, che restano agganciati a un AP lontano con una tacca di segnale mentre ne hanno uno sopra la testa." },
+
+    { "q": "In un ufficio con dieci access point, che larghezza di canale conviene sui 5 GHz?",
+      "a": [ {"t":"20 o 40 MHz: canali stretti per avere più celle indipendenti","ok":true},
+             {"t":"160 MHz, per la massima velocità","ok":false},
+             {"t":"80 MHz sempre","ok":false},
+             {"t":"È indifferente","ok":false} ],
+      "e": "Ogni raddoppio della larghezza dimezza il numero di canali indipendenti: con dieci AP e canali larghi si finisce per farli pestare i piedi a vicenda. Meglio dieci celle da 300 Mbps che non si disturbano che dieci da 800 Mbps che si aspettano. I canali larghi hanno senso con pochi AP e pochi utenti." },
+
+    { "q": "Un utente mostra tre tacche piene ma non riesce a navigare. Causa più probabile?",
+      "a": [ {"t":"Potenza degli AP troppo alta: sente bene l'AP ma le sue risposte non arrivano","ok":true},
+             {"t":"Segnale troppo debole","ok":false},
+             {"t":"Canale sbagliato","ok":false},
+             {"t":"Manca l'autenticazione","ok":false} ],
+      "e": "La comunicazione è bidirezionale ma la potenza non è simmetrica: l'AP urla, il telefono no. Il dispositivo resta agganciato da lontano perché il segnale in arrivo è forte, ma il suo segnale di ritorno non ce la fa. La cura è ridurre la potenza e infittire gli AP." },
+
+    { "q": "A cosa serve l'802.11r e dove è indispensabile?",
+      "a": [ {"t":"Riautenticazione rapida al cambio di AP: indispensabile per la voce","ok":true},
+             {"t":"Aumenta la portata degli access point","ok":false},
+             {"t":"Permette di usare canali più larghi","ok":false},
+             {"t":"Cifra il traffico tra AP e controller","ok":false} ],
+      "e": "Senza roaming rapido, ogni cambio di access point comporta una riautenticazione completa: qualche centinaio di millisecondi che su una chiamata si sentono come un buco nell'audio. Va attivato dove ci sono telefoni VoIP o terminali in movimento, verificando però che i dispositivi vecchi lo reggano." },
+
+    { "q": "Cos'è il DFS e quale effetto collaterale ha?",
+      "a": [ {"t":"Obbliga l'AP a liberare il canale se rileva un radar, causando brevi interruzioni","ok":true},
+             {"t":"Riduce automaticamente la potenza di notte","ok":false},
+             {"t":"Distribuisce i client tra gli access point","ok":false},
+             {"t":"Seleziona la banda migliore per ogni dispositivo","ok":false} ],
+      "e": "Buona parte dei 5 GHz è condivisa con i radar: su quei canali l'AP deve spostarsi immediatamente se ne rileva uno, interrompendo le connessioni per qualche secondo. Dà molti più canali disponibili, ma vicino a un aeroporto o a un radar meteo conviene escluderli — e alcuni dispositivi vecchi non li supportano affatto." },
+
+    { "q": "Come si dimensiona il Wi-Fi di una sala congressi da 200 posti?",
+      "a": [ {"t":"Molti AP a potenza bassa con canali stretti, per fare celle piccole","ok":true},
+             {"t":"Pochi AP potenti che coprano tutta la sala","ok":false},
+             {"t":"Un solo AP di fascia alta al centro","ok":false},
+             {"t":"Come un ufficio, in base ai metri quadri","ok":false} ],
+      "e": "È un problema di densità, non di copertura: l'obiettivo è che ogni AP serva poche decine di dispositivi invece di duecento. Si usano molti apparati con potenza ridotta, canali stretti e antenne orientate verso il basso, proprio per rimpicciolire le celle. Dimensionare sui metri quadri darebbe un numero di AP largamente insufficiente." }
+  ]
+}
+</script>
