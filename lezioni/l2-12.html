@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Firewall stateful: come ragiona davvero — NetPath</title>
+<meta name="description" content="La tabella delle sessioni, il traffico di ritorno, e perché «ho aperto la porta» spesso non basta.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-12">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Firewall e NAT</span>
+      </nav>
+      <h1 class="lesson-title">Firewall stateful: come ragiona davvero</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 12</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Spiegare cosa cambia tra un filtro senza stato e uno stateful</li>
+        <li>Leggere una tabella delle sessioni e ricavarne una diagnosi</li>
+        <li>Capire perché non servono regole per il traffico di ritorno</li>
+        <li>Riconoscere i guasti causati dalla scadenza delle sessioni</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Se c'è un concetto che separa chi configura firewall a caso da chi sa cosa sta facendo,
+è questo. Capire lo stato ti evita metà delle regole inutili, ti spiega perché certe cose funzionano
+«senza motivo» e ti dà lo strumento diagnostico più potente che un firewall offra.</p>
+
+<h2>Senza stato e con stato</h2>
+
+<p>Un filtro <strong>senza stato</strong> guarda ogni pacchetto per conto suo, come se fosse il primo
+che vede. Non ricorda niente. Per permettere una semplice navigazione web servirebbero due regole:
+una per il traffico in uscita verso la porta 443, e una per le risposte in ingresso.</p>
+
+<p>Un firewall <strong>stateful</strong> tiene invece una <strong>tabella delle sessioni</strong>: quando
+qualcuno apre una conversazione permessa, se la annota. Da quel momento tutti i pacchetti che
+appartengono a quella conversazione — <em>comprese le risposte</em> — passano automaticamente, senza
+bisogno di nessuna regola aggiuntiva.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Confronto tra filtro senza stato e firewall stateful con tabella delle sessioni">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Due modi di guardare lo stesso traffico</text>
+
+    <text x="175" y="46" text-anchor="middle" class="dg-label-sm">SENZA STATO</text>
+    <rect x="20" y="56" width="310" height="96" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="175" y="80" text-anchor="middle" class="dg-mono-sm">regola 1: LAN → Internet:443 permetti</text>
+    <text x="175" y="100" text-anchor="middle" class="dg-mono-sm">regola 2: Internet:443 → LAN permetti</text>
+    <text x="175" y="128" text-anchor="middle" class="dg-label-sm">La regola 2 è un buco enorme:</text>
+    <text x="175" y="144" text-anchor="middle" class="dg-label-sm">chiunque, da fuori, può parlare alla LAN</text>
+
+    <text x="525" y="46" text-anchor="middle" class="dg-label-sm">STATEFUL</text>
+    <rect x="370" y="56" width="310" height="96" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="525" y="84" text-anchor="middle" class="dg-mono-sm">regola 1: LAN → Internet:443 permetti</text>
+    <text x="525" y="112" text-anchor="middle" class="dg-label-sm">E basta.</text>
+    <text x="525" y="134" text-anchor="middle" class="dg-label-sm">Le risposte passano perché il firewall</text>
+    <text x="525" y="148" text-anchor="middle" class="dg-label-sm">ricorda chi ha iniziato.</text>
+
+    <text x="350" y="186" text-anchor="middle" class="dg-mono-sm">LA TABELLA DELLE SESSIONI</text>
+    <rect x="20" y="198" width="660" height="80" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.3"/>
+    <line x1="20" y1="222" x2="680" y2="222" stroke="var(--dg-line-soft)"/>
+    <g class="dg-mono-sm">
+      <text x="36"  y="216">SORGENTE</text>
+      <text x="200" y="216">DESTINAZIONE</text>
+      <text x="380" y="216">PROTO</text>
+      <text x="450" y="216">STATO</text>
+      <text x="570" y="216">SCADE TRA</text>
+
+      <text x="36"  y="244">10.10.10.50:51844</text>
+      <text x="200" y="244">142.250.180.99:443</text>
+      <text x="380" y="244">TCP</text>
+      <text x="450" y="244">ESTABLISHED</text>
+      <text x="570" y="244">3598 s</text>
+
+      <text x="36"  y="266">10.10.10.73:49201</text>
+      <text x="200" y="266">10.10.50.20:445</text>
+      <text x="380" y="266">TCP</text>
+      <text x="450" y="266">ESTABLISHED</text>
+      <text x="570" y="266">3500 s</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>La tabella delle sessioni è la memoria del firewall. Ogni riga è una conversazione viva,
+  con un <b>timer</b> che la cancella quando tace troppo a lungo. Quel timer è la causa di una
+  categoria intera di guasti, come vedrai tra poco.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il buttafuori con la lista
+  </div>
+  <p>Un locale ha un buttafuori all'ingresso. La regola è: «i clienti possono uscire a fumare, ma non
+  può entrare nessuno che non sia già stato dentro».</p>
+  <p>Un buttafuori <b>senza memoria</b> non può farcela: vede uno che vuole entrare e non sa se è
+  uscito a fumare cinque minuti fa o se è uno sconosciuto. Per farlo funzionare dovrebbe lasciare
+  entrare tutti — cioè annullare la regola.</p>
+  <p>Un buttafuori <b>con la lista</b> invece si segna chi esce. Quando quello torna, controlla la
+  lista, lo riconosce e lo fa passare <b>senza bisogno di nessuna regola aggiuntiva</b>. Uno
+  sconosciuto che non è nella lista resta fuori.</p>
+  <p>E c'è un dettaglio che conta: <b>dopo un po' il buttafuori cancella i nomi</b>. Se uno esce a
+  fumare e torna dopo tre ore, non è più nella lista e resta fuori. Questa è esattamente la scadenza
+  delle sessioni — e il motivo per cui certe connessioni «cadono da sole» dopo un periodo di inattività.</p>
+</div>
+
+<h2>Le conseguenze pratiche</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Tre cose da ricordare per sempre
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Non scrivere mai regole per il traffico di ritorno.</b> Sono inutili e sono buchi.
+    Se trovi in un cliente regole «da Internet verso la LAN, porta 443» messe «per far tornare le
+    risposte», sono da togliere.</li>
+    <li><b>Conta solo chi inizia la conversazione.</b> Quando scrivi una regola, la domanda è sempre:
+    «chi manda il primo pacchetto?». Quello è il sorgente.</li>
+    <li><b>Una regola modificata non chiude le sessioni già aperte.</b> Se togli il permesso a un
+    utente, la sua connessione in corso continua finché non scade. È il motivo per cui un blocco
+    «non ha effetto»: va anche cancellata la sessione.</li>
+  </ul>
+</div>
+
+<h2>Gli stati di una sessione TCP</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Stato</th><th>Significa</th><th>Timer tipico</th></tr></thead>
+    <tbody>
+      <tr><td><code>SYN_SENT</code></td><td>Qualcuno ha bussato, nessuna risposta ancora</td><td>pochi secondi</td></tr>
+      <tr><td><code>ESTABLISHED</code></td><td>Conversazione aperta e funzionante</td><td>1 ora (spesso 3600 s)</td></tr>
+      <tr><td><code>FIN_WAIT</code> / <code>TIME_WAIT</code></td><td>Chiusura ordinata in corso</td><td>pochi secondi</td></tr>
+      <tr><td><code>CLOSE</code></td><td>Chiusa, in attesa di rimozione</td><td>—</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Per <strong>UDP e ICMP</strong> non esiste nessuno stato reale: il firewall ne inventa uno,
+considerando «aperta» una pseudo-sessione per un tempo breve dopo l'ultimo pacchetto —
+tipicamente 30–180 secondi. È un'approssimazione necessaria, e spiega perché certi servizi UDP
+richiedono traffico periodico per non essere dimenticati.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il ticket «il gestionale si disconnette dopo un'ora di inattività»
+  </div>
+  <p>Un classico assoluto, e adesso sai spiegarlo. L'utente apre il gestionale la mattina, lo lascia
+  aperto, va in riunione, torna dopo un'ora e trova un errore di connessione.</p>
+  <p><b>Cosa succede:</b> la sessione TCP è rimasta aperta sul PC e sul server, ma non è passato nemmeno
+  un pacchetto per un'ora. Il timer del firewall è scaduto e la riga è stata cancellata. Quando il PC
+  riprende a scrivere su quella connessione, il firewall vede un pacchetto che non appartiene a nessuna
+  sessione nota e lo scarta.</p>
+  <p><b>Le soluzioni, in ordine di correttezza:</b></p>
+  <ul style="margin-bottom:0">
+    <li><b>Attivare il keepalive TCP</b> sull'applicazione o sul sistema operativo, così passa un
+    pacchetto ogni pochi minuti e la sessione resta viva. È la soluzione giusta.</li>
+    <li><b>Alzare il timer</b> sul firewall solo per quel servizio (per esempio a 8 ore sulla porta
+    del gestionale). Accettabile, ma consuma memoria delle sessioni.</li>
+    <li><b>Alzare il timer globale</b>. È la scorciatoia che fanno in tanti, e riempie la tabella delle
+    sessioni di conversazioni morte.</li>
+  </ul>
+</div>
+
+<h2>Leggere la tabella delle sessioni: lo strumento diagnostico</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Guardare le sessioni vive</div>
+<pre><span class="c">═══ FORTIGATE — il comando più utile che esista ═════</span>
+<span class="p">diagnose sys session filter src</span> <span class="n">10.10.10.50</span>
+<span class="p">diagnose sys session filter dport</span> <span class="n">443</span>
+<span class="p">diagnose sys session list</span>
+<span class="p">diagnose sys session clear</span>              <span class="c"># cancella quelle filtrate</span>
+<span class="p">get system session-info full-stat</span>       <span class="c"># quante sessioni in totale</span>
+
+<span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/ip firewall connection print where src-address~</span><span class="s">"10.10.10.50"</span>
+<span class="p">/ip firewall connection print count-only</span>
+
+<span class="c">═══ LINUX / SOPHOS ══════════════════════════════════</span>
+<span class="p">conntrack -L -s</span> <span class="n">10.10.10.50</span>
+<span class="p">conntrack -D -s</span> <span class="n">10.10.10.50</span>            <span class="c"># cancella</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Cosa ti dice una sessione, in un colpo d'occhio
+  </div>
+  <p>Guardando una riga della tabella rispondi a domande che altrimenti richiederebbero una cattura:</p>
+  <ul style="margin-bottom:0">
+    <li><b>La sessione esiste?</b> No → il traffico non arriva nemmeno al firewall: guarda routing,
+    VLAN, cavo.</li>
+    <li><b>Esiste ma è in <code>SYN_SENT</code>?</b> → Il firewall l'ha lasciata passare, ma dall'altra
+    parte nessuno risponde. Il problema è oltre il firewall.</li>
+    <li><b>Da quale interfaccia entra ed esce?</b> → Verifica immediata del routing e delle policy
+    route, senza leggere tabelle.</li>
+    <li><b>Quale regola l'ha permessa?</b> Su FortiGate la sessione riporta l'identificativo della
+    policy: sai <em>esattamente</em> quale riga sta agendo, senza doverle leggere tutte.</li>
+    <li><b>Quanti pacchetti in ciascuna direzione?</b> → Se sono molti in uscita e zero in ingresso,
+    il traffico esce e non torna: routing asimmetrico o NAT sbagliato.</li>
+  </ul>
+</div>
+
+<h2>Il limite delle sessioni: un numero da conoscere</h2>
+
+<p>Ogni firewall ha un numero massimo di sessioni contemporanee, ed è un parametro del datasheet molto
+più importante del throughput: un piccolo apparato può reggere 100.000 sessioni, uno medio qualche
+milione.</p>
+
+<p>Quando la tabella si riempie, il firewall <strong>smette di aprire nuove connessioni</strong>: il
+traffico esistente continua, ma niente di nuovo funziona. Il sintomo è disorientante — «le pagine già
+aperte funzionano, le nuove no» — e la causa tipica non è il numero di utenti ma <strong>un dispositivo
+impazzito</strong>: un PC infetto che scandisce la rete, una telecamera che ritenta migliaia di
+connessioni, un backup mal configurato.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Trovare il colpevole in un minuto
+  </div>
+  <p>Quando le sessioni esplodono, la domanda è «chi le sta aprendo?». Su FortiGate:</p>
+  <div class="code" style="margin:10px 0 0">
+    <div class="code__bar"><span class="dot"></span>Chi sta consumando la tabella</div>
+<pre><span class="p">get system session-info full-stat</span>       <span class="c"># quante sono in totale</span>
+<span class="p">diagnose sys session filter src</span> <span class="n">10.10.10.73</span>
+<span class="p">diagnose sys session stat</span>               <span class="c"># conteggio per quel filtro</span>
+<span class="c"># su MikroTik, per contare per sorgente:</span>
+<span class="p">/ip firewall connection print count-only where src-address~</span><span class="s">"10.10.10."</span>
+</pre>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0">Nove volte su dieci un solo indirizzo ne ha decine di
+  migliaia. Quello è il dispositivo da isolare — e spesso è anche la prima prova concreta che il
+  cliente ha un problema di sicurezza, non di rete.</p>
+</div>
+
+<h2>Stateful non vuol dire sicuro</h2>
+
+<p>Uno stateful sa che una conversazione è stata iniziata da dentro. <strong>Non sa se sia una buona
+idea.</strong> Un malware che dall'interno contatta il proprio centro di comando sulla porta 443 apre
+una sessione perfettamente legittima, e il firewall la permette esattamente come farebbe con un sito
+qualsiasi.</p>
+
+<p>È per questo che i controlli di livello 7 — filtro web, controllo applicativo, IPS, antivirus di
+rete — non sono un di più: guardano <em>dentro</em> conversazioni che al livello 4 sono indistinguibili.
+Li vedremo nel capitolo 3.3.</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: firewall stateful",
+  "questions": [
+    { "q": "Perché su un firewall stateful non serve una regola per il traffico di ritorno?",
+      "a": [ {"t":"Il firewall ricorda le conversazioni aperte e riconosce le risposte come parte di esse","ok":true},
+             {"t":"Perché il traffico di ritorno usa porte casuali","ok":false},
+             {"t":"Perché le risposte non attraversano il firewall","ok":false},
+             {"t":"Perché il NAT le lascia passare automaticamente","ok":false} ],
+      "e": "La tabella delle sessioni è la memoria del firewall: quando una conversazione permessa viene iniziata, viene annotata, e tutti i pacchetti che le appartengono passano. Scrivere regole di ritorno è inutile e apre buchi verso l'interno: se le trovi in un cliente, sono da togliere." },
+
+    { "q": "Un utente lascia il gestionale aperto, va in riunione un'ora e al ritorno trova un errore di connessione. Perché?",
+      "a": [ {"t":"La sessione è scaduta sul firewall per inattività ed è stata rimossa dalla tabella","ok":true},
+             {"t":"Il server ha riavviato il servizio","ok":false},
+             {"t":"Il DHCP ha cambiato l'indirizzo del PC","ok":false},
+             {"t":"Il firewall ha bloccato l'utente","ok":false} ],
+      "e": "Ogni riga della tabella ha un timer, tipicamente un'ora per le sessioni TCP stabilite. Senza traffico il firewall la cancella, e i pacchetti successivi non appartengono più a nessuna sessione nota. La soluzione corretta è il keepalive TCP lato applicazione; alzare il timer solo per quel servizio è accettabile, alzarlo globalmente è una scorciatoia che riempie la tabella di conversazioni morte." },
+
+    { "q": "Hai tolto il permesso a un utente ma continua a navigare. Perché?",
+      "a": [ {"t":"Le sessioni già aperte restano valide finché non scadono o non vengono cancellate","ok":true},
+             {"t":"La regola non è stata salvata","ok":false},
+             {"t":"L'utente sta usando un altro indirizzo","ok":false},
+             {"t":"Il firewall applica le regole solo al riavvio","ok":false} ],
+      "e": "Le regole vengono valutate quando una sessione <b>nasce</b>: una conversazione già annotata continua a passare. Per rendere immediato un blocco bisogna cancellare anche le sessioni attive di quell'indirizzo, con <code>diagnose sys session clear</code> o l'equivalente." },
+
+    { "q": "Una sessione risulta in stato <code>SYN_SENT</code> e non evolve. Cosa concludi?",
+      "a": [ {"t":"Il firewall ha lasciato passare, ma dall'altra parte nessuno risponde: il problema è oltre","ok":true},
+             {"t":"Il firewall sta bloccando il traffico","ok":false},
+             {"t":"Il NAT non è configurato","ok":false},
+             {"t":"La regola è scritta al contrario","ok":false} ],
+      "e": "Se la sessione esiste, il firewall ha applicato una regola di permesso e ha fatto passare il SYN: la mancanza di risposta viene da oltre. Servizio spento, host irraggiungibile, o un altro firewall più avanti. Se invece la sessione <em>non esistesse affatto</em>, il traffico non starebbe nemmeno arrivando al firewall." },
+
+    { "q": "Un cliente riferisce che le pagine già aperte funzionano ma non se ne aprono di nuove. Cosa sospetti?",
+      "a": [ {"t":"La tabella delle sessioni è piena, spesso per colpa di un singolo dispositivo impazzito","ok":true},
+             {"t":"La banda è satura","ok":false},
+             {"t":"Il DNS non risolve","ok":false},
+             {"t":"Il certificato del firewall è scaduto","ok":false} ],
+      "e": "È il sintomo caratteristico dell'esaurimento delle sessioni: il traffico esistente continua perché le sue righe ci sono già, ma non se ne possono creare di nuove. La causa raramente è il numero di utenti: quasi sempre è un PC infetto che scandisce la rete o un dispositivo che ritenta migliaia di connessioni. Si trova contando le sessioni per indirizzo sorgente." },
+
+    { "q": "Un firewall stateful protegge da un malware che dall'interno contatta il proprio centro di comando?",
+      "a": [ {"t":"No: è una connessione iniziata dall'interno, quindi perfettamente legittima per lo stato","ok":true},
+             {"t":"Sì, riconosce il traffico anomalo e lo blocca","ok":false},
+             {"t":"Sì, se il malware usa una porta non standard","ok":false},
+             {"t":"Dipende dalla marca del firewall","ok":false} ],
+      "e": "Lo stato risponde solo a «chi ha iniziato», non a «è una buona idea». Una connessione in uscita sulla 443 è indistinguibile da qualsiasi navigazione. Servono controlli di livello 7 — filtro web, controllo applicativo, IPS, antivirus di rete — che guardano dentro conversazioni che al livello 4 sono identiche." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

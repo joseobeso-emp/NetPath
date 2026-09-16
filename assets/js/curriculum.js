@@ -76,10 +76,10 @@ window.NETPATH_CURRICULUM = [
       { id:"l2-11", t:"Policy routing e route leaking", s:"Quando la destinazione non basta a decidere la strada.", m:22, ready:true }
     ]},
     { title: "Firewall e NAT", lessons: [
-      { id:"l2-12", t:"Firewall stateful: come ragiona davvero", s:"La tabella delle sessioni, il traffico di ritorno, e perché 'ho aperto la porta' spesso non basta.", m:28, ready:false },
-      { id:"l2-13", t:"Zone, interfacce, policy: l'ordine conta", s:"Il modello di policy di Fortinet, Sophos e WatchGuard messi a confronto.", m:26, ready:false },
-      { id:"l2-14", t:"NAT avanzato: SNAT, DNAT, hairpin", s:"Il NAT che ti serve davvero nei ticket, incluso il caso che nessuno sa risolvere.", m:26, ready:false },
-      { id:"l2-15", t:"Pubblicare un servizio senza aprire un buco", s:"Port forward fatto bene: restrizioni sorgente, geo-IP, IPS, certificati.", m:24, ready:false }
+      { id:"l2-12", t:"Firewall stateful: come ragiona davvero", s:"La tabella delle sessioni, il traffico di ritorno, e perché 'ho aperto la porta' spesso non basta.", m:28, ready:true },
+      { id:"l2-13", t:"Zone, interfacce, policy: l'ordine conta", s:"Il modello di policy di Fortinet, Sophos e WatchGuard messi a confronto.", m:26, ready:true },
+      { id:"l2-14", t:"NAT avanzato: SNAT, DNAT, hairpin", s:"Il NAT che ti serve davvero nei ticket, incluso il caso che nessuno sa risolvere.", m:26, ready:true },
+      { id:"l2-15", t:"Pubblicare un servizio senza aprire un buco", s:"Port forward fatto bene: restrizioni sorgente, geo-IP, IPS, certificati.", m:24, ready:true }
     ]},
     { title: "VPN", lessons: [
       { id:"l2-16", t:"IPsec spiegato: IKE fase 1 e fase 2", s:"SA, proposte, PFS, DH group. Perché i due lati devono dire esattamente la stessa cosa.", m:30, ready:false },

@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zone, interfacce e policy: l'ordine conta — NetPath</title>
+<meta name="description" content="Il modello di regole di Fortinet, Sophos, WatchGuard e MikroTik messi a confronto, e la regola coperta che nessuno trova.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-13">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Firewall e NAT</span>
+      </nav>
+      <h1 class="lesson-title">Zone, interfacce e policy: l'ordine conta</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 13</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Scrivere una regola firewall sapendo cosa significa ogni campo</li>
+        <li>Capire perché l'ordine delle regole decide tutto</li>
+        <li>Riconoscere una regola coperta da un'altra prima che causi un guasto</li>
+        <li>Tradurre lo stesso concetto tra i vendor che usi in azienda</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Tutti i firewall del mondo funzionano allo stesso modo: una lista ordinata di regole,
+valutata dall'alto verso il basso, che si ferma alla prima corrispondenza. Cambiano i nomi dei campi e
+il colore dell'interfaccia. Capito il modello una volta, li sai usare tutti.</p>
+
+<h2>I campi di una regola</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="I campi di una regola firewall e il loro significato">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Una regola risponde a sei domande</text>
+    <g stroke-width="1.4">
+      <rect x="14"  y="40" width="104" height="40" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="122" y="40" width="104" height="40" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="230" y="40" width="104" height="40" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="338" y="40" width="104" height="40" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="446" y="40" width="104" height="40" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="554" y="40" width="132" height="40" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="66"  y="56">DA DOVE</text><text x="66"  y="72">zona/interfaccia</text>
+      <text x="174" y="56">VERSO DOVE</text><text x="174" y="72">zona/interfaccia</text>
+      <text x="282" y="56">CHI</text><text x="282" y="72">indirizzo sorg.</text>
+      <text x="390" y="56">VERSO CHI</text><text x="390" y="72">indirizzo dest.</text>
+      <text x="498" y="56">COSA</text><text x="498" y="72">servizio/porta</text>
+      <text x="620" y="56">AZIONE</text><text x="620" y="72">permetti / nega</text>
+    </g>
+
+    <rect x="14" y="100" width="672" height="46" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="350" y="120" text-anchor="middle" class="dg-label-sm">+ COSA CI FACCIO MENTRE PASSA (solo firewall di livello 7)</text>
+    <text x="350" y="138" text-anchor="middle" class="dg-mono-sm">antivirus · IPS · filtro web · controllo applicativo · ispezione TLS · registrazione</text>
+
+    <rect x="14" y="164" width="672" height="34" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <text x="350" y="185" text-anchor="middle" class="dg-label-sm">Esempio: da <tspan font-family="var(--font-mono)">VLAN-uffici</tspan> verso <tspan font-family="var(--font-mono)">VLAN-server</tspan>, da <tspan font-family="var(--font-mono)">rete-uffici</tspan> a <tspan font-family="var(--font-mono)">srv-gestionale</tspan>, servizio <tspan font-family="var(--font-mono)">SQL-1433</tspan>, PERMETTI, con IPS attivo</text>
+
+    <text x="350" y="228" text-anchor="middle" class="dg-label-sm">Ricorda la lezione precedente: «sorgente» significa <tspan font-weight="700">chi inizia la conversazione</tspan>. Le risposte non hanno bisogno di regole.</text>
+  </svg>
+  </div>
+  <figcaption>Se sai rispondere a queste sei domande, sai scrivere una regola su qualsiasi firewall
+  esista. Il settimo blocco — cosa fare mentre il traffico passa — è ciò che distingue un firewall di
+  nuova generazione da un filtro di livello 4.</figcaption>
+</figure>
+
+<h2>Zone o interfacce?</h2>
+
+<p>Una <strong>zona</strong> è un gruppo di interfacce trattate allo stesso modo. Invece di scrivere una
+regola per ogni VLAN, ne scrivi una per la zona «LAN» che contiene VLAN 10, 50 e 60.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Regole per interfaccia</th><th>Regole per zona</th></tr></thead>
+    <tbody>
+      <tr><td><b>Numero di regole</b></td><td>Cresce moltiplicando le VLAN</td><td>Resta piccolo</td></tr>
+      <tr><td><b>Granularità</b></td><td>Massima: controlli ogni VLAN</td><td>Minore: dentro la zona il traffico è libero</td></tr>
+      <tr><td><b>Quando usarle</b></td><td>Poche VLAN, o controlli fini</td><td>Molte VLAN con lo stesso trattamento</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La trappola delle zone
+  </div>
+  <p>Su molti firewall, <b>il traffico dentro la stessa zona passa senza essere filtrato</b> (o segue
+  un'impostazione «intra-zone» che di default è «permetti»).</p>
+  <p>Se metti nella zona «LAN» sia gli uffici sia le telecamere per comodità, hai appena <b>annullato
+  la segmentazione</b> tra loro: le VLAN restano separate a livello 2, ma il firewall le lascia parlare
+  liberamente. È uno degli errori più comuni e più silenziosi che vedrai nelle configurazioni ereditate.</p>
+  <p style="margin-bottom:0"><b>Regola pratica:</b> nella stessa zona ci vanno solo reti che devono
+  davvero potersi parlare senza controlli. Tutto il resto resta interfaccia per interfaccia.</p>
+</div>
+
+<h2>L'ordine: primo che corrisponde, vince</h2>
+
+<p>Le regole si leggono <strong>dall'alto verso il basso</strong> e la valutazione si ferma alla prima
+che corrisponde. Tutte quelle sotto non vengono nemmeno guardate.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 260" role="img" aria-label="Una regola più generica posta sopra rende inutile una regola più specifica sotto">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">La regola coperta: il guasto che non si trova</text>
+
+    <g stroke-width="1.5">
+      <rect x="30" y="40"  width="640" height="38" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="30" y="86"  width="640" height="38" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2.2"/>
+      <rect x="30" y="132" width="640" height="38" rx="6" fill="var(--dg-line-soft)" stroke="var(--dg-line)" opacity=".55"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="46" y="64">1</text>
+      <text x="80" y="64">uffici → server   ·   qualsiasi servizio   ·   PERMETTI</text>
+      <text x="46" y="110">2</text>
+      <text x="80" y="110">uffici → server   ·   SMB (445)           ·   NEGA</text>
+      <text x="46" y="156">3</text>
+      <text x="80" y="156">tutto il resto                             ·   NEGA</text>
+    </g>
+    <text x="596" y="110" class="dg-mono-sm" fill="var(--dg-3)">MAI RAGGIUNTA</text>
+
+    <rect x="80" y="192" width="540" height="52" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="350" y="212" text-anchor="middle" class="dg-label-sm">La regola 1 corrisponde già a tutto il traffico uffici→server, SMB compreso.</text>
+    <text x="350" y="230" text-anchor="middle" class="dg-label-sm">La regola 2 esiste, sembra giusta, e <tspan font-weight="700">non ha alcun effetto</tspan>. Il contatore dei suoi pacchetti resta a zero.</text>
+  </svg>
+  </div>
+  <figcaption>Si chiama <b>regola coperta</b> (shadowed rule). Non genera errori, non genera avvisi,
+  e chi la legge è convinto che stia funzionando. Il modo per trovarla è uno solo: <b>guardare i
+  contatori</b>.</figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    L'ordine corretto: dal particolare al generale
+  </div>
+  <p>Le regole vanno scritte <b>dalle più specifiche alle più generiche</b>, come una piramide
+  rovesciata:</p>
+  <ol style="margin-bottom:0">
+    <li>Negazioni puntuali (blocca questo host verso quel servizio)</li>
+    <li>Permessi specifici (uffici → gestionale sulla porta 1433)</li>
+    <li>Permessi ampi (uffici → Internet)</li>
+    <li>La negazione finale, esplicita e con registrazione attiva</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">E <b>controlla i contatori dopo qualche giorno</b>: ogni
+  regola con zero pacchetti o è inutile, o è coperta. La prima ipotesi è innocua, la seconda è un
+  guasto che aspetta il momento peggiore per manifestarsi.</p>
+</div>
+
+<h2>La negazione implicita finale</h2>
+
+<p>Tutti i firewall hanno, in fondo alla lista, una regola invisibile: <strong>nega tutto ciò che non
+corrisponde a nessuna regola precedente</strong>. È il comportamento corretto — si permette
+esplicitamente ciò che serve, e tutto il resto è vietato per costruzione.</p>
+
+<p><strong>Aggiungi però sempre una tua negazione finale esplicita con la registrazione attiva.</strong>
+Motivo: la regola implicita in genere non registra nulla, quindi quando qualcosa non funziona non trovi
+traccia del blocco nei log e passi ore a chiederti dove sia finito il traffico. Con una regola tua, il
+blocco compare nel log e la diagnosi diventa immediata.</p>
+
+<h2>Lo stesso concetto, quattro vendor</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Concetto</th><th>FortiGate</th><th>Sophos XGS</th><th>WatchGuard</th><th>MikroTik</th></tr></thead>
+    <tbody>
+      <tr><td><b>Regola</b></td><td>Firewall Policy</td><td>Firewall Rule</td><td>Policy</td><td>filter rule (chain forward)</td></tr>
+      <tr><td><b>Gruppo di interfacce</b></td><td>Zone</td><td>Zone</td><td>Alias / Interface</td><td>interface list</td></tr>
+      <tr><td><b>Oggetto indirizzo</b></td><td>Address / Group</td><td>IP Host / Network</td><td>Alias</td><td>address-list</td></tr>
+      <tr><td><b>Servizio</b></td><td>Service</td><td>Service</td><td>Policy Type</td><td>protocol + port</td></tr>
+      <tr><td><b>Controlli L7</b></td><td>Security Profiles</td><td>Web/App Filter, IPS</td><td>Proxy Action</td><td>— (limitati)</td></tr>
+      <tr><td><b>Negazione finale</b></td><td>implicit deny</td><td>Drop All</td><td>Unhandled Packet</td><td>da scrivere a mano</td></tr>
+      <tr><td><b>Contatori</b></td><td>Bytes/Packets sulla policy</td><td>colonna nella lista</td><td>Traffic Monitor</td><td><code>print stats</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le differenze che ti faranno sbagliare passando da un vendor all'altro
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>MikroTik non ha nessuna negazione finale.</b> Se non la scrivi tu, il comportamento
+    predefinito è <em>permetti tutto</em>. È l'opposto di tutti gli altri, ed è il motivo per cui un
+    RouterOS configurato a metà è completamente aperto.</li>
+    <li><b>WatchGuard chiama «SNAT» il port forward</b>, mentre nel resto del mondo SNAT è il NAT
+    sorgente. Fonte inesauribile di equivoci in una chiamata tra tecnici.</li>
+    <li><b>Su FortiGate le policy sono valutate per coppia di interfacce</b>: una regola scritta con
+    l'interfaccia sbagliata semplicemente non viene mai considerata, senza alcun avviso.</li>
+    <li><b>Su Sophos l'ordine si gestisce a gruppi</b>: spostare una regola tra gruppi ne cambia la
+    posizione effettiva, e non sempre è evidente dall'interfaccia.</li>
+  </ul>
+</div>
+
+<h2>Scrivere regole che si capiscano tra due anni</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Le convenzioni che ti distinguono
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Mai indirizzi scritti a mano nelle regole.</b> Crea oggetti con nomi parlanti
+    (<code>srv-gestionale</code>, <code>rete-ospiti</code>, <code>nvr-telecamere</code>). Il giorno che
+    l'indirizzo cambia, modifichi l'oggetto e non vai a caccia in trenta regole.</li>
+    <li><b>Nomi coerenti e prevedibili:</b> <code>tipo-descrizione</code>. Se tutti i tuoi clienti
+    seguono lo stesso schema, entri in un firewall che non vedi da un anno e ti orienti subito.</li>
+    <li><b>Ogni regola ha un commento</b> con chi l'ha chiesta, quando e perché. «Richiesta Rossi
+    12/03/2026 — accesso fornitore al macchinario CNC» rende possibile, tra due anni, capire se serve
+    ancora.</li>
+    <li><b>Registrazione attiva su tutte le regole importanti</b>, e sempre sulla negazione finale.
+    Senza log, ogni diagnosi diventa indovinare.</li>
+    <li><b>Revisione periodica.</b> Una volta l'anno guarda i contatori: le regole a zero si
+    documentano e si tolgono. Una lista di regole che cresce e non cala mai diventa in pochi anni
+    illeggibile e piena di permessi dimenticati.</li>
+  </ul>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Verificare quale regola sta agendo</div>
+<pre><span class="c">═══ FORTIGATE — il traffico viene bloccato: da chi? ═</span>
+<span class="p">diagnose debug flow filter addr</span> <span class="n">10.10.10.50</span>
+<span class="p">diagnose debug flow filter port</span> <span class="n">443</span>
+<span class="p">diagnose debug flow show function-name enable</span>
+<span class="p">diagnose debug flow trace start</span> <span class="n">20</span>
+<span class="p">diagnose debug enable</span>
+<span class="c"># ... riproduci il traffico: il firewall racconta passo per passo</span>
+<span class="c">#     quale rotta usa, quale policy corrisponde, se e perché blocca</span>
+<span class="p">diagnose debug disable</span>
+<span class="p">diagnose debug reset</span>
+
+<span class="c">═══ MIKROTIK — contatori per regola ═════════════════</span>
+<span class="p">/ip firewall filter print stats</span>
+<span class="p">/ip firewall filter reset-counters-all</span>   <span class="c"># azzera e riguarda dopo un'ora</span>
+
+<span class="c">═══ SOPHOS / LINUX ══════════════════════════════════</span>
+<span class="p">iptables -L -v -n --line-numbers</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il comando che risolve più ticket di qualunque altro
+  </div>
+  <p>Su FortiGate, <code>diagnose debug flow</code> è lo strumento più potente che hai: gli dici quale
+  traffico osservare, riproduci il problema, e il firewall <b>ti racconta in italiano tecnico</b> cosa
+  fa a ogni passaggio — quale rotta sceglie, quale policy corrisponde, se applica NAT, e se blocca
+  <em>quale regola</em> l'ha fatto.</p>
+  <p style="margin-bottom:0">Smetti di indovinare quale regola stia agendo: glielo chiedi.
+  Ricordati solo di disattivare il debug quando hai finito.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: policy e ordine",
+  "questions": [
+    { "q": "Come vengono valutate le regole di un firewall?",
+      "a": [ {"t":"Dall'alto verso il basso, fermandosi alla prima che corrisponde","ok":true},
+             {"t":"Tutte insieme, e vince la più restrittiva","ok":false},
+             {"t":"Dal basso verso l'alto","ok":false},
+             {"t":"In ordine di specificità, indipendentemente dalla posizione","ok":false} ],
+      "e": "Prima corrispondenza, poi si ferma: tutte le regole sotto non vengono nemmeno guardate. È per questo che l'ordine decide tutto, e che una regola generica messa in alto può rendere inutile una specifica più sotto. A differenza del routing, qui la specificità non conta: conta la posizione." },
+
+    { "q": "Una regola «nega SMB da uffici a server» è sotto una «permetti tutto da uffici a server». Cosa succede?",
+      "a": [ {"t":"La regola di negazione non ha alcun effetto: il suo contatore resta a zero","ok":true},
+             {"t":"La negazione vince perché è più specifica","ok":false},
+             {"t":"Il firewall segnala un conflitto","ok":false},
+             {"t":"Le due regole si annullano a vicenda","ok":false} ],
+      "e": "È una regola coperta: il traffico SMB corrisponde già alla regola permissiva sopra e la valutazione si ferma lì. Non genera errori né avvisi, e chi legge la configurazione è convinto che il blocco sia attivo. L'unico modo per accorgersene è guardare i contatori: zero pacchetti significa inutile oppure coperta." },
+
+    { "q": "Perché conviene aggiungere una negazione finale esplicita, se esiste già quella implicita?",
+      "a": [ {"t":"Perché quella implicita in genere non registra nulla nei log","ok":true},
+             {"t":"Perché quella implicita può essere disattivata per errore","ok":false},
+             {"t":"Perché rende il firewall più veloce","ok":false},
+             {"t":"Perché altrimenti il traffico passerebbe","ok":false} ],
+      "e": "Il blocco avviene comunque, ma senza traccia: quando qualcosa non funziona non trovi niente nei log e passi ore a chiederti dove sia finito il traffico. Una regola tua, con registrazione attiva, rende il blocco visibile e la diagnosi immediata." },
+
+    { "q": "Hai messo nella stessa zona «LAN» le VLAN uffici e telecamere. Qual è la conseguenza?",
+      "a": [ {"t":"Su molti firewall il traffico dentro la zona non viene filtrato: la segmentazione è annullata","ok":true},
+             {"t":"Nessuna: le VLAN restano separate","ok":false},
+             {"t":"Le due VLAN si fondono anche a livello 2","ok":false},
+             {"t":"Il firewall rifiuta la configurazione","ok":false} ],
+      "e": "Le VLAN restano separate a livello 2, ma il traffico intra-zona in genere passa senza controlli, quindi uffici e telecamere si parlano liberamente. È un errore silenzioso e frequentissimo nelle configurazioni ereditate: nella stessa zona vanno solo reti che devono davvero potersi parlare senza filtri." },
+
+    { "q": "Qual è la differenza di comportamento predefinito più pericolosa tra MikroTik e gli altri firewall?",
+      "a": [ {"t":"MikroTik non ha una negazione finale implicita: senza regole permette tutto","ok":true},
+             {"t":"MikroTik non supporta le zone","ok":false},
+             {"t":"MikroTik valuta le regole dal basso verso l'alto","ok":false},
+             {"t":"MikroTik non registra i log","ok":false} ],
+      "e": "È l'opposto di FortiGate, Sophos e WatchGuard, che chiudono tutto ciò che non è esplicitamente permesso. Un RouterOS configurato a metà è completamente aperto, ed è il motivo per cui la regola di chiusura va scritta a mano e messa per ultima." },
+
+    { "q": "Perché non si scrivono indirizzi IP direttamente dentro le regole?",
+      "a": [ {"t":"Con oggetti dal nome parlante, un cambio di indirizzo si fa in un punto solo","ok":true},
+             {"t":"Perché i firewall non accettano indirizzi letterali","ok":false},
+             {"t":"Perché rallenta l'elaborazione","ok":false},
+             {"t":"Perché gli indirizzi cambiano a ogni riavvio","ok":false} ],
+      "e": "Il giorno che il server cambia indirizzo, con gli oggetti modifichi una voce sola; con gli indirizzi scritti a mano devi trovarli in trenta regole sperando di non dimenticarne una. In più i nomi rendono la configurazione leggibile: <code>srv-gestionale</code> dice cosa fa quella regola, <code>10.10.50.23</code> no." },
+
+    { "q": "Un traffico viene bloccato su un FortiGate e non capisci quale regola lo faccia. Cosa usi?",
+      "a": [ {"t":"<code>diagnose debug flow</code>, che racconta passo per passo cosa fa il firewall","ok":true},
+             {"t":"Un riavvio dell'apparato","ok":false},
+             {"t":"La cancellazione di tutte le sessioni","ok":false},
+             {"t":"L'esportazione della configurazione","ok":false} ],
+      "e": "Gli indichi quale traffico osservare, riproduci il problema, e il firewall descrive ogni passaggio: rotta scelta, policy corrispondente, NAT applicato, e in caso di blocco quale regola l'ha causato. È lo strumento che sostituisce ore di ipotesi con trenta secondi di lettura — ricordandosi di disattivare il debug alla fine." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

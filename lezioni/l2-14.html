@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NAT avanzato: SNAT, DNAT e hairpin — NetPath</title>
+<meta name="description" content="Il NAT che ti serve davvero nei ticket, incluso il caso che quasi nessuno sa risolvere.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-14">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Firewall e NAT</span>
+      </nav>
+      <h1 class="lesson-title">NAT avanzato: SNAT, DNAT e hairpin</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 14</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere masquerade e NAT sorgente con indirizzo fisso, e sapere quando serve ciascuno</li>
+        <li>Configurare un port forward capendo cosa succede al pacchetto</li>
+        <li>Risolvere l'hairpin NAT, e sapere perché spesso la soluzione migliore è un'altra</li>
+        <li>Capire in che ordine il firewall applica NAT, routing e policy</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Il NAT di base l'hai visto nella lezione 1-21. Qui vediamo i casi che incontri davvero
+lavorando: l'indirizzo pubblico fisso per un server che manda posta, il port forward fatto bene, e il
+famigerato hairpin — quello che «funziona da fuori ma non da dentro» e che fa perdere pomeriggi interi
+a chi non sa cosa sta guardando.</p>
+
+<h2>SNAT: due varianti che non sono intercambiabili</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Masquerade</th><th>NAT sorgente con indirizzo fisso</th></tr></thead>
+    <tbody>
+      <tr><td><b>Quale indirizzo usa</b></td><td>Quello che l'interfaccia ha <em>in quel momento</em></td><td>Un indirizzo che indichi tu</td></tr>
+      <tr><td><b>Se l'IP della WAN cambia</b></td><td>Si adatta da solo</td><td>Smette di funzionare</td></tr>
+      <tr><td><b>Costo</b></td><td>Ricalcola a ogni pacchetto: leggermente più pesante</td><td>Più efficiente</td></tr>
+      <tr><td><b>Quando usarlo</b></td><td>Linee con IP dinamico, 4G, backup</td><td>IP pubblici fissi, e quando serve che un server esca <b>sempre</b> con lo stesso indirizzo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché un server di posta vuole un indirizzo dedicato
+  </div>
+  <p>Se un cliente ha più indirizzi pubblici e un server che manda posta, quel server deve uscire
+  <b>sempre</b> dallo stesso indirizzo — quello per cui esistono il record inverso (PTR) e l'SPF del
+  dominio.</p>
+  <p>Con il masquerade il server esce con l'indirizzo principale della WAN, che magari è condiviso con
+  tutta l'azienda e non corrisponde al PTR configurato. Risultato: <b>le mail finiscono nello spam</b>
+  e nessuno collega la causa al NAT.</p>
+  <p style="margin-bottom:0">Si risolve con una regola di NAT sorgente specifica: «il traffico che parte
+  da <code>srv-mail</code> esce con l'indirizzo <code>203.0.113.7</code>», posta <b>sopra</b> la regola
+  generale di masquerade — perché anche qui vale la prima corrispondenza.</p>
+</div>
+
+<h2>DNAT: cosa succede davvero a un port forward</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Il percorso di un pacchetto attraverso un port forward, con la riscrittura della destinazione e il ritorno">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Un pacchetto da Internet verso il server interno</text>
+
+    <rect x="16" y="52" width="130" height="50" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="81" y="74" text-anchor="middle" class="dg-label-sm">Utente su Internet</text>
+    <text x="81" y="91" text-anchor="middle" class="dg-mono-sm">88.40.1.9</text>
+
+    <rect x="268" y="52" width="164" height="50" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.9"/>
+    <text x="350" y="74" text-anchor="middle" class="dg-label-sm">FIREWALL</text>
+    <text x="350" y="91" text-anchor="middle" class="dg-mono-sm">203.0.113.5</text>
+
+    <rect x="554" y="52" width="130" height="50" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="619" y="74" text-anchor="middle" class="dg-label-sm">Server web</text>
+    <text x="619" y="91" text-anchor="middle" class="dg-mono-sm">10.10.50.20</text>
+
+    <defs><marker id="dn1" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-1)"/></marker>
+      <marker id="dn2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-5)"/></marker></defs>
+
+    <path d="M150 128h114" stroke="var(--dg-1)" stroke-width="1.8" marker-end="url(#dn1)"/>
+    <path d="M436 128h114" stroke="var(--dg-1)" stroke-width="1.8" marker-end="url(#dn1)"/>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="207" y="122">da 88.40.1.9</text>
+      <text x="207" y="136">a 203.0.113.5:443</text>
+      <text x="493" y="122">da 88.40.1.9</text>
+      <text x="493" y="136">a <tspan fill="var(--dg-3)" font-weight="700">10.10.50.20:443</tspan></text>
+    </g>
+    <text x="350" y="160" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-3)">↑ riscrive la DESTINAZIONE</text>
+
+    <path d="M550 208H440" stroke="var(--dg-5)" stroke-width="1.8" marker-end="url(#dn2)"/>
+    <path d="M264 208H154" stroke="var(--dg-5)" stroke-width="1.8" marker-end="url(#dn2)"/>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="493" y="202">da 10.10.50.20</text>
+      <text x="493" y="216">a 88.40.1.9</text>
+      <text x="207" y="202">da <tspan fill="var(--dg-3)" font-weight="700">203.0.113.5</tspan></text>
+      <text x="207" y="216">a 88.40.1.9</text>
+    </g>
+    <text x="350" y="240" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-5)">↑ al ritorno riscrive la SORGENTE, automaticamente</text>
+
+    <rect x="90" y="258" width="520" height="30" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.4"/>
+    <text x="350" y="278" text-anchor="middle" class="dg-label-sm">L'utente non sa che esiste 10.10.50.20: per lui ha parlato con 203.0.113.5.</text>
+  </svg>
+  </div>
+  <figcaption>Nota che il <b>sorgente resta l'indirizzo vero dell'utente</b>: il server vede 88.40.1.9
+  nei suoi log, il che è corretto e desiderabile. Il ritorno viene riscritto automaticamente dalla
+  tabella delle sessioni, senza bisogno di nessuna regola.</figcaption>
+</figure>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    NAT e policy sono due cose separate
+  </div>
+  <p>Su quasi tutti i firewall, creare il port forward <b>non basta</b>: serve anche una regola di
+  policy che permetta quel traffico. Sono due configurazioni distinte, e dimenticare la seconda è
+  l'errore più frequente.</p>
+  <p>FortiGate lo rende meno evidente perché il Virtual IP si usa <em>come destinazione</em> dentro la
+  policy: se non crei la policy, il VIP esiste ma non fa niente. Su MikroTik servono una regola in
+  <code>dstnat</code> e una in <code>forward</code>. Su Sophos e WatchGuard la regola di pubblicazione
+  contiene entrambe le cose, ed è l'unico caso in cui sono unificate.</p>
+  <p style="margin-bottom:0"><b>Regola pratica:</b> dopo aver creato un port forward, chiediti sempre
+  «e la policy che lo permette dove sta?».</p>
+</div>
+
+<h2>L'ordine delle operazioni</h2>
+
+<p>Capire in che sequenza il firewall applica NAT, routing e regole spiega comportamenti altrimenti
+incomprensibili — in particolare <strong>quale indirizzo devi scrivere nelle regole</strong>.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 160" role="img" aria-label="Ordine delle operazioni su un firewall: DNAT, routing, policy, SNAT">
+    <g stroke-width="1.6">
+      <rect x="16"  y="44" width="146" height="54" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="186" y="44" width="146" height="54" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="356" y="44" width="146" height="54" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="526" y="44" width="158" height="54" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="89"  y="68" class="dg-mono-sm">1 · DNAT</text>
+      <text x="89"  y="86" class="dg-label-sm">riscrive la destinazione</text>
+      <text x="259" y="68" class="dg-mono-sm">2 · ROUTING</text>
+      <text x="259" y="86" class="dg-label-sm">sceglie l'uscita</text>
+      <text x="429" y="68" class="dg-mono-sm">3 · POLICY</text>
+      <text x="429" y="86" class="dg-label-sm">permetti o nega</text>
+      <text x="605" y="68" class="dg-mono-sm">4 · SNAT</text>
+      <text x="605" y="86" class="dg-label-sm">riscrive la sorgente</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#ord)">
+      <path d="M166 71h16"/><path d="M336 71h16"/><path d="M506 71h16"/>
+    </g>
+    <defs><marker id="ord" markerWidth="7" markerHeight="7" refX="6" refY="3.2" orient="auto">
+      <path d="M0 0l6 3.2L0 6.4z" fill="var(--dg-line)"/></marker></defs>
+    <text x="350" y="130" text-anchor="middle" class="dg-label-sm">Conseguenza: quando scrivi la policy, la destinazione è già stata tradotta.</text>
+    <text x="350" y="148" text-anchor="middle" class="dg-label-sm">Nelle regole va quindi l'indirizzo <tspan font-weight="700">interno</tspan> del server, non quello pubblico.</text>
+  </svg>
+  </div>
+  <figcaption>Il DNAT avviene <b>prima</b> di routing e policy; lo SNAT <b>dopo</b>. È il motivo per cui
+  le regole si scrivono con gli indirizzi interni, e per cui un port forward influenza anche la scelta
+  della rotta.</figcaption>
+</figure>
+
+<h2>Hairpin NAT: «da fuori funziona, da dentro no»</h2>
+
+<p>Il caso che ti farà perdere un pomeriggio, se non lo conosci. Un utente <strong>interno</strong>
+vuole raggiungere il server aziendale usando il nome pubblico, che risolve nell'IP pubblico.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 280" role="img" aria-label="Perché l'hairpin NAT fallisce: il server risponde direttamente al client saltando il firewall">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Perché fallisce senza configurazione dedicata</text>
+
+    <rect x="30" y="60" width="140" height="50" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="100" y="82" text-anchor="middle" class="dg-label-sm">PC interno</text>
+    <text x="100" y="99" text-anchor="middle" class="dg-mono-sm">10.10.10.50</text>
+
+    <rect x="280" y="60" width="150" height="50" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.8"/>
+    <text x="355" y="82" text-anchor="middle" class="dg-label-sm">FIREWALL</text>
+    <text x="355" y="99" text-anchor="middle" class="dg-mono-sm">203.0.113.5</text>
+
+    <rect x="540" y="60" width="140" height="50" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="610" y="82" text-anchor="middle" class="dg-label-sm">Server</text>
+    <text x="610" y="99" text-anchor="middle" class="dg-mono-sm">10.10.50.20</text>
+
+    <defs><marker id="hp1" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-1)"/></marker>
+      <marker id="hp2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-3)"/></marker></defs>
+
+    <path d="M174 136h102" stroke="var(--dg-1)" stroke-width="1.8" marker-end="url(#hp1)"/>
+    <text x="225" y="130" text-anchor="middle" class="dg-mono-sm">1 · da 10.10.10.50</text>
+    <text x="225" y="152" text-anchor="middle" class="dg-mono-sm">a 203.0.113.5</text>
+
+    <path d="M434 136h102" stroke="var(--dg-1)" stroke-width="1.8" marker-end="url(#hp1)"/>
+    <text x="485" y="130" text-anchor="middle" class="dg-mono-sm">2 · DNAT →</text>
+    <text x="485" y="152" text-anchor="middle" class="dg-mono-sm">a 10.10.50.20</text>
+
+    <path d="M540 196 Q 350 250 174 196" stroke="var(--dg-3)" stroke-width="2.4" fill="none" marker-end="url(#hp2)"/>
+    <text x="355" y="244" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-3)">3 · il server risponde DIRETTAMENTE al 10.10.10.50 — sono nella stessa rete!</text>
+
+    <rect x="80" y="258" width="540" height="20" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.4"/>
+    <text x="350" y="272" text-anchor="middle" class="dg-mono-sm">Il PC aspetta una risposta da 203.0.113.5 e ne riceve una da 10.10.50.20: la scarta.</text>
+  </svg>
+  </div>
+  <figcaption>Il traffico <b>di andata</b> passa dal firewall, quello <b>di ritorno</b> no: il server
+  vede un client della propria rete e gli risponde direttamente. Il client riceve una risposta da un
+  indirizzo diverso da quello a cui aveva scritto e la butta. Classico routing asimmetrico.</figcaption>
+</figure>
+
+<h3>Le due soluzioni</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Hairpin NAT</th><th>Split DNS</th></tr></thead>
+    <tbody>
+      <tr><td><b>Come funziona</b></td>
+          <td>Si aggiunge un NAT sorgente: il firewall sostituisce anche il mittente col proprio indirizzo, così il server risponde a lui e il ritorno ripassa di lì</td>
+          <td>Il DNS interno risponde con l'indirizzo <b>privato</b>: il traffico non esce mai e va dritto al server</td></tr>
+      <tr><td><b>Pro</b></td><td>Funziona senza toccare il DNS</td>
+          <td>Semplice, efficiente, nessun carico sul firewall, funziona anche se il firewall è in manutenzione</td></tr>
+      <tr><td><b>Contro</b></td>
+          <td>Il server vede tutte le connessioni interne provenire dal firewall: <b>i log diventano inutili</b> e le regole per indirizzo non funzionano più</td>
+          <td>Serve un DNS interno gestito (in un dominio Active Directory c'è già)</td></tr>
+      <tr><td><b>Quale scegliere</b></td><td>Se non hai un DNS interno</td><td><b>Preferisci sempre questa</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Hairpin NAT, quando serve davvero</div>
+<pre><span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="c"># 1. il port forward normale</span>
+<span class="p">/ip firewall nat add chain=</span><span class="s">dstnat</span> <span class="p">dst-address=</span><span class="n">203.0.113.5</span> <span class="p">\</span>
+<span class="p">    protocol=</span><span class="s">tcp</span> <span class="p">dst-port=</span><span class="n">443</span> <span class="p">action=</span><span class="s">dst-nat</span> <span class="p">\</span>
+<span class="p">    to-addresses=</span><span class="n">10.10.50.20</span> <span class="p">to-ports=</span><span class="n">443</span>
+
+<span class="c"># 2. il pezzo in più: mascherare anche la sorgente interna</span>
+<span class="p">/ip firewall nat add chain=</span><span class="s">srcnat</span> <span class="p">src-address=</span><span class="n">10.10.10.0/24</span> <span class="p">\</span>
+<span class="p">    dst-address=</span><span class="n">10.10.50.20</span> <span class="p">protocol=</span><span class="s">tcp</span> <span class="p">dst-port=</span><span class="n">443</span> <span class="p">\</span>
+<span class="p">    action=</span><span class="s">masquerade</span> <span class="p">comment=</span><span class="s">"hairpin"</span>
+
+<span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="c"># policy da LAN a LAN con il VIP come destinazione e NAT attivo</span>
+<span class="p">config firewall policy</span>
+  <span class="p">edit</span> <span class="n">10</span>
+    <span class="p">set srcintf</span> <span class="s">"v10-uffici"</span>
+    <span class="p">set dstintf</span> <span class="s">"v50-server"</span>
+    <span class="p">set dstaddr</span> <span class="s">"VIP-portale"</span>
+    <span class="p">set action</span> <span class="s">accept</span>
+    <span class="p">set nat</span> <span class="s">enable</span>            <span class="c"># ← senza questo non funziona</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Proponi lo split DNS, non l'hairpin
+  </div>
+  <p>L'hairpin funziona, ma ha un costo che si paga dopo: <b>il server smette di sapere chi sono i suoi
+  utenti interni</b>, perché li vede tutti arrivare dall'indirizzo del firewall. Addio log utili, addio
+  regole per indirizzo, addio analisi degli accessi.</p>
+  <p style="margin-bottom:0">Lo split DNS — una zona nel DNS interno che risponde con l'indirizzo
+  privato — risolve lo stesso problema senza nessuno svantaggio, ed è due minuti di lavoro se il cliente
+  ha Active Directory. Vale come regola generale: <b>preferisci sempre la soluzione che evita il
+  problema a quella che lo aggira.</b></p>
+</div>
+
+<h2>Diagnosticare il NAT</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>Da fuori non si raggiunge il servizio</td><td>Manca la policy, o il servizio non è in ascolto, o l'operatore filtra quella porta</td></tr>
+      <tr><td>Da dentro non si raggiunge col nome pubblico</td><td>Hairpin mancante → usa split DNS</td></tr>
+      <tr><td>Il server vede tutte le connessioni dal firewall</td><td>C'è un NAT sorgente dove non serve</td></tr>
+      <tr><td>Le mail del server finiscono nello spam</td><td>Esce con l'indirizzo sbagliato: serve un NAT sorgente dedicato</td></tr>
+      <tr><td>Funziona per alcuni utenti esterni e non per altri</td><td>Restrizione per indirizzo sorgente o filtro geografico</td></tr>
+      <tr><td>Funziona, ma il server logga sempre lo stesso IP</td><td>C'è un proxy o un bilanciatore davanti che non passa l'indirizzo originale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: NAT avanzato",
+  "questions": [
+    { "q": "In un port forward, cosa succede all'indirizzo sorgente del pacchetto in arrivo?",
+      "a": [ {"t":"Resta quello vero dell'utente esterno: viene riscritta solo la destinazione","ok":true},
+             {"t":"Viene sostituito con l'indirizzo del firewall","ok":false},
+             {"t":"Viene sostituito con l'indirizzo del server interno","ok":false},
+             {"t":"Viene rimosso","ok":false} ],
+      "e": "Il DNAT riscrive la destinazione, non la sorgente. È corretto e desiderabile: il server vede nei log l'indirizzo reale di chi si è collegato. Se invece vede sempre l'indirizzo del firewall, c'è un NAT sorgente di troppo — tipicamente una configurazione di hairpin applicata più larga del necessario." },
+
+    { "q": "Un servizio è raggiungibile da Internet ma non dall'interno usando il nome pubblico. Qual è la soluzione preferibile?",
+      "a": [ {"t":"Split DNS: il DNS interno risponde con l'indirizzo privato","ok":true},
+             {"t":"Hairpin NAT","ok":false},
+             {"t":"Aprire una seconda porta","ok":false},
+             {"t":"Assegnare un secondo indirizzo pubblico","ok":false} ],
+      "e": "Entrambe risolvono, ma l'hairpin costringe il firewall a mascherare anche la sorgente: il server vede tutte le connessioni interne provenire dal firewall e i log diventano inutili. Lo split DNS evita il problema alla radice — il traffico non esce nemmeno — ed è due minuti di lavoro dove c'è Active Directory." },
+
+    { "q": "Perché l'hairpin NAT non funziona senza configurazione dedicata?",
+      "a": [ {"t":"Il server risponde direttamente al client, che è nella sua stessa rete, e il ritorno non passa dal firewall","ok":true},
+             {"t":"Il firewall blocca il traffico che entra ed esce dalla stessa interfaccia","ok":false},
+             {"t":"Il DNS interno non risolve il nome","ok":false},
+             {"t":"Il NAT non supporta indirizzi privati come destinazione","ok":false} ],
+      "e": "L'andata passa dal firewall e viene tradotta; al ritorno il server vede un client della propria rete e gli risponde direttamente. Il client aveva scritto all'indirizzo pubblico e riceve una risposta da un indirizzo privato: non corrisponde a nessuna sessione e la scarta. È routing asimmetrico in piena regola." },
+
+    { "q": "Quando serve un NAT sorgente con indirizzo fisso invece del masquerade?",
+      "a": [ {"t":"Quando un server deve uscire sempre con lo stesso indirizzo pubblico, per esempio per il PTR e l'SPF della posta","ok":true},
+             {"t":"Quando la linea ha indirizzo dinamico","ok":false},
+             {"t":"Quando ci sono più di cento utenti","ok":false},
+             {"t":"Quando si usano le VLAN","ok":false} ],
+      "e": "Il masquerade usa l'indirizzo che l'interfaccia ha in quel momento, ed è la scelta giusta sulle linee dinamiche. Ma un server di posta deve uscire dall'indirizzo per cui esistono record inverso e SPF, altrimenti le mail finiscono nello spam e nessuno collega la causa al NAT." },
+
+    { "q": "In che ordine un firewall applica DNAT, routing, policy e SNAT?",
+      "a": [ {"t":"DNAT, routing, policy, SNAT","ok":true},
+             {"t":"Policy, DNAT, routing, SNAT","ok":false},
+             {"t":"Routing, DNAT, SNAT, policy","ok":false},
+             {"t":"SNAT, routing, policy, DNAT","ok":false} ],
+      "e": "Il DNAT viene per primo, quindi quando la policy viene valutata la destinazione è <b>già tradotta</b>: nelle regole va scritto l'indirizzo interno del server, non quello pubblico. Lo SNAT viene per ultimo, dopo che la decisione di uscita è stata presa." },
+
+    { "q": "Hai creato un port forward su FortiGate ma il servizio non risponde da fuori. Cosa hai probabilmente dimenticato?",
+      "a": [ {"t":"La policy che permette il traffico verso il Virtual IP","ok":true},
+             {"t":"La rotta di default","ok":false},
+             {"t":"Il masquerade in uscita","ok":false},
+             {"t":"La VLAN del server","ok":false} ],
+      "e": "NAT e policy sono configurazioni separate: il Virtual IP definisce la traduzione, ma senza una regola che usi quel VIP come destinazione il traffico viene comunque bloccato dalla negazione finale. Dopo ogni port forward la domanda da farsi è sempre: «e la policy che lo permette dove sta?»." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

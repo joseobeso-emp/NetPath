@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pubblicare un servizio senza aprire un buco — NetPath</title>
+<meta name="description" content="Port forward fatto bene: la scala delle alternative, la lista di controllo, e cosa non si espone mai.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-15">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>Firewall e NAT</span>
+      </nav>
+      <h1 class="lesson-title">Pubblicare un servizio senza aprire un buco</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 15</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Valutare se un servizio debba davvero essere pubblicato</li>
+        <li>Conoscere le alternative al port forward, in ordine di sicurezza</li>
+        <li>Applicare una lista di controllo prima di esporre qualsiasi cosa</li>
+        <li>Sapere cosa monitorare dopo, perché la pubblicazione non finisce al collaudo</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">«Ci serve accedere da fuori» è una delle richieste più frequenti che riceverai, ed è
+anche quella in cui è più facile fare un danno grave. Questa lezione ti dà il metodo per rispondere
+bene: non «no», non «sì subito», ma la soluzione giusta con il rischio minimo.</p>
+
+<h2>La domanda prima della domanda</h2>
+
+<p>Quando un cliente chiede di pubblicare qualcosa, la prima cosa da capire è <strong>cosa vuole
+ottenere</strong>, non cosa ha chiesto. «Apri la 3389» è già una soluzione — quasi sempre la peggiore —
+proposta da chi non conosce le alternative.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Chiede</th><th>In realtà vuole</th><th>Risposta migliore</th></tr></thead>
+    <tbody>
+      <tr><td>«Apri il desktop remoto»</td><td>Lavorare da casa sul proprio PC</td><td>VPN client, o un gateway RDP dedicato con autenticazione a più fattori</td></tr>
+      <tr><td>«Apri la cartella condivisa»</td><td>Accedere ai file da fuori</td><td>VPN, oppure sincronizzazione cloud</td></tr>
+      <tr><td>«Pubblica il gestionale»</td><td>Farlo usare agli agenti in giro</td><td>VPN, o reverse proxy con autenticazione forte</td></tr>
+      <tr><td>«Il fornitore deve entrare nel macchinario»</td><td>Assistenza remota occasionale</td><td>Accesso temporaneo, limitato all'indirizzo del fornitore e a quel solo sistema</td></tr>
+      <tr><td>«Pubblica le telecamere»</td><td>Vedere le immagini dal telefono</td><td>L'app cloud del produttore, o VPN. <b>Mai</b> l'NVR esposto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>La scala delle alternative</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Scala delle opzioni per dare accesso dall'esterno, dalla più sicura alla più rischiosa">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dal più sicuro al più rischioso — scendi solo se il gradino sopra non è praticabile</text>
+
+    <g stroke-width="1.6">
+      <rect x="30" y="40"  width="640" height="42" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="30" y="92"  width="640" height="42" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="30" y="144" width="640" height="42" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="30" y="196" width="640" height="42" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="30" y="248" width="640" height="42" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2.4"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="50" y="58">1 · NON PUBBLICARE — il servizio va in cloud, o l'accesso non serve davvero</text>
+      <text x="50" y="74" fill="var(--dg-text-soft)">la soluzione più sicura è quella che elimina il problema</text>
+
+      <text x="50" y="110">2 · VPN — l'utente entra in rete, poi usa il servizio come se fosse in ufficio</text>
+      <text x="50" y="126" fill="var(--dg-text-soft)">niente è esposto tranne il concentratore VPN stesso</text>
+
+      <text x="50" y="162">3 · ZTNA / accesso applicativo — solo quell'applicazione, per quell'utente verificato</text>
+      <text x="50" y="178" fill="var(--dg-text-soft)">più fine della VPN: non dà accesso alla rete, solo al servizio</text>
+
+      <text x="50" y="214">4 · REVERSE PROXY — il firewall termina la connessione e la ispeziona</text>
+      <text x="50" y="230" fill="var(--dg-text-soft)">il client non parla mai direttamente col server interno</text>
+
+      <text x="50" y="266">5 · PORT FORWARD DIRETTO — il mondo parla col tuo server</text>
+      <text x="50" y="282" fill="var(--dg-text-soft)">ultima risorsa, e solo con tutta la lista di controllo applicata</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>Nella pratica la risposta corretta è il gradino <b>2</b> in otto casi su dieci. Il
+  gradino 5 si usa solo per servizi pensati per essere pubblici — un sito web, un server di posta — e
+  mai per protocolli di amministrazione.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la porta sulla strada
+  </div>
+  <p>Un port forward è come aprire una porta che dà direttamente sulla strada, dentro casa tua.
+  Non su un cortile, non su un citofono: sulla strada.</p>
+  <p>E non è una strada di campagna. È una strada dove passano <b>in continuazione</b> persone che
+  provano tutte le maniglie di tutte le porte, senza sosta, giorno e notte, in automatico. Non ti
+  cercano: cercano <em>qualsiasi</em> porta aperta.</p>
+  <p>Una porta nuova viene provata <b>nel giro di pochi minuti</b> dalla sua apertura. Non è una figura
+  retorica: ci sono sistemi che scandiscono l'intero spazio degli indirizzi di Internet in poche ore, e
+  chi entra per primo spesso non è nemmeno un umano.</p>
+  <p>La VPN invece è un portone blindato con il citofono: per entrare devi <b>prima</b> dimostrare chi
+  sei, e solo dopo vedi cosa c'è dentro. Chi passa per strada non vede nemmeno che dietro c'è una casa.</p>
+</div>
+
+<h2>Cosa non si pubblica mai</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La lista nera, senza eccezioni
+  </div>
+  <div class="table-wrap" style="margin:8px 0 0">
+    <table>
+      <thead><tr><th>Servizio</th><th>Porta</th><th>Perché mai</th></tr></thead>
+      <tbody>
+        <tr><td><b>RDP</b></td><td>3389</td><td>Il vettore numero uno dei ransomware. Trovato in pochi minuti, poi tentativi di password all'infinito.</td></tr>
+        <tr><td><b>SMB</b></td><td>445, 139</td><td>Il vettore di WannaCry. Molti operatori lo bloccano d'ufficio, e fanno bene.</td></tr>
+        <tr><td><b>Database</b></td><td>1433, 3306, 5432, 27017</td><td>Non hanno difese pensate per Internet e spesso girano con credenziali predefinite.</td></tr>
+        <tr><td><b>Interfacce di amministrazione</b></td><td>varie</td><td>Firewall, switch, NAS, UPS, stampanti: si gestiscono da dentro o via VPN.</td></tr>
+        <tr><td><b>Telecamere e NVR</b></td><td>varie</td><td>Firmware vecchi, credenziali predefinite, vulnerabilità note e mai corrette.</td></tr>
+        <tr><td><b>VNC, Telnet, FTP</b></td><td>5900, 23, 21</td><td>Protocolli senza cifratura o con autenticazione debole.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Se un cliente insiste</b>, mettilo per iscritto: spiega
+  il rischio in una mail, proponi l'alternativa, e se decide comunque di procedere fatti rispondere per
+  iscritto. Non è burocrazia: è la differenza tra «ci avevano avvisati» e «ce l'hanno fatto loro» il
+  giorno in cui parte il ransomware.</p>
+</div>
+
+<h2>La lista di controllo, quando pubblicare è inevitabile</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Controllo</th><th>Perché</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Limita gli indirizzi sorgente</b></td>
+          <td>Se il servizio serve a tre sedi e a un fornitore, permetti solo quei quattro indirizzi. Riduce la superficie di attacco del 99,99%, e costa un minuto.</td></tr>
+      <tr><td>2</td><td><b>Filtro geografico</b></td>
+          <td>Se il cliente lavora solo in Italia, bloccare tutto il resto elimina gran parte del rumore. Non è una difesa forte, ma pulisce i log e rende visibile ciò che conta.</td></tr>
+      <tr><td>3</td><td><b>IPS attivo su quella regola</b></td>
+          <td>Intercetta i tentativi di sfruttare vulnerabilità note prima che arrivino al servizio.</td></tr>
+      <tr><td>4</td><td><b>Solo la porta necessaria, verso il solo host necessario</b></td>
+          <td>Mai intervalli di porte, mai «tutte le porte verso il server».</td></tr>
+      <tr><td>5</td><td><b>Certificato valido e TLS aggiornato</b></td>
+          <td>Niente protocolli obsoleti, niente certificati autofirmati che abituano gli utenti a ignorare gli avvisi.</td></tr>
+      <tr><td>6</td><td><b>Autenticazione a più fattori</b></td>
+          <td>La singola misura che rende inefficaci i tentativi di password. Se il servizio la supporta, è obbligatoria.</td></tr>
+      <tr><td>7</td><td><b>Il server è in DMZ, non nella LAN</b></td>
+          <td>Se lo bucano, non arrivano ai dati aziendali.</td></tr>
+      <tr><td>8</td><td><b>Aggiornamenti garantiti</b></td>
+          <td>Un servizio esposto va tenuto aggiornato. Se il fornitore non rilascia più patch, quel servizio non va pubblicato — punto.</td></tr>
+      <tr><td>9</td><td><b>Registrazione e allarmi</b></td>
+          <td>Log conservati e un avviso se i tentativi falliti superano una soglia.</td></tr>
+      <tr><td>10</td><td><b>Scadenza</b></td>
+          <td>Accesso per un fornitore? Mettilo in calendario e chiudilo quando l'intervento finisce.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La porta non standard non è una difesa
+  </div>
+  <p>Spostare RDP dalla 3389 alla 33890 riduce il <b>rumore</b> nei log, perché le scansioni di massa
+  provano prima le porte note. Non riduce il <b>rischio</b>: gli strumenti di scansione provano tutte
+  le 65.535 porte in pochi minuti e riconoscono il servizio da come risponde, non dal numero.</p>
+  <p style="margin-bottom:0">Usala pure come misura accessoria, ma <b>non contarla nella valutazione
+  del rischio</b> e non presentarla al cliente come una protezione. È igiene, non sicurezza.</p>
+</div>
+
+<h2>Il reverse proxy: il gradino che quasi nessuno usa</h2>
+
+<p>Invece di far arrivare il client al server, il <strong>firewall stesso termina la connessione</strong>,
+la ispeziona e ne apre una nuova verso il server interno. Il client non parla mai direttamente col
+server.</p>
+
+<p>Vantaggi concreti: si può ispezionare il traffico anche se cifrato, si possono filtrare gli attacchi
+applicativi (WAF), si può aggiungere autenticazione <em>prima</em> che il traffico raggiunga il server,
+e si possono pubblicare più servizi interni sullo stesso indirizzo e porta, distinguendoli dal nome.</p>
+
+<p>Tutti i firewall che usi in azienda lo supportano: FortiGate lo chiama <em>Virtual Server</em> o
+<em>ZTNA proxy</em>, Sophos <em>Web Server Protection</em>, WatchGuard <em>HTTP/HTTPS proxy action</em>.
+È un gradino di sicurezza in più che spesso è già pagato nella licenza e non viene usato.</p>
+
+<h2>Dopo la pubblicazione</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il lavoro non finisce al collaudo
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Guarda i log il giorno dopo.</b> Vedrai i primi tentativi automatici entro poche ore: serve
+    a confermare che le restrizioni funzionano e a tarare gli allarmi.</li>
+    <li><b>Verifica dall'esterno cosa è davvero visibile.</b> Da una connessione mobile, prova cosa
+    risponde l'indirizzo pubblico del cliente. Spesso si scoprono pubblicazioni fatte anni prima da
+    qualcun altro e mai chiuse.</li>
+    <li><b>Documenta la pubblicazione</b>: cosa, perché, chi l'ha chiesta, quali restrizioni, quando
+    va rivista.</li>
+    <li><b>Mettila in revisione periodica.</b> Una volta l'anno, per ogni servizio pubblicato, chiediti
+    se serve ancora. Le pubblicazioni dimenticate sono la causa di una quota enorme degli incidenti.</li>
+  </ul>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Esercizio da fare su un cliente vero
+  </div>
+  <p>Prendi un cliente che segui e fai l'inventario di <b>tutto ciò che è pubblicato</b> sul suo
+  firewall: ogni port forward, ogni Virtual IP, ogni regola con sorgente «any» da Internet.</p>
+  <p>Per ognuno rispondi a tre domande: <b>chi l'ha chiesto e quando? serve ancora? quali delle dieci
+  voci della lista di controllo sono rispettate?</b></p>
+  <p style="margin-bottom:0">Ci metti un'ora e nella grande maggioranza dei casi troverai almeno una
+  pubblicazione che non serve più a nessuno e che nessuno ha mai chiuso. Chiuderla è il lavoro di
+  sicurezza col miglior rapporto tra sforzo e rischio evitato che tu possa fare oggi.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: pubblicare un servizio",
+  "questions": [
+    { "q": "Un cliente chiede di aprire il desktop remoto per far lavorare i dipendenti da casa. Cosa proponi?",
+      "a": [ {"t":"Una VPN, spiegando che RDP esposto è il principale vettore dei ransomware","ok":true},
+             {"t":"Un port forward sulla 3389 con password complessa","ok":false},
+             {"t":"Un port forward su una porta non standard","ok":false},
+             {"t":"Di rinunciare al lavoro da remoto","ok":false} ],
+      "e": "La richiesta è «lavorare da casa», non «aprire la 3389»: quella è già una soluzione, e la peggiore. Con la VPN l'utente entra in rete dopo essersi autenticato e usa RDP come se fosse in ufficio, senza che nulla sia esposto. Cambiare porta riduce il rumore nei log ma non il rischio." },
+
+    { "q": "In quanto tempo, tipicamente, un nuovo servizio esposto riceve i primi tentativi di accesso?",
+      "a": [ {"t":"Pochi minuti od ore: esistono sistemi che scandiscono tutto Internet di continuo","ok":true},
+             {"t":"Qualche settimana","ok":false},
+             {"t":"Solo se qualcuno conosce l'indirizzo","ok":false},
+             {"t":"Mai, se si usa una porta insolita","ok":false} ],
+      "e": "Le scansioni di massa coprono l'intero spazio degli indirizzi IPv4 in poche ore e non cercano <em>te</em>: cercano qualsiasi porta aperta. Un servizio nuovo viene trovato quasi subito, e chi bussa per primo di solito non è un umano ma un sistema automatico." },
+
+    { "q": "Qual è la misura che riduce di più la superficie di attacco di un servizio pubblicato?",
+      "a": [ {"t":"Limitare gli indirizzi sorgente ammessi","ok":true},
+             {"t":"Cambiare la porta","ok":false},
+             {"t":"Attivare il filtro geografico","ok":false},
+             {"t":"Usare un certificato valido","ok":false} ],
+      "e": "Se il servizio serve a tre sedi e a un fornitore, permettere solo quei quattro indirizzi elimina praticamente tutto il resto di Internet: costa un minuto ed è la misura con il miglior rapporto tra sforzo ed efficacia. Le altre sono utili ma agiscono su un insieme di attaccanti molto più ampio." },
+
+    { "q": "Cosa fa un reverse proxy rispetto a un port forward diretto?",
+      "a": [ {"t":"Termina la connessione sul firewall, la ispeziona e ne apre una nuova verso il server","ok":true},
+             {"t":"Cifra il traffico tra client e server","ok":false},
+             {"t":"Assegna al server un indirizzo pubblico dedicato","ok":false},
+             {"t":"Distribuisce il carico su più linee","ok":false} ],
+      "e": "Il client non parla mai direttamente col server interno. Questo permette di ispezionare anche il traffico cifrato, filtrare attacchi applicativi, aggiungere autenticazione prima che il traffico raggiunga il server, e pubblicare più servizi sullo stesso indirizzo distinguendoli dal nome. Tutti i firewall che usi in azienda lo supportano, e quasi nessuno lo usa." },
+
+    { "q": "Perché un servizio il cui fornitore non rilascia più aggiornamenti non va pubblicato?",
+      "a": [ {"t":"Le vulnerabilità che verranno scoperte non saranno mai corrette, e il servizio è raggiungibile da chiunque","ok":true},
+             {"t":"Perché smetterebbe di funzionare","ok":false},
+             {"t":"Perché i firewall moderni lo bloccano automaticamente","ok":false},
+             {"t":"Perché consuma troppe risorse","ok":false} ],
+      "e": "Esporre significa accettare di essere continuamente sondati: senza la possibilità di correggere ciò che verrà scoperto, è solo questione di tempo. Per questi sistemi la risposta corretta è l'accesso mediato — VPN o reverse proxy con autenticazione — che li tiene fuori dalla portata diretta di Internet." },
+
+    { "q": "Qual è il lavoro di sicurezza col miglior rapporto tra sforzo e rischio evitato, su un cliente esistente?",
+      "a": [ {"t":"Fare l'inventario delle pubblicazioni esistenti e chiudere quelle che non servono più","ok":true},
+             {"t":"Sostituire il firewall con un modello più recente","ok":false},
+             {"t":"Aumentare la complessità delle password","ok":false},
+             {"t":"Installare un antivirus su tutti i PC","ok":false} ],
+      "e": "Quasi ogni cliente ha almeno una pubblicazione fatta anni prima, per un motivo che non esiste più, e che nessuno ha mai chiuso. Trovarla e chiuderla costa un'ora e rimuove un'esposizione reale. Le altre misure sono utili ma costano molto di più e non eliminano un rischio già presente." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
