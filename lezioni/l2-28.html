@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Documentare una rete come un professionista — NetPath</title>
+<meta name="description" content="Schema logico, schema fisico, piano di indirizzamento, naming e credenziali. Quello che lasci a chi viene dopo di te — che spesso sei tu.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l2-28">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l2">Livello 2</a><span class="sep">/</span>
+        <span>IPv6 e documentazione</span>
+      </nav>
+      <h1 class="lesson-title">Documentare una rete come un professionista</h1>
+      <div class="lesson-meta">
+        <span class="badge lv2">Livello 2</span>
+        <span class="chip">Lezione 28</span>
+        <span class="chip">22 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Sapere quali documenti servono davvero e quali sono inutili</li>
+        <li>Produrre una documentazione che qualcuno userà, invece di una che nessuno apre</li>
+        <li>Mantenerla aggiornata senza che diventi un secondo lavoro</li>
+        <li>Usare la documentazione come argomento commerciale</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">La documentazione ha la fama di essere il lavoro noioso che si fa alla fine e che
+nessuno legge. In realtà è lo strumento che, tra un anno, ti farà risolvere in dieci minuti un problema
+che altrimenti ne richiederebbe tre ore — e chi viene dopo di te, nove volte su dieci, <strong>sei
+tu</strong> che non ricordi più niente.</p>
+
+<h2>I cinque documenti che servono</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Documento</th><th>Risponde alla domanda</th><th>Formato</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 · Schema logico</b></td><td>Come è organizzata la rete: VLAN, subnet, chi parla con chi</td><td>Un disegno, una pagina</td></tr>
+      <tr><td><b>2 · Schema fisico</b></td><td>Cosa è collegato a cosa, e dove sta fisicamente</td><td>Un disegno + tabella delle porte</td></tr>
+      <tr><td><b>3 · Piano di indirizzamento</b></td><td>Quale indirizzo ha ogni cosa</td><td>Tabella</td></tr>
+      <tr><td><b>4 · Inventario apparati</b></td><td>Cosa c'è, che modello, che firmware, quando scade il supporto</td><td>Tabella</td></tr>
+      <tr><td><b>5 · Accessi e credenziali</b></td><td>Come si entra in ogni cosa</td><td><b>Gestore di password</b>, mai un foglio</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Perché due schemi e non uno
+  </div>
+  <p>Lo schema <b>logico</b> risponde a «come funziona»: VLAN, subnet, gateway, tunnel, flussi permessi.
+  Non ha cavi né armadi: è concettuale, e sopravvive a un cambio di hardware.</p>
+  <p>Lo schema <b>fisico</b> risponde a «dov'è»: quale switch, quale porta, quale armadio, quale cavo.
+  Serve quando devi mandare qualcuno sul posto o capire cosa spegnere.</p>
+  <p style="margin-bottom:0">Mescolarli produce un disegno illeggibile che non serve per nessuno dei due
+  scopi — ed è esattamente l'errore più comune.</p>
+</div>
+
+<h2>Cosa mettere nello schema logico</h2>
+
+<ul class="clean">
+  <li>Tutte le <b>VLAN</b> con numero, nome e subnet</li>
+  <li>Il <b>gateway</b> di ciascuna</li>
+  <li>Gli apparati che instradano, e <b>dove avviene il routing</b> (firewall o switch L3)</li>
+  <li>Le <b>linee WAN</b> con operatore, banda e indirizzi pubblici</li>
+  <li>I <b>tunnel VPN</b> con l'altra estremità e le reti trasportate</li>
+  <li>I <b>server principali</b> con il ruolo, non tutti i PC</li>
+  <li>Le <b>regole di flusso principali</b>, in sintesi: «ospiti → solo Internet»</li>
+</ul>
+
+<p>Quello che <strong>non</strong> va messo: ogni singolo PC, ogni stampante, ogni dettaglio di
+configurazione. Uno schema che cerca di dire tutto non dice niente e diventa impossibile da mantenere.</p>
+
+<h2>Il piano di indirizzamento</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>VLAN</th><th>Nome</th><th>Subnet</th><th>Gateway</th><th>DHCP</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>10</td><td>Uffici</td><td>10.42.10.0/24</td><td>.1</td><td>.100–.200</td><td>~70 dispositivi</td></tr>
+      <tr><td>20</td><td>Ospiti</td><td>10.42.20.0/24</td><td>.1</td><td>.50–.250</td><td>lease 2 h, solo Internet</td></tr>
+      <tr><td>30</td><td>Telecamere</td><td>10.42.30.0/24</td><td>.1</td><td>riservazioni</td><td>18 cam + NVR su .20</td></tr>
+      <tr><td>99</td><td>Gestione</td><td>10.42.99.0/24</td><td>.1</td><td>statici</td><td>accesso solo da IT</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Sotto, la ripartizione interna standard (la convenzione della lezione 1-19: <code>.1–.20</code>
+apparati, <code>.21–.99</code> riservazioni, <code>.100–.250</code> dinamico) e l'elenco degli
+indirizzi statici assegnati, con a cosa corrispondono.</p>
+
+<h2>Il naming</h2>
+
+<p>Una convenzione di nomi coerente vale quanto uno schema. La regola è che il nome dica
+<strong>cosa</strong>, <strong>dove</strong> e <strong>quale</strong>:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Schema</th><th>Esempio</th><th>Si legge</th></tr></thead>
+    <tbody>
+      <tr><td><code>tipo-sede-piano-numero</code></td><td><code>sw-mi-p1-01</code></td><td>switch, Milano, piano 1, il primo</td></tr>
+      <tr><td><code>fw-sede-numero</code></td><td><code>fw-mi-01</code></td><td>firewall di Milano, primo nodo</td></tr>
+      <tr><td><code>ap-sede-zona-numero</code></td><td><code>ap-mi-magazzino-03</code></td><td>access point, Milano, magazzino</td></tr>
+      <tr><td><code>srv-ruolo-numero</code></td><td><code>srv-dc-01</code></td><td>server, domain controller, primo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Gli stessi nomi vanno usati <strong>ovunque</strong>: sull'apparato, nel monitoraggio, nel DNS,
+nell'etichetta fisica e nella documentazione. Un apparato che si chiama in quattro modi diversi in
+quattro posti è la ragione per cui le diagnosi si allungano.</p>
+
+<h2>Credenziali: mai in un documento</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il file «password clienti.xlsx» è un incidente in attesa
+  </div>
+  <p>Esiste in troppi MSP, spesso su una condivisione a cui accedono venti persone, a volte con una
+  copia sul portatile di qualcuno. Se quel file esce, escono le chiavi di tutti i clienti insieme.</p>
+  <p><b>La soluzione è un gestore di password</b> con cartelle per cliente, permessi per gruppo e
+  registro degli accessi. Costa pochi euro per utente al mese e risolve anche problemi pratici: quando
+  una persona lascia l'azienda, le revochi l'accesso a tutto in un clic.</p>
+  <p style="margin-bottom:0">Nella documentazione va scritto <b>dove</b> stanno le credenziali e
+  <b>chi</b> vi ha accesso — non le credenziali.</p>
+</div>
+
+<h2>Il problema vero: tenerla aggiornata</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una documentazione sbagliata è peggio di nessuna documentazione
+  </div>
+  <p>Se lo schema dice che il server sta sulla porta 12 e in realtà è sulla 18, tu ti fidi, scolleghi
+  la porta sbagliata e fermi qualcosa di importante. Senza documentazione avresti almeno verificato.</p>
+  <p><b>Le tre abitudini che la mantengono viva:</b></p>
+  <ul style="margin-bottom:0">
+    <li><b>Si aggiorna durante l'intervento, non dopo.</b> «Poi lo scrivo» significa mai.</li>
+    <li><b>Ogni documento ha data e autore dell'ultima modifica.</b> Sapere che è vecchia di due anni
+    ti dice quanto fidarti.</li>
+    <li><b>Un passaggio di revisione nella chiusura del ticket.</b> Se un intervento ha cambiato la
+    rete e la documentazione non è stata toccata, il ticket non è chiuso.</li>
+  </ul>
+</div>
+
+<h2>La documentazione come argomento commerciale</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Tre modi in cui ti torna indietro
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Con il cliente.</b> Consegnare uno schema chiaro alla fine di un progetto fa una figura
+    enorme e giustifica il prezzo: rende visibile un lavoro che altrimenti è invisibile. Molti clienti
+    non hanno <em>mai</em> ricevuto uno schema della propria rete.</li>
+    <li><b>Con i colleghi.</b> Un intervento su un cliente documentato lo può fare chiunque; su uno non
+    documentato lo puoi fare solo tu. Sembra una forma di sicurezza personale, ed è l'opposto: ti
+    condanna a essere sempre tu a rispondere al telefono, anche in ferie.</li>
+    <li><b>Con te stesso.</b> Tra un anno, alle 23:00, davanti a un guasto, l'unica cosa che vorrai è
+    uno schema aggiornato. E a quel punto sarà tardi per scriverlo.</li>
+  </ul>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18A2 2 0 006.3 21h11.4a2 2 0 001.7-3L14 9.5V3"/></svg>
+    Hai finito il Livello 2. Fai questo.
+  </div>
+  <ol style="margin-bottom:0">
+    <li>Prendi il cliente che conosci meglio e <b>disegna il suo schema logico</b> su una pagina.
+    Dove ti fermi perché non sai una cosa, hai trovato un buco nella tua conoscenza di quella rete.</li>
+    <li>Fai lo stesso con lo schema fisico di un armadio.</li>
+    <li>Confronta con quello che l'azienda ha già: quasi certamente scoprirai che è vecchio o che non
+    esiste.</li>
+    <li>Proponi di aggiornarlo. È un lavoro fatturabile, utile al cliente, e che ti costringe a
+    conoscere quella rete meglio di chiunque altro.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: documentazione",
+  "questions": [
+    { "q": "Perché servono due schemi separati, logico e fisico?",
+      "a": [ {"t":"Rispondono a domande diverse — «come funziona» e «dov'è» — e mescolarli li rende illeggibili","ok":true},
+             {"t":"Perché lo richiedono le certificazioni","ok":false},
+             {"t":"Perché il logico è per il cliente e il fisico per i tecnici","ok":false},
+             {"t":"Per avere una copia di riserva","ok":false} ],
+      "e": "Lo schema logico descrive VLAN, subnet e flussi, ed è concettuale: sopravvive a un cambio di hardware. Quello fisico dice quale porta di quale switch in quale armadio, e serve quando devi mandare qualcuno sul posto. Un disegno che tenta di dire entrambe le cose non serve per nessuna delle due." },
+
+    { "q": "Cosa NON va messo in uno schema logico?",
+      "a": [ {"t":"Ogni singolo PC e stampante","ok":true},
+             {"t":"Le VLAN con subnet e gateway","ok":false},
+             {"t":"I tunnel VPN e le reti che trasportano","ok":false},
+             {"t":"Le linee WAN con operatore e banda","ok":false} ],
+      "e": "Uno schema che cerca di rappresentare tutto diventa illeggibile e impossibile da mantenere aggiornato, quindi invecchia in fretta e smette di essere usato. I dispositivi finali stanno nell'inventario e nel piano di indirizzamento, non nel disegno." },
+
+    { "q": "Perché una documentazione sbagliata è peggio di nessuna documentazione?",
+      "a": [ {"t":"Ti fidi di un'informazione errata e agisci di conseguenza, invece di verificare","ok":true},
+             {"t":"Perché occupa spazio inutilmente","ok":false},
+             {"t":"Perché il cliente potrebbe contestarla","ok":false},
+             {"t":"Perché rallenta la ricerca delle informazioni","ok":false} ],
+      "e": "Se lo schema dice che il server è sulla porta 12 e in realtà è sulla 18, scolleghi la porta sbagliata e fermi qualcosa di importante. Senza documentazione avresti almeno verificato prima. Per questo ogni documento deve riportare data e autore dell'ultima modifica: sapere quanto è vecchia ti dice quanto fidarti." },
+
+    { "q": "Dove vanno conservate le credenziali dei clienti?",
+      "a": [ {"t":"In un gestore di password con permessi per gruppo e registro degli accessi","ok":true},
+             {"t":"In un foglio di calcolo protetto da password","ok":false},
+             {"t":"Nel documento di progetto del cliente","ok":false},
+             {"t":"Nelle note del sistema di ticketing","ok":false} ],
+      "e": "Il file condiviso con le password di tutti i clienti è un incidente in attesa: se esce, escono le chiavi di tutti insieme. Un gestore dedicato risolve anche la revoca — quando una persona lascia l'azienda, le togli l'accesso a tutto in un clic. Nella documentazione si scrive <b>dove</b> stanno le credenziali, non quali sono." },
+
+    { "q": "Qual è l'abitudine che mantiene viva una documentazione?",
+      "a": [ {"t":"Aggiornarla durante l'intervento, e non chiudere il ticket finché non è aggiornata","ok":true},
+             {"t":"Rivederla completamente una volta l'anno","ok":false},
+             {"t":"Affidarla a una persona dedicata","ok":false},
+             {"t":"Generarla automaticamente dagli apparati","ok":false} ],
+      "e": "«Poi lo scrivo» significa mai. Legare l'aggiornamento alla chiusura del ticket è l'unico meccanismo che regge nel tempo, perché non richiede volontà ma è parte del processo. La revisione annuale serve, ma da sola arriva troppo tardi." },
+
+    { "q": "Perché non documentare un cliente è controproducente per il tecnico stesso?",
+      "a": [ {"t":"Lo condanna a essere l'unico a poterci intervenire, anche quando non vorrebbe","ok":true},
+             {"t":"Perché il cliente paga meno","ok":false},
+             {"t":"Perché rallenta la fatturazione","ok":false},
+             {"t":"Perché impedisce di usare il monitoraggio","ok":false} ],
+      "e": "Sembra una forma di sicurezza personale — «solo io so come funziona» — ed è l'opposto: significa rispondere al telefono anche in ferie, non poter delegare nulla e non poter crescere di ruolo. Un cliente documentato lo può gestire chiunque, ed è esattamente ciò che ti libera." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

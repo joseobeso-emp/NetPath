@@ -1,0 +1,250 @@
+#id: l2-27
+#title: IPv6 senza paura
+#min: 30
+#level: 2
+#chapter: IPv6 e documentazione
+#desc: Indirizzi, SLAAC, NDP e dual stack. Perché non è "IPv4 con più numeri" e perché ti riguarda già oggi.
+#obj: Leggere e scrivere un indirizzo IPv6 senza esitare
+#obj: Capire come un dispositivo ottiene un indirizzo senza DHCP
+#obj: Sapere cosa cambia rispetto a IPv4 e cosa resta uguale
+#obj: Gestire IPv6 nei clienti anche quando non lo si usa di proposito
+---
+<p class="lead">IPv6 spaventa perché gli indirizzi sono lunghi e pieni di due punti. In realtà i
+concetti sono gli stessi di IPv4 — subnet, gateway, routing — con tre differenze importanti e una
+notizia che riguarda il tuo lavoro <em>adesso</em>: <strong>IPv6 è già attivo nelle reti dei tuoi
+clienti, che loro lo sappiano o no</strong>.</p>
+
+<h2>Leggere un indirizzo</h2>
+
+<p>128 bit, scritti in otto gruppi di quattro cifre esadecimali separati dai due punti. Esempio
+completo:</p>
+
+<p><code>2001:0db8:0000:0000:0000:ff00:0042:8329</code></p>
+
+<p>Si abbrevia con due regole, e sono tutto ciò che serve:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Regola</th><th>Prima</th><th>Dopo</th></tr></thead>
+    <tbody>
+      <tr><td>Togli gli zeri iniziali di ogni gruppo</td><td><code>2001:0db8:0000:...:0042:8329</code></td><td><code>2001:db8:0:...:42:8329</code></td></tr>
+      <tr><td>Sostituisci <b>una sola</b> sequenza di gruppi nulli con <code>::</code></td><td><code>2001:db8:0:0:0:ff00:42:8329</code></td><td><code>2001:db8::ff00:42:8329</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>La seconda regola si può usare <strong>una volta sola</strong> per indirizzo: altrimenti non si
+saprebbe quanti gruppi ripristinare da ciascun lato.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il prefisso è quasi sempre /64
+  </div>
+  <p>In IPv4 il prefisso varia continuamente: /24, /26, /30. In IPv6, per convenzione quasi universale,
+  <b>ogni rete locale è un /64</b>: 64 bit di rete e 64 bit per l'host.</p>
+  <p>Sembra uno spreco enorme — sono miliardi di miliardi di indirizzi per una singola VLAN — ed è
+  voluto: serve al meccanismo di autoconfigurazione. Conseguenza pratica: <b>smetti di calcolare le
+  subnet</b>. Un operatore ti assegna tipicamente un /56 o un /48, e tu ne ricavi VLAN da /64
+  cambiando una cifra.</p>
+  <p style="margin-bottom:0">Con un /48 hai 65.536 reti /64 da distribuire. Il subnetting in IPv6 è
+  banale proprio perché lo spazio è enorme.</p>
+</div>
+
+<h2>I tipi di indirizzo che vedrai</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Inizia per</th><th>Tipo</th><th>Cosa significa</th></tr></thead>
+    <tbody>
+      <tr><td><code>fe80::</code></td><td><b>Link-local</b></td>
+          <td>Se lo assegna ogni interfaccia da sola, sempre. Vale solo sul segmento locale, non si instrada. <b>Lo vedrai ovunque</b></td></tr>
+      <tr><td><code>2000::/3</code><br><span style="font-size:.85em">(2xxx, 3xxx)</span></td><td><b>Globale</b></td>
+          <td>L'equivalente dell'IP pubblico: raggiungibile da tutta Internet</td></tr>
+      <tr><td><code>fc00::/7</code><br><span style="font-size:.85em">(fd00:: in pratica)</span></td><td><b>Unique local</b></td>
+          <td>L'equivalente degli indirizzi privati RFC 1918</td></tr>
+      <tr><td><code>ff00::/8</code></td><td><b>Multicast</b></td>
+          <td>IPv6 usa il multicast al posto del broadcast, che <b>non esiste più</b></td></tr>
+      <tr><td><code>::1</code></td><td>Loopback</td><td>L'equivalente di 127.0.0.1</td></tr>
+      <tr><td><code>::</code></td><td>Indirizzo non specificato</td><td>L'equivalente di 0.0.0.0</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Le tre differenze che contano</h2>
+
+<h3>1. Un dispositivo ha più indirizzi contemporaneamente</h3>
+<p>È normale e voluto. Una scheda di rete ha tipicamente: un link-local (<code>fe80::</code>), un
+indirizzo globale stabile, e spesso uno o più <strong>indirizzi temporanei</strong> che cambiano ogni
+giorno per la privacy.</p>
+<p><b>Conseguenza pratica:</b> le regole firewall e i log basati su un singolo indirizzo IPv6 diventano
+inaffidabili. Si ragiona per <em>prefisso</em> di rete, non per indirizzo singolo.</p>
+
+<h3>2. Niente broadcast, niente ARP</h3>
+<p>Il broadcast non esiste: al suo posto c'è il multicast, molto più efficiente perché solo chi
+è interessato ascolta. E ARP è sostituito da <strong>NDP</strong> (Neighbor Discovery Protocol), che
+oltre a trovare i vicini fa anche altre cose — scoprire i router, verificare che un indirizzo sia
+libero, e annunciare i prefissi della rete.</p>
+
+<h3>3. L'autoconfigurazione: SLAAC</h3>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 220" role="img" aria-label="Il processo SLAAC: il router annuncia il prefisso e il dispositivo si costruisce l'indirizzo">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Come un dispositivo si dà un indirizzo, senza DHCP</text>
+
+    <rect x="30" y="52" width="140" height="46" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="100" y="80" text-anchor="middle" class="dg-label-sm">PC che si accende</text>
+    <rect x="530" y="52" width="140" height="46" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="600" y="80" text-anchor="middle" class="dg-label-sm">ROUTER</text>
+
+    <defs><marker id="sl1" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-1)"/></marker>
+      <marker id="sl2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+      <path d="M0 0l7 3.5L0 7z" fill="var(--dg-5)"/></marker></defs>
+
+    <path d="M174 118h352" stroke="var(--dg-1)" stroke-width="1.7" marker-end="url(#sl1)"/>
+    <text x="350" y="112" text-anchor="middle" class="dg-mono-sm">1 · Router Solicitation — «c'è un router?»</text>
+
+    <path d="M526 154H178" stroke="var(--dg-5)" stroke-width="1.7" marker-end="url(#sl2)"/>
+    <text x="350" y="148" text-anchor="middle" class="dg-mono-sm">2 · Router Advertisement — «sì, e il prefisso è 2001:db8:1:10::/64»</text>
+
+    <rect x="120" y="178" width="460" height="30" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.5"/>
+    <text x="350" y="198" text-anchor="middle" class="dg-label-sm">3 · Il PC si costruisce da solo la seconda metà dell'indirizzo e verifica che sia libera.</text>
+  </svg>
+  </div>
+  <figcaption>Si chiama <b>SLAAC</b> (StateLess Address AutoConfiguration): non c'è nessun server che
+  tiene traccia di chi ha cosa. Il router annuncia il prefisso, il dispositivo completa l'indirizzo
+  e se lo prende.</figcaption>
+</figure>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il problema del DNS con SLAAC
+  </div>
+  <p>SLAAC storicamente comunicava il prefisso e il gateway, ma <b>non i server DNS</b>. Da qui tre
+  modalità che troverai nei clienti:</p>
+  <ul style="margin-bottom:0">
+    <li><b>SLAAC puro:</b> indirizzo automatico, DNS da configurare altrove o via IPv4</li>
+    <li><b>SLAAC + DHCPv6 «stateless»:</b> l'indirizzo se lo fa il dispositivo, il DNS lo chiede al
+    DHCPv6</li>
+    <li><b>DHCPv6 «stateful»:</b> come IPv4, il server assegna tutto e tiene traccia</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Esiste anche l'opzione <b>RDNSS</b> che porta il DNS dentro
+  l'annuncio del router, ormai supportata quasi ovunque. In un ambiente Active Directory,
+  <b>DHCPv6 stateful</b> resta la scelta più gestibile perché mantiene il controllo centrale e la
+  registrazione dei nomi.</p>
+</div>
+
+<h2>Cosa resta uguale</h2>
+
+<p>Ed è la parte rassicurante: <strong>tutto quello che hai imparato continua a valere</strong>.
+Subnet, gateway, tabella di routing con longest prefix match, firewall stateful, VLAN, OSPF e BGP
+(nelle versioni per IPv6), DNS, TCP e UDP: identici. Cambia la sintassi degli indirizzi e il modo di
+ottenerli, non la logica.</p>
+
+<h2>Perché ti riguarda già oggi</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    IPv6 è attivo anche se nessuno l'ha configurato
+  </div>
+  <p>Windows, macOS, Linux, iOS e Android hanno <b>IPv6 attivo per impostazione predefinita</b> e lo
+  <b>preferiscono</b> a IPv4 quando disponibile. In pratica, in ogni rete dei tuoi clienti:</p>
+  <ul>
+    <li>Tutti i dispositivi hanno già un indirizzo <code>fe80::</code> e si parlano tra loro in IPv6
+    sul segmento locale.</li>
+    <li>Se un operatore fornisce IPv6 — e sempre più lo fanno — i dispositivi escono in IPv6
+    <b>senza che nessuno l'abbia deciso</b>.</li>
+  </ul>
+  <p><b>Il rischio concreto:</b> hai costruito regole firewall, filtri e restrizioni <b>solo su IPv4</b>.
+  Il traffico IPv6 le aggira completamente, perché sono due pile separate con due insiemi di regole
+  separate. Un cliente può avere un firewall perfettamente configurato e un'uscita IPv6 totalmente
+  aperta.</p>
+  <p style="margin-bottom:0"><b>Cosa fare, in ordine di praticità:</b> se non usi IPv6, <b>disattivalo
+  in modo esplicito</b> sull'interfaccia WAN e verifica che non passi nulla. Se lo usi, <b>replica
+  tutte le regole</b> anche per IPv6. Quello che non va fatto è ignorarlo: è la posizione peggiore
+  delle due.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Verificare cosa succede davvero</div>
+<pre><span class="c"># il PC ha indirizzi IPv6? Quali?</span>
+<span class="p">ipconfig /all</span>                       <span class="c"># Windows: cerca IPv6</span>
+<span class="p">ip -6 addr show</span>                     <span class="c"># Linux</span>
+
+<span class="c"># esco davvero in IPv6?</span>
+<span class="p">curl -6 ifconfig.co</span>
+<span class="c"># oppure apri test-ipv6.com dal browser del cliente</span>
+
+<span class="c"># i vicini IPv6 (l'equivalente di arp -a)</span>
+<span class="p">netsh interface ipv6 show neighbors</span>
+<span class="p">ip -6 neigh show</span>
+
+<span class="c"># il firewall ha regole IPv6?</span>
+<span class="p">/ipv6 firewall filter print</span>         <span class="c"># MikroTik</span>
+<span class="p">show firewall policy6</span>                <span class="c"># FortiGate</span>
+</pre>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il controllo da fare su ogni cliente, una volta
+  </div>
+  <p>Apri <code>test-ipv6.com</code> da un PC del cliente. Se il risultato dice che IPv6 funziona,
+  quel cliente <b>sta già uscendo in IPv6</b>. Vai sul firewall e guarda se esistono regole IPv6:
+  nella maggior parte dei casi non ce ne sono, o c'è un «permetti tutto» rimasto dai valori predefiniti.</p>
+  <p style="margin-bottom:0">Cinque minuti, e trovi un buco di sicurezza reale che nessuno aveva mai
+  guardato. È anche un'ottima occasione per spiegare al cliente una cosa che non sapeva — e per
+  proporre il lavoro di messa in sicurezza.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: IPv6",
+  "questions": [
+    { "q": "Quante volte si può usare l'abbreviazione <code>::</code> in un indirizzo IPv6?",
+      "a": [ {"t":"Una sola","ok":true}, {"t":"Due","ok":false},
+             {"t":"Quante se ne vuole","ok":false}, {"t":"Nessuna: è solo una convenzione di scrittura","ok":false} ],
+      "e": "Sostituisce una sequenza di gruppi nulli, e usarla due volte renderebbe impossibile capire quanti gruppi ripristinare da ciascun lato. È una regola sintattica, non una preferenza." },
+
+    { "q": "Perché ogni rete locale IPv6 usa quasi sempre un prefisso /64?",
+      "a": [ {"t":"È la convenzione richiesta dal meccanismo di autoconfigurazione SLAAC","ok":true},
+             {"t":"Perché i router non supportano prefissi diversi","ok":false},
+             {"t":"Per limitare il numero di dispositivi per rete","ok":false},
+             {"t":"Perché lo impongono gli operatori","ok":false} ],
+      "e": "Lasciare 64 bit alla parte host permette al dispositivo di costruirsi da solo la seconda metà dell'indirizzo. Sembra uno spreco, ma lo spazio è talmente ampio che non lo è: con un /48 assegnato dall'operatore si ricavano 65.536 reti /64. Il risultato pratico è che in IPv6 il subnetting diventa banale." },
+
+    { "q": "Cosa sostituisce ARP in IPv6?",
+      "a": [ {"t":"NDP, il Neighbor Discovery Protocol, basato su multicast","ok":true},
+             {"t":"Nulla: ARP funziona anche in IPv6","ok":false},
+             {"t":"Il DHCPv6","ok":false},
+             {"t":"Il DNS","ok":false} ],
+      "e": "In IPv6 il broadcast non esiste più: NDP usa il multicast, che è più efficiente perché solo i dispositivi interessati ascoltano. NDP fa anche più cose di ARP: scopre i router, verifica che un indirizzo sia libero e annuncia i prefissi della rete." },
+
+    { "q": "Un cliente non ha mai configurato IPv6. Cosa è comunque probabile?",
+      "a": [ {"t":"I dispositivi hanno già indirizzi link-local e, se l'operatore fornisce IPv6, escono in IPv6 senza regole firewall","ok":true},
+             {"t":"IPv6 è disattivato finché qualcuno non lo abilita","ok":false},
+             {"t":"I dispositivi usano IPv6 solo verso Internet","ok":false},
+             {"t":"Il firewall applica automaticamente le stesse regole di IPv4","ok":false} ],
+      "e": "Tutti i sistemi operativi moderni hanno IPv6 attivo per impostazione predefinita e lo preferiscono a IPv4 quando disponibile. Le due pile hanno però insiemi di regole <b>separati</b>: un firewall perfettamente configurato su IPv4 può avere un'uscita IPv6 completamente aperta." },
+
+    { "q": "Perché le regole firewall basate su un singolo indirizzo IPv6 sono poco affidabili?",
+      "a": [ {"t":"Un dispositivo ha più indirizzi contemporaneamente, e quelli temporanei cambiano nel tempo","ok":true},
+             {"t":"Perché gli indirizzi IPv6 sono troppo lunghi da scrivere","ok":false},
+             {"t":"Perché IPv6 non supporta il filtraggio per indirizzo","ok":false},
+             {"t":"Perché il NAT li riscrive","ok":false} ],
+      "e": "Una scheda ha tipicamente un link-local, un indirizzo globale stabile e uno o più indirizzi temporanei che cambiano per privacy. Le regole vanno scritte sul <b>prefisso</b> della rete, non sul singolo indirizzo — ed è anche il motivo per cui i log IPv6 vanno letti diversamente." },
+
+    { "q": "Qual è la posizione peggiore rispetto a IPv6 su un cliente?",
+      "a": [ {"t":"Ignorarlo: resta attivo senza regole","ok":true},
+             {"t":"Disattivarlo esplicitamente sulla WAN","ok":false},
+             {"t":"Configurarlo con le stesse regole di IPv4","ok":false},
+             {"t":"Usarlo solo per il traffico interno","ok":false} ],
+      "e": "Le due scelte legittime sono usarlo bene, replicando tutte le regole, oppure disattivarlo in modo esplicito e verificato. Ignorarlo significa avere una seconda via di uscita non governata: è il peggiore dei tre scenari, e si scopre in cinque minuti aprendo test-ipv6.com da un PC del cliente." }
+  ]
+}
+</script>

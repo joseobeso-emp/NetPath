@@ -99,8 +99,8 @@ window.NETPATH_CURRICULUM = [
       { id:"l2-26", t:"QoS: dare la precedenza a chi serve", s:"DSCP, code, shaping, policing. Il VoIP che gracchia e come si sistema.", m:26, ready:true }
     ]},
     { title: "IPv6 e documentazione", lessons: [
-      { id:"l2-27", t:"IPv6 senza paura", s:"Indirizzi, SLAAC, NDP, dual stack. Perché non è 'IPv4 con più numeri'.", m:30, ready:false },
-      { id:"l2-28", t:"Documentare una rete come un professionista", s:"Schema logico, fisico, IP plan, naming, credenziali. Quello che lasci a chi viene dopo di te.", m:22, ready:false }
+      { id:"l2-27", t:"IPv6 senza paura", s:"Indirizzi, SLAAC, NDP, dual stack. Perché non è 'IPv4 con più numeri'.", m:30, ready:true },
+      { id:"l2-28", t:"Documentare una rete come un professionista", s:"Schema logico, fisico, IP plan, naming, credenziali. Quello che lasci a chi viene dopo di te.", m:22, ready:true }
     ]}
   ]
 },
