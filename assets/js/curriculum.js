@@ -124,11 +124,11 @@ window.NETPATH_CURRICULUM = [
       { id:"l3-07", t:"Connettività: FTTH, FWA, MPLS, backup 4G/5G", s:"Cosa vendono gli operatori, cosa consegnano, cosa scrivere nel contratto.", m:24, ready:true }
     ]},
     { title: "Sicurezza di rete", lessons: [
-      { id:"l3-08", t:"SSL/TLS inspection: come e quando", s:"Il compromesso più delicato che farai: cosa vedi, cosa rompi, cosa dice il GDPR.", m:30, ready:false },
-      { id:"l3-09", t:"IPS/IDS, antivirus di rete, sandboxing", s:"Firme, anomalie, falsi positivi e come si tara un IPS senza bloccare il gestionale.", m:28, ready:false },
-      { id:"l3-10", t:"Web filtering, proxy, application control", s:"Categorie, SNI, QUIC, e perché bloccare un sito è più difficile di quanto sembri.", m:26, ready:false },
-      { id:"l3-11", t:"Attacchi di rete comuni e difese", s:"ARP spoofing, rogue DHCP, VLAN hopping, DNS poisoning, esfiltrazione. Con la difesa per ognuno.", m:30, ready:false },
-      { id:"l3-12", t:"Segmentazione e Zero Trust", s:"Microsegmentazione, east-west, e come si vende un progetto di segmentazione.", m:28, ready:false }
+      { id:"l3-08", t:"SSL/TLS inspection: come e quando", s:"Il compromesso più delicato che farai: cosa vedi, cosa rompi, cosa dice il GDPR.", m:30, ready:true },
+      { id:"l3-09", t:"IPS/IDS, antivirus di rete, sandboxing", s:"Firme, anomalie, falsi positivi e come si tara un IPS senza bloccare il gestionale.", m:28, ready:true },
+      { id:"l3-10", t:"Web filtering, proxy, application control", s:"Categorie, SNI, QUIC, e perché bloccare un sito è più difficile di quanto sembri.", m:26, ready:true },
+      { id:"l3-11", t:"Attacchi di rete comuni e difese", s:"ARP spoofing, rogue DHCP, VLAN hopping, DNS poisoning, esfiltrazione. Con la difesa per ognuno.", m:30, ready:true },
+      { id:"l3-12", t:"Segmentazione e Zero Trust", s:"Microsegmentazione, east-west, e come si vende un progetto di segmentazione.", m:28, ready:true }
     ]},
     { title: "Identità e accesso", lessons: [
       { id:"l3-13", t:"RADIUS, LDAP, SAML: chi sei e cosa puoi", s:"I tre pilastri dell'autenticazione di rete, con i flussi disegnati.", m:28, ready:false },

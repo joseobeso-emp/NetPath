@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ispezione TLS: come, quando e a quale prezzo — NetPath</title>
+<meta name="description" content="Il compromesso più delicato che farai: cosa vedi, cosa rompi, e perché non è solo una decisione tecnica.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-08">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Sicurezza di rete</span>
+      </nav>
+      <h1 class="lesson-title">Ispezione TLS: come, quando e a quale prezzo</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 08</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire il meccanismo dell'ispezione TLS e cosa richiede ai client</li>
+        <li>Sapere cosa si rompe e come si gestiscono le eccezioni</li>
+        <li>Distinguere ispezione completa e ispezione del solo nome del server</li>
+        <li>Riconoscere che la decisione coinvolge anche aspetti legali e organizzativi</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Oggi oltre il 90% del traffico web è cifrato. Un firewall che non decifra vede solo
+buste chiuse: sa <em>con chi</em> parli, non <em>cosa</em> dici. L'ispezione TLS apre quelle buste — e
+proprio per questo è la funzione più potente e più delicata che configurerai.</p>
+
+<h2>Come funziona</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Il firewall termina la connessione TLS, ispeziona e ne apre una nuova verso il server">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Due connessioni al posto di una</text>
+
+    <rect x="20" y="66" width="130" height="52" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="85" y="88" text-anchor="middle" class="dg-label-sm">PC dell'utente</text>
+    <text x="85" y="105" text-anchor="middle" class="dg-mono-sm">browser</text>
+
+    <rect x="270" y="58" width="160" height="68" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="2"/>
+    <text x="350" y="80" text-anchor="middle" class="dg-label-sm">FIREWALL</text>
+    <text x="350" y="98" text-anchor="middle" class="dg-mono-sm">decifra · analizza</text>
+    <text x="350" y="114" text-anchor="middle" class="dg-mono-sm">ricifra</text>
+
+    <rect x="550" y="66" width="130" height="52" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="615" y="88" text-anchor="middle" class="dg-label-sm">Server web</text>
+    <text x="615" y="105" text-anchor="middle" class="dg-mono-sm">certificato vero</text>
+
+    <path d="M154 92h112" stroke="var(--dg-3)" stroke-width="2.4"/>
+    <path d="M434 92h112" stroke="var(--dg-5)" stroke-width="2.4"/>
+    <text x="210" y="84" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-3)">TLS #1</text>
+    <text x="490" y="84" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-5)">TLS #2</text>
+
+    <rect x="120" y="152" width="200" height="46" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.4"/>
+    <text x="220" y="172" text-anchor="middle" class="dg-label-sm">Il firewall presenta un certificato</text>
+    <text x="220" y="188" text-anchor="middle" class="dg-label-sm">che ha generato lui</text>
+
+    <rect x="380" y="152" width="200" height="46" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.4"/>
+    <text x="480" y="172" text-anchor="middle" class="dg-label-sm">Verso il server è un client</text>
+    <text x="480" y="188" text-anchor="middle" class="dg-label-sm">normale, e verifica il certificato vero</text>
+
+    <rect x="140" y="212" width="420" height="28" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.5"/>
+    <text x="350" y="231" text-anchor="middle" class="dg-label-sm">Perché il browser non protesti, la CA del firewall va installata su <tspan font-weight="700">ogni dispositivo</tspan>.</text>
+  </svg>
+  </div>
+  <figcaption>Tecnicamente è un <b>intermediario autorizzato</b>: il firewall si mette in mezzo e il
+  browser lo accetta perché si fida del certificato che l'azienda ha installato. È la stessa tecnica
+  di un attacco, resa legittima dal fatto che la chiave è la tua e l'hai distribuita tu.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'ufficio postale che apre le buste
+  </div>
+  <p>Tutta la posta che entra ed esce dall'azienda è in buste sigillate. L'azienda vuole controllare che
+  nessuno riceva pacchi pericolosi, quindi istituisce un <b>ufficio interno che apre ogni busta</b>, la
+  legge, verifica che sia a posto, la rimette in una busta nuova con il proprio timbro e la consegna.</p>
+  <p>Perché funzioni, tutti i dipendenti devono essere stati informati che le buste col timbro
+  dell'azienda sono affidabili: se no, vedendo un sigillo diverso da quello del mittente, penserebbero
+  a una manomissione. <b>Quel «devono fidarsi del timbro» è il certificato da installare.</b></p>
+  <p style="margin-bottom:0">E si capisce subito il problema: se un dipendente riceve la posta della
+  propria banca o del proprio medico, <b>anche quella viene aperta</b>. Non è un dettaglio tecnico: è
+  esattamente il punto su cui la decisione smette di essere solo tecnica.</p>
+</div>
+
+<h2>Cosa si guadagna</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Funzione</th><th>Senza ispezione</th><th>Con ispezione</th></tr></thead>
+    <tbody>
+      <tr><td><b>Antivirus di rete</b></td><td>Inefficace: non vede il contenuto</td><td>Analizza i file scaricati</td></tr>
+      <tr><td><b>IPS</b></td><td>Vede poco del traffico applicativo</td><td>Rileva gli attacchi dentro il traffico cifrato</td></tr>
+      <tr><td><b>Filtro web</b></td><td>Funziona sul <b>nome del sito</b> (SNI)</td><td>Funziona anche sulle singole pagine e sui contenuti</td></tr>
+      <tr><td><b>Controllo applicativo</b></td><td>Riconoscimento parziale</td><td>Riconoscimento preciso</td></tr>
+      <tr><td><b>Prevenzione perdita dati</b></td><td>Impossibile</td><td>Possibile</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La via di mezzo che molti ignorano
+  </div>
+  <p>Esistono <b>due modalità</b>, e la differenza è enorme:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Ispezione del solo certificato</b> (o «SNI-based»): il firewall legge in chiaro il nome del
+    server dall'handshake — l'SNI della lezione 1-23 — e decide se permettere. <b>Non decifra nulla</b>,
+    non serve installare certificati, non rompe niente. Permette filtro web per categoria e blocco dei
+    siti, che è già l'80% di quello che un cliente chiede.</li>
+    <li><b>Ispezione completa</b>: decifra, analizza il contenuto, ricifra. Serve per antivirus e IPS
+    efficaci sul traffico web.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0"><b>Molti clienti che chiedono l'ispezione completa in
+  realtà vogliono solo bloccare certe categorie di siti</b>: la modalità leggera basta, costa quasi
+  nulla in prestazioni e non apre nessuno dei problemi che seguono.</p>
+</div>
+
+<h2>Cosa si rompe</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa</th><th>Perché</th><th>Cosa fare</th></tr></thead>
+    <tbody>
+      <tr><td><b>Applicazioni con certificate pinning</b></td>
+          <td>Hanno il certificato del server scritto dentro e rifiutano qualsiasi sostituzione: molte app bancarie, di messaggistica e alcuni aggiornamenti di sistema</td>
+          <td>Eccezione: escludere quelle destinazioni</td></tr>
+      <tr><td><b>Autenticazione con certificato client</b></td>
+          <td>Il server vuole il certificato del client, che il firewall non possiede</td>
+          <td>Eccezione obbligatoria</td></tr>
+      <tr><td><b>Dispositivi non gestiti</b></td>
+          <td>Telefoni personali, dispositivi di ospiti, stampanti, IoT: non puoi installarci la CA</td>
+          <td>Escluderli per VLAN, o non ispezionare la rete ospiti</td></tr>
+      <tr><td><b>Applicazioni con archivio certificati proprio</b></td>
+          <td>Alcuni programmi e ambienti di sviluppo non usano quello di sistema</td>
+          <td>Configurazione caso per caso</td></tr>
+      <tr><td><b>Prestazioni</b></td><td>Il costo computazionale è enorme (lezione 3-03)</td><td>Dimensionare in anticipo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le categorie da escludere sempre
+  </div>
+  <p>Praticamente tutti i firewall offrono liste di esclusione predefinite: <b>attivale e integrale</b>.
+  Le categorie che vanno escluse per principio, prima ancora che per motivi tecnici:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Servizi bancari e finanziari</b></li>
+    <li><b>Sanità</b></li>
+    <li><b>Servizi pubblici e istituzionali</b> (portali della pubblica amministrazione, previdenza)</li>
+    <li><b>Aggiornamenti di sistema operativo e software</b></li>
+    <li>Le destinazioni che il cliente indica come sensibili</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Non è solo prudenza tecnica: è ciò che rende la
+  configurazione difendibile se qualcuno un domani ti chiede conto di cosa hai deciso di decifrare.</p>
+</div>
+
+<h2>La parte che non è tecnica</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Questa decisione non spetta a te
+  </div>
+  <p>Decifrare il traffico dei dipendenti tocca il trattamento di dati personali e il controllo
+  dell'attività lavorativa. In Italia entrambi gli aspetti sono regolati — dal GDPR e dalla normativa
+  sui controlli a distanza dei lavoratori — e richiedono adempimenti specifici da parte del datore di
+  lavoro.</p>
+  <p><b>Non sono materia tua, e non devi improvvisare un parere.</b> Il tuo compito è:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Sollevare il tema per iscritto</b> prima di attivare l'ispezione completa, spiegando in
+    termini semplici cosa comporta: «il sistema sarà in grado di vedere il contenuto della navigazione
+    dei dipendenti, escluse le categorie che escluderemo».</li>
+    <li><b>Chiedere conferma scritta</b> che il cliente abbia verificato gli adempimenti con il proprio
+    consulente del lavoro o legale e con il responsabile della protezione dei dati.</li>
+    <li><b>Documentare</b> cosa viene ispezionato, cosa escluso, chi può accedere ai log e per quanto
+    vengono conservati.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">È una conversazione che molti fornitori evitano perché
+  scomoda. Farla ti distingue, protegge il cliente e protegge te.</p>
+</div>
+
+<h2>Il percorso di attivazione</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Come si attiva senza far saltare l'azienda
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Parti dall'ispezione leggera</b> (solo nome del server) e verifica se basta a coprire le
+    esigenze reali del cliente. Spesso la risposta è sì.</li>
+    <li>Se serve quella completa, <b>affronta prima la parte non tecnica</b> di cui sopra.</li>
+    <li><b>Distribuisci la CA</b> via criteri di gruppo a tutti i dispositivi aziendali gestiti.</li>
+    <li><b>Attiva in modalità solo osservazione</b> su un gruppo pilota: registra senza bloccare, e
+    guarda cosa emerge.</li>
+    <li><b>Costruisci le eccezioni</b> partendo dalle liste predefinite e aggiungendo ciò che il pilota
+    ha fatto emergere.</li>
+    <li><b>Estendi per gruppi</b>, non a tutta l'azienda insieme.</li>
+    <li><b>Escludi sempre</b> la rete ospiti e i dispositivi non gestiti.</li>
+    <li><b>Documenta</b> e metti in calendario una revisione periodica delle eccezioni.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: ispezione TLS",
+  "questions": [
+    { "q": "Perché l'ispezione TLS richiede di installare un certificato su ogni dispositivo?",
+      "a": [ {"t":"Il firewall presenta un certificato generato da sé, e il browser deve fidarsene","ok":true},
+             {"t":"Per cifrare il traffico verso il firewall","ok":false},
+             {"t":"Per identificare l'utente","ok":false},
+             {"t":"Per rispettare gli standard TLS","ok":false} ],
+      "e": "Il firewall termina la connessione e ne apre una nuova: verso il client si presenta con un certificato proprio, che senza la CA installata verrebbe rifiutato come tentativo di manomissione. È lo stesso meccanismo di un attacco, legittimato dal fatto che la chiave è dell'azienda e l'ha distribuita lei." },
+
+    { "q": "Qual è la differenza tra ispezione del solo certificato e ispezione completa?",
+      "a": [ {"t":"La prima legge solo il nome del server senza decifrare; la seconda decifra il contenuto","ok":true},
+             {"t":"La prima vale per HTTP e la seconda per HTTPS","ok":false},
+             {"t":"La prima è più lenta","ok":false},
+             {"t":"Sono la stessa cosa con nomi diversi","ok":false} ],
+      "e": "L'ispezione leggera usa l'SNI, che viaggia in chiaro: permette filtro per categoria e blocco dei siti senza decifrare nulla, senza installare certificati e senza rompere niente. Molti clienti che chiedono l'ispezione completa in realtà vogliono solo questo — vale la pena verificarlo prima." },
+
+    { "q": "Perché alcune applicazioni bancarie smettono di funzionare con l'ispezione attiva?",
+      "a": [ {"t":"Usano il certificate pinning: hanno il certificato del server scritto dentro e rifiutano sostituzioni","ok":true},
+             {"t":"Perché usano protocolli diversi da TLS","ok":false},
+             {"t":"Perché il firewall non supporta la loro cifratura","ok":false},
+             {"t":"Perché richiedono troppa banda","ok":false} ],
+      "e": "Il pinning è una difesa dell'applicazione contro esattamente questo tipo di intermediazione: qualsiasi certificato diverso da quello atteso viene rifiutato, indipendentemente da quali CA siano installate. L'unica soluzione è escludere quelle destinazioni dall'ispezione." },
+
+    { "q": "Quali categorie vanno escluse per principio dall'ispezione?",
+      "a": [ {"t":"Servizi bancari, sanità, portali pubblici e aggiornamenti software","ok":true},
+             {"t":"Solo i siti che danno errori","ok":false},
+             {"t":"I social network","ok":false},
+             {"t":"Nessuna: l'ispezione deve essere totale per essere efficace","ok":false} ],
+      "e": "Sono categorie che trattano dati particolarmente sensibili o che si rompono comunque per via del pinning. Escluderle non è solo prudenza tecnica: è ciò che rende la configurazione difendibile se un domani qualcuno chiede conto di cosa è stato deciso di decifrare." },
+
+    { "q": "Prima di attivare l'ispezione completa in un'azienda, qual è il tuo compito?",
+      "a": [ {"t":"Sollevare per iscritto le implicazioni e chiedere conferma che il cliente abbia verificato gli adempimenti con i propri consulenti","ok":true},
+             {"t":"Valutare tu stesso la conformità normativa","ok":false},
+             {"t":"Attivarla e informare i dipendenti dopo","ok":false},
+             {"t":"Nulla: è una scelta puramente tecnica","ok":false} ],
+      "e": "Decifrare il traffico dei dipendenti tocca il trattamento dei dati personali e il controllo dell'attività lavorativa, materie regolate e non di tua competenza. Il tuo compito è spiegare chiaramente cosa comporta, chiedere conferma scritta che il cliente abbia fatto le verifiche con i propri consulenti, e documentare cosa viene ispezionato e cosa no." },
+
+    { "q": "Qual è il primo passo pratico per attivare l'ispezione senza problemi?",
+      "a": [ {"t":"Partire dalla modalità leggera e verificare se basta, poi eventualmente procedere per gruppi pilota in sola osservazione","ok":true},
+             {"t":"Attivarla su tutta l'azienda di notte","ok":false},
+             {"t":"Attivarla senza eccezioni per vedere cosa si rompe","ok":false},
+             {"t":"Installare la CA solo sui PC che danno problemi","ok":false} ],
+      "e": "L'ispezione leggera spesso copre già l'esigenza reale. Se serve quella completa, si distribuisce la CA ai dispositivi gestiti, si attiva in sola osservazione su un gruppo pilota per far emergere le eccezioni, e si estende per gruppi — escludendo sempre rete ospiti e dispositivi non gestiti, su cui la CA non si può installare." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

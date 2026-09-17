@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Segmentazione e Zero Trust — NetPath</title>
+<meta name="description" content="Microsegmentazione, traffico est-ovest, e come si vende e si realizza un progetto di segmentazione senza fermare l'azienda.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-12">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Sicurezza di rete</span>
+      </nav>
+      <h1 class="lesson-title">Segmentazione e Zero Trust</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 12</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere segmentazione, microsegmentazione e Zero Trust senza confonderli con il marketing</li>
+        <li>Capire cosa significa «traffico est-ovest» e perché è il punto cieco</li>
+        <li>Progettare una segmentazione realizzabile, non teorica</li>
+        <li>Presentare il progetto a un cliente in modo che lo capisca e lo approvi</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">«Zero Trust» è diventato un termine di marketing applicato a qualsiasi cosa. Sotto c'è
+però un principio semplice e valido, ed è il naturale punto d'arrivo di tutto quello che hai imparato
+sulla segmentazione. Questa lezione separa l'idea dal rumore e la rende un progetto realizzabile.</p>
+
+<h2>Il principio, in una frase</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il castello e l'aeroporto
+  </div>
+  <p>Il modello tradizionale è il <b>castello</b>: un muro alto, un ponte levatoio, guardie all'ingresso.
+  Una volta dentro, sei dei nostri: giri dove vuoi, nessuno ti chiede più niente.</p>
+  <p>Funzionava quando tutti lavoravano dentro il castello. Oggi metà della gente lavora da casa, i
+  dati stanno in cloud fuori dal castello, e i fornitori entrano ed escono. Soprattutto: <b>se qualcuno
+  riesce a superare il muro una volta, dentro ha campo libero.</b></p>
+  <p>Il modello Zero Trust è l'<b>aeroporto</b>: il controllo non è solo all'ingresso. Ti chiedono il
+  documento al check-in, ai controlli, al gate e prima di salire. Non perché sospettino di te, ma
+  perché <b>ogni zona richiede una verifica per quella zona</b>. Chi supera un controllo non ha
+  automaticamente accesso a tutto il resto.</p>
+  <p style="margin-bottom:0">Da qui la frase che riassume tutto: <b>«non fidarsi mai, verificare
+  sempre»</b> — dove «verificare» significa chi sei, da quale dispositivo, per accedere a cosa.</p>
+</div>
+
+<h2>Nord-sud ed est-ovest</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Traffico nord-sud verso Internet e traffico est-ovest tra sistemi interni">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Due direzioni, due livelli di attenzione molto diversi</text>
+
+    <rect x="280" y="40" width="140" height="36" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.6"/>
+    <text x="350" y="63" text-anchor="middle" class="dg-mono-sm">INTERNET</text>
+
+    <rect x="290" y="100" width="120" height="34" rx="7" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.8"/>
+    <text x="350" y="122" text-anchor="middle" class="dg-mono-sm">FIREWALL</text>
+
+    <path d="M350 78v18" stroke="var(--dg-5)" stroke-width="2.6"/>
+    <text x="420" y="92" class="dg-mono-sm" fill="var(--dg-5)">nord-sud: molto controllato</text>
+
+    <g stroke-width="1.5">
+      <rect x="30"  y="176" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="190" y="176" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="380" y="176" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="540" y="176" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="95" y="200">PC uffici</text><text x="255" y="200">server</text>
+      <text x="445" y="200">telecamere</text><text x="605" y="200">macchinari</text>
+    </g>
+    <g stroke="var(--dg-3)" stroke-width="2.2" stroke-dasharray="6 4">
+      <path d="M160 196h30"/><path d="M320 196h60"/><path d="M510 196h30"/>
+    </g>
+    <path d="M350 138v30" stroke="var(--dg-line)" stroke-width="1.6"/>
+    <text x="350" y="240" text-anchor="middle" class="dg-label-sm" fill="var(--dg-3)">est-ovest: nella maggior parte delle aziende <tspan font-weight="700">non controllato affatto</tspan></text>
+  </svg>
+  </div>
+  <figcaption><b>Nord-sud</b> è il traffico verso l'esterno: ci sono firewall, IPS, filtro web, tutto.
+  <b>Est-ovest</b> è il traffico tra sistemi interni: in una rete piatta non lo guarda nessuno.
+  Ed è proprio lì che avviene il movimento laterale della lezione precedente.</figcaption>
+</figure>
+
+<h2>I livelli di segmentazione</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Livello</th><th>Granularità</th><th>Come si realizza</th><th>Sforzo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Nessuna</b></td><td>Rete piatta</td><td>—</td><td>—</td></tr>
+      <tr><td><b>Segmentazione</b></td><td>Gruppi di dispositivi</td><td>VLAN + regole tra loro (capitolo 2.1)</td><td><b>Giorni.</b> Realizzabile in qualsiasi cliente</td></tr>
+      <tr><td><b>Microsegmentazione</b></td><td>Singolo carico di lavoro</td>
+          <td>Regole tra singoli server, anche dentro la stessa VLAN: firewall distribuiti, agenti sugli host, NSG in cloud</td>
+          <td><b>Settimane o mesi.</b> Serve conoscere tutti i flussi</td></tr>
+      <tr><td><b>Zero Trust completo</b></td><td>Singolo accesso</td>
+          <td>Ogni accesso verificato per identità, dispositivo e contesto, indipendentemente dalla posizione in rete</td>
+          <td><b>Percorso pluriennale</b>, non un progetto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Onestà su cosa è realistico
+  </div>
+  <p>Nella PMI italiana, il salto che produce il 90% del beneficio è il primo: <b>da rete piatta a
+  segmentazione con regole vere</b>. Costa giorni, non mesi, e riduce drasticamente l'impatto di un
+  incidente.</p>
+  <p style="margin-bottom:0">La microsegmentazione ha senso su ambienti server e in cloud, dove i flussi
+  sono conoscibili. Lo Zero Trust completo è una direzione verso cui muoversi, non un prodotto da
+  installare — e un fornitore che te lo vende come tale sta semplificando parecchio.</p>
+</div>
+
+<h2>I pilastri dello Zero Trust</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Pilastro</th><th>Cosa significa concretamente</th><th>Con cosa si fa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Identità verificata</b></td><td>Ogni accesso è associato a una persona, con MFA</td><td>Directory aziendale + MFA + accesso condizionale</td></tr>
+      <tr><td><b>Dispositivo verificato</b></td><td>Solo dispositivi gestiti e sani accedono alle risorse</td><td>Gestione dei dispositivi, certificati, controllo dello stato</td></tr>
+      <tr><td><b>Minimo privilegio</b></td><td>Ognuno accede solo a ciò che gli serve</td><td>Gruppi, regole per ruolo, accessi temporanei</td></tr>
+      <tr><td><b>Segmentazione</b></td><td>Il confine di rete esiste e viene fatto rispettare</td><td><b>Il tuo mestiere:</b> VLAN, regole, microsegmentazione</td></tr>
+      <tr><td><b>Verifica continua</b></td><td>L'accesso concesso può essere revocato se cambia il contesto</td><td>Accesso condizionale, integrazione tra endpoint e rete</td></tr>
+      <tr><td><b>Visibilità</b></td><td>Si registra e si analizza chi accede a cosa</td><td>Log centralizzati, NetFlow (lezione 2-25)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Nota che <strong>solo uno dei sei pilastri è puramente di rete</strong>. È il motivo per cui un
+progetto Zero Trust non può essere solo tuo: coinvolge chi gestisce identità, dispositivi e
+applicazioni. Il tuo pezzo è essenziale ma non sufficiente, e dirlo ti evita di promettere risultati
+che non dipendono solo da te.</p>
+
+<h2>Come si realizza un progetto di segmentazione</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il percorso in cinque fasi, senza fermare l'azienda
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Osserva prima di decidere.</b> Attiva NetFlow e registra il traffico est-ovest per due o
+    quattro settimane. Scoprirai flussi che nessuno conosceva — e questa è la fase che nessuno fa.</li>
+    <li><b>Raggruppa per fiducia</b>, non per reparto, e compila la <b>matrice di comunicazione</b>
+    (lezione 2-04) usando i dati osservati, non le ipotesi.</li>
+    <li><b>Separa prima ciò che è facile e indiscutibile:</b> ospiti, telecamere, IoT, gestione. Nessuno
+    protesterà, e il beneficio è immediato.</li>
+    <li><b>Applica le regole in sola osservazione</b> prima di bloccare: la maggior parte dei firewall
+    permette di registrare cosa <em>verrebbe</em> bloccato. Due settimane così fanno emergere ciò che
+    la matrice aveva dimenticato.</li>
+    <li><b>Passa in blocco per gruppi</b>, e affronta per ultimi i sistemi legacy — che è dove si
+    annidano i flussi non documentati.</li>
+  </ol>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il sistema legacy che rovina i piani
+  </div>
+  <p>In quasi ogni azienda c'è almeno un sistema — un gestionale vecchio, un macchinario, un software
+  del fornitore — che <b>parla in modi non documentati</b>: porte casuali, broadcast, protocolli
+  obsoleti, e un fornitore che risponde «deve poter vedere tutto».</p>
+  <p><b>Non è un motivo per rinunciare alla segmentazione</b>: è un motivo per isolarlo in una VLAN sua
+  con regole su misura, ricavate dall'osservazione. Se davvero deve parlare con molte cose, almeno il
+  resto della rete non deve poter parlare con lui.</p>
+  <p style="margin-bottom:0">E quando il fornitore dice «serve tutto aperto», chiedi <b>per iscritto</b>
+  quali porte servono: spesso la richiesta si ridimensiona da sola nel momento in cui qualcuno deve
+  metterla nero su bianco.</p>
+</div>
+
+<h2>Come si presenta al cliente</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Parla di conseguenze, non di architettura
+  </div>
+  <p>Non dire «implementiamo la microsegmentazione secondo il paradigma Zero Trust». Di' questo:</p>
+  <p><b>«Oggi, se un solo computer viene compromesso, da quel computer si raggiunge tutto: i server,
+  i backup, le telecamere, i macchinari. Vogliamo fare in modo che resti un problema di un computer
+  solo.»</b></p>
+  <p style="margin-bottom:0">Poi mostra i <b>dati reali</b> raccolti nella fase 1: «in queste due
+  settimane abbiamo osservato che dal PC della reception si raggiungono 47 sistemi diversi, e ne
+  userebbe 3». È il momento in cui il progetto si vende da solo, perché il cliente vede la sua rete
+  e non una teoria.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: segmentazione e Zero Trust",
+  "questions": [
+    { "q": "Cosa significa «traffico est-ovest»?",
+      "a": [ {"t":"Il traffico tra sistemi interni, che nella maggior parte delle aziende non è controllato","ok":true},
+             {"t":"Il traffico verso Internet","ok":false},
+             {"t":"Il traffico tra sedi diverse","ok":false},
+             {"t":"Il traffico in ingresso dai servizi pubblicati","ok":false} ],
+      "e": "Nord-sud è il traffico verso l'esterno, presidiato da firewall, IPS e filtri. Est-ovest è quello tra PC e server interni: in una rete piatta non lo guarda nessuno, ed è esattamente dove avviene il movimento laterale che trasforma un incidente in un disastro." },
+
+    { "q": "Qual è il salto che produce il maggior beneficio nella PMI?",
+      "a": [ {"t":"Da rete piatta a segmentazione in VLAN con regole vere","ok":true},
+             {"t":"Dalla segmentazione alla microsegmentazione","ok":false},
+             {"t":"L'adozione completa di Zero Trust","ok":false},
+             {"t":"L'installazione di un firewall più potente","ok":false} ],
+      "e": "Il primo salto costa giorni e riduce drasticamente l'impatto di un incidente. La microsegmentazione ha senso su server e cloud dove i flussi sono conoscibili; lo Zero Trust completo è una direzione pluriennale, non un prodotto — e chi lo vende come tale sta semplificando parecchio." },
+
+    { "q": "Quanti dei pilastri Zero Trust sono di competenza puramente di rete?",
+      "a": [ {"t":"Uno solo: la segmentazione","ok":true},
+             {"t":"Tutti","ok":false},
+             {"t":"Nessuno","ok":false},
+             {"t":"Quattro su sei","ok":false} ],
+      "e": "Identità, dispositivi, minimo privilegio, verifica continua e visibilità coinvolgono chi gestisce directory, endpoint e applicazioni. Il tuo pezzo — far esistere e rispettare il confine di rete — è essenziale ma non sufficiente, e dirlo evita di promettere risultati che non dipendono solo da te." },
+
+    { "q": "Qual è la prima fase di un progetto di segmentazione?",
+      "a": [ {"t":"Osservare il traffico est-ovest reale per alcune settimane","ok":true},
+             {"t":"Creare le VLAN","ok":false},
+             {"t":"Scrivere le regole firewall","ok":false},
+             {"t":"Presentare il preventivo","ok":false} ],
+      "e": "È la fase che quasi nessuno fa e che determina il successo del progetto: i dati osservati rivelano flussi che nessuno conosceva, e permettono di costruire la matrice di comunicazione sulla realtà invece che sulle ipotesi. Sono anche i dati con cui poi si vende il progetto al cliente." },
+
+    { "q": "Un fornitore dice che il suo gestionale «deve poter vedere tutto». Come procedi?",
+      "a": [ {"t":"Chiedi per iscritto quali porte servono e isoli il sistema in una VLAN con regole su misura","ok":true},
+             {"t":"Rinunci a segmentare quella parte","ok":false},
+             {"t":"Apri tutto come richiesto","ok":false},
+             {"t":"Sostituisci il gestionale","ok":false} ],
+      "e": "La richiesta si ridimensiona quasi sempre nel momento in cui qualcuno deve metterla nero su bianco. E anche se davvero servisse ampio accesso, isolare quel sistema in una VLAN propria significa almeno che <b>il resto della rete non può parlare con lui</b> — che è metà del beneficio." },
+
+    { "q": "Come si presenta un progetto di segmentazione a un cliente non tecnico?",
+      "a": [ {"t":"«Se un computer viene compromesso, oggi si raggiunge tutto; vogliamo che resti un problema di un computer solo», con i dati osservati","ok":true},
+             {"t":"Spiegando l'architettura Zero Trust e i suoi pilastri","ok":false},
+             {"t":"Mostrando lo schema delle VLAN","ok":false},
+             {"t":"Elencando le funzioni del firewall","ok":false} ],
+      "e": "Il cliente compra la soluzione di un problema che riconosce, non un'architettura. La frase sulle conseguenze unita a un dato concreto — «dal PC della reception si raggiungono 47 sistemi e ne userebbe 3» — rende il rischio visibile, e a quel punto il progetto si vende da solo." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

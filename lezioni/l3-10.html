@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Filtro web, proxy e controllo applicativo — NetPath</title>
+<meta name="description" content="Categorie, SNI, QUIC, e perché bloccare un sito è più difficile di quanto sembri.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-10">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Sicurezza di rete</span>
+      </nav>
+      <h1 class="lesson-title">Filtro web, proxy e controllo applicativo</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 10</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire i tre modi in cui si può filtrare la navigazione e i loro limiti</li>
+        <li>Gestire il problema di QUIC e dei DNS cifrati</li>
+        <li>Distinguere filtro web e controllo applicativo</li>
+        <li>Impostare un filtro che regga senza generare una coda di eccezioni</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">«Bloccare Facebook» sembra la richiesta più semplice del mondo. In realtà, tra nomi che
+cambiano, indirizzi condivisi, protocolli che aggirano il filtro e app che funzionano lo stesso, è uno
+degli argomenti in cui si scopre che le cose semplici non lo sono.</p>
+
+<h2>I tre modi di filtrare</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Metodo</th><th>Su cosa agisce</th><th>Pro</th><th>Contro</th></tr></thead>
+    <tbody>
+      <tr><td><b>Filtro DNS</b></td><td>La risoluzione del nome</td>
+          <td>Semplicissimo, nessun impatto sulle prestazioni, funziona anche fuori sede con un servizio cloud</td>
+          <td>Si aggira cambiando DNS o usando l'indirizzo diretto</td></tr>
+      <tr><td><b>Filtro sul nome del server</b> (SNI)</td><td>Il nome in chiaro nell'handshake TLS</td>
+          <td>Non serve decifrare, buon compromesso</td>
+          <td>Non vede le singole pagine; alcune tecniche recenti cifrano anche l'SNI</td></tr>
+      <tr><td><b>Ispezione completa</b></td><td>Il contenuto decifrato</td>
+          <td>Controllo fine su pagine e contenuti</td>
+          <td>Tutti i costi e le implicazioni della lezione 3-08</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La combinazione che funziona nella pratica
+  </div>
+  <p><b>Filtro DNS + filtro SNI sul firewall.</b> Il primo è leggerissimo e copre anche i dispositivi
+  fuori sede se usi un servizio cloud; il secondo intercetta chi aggira il DNS. Insieme coprono
+  praticamente tutto ciò che un cliente chiede, senza decifrare niente.</p>
+  <p style="margin-bottom:0">L'ispezione completa si aggiunge solo se serve davvero l'antivirus sul
+  traffico web o il controllo dei contenuti dentro le pagine.</p>
+</div>
+
+<h2>I tre problemi che rendono il filtro difficile</h2>
+
+<h3>1. QUIC</h3>
+<p>Molti servizi — a partire da quelli di Google e da Chrome — usano <strong>QUIC</strong>, un protocollo
+che viaggia su <strong>UDP 443</strong> invece che su TCP. Molti firewall lo ispezionano peggio o non
+lo ispezionano affatto, e il risultato è che il filtro sembra non funzionare su certi siti.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La regola pratica su QUIC
+  </div>
+  <p>Se il tuo firewall non sa ispezionare QUIC, <b>bloccalo</b>: chiudi UDP 443 in uscita. I browser
+  se ne accorgono e ripiegano automaticamente su TCP, dove il filtro funziona. L'utente non si accorge
+  di niente se non di una frazione di secondo in più alla prima connessione.</p>
+  <p style="margin-bottom:0">È una di quelle configurazioni che risolvono un'intera categoria di
+  «il filtro non blocca YouTube» — e che quasi nessuno conosce.</p>
+</div>
+
+<h3>2. I DNS cifrati</h3>
+<p>Browser e sistemi operativi usano sempre più spesso <strong>DNS over HTTPS</strong>, che porta le
+richieste DNS dentro traffico web cifrato verso un risolutore esterno. Il filtro DNS aziendale viene
+semplicemente scavalcato.</p>
+<p>Le contromisure: imporre via criteri di gruppo il comportamento del browser, bloccare i risolutori
+pubblici noti, e — soprattutto — <strong>non dipendere solo dal DNS</strong>, ma affiancare il filtro
+sul firewall.</p>
+
+<h3>3. Indirizzi condivisi e nomi che cambiano</h3>
+<p>Bloccare per indirizzo IP non funziona più: dietro le reti di distribuzione dei contenuti, migliaia
+di siti diversi condividono gli stessi indirizzi. Bloccarne uno significa bloccare anche servizi che
+il cliente usa — e il sintomo sarà «da quando avete messo il filtro, il gestionale non va».</p>
+<p>Si filtra <strong>per nome e per categoria</strong>, mai per indirizzo, salvo casi specifici e
+documentati.</p>
+
+<h2>Le categorie</h2>
+
+<p>I produttori classificano milioni di siti in categorie: social, streaming, giochi, contenuti per
+adulti, phishing, malware, domini appena registrati. Si costruisce un profilo che permette, blocca o
+avvisa per ciascuna.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Categoria</th><th>Trattamento consigliato</th><th>Motivo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Malware, phishing, botnet</b></td><td><b>Blocca</b></td><td>Nessuna discussione possibile: è sicurezza</td></tr>
+      <tr><td><b>Domini registrati da poco</b></td><td><b>Blocca</b></td><td>Enorme rapporto tra rischio e utilità: molte campagne usano domini di pochi giorni</td></tr>
+      <tr><td><b>Contenuti per adulti, gioco d'azzardo, violenza</b></td><td>Blocca</td><td>Riduce rischi legali e reputazionali per il cliente</td></tr>
+      <tr><td><b>Anonimizzatori e proxy</b></td><td>Blocca</td><td>Servono proprio ad aggirare il filtro</td></tr>
+      <tr><td><b>Streaming e social</b></td><td><b>Decide il cliente</b></td><td>Non è sicurezza, è politica aziendale: non è una tua scelta</td></tr>
+      <tr><td><b>Archiviazione cloud personale</b></td><td>Valutare</td><td>Via comune per la fuga di dati, ma spesso serve per lavoro</td></tr>
+      <tr><td><b>Non classificato</b></td><td>Permetti e registra</td><td>Bloccare produrrebbe una coda infinita di eccezioni</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Separa la sicurezza dalla politica aziendale
+  </div>
+  <p>Bloccare malware e phishing è una <b>misura di sicurezza</b>: la decidi tu e la difendi con
+  argomenti tecnici.</p>
+  <p>Bloccare Facebook o YouTube è una <b>scelta organizzativa del datore di lavoro</b>, con
+  implicazioni sul rapporto con i dipendenti e con le loro rappresentanze. Non è una decisione tua,
+  e non devi essere tu a proporla di iniziativa.</p>
+  <p style="margin-bottom:0"><b>Come si gestisce:</b> proponi il profilo di sicurezza come parte del
+  lavoro, e presenta le categorie «di comportamento» come un elenco su cui <b>il cliente sceglie</b>,
+  mettendo per iscritto cosa ha deciso. Ti evita di diventare il responsabile di una scelta che non
+  hai preso.</p>
+</div>
+
+<h2>Controllo applicativo: un'altra cosa dal filtro web</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Filtro web</th><th>Controllo applicativo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ragiona su</b></td><td>Siti e categorie</td><td><b>Applicazioni</b> riconosciute dal comportamento</td></tr>
+      <tr><td><b>Esempio</b></td><td>Blocca la categoria «social»</td><td>Permetti Teams, blocca il trasferimento file di Teams</td></tr>
+      <tr><td><b>Utile per</b></td><td>Navigazione</td><td>Applicazioni che non sono siti: condivisione file, desktop remoto, tunnel, giochi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Il controllo applicativo è quello che serve per casi come «blocca i programmi di assistenza remota
+che i dipendenti installano da soli» o «permetti la posta aziendale e blocca quella personale» —
+richieste che il filtro per categoria non può soddisfare.</p>
+
+<h2>Il reverse proxy e il proxy in uscita</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Proxy in uscita</th><th>Reverse proxy</th></tr></thead>
+    <tbody>
+      <tr><td><b>Protegge</b></td><td>Gli utenti che navigano</td><td>I server pubblicati (lezione 2-15)</td></tr>
+      <tr><td><b>Come si usa</b></td><td>Esplicito (configurato nel browser) o trasparente</td><td>Il client si collega al firewall, non al server</td></tr>
+      <tr><td><b>Vantaggio</b></td><td>Registrazione dettagliata, autenticazione utente, cache</td><td>Ispezione, WAF, autenticazione prima del server</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Nelle reti moderne il proxy esplicito è sempre meno usato: la stessa funzione la fa il firewall in
+modo trasparente. Resta utile dove serve <strong>autenticare l'utente</strong> per la navigazione,
+così i log riportano il nome della persona e non solo l'indirizzo IP.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il profilo che propongo a un cliente nuovo
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Blocco delle categorie di sicurezza</b> — malware, phishing, botnet, domini nuovi,
+    anonimizzatori. Nessuna discussione, fa parte del lavoro.</li>
+    <li><b>Blocco delle categorie a rischio legale</b> — contenuti illeciti, gioco d'azzardo. Lo
+    propongo io, lo conferma il cliente.</li>
+    <li><b>Elenco delle categorie «comportamentali»</b> — social, streaming, acquisti — presentato al
+    cliente perché decida, con il risultato messo per iscritto.</li>
+    <li><b>Non classificato permesso ma registrato</b>, con revisione dopo un mese.</li>
+    <li><b>QUIC bloccato</b> se il firewall non lo ispeziona.</li>
+    <li><b>Eccezione per la rete ospiti</b>: solo le categorie di sicurezza, niente politiche aziendali.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">Dopo due settimane guarda i rapporti insieme al cliente:
+  è il momento in cui vede cosa succede davvero nella sua rete, e quasi sempre emerge qualcosa che non
+  immaginava.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: filtro web e applicazioni",
+  "questions": [
+    { "q": "Perché non si filtra per indirizzo IP?",
+      "a": [ {"t":"Dietro le reti di distribuzione dei contenuti migliaia di siti condividono gli stessi indirizzi","ok":true},
+             {"t":"Perché gli indirizzi sono troppi da elencare","ok":false},
+             {"t":"Perché il firewall non supporta liste di indirizzi","ok":false},
+             {"t":"Perché IPv6 ha troppi indirizzi","ok":false} ],
+      "e": "Bloccare un indirizzo significa bloccare anche i servizi legittimi che lo condividono, e il sintomo arriva come «da quando avete messo il filtro il gestionale non va». Si filtra per nome e per categoria, salvo casi specifici e documentati." },
+
+    { "q": "Il filtro non riesce a bloccare alcuni siti, in particolare quelli di Google. Cosa sospetti?",
+      "a": [ {"t":"Stanno usando QUIC su UDP 443, che il firewall non ispeziona","ok":true},
+             {"t":"Le categorie non sono aggiornate","ok":false},
+             {"t":"Manca l'ispezione TLS","ok":false},
+             {"t":"Il DNS aziendale non funziona","ok":false} ],
+      "e": "QUIC viaggia su UDP 443 e molti firewall lo ispezionano male o per niente. La soluzione pratica è bloccare UDP 443 in uscita: i browser ripiegano automaticamente su TCP, dove il filtro funziona, e l'utente non si accorge di nulla. È una configurazione che risolve un'intera categoria di segnalazioni." },
+
+    { "q": "Perché il solo filtro DNS non basta?",
+      "a": [ {"t":"Si aggira cambiando risolutore o usando DNS over HTTPS","ok":true},
+             {"t":"Perché rallenta la navigazione","ok":false},
+             {"t":"Perché non supporta le categorie","ok":false},
+             {"t":"Perché non funziona con IPv6","ok":false} ],
+      "e": "Browser e sistemi operativi usano sempre più spesso DNS cifrati verso risolutori esterni, scavalcando quello aziendale. Il filtro DNS resta utile — è leggero e copre anche i dispositivi fuori sede — ma va affiancato dal filtro sul firewall, che intercetta chi lo aggira." },
+
+    { "q": "Chi decide se bloccare i social network in azienda?",
+      "a": [ {"t":"Il cliente: è una scelta organizzativa, non una misura di sicurezza","ok":true},
+             {"t":"Il tecnico, in base alle buone pratiche","ok":false},
+             {"t":"Il produttore del firewall, tramite i profili predefiniti","ok":false},
+             {"t":"Nessuno: va sempre bloccato","ok":false} ],
+      "e": "Bloccare malware e phishing è sicurezza e lo proponi tu. Bloccare i social riguarda il rapporto tra datore di lavoro e dipendenti e le loro rappresentanze: si presenta come un elenco su cui il cliente sceglie, mettendo per iscritto la decisione. Serve anche a non diventare il responsabile di una scelta che non hai preso." },
+
+    { "q": "Perché i domini registrati da poco vanno bloccati?",
+      "a": [ {"t":"Molte campagne di phishing e malware usano domini di pochi giorni, e l'uso legittimo è raro","ok":true},
+             {"t":"Perché non sono ancora classificati","ok":false},
+             {"t":"Perché hanno certificati non validi","ok":false},
+             {"t":"Perché consumano più banda","ok":false} ],
+      "e": "È una delle regole con il miglior rapporto tra rischio evitato e disturbo causato: un'azienda ha pochissime ragioni legittime per visitare un dominio nato tre giorni fa, mentre le campagne malevole ne fanno un uso sistematico proprio per sfuggire alle liste." },
+
+    { "q": "Cosa distingue il controllo applicativo dal filtro web?",
+      "a": [ {"t":"Riconosce le applicazioni dal comportamento, anche quelle che non sono siti","ok":true},
+             {"t":"Agisce solo sul traffico cifrato","ok":false},
+             {"t":"Funziona senza licenza","ok":false},
+             {"t":"Si applica solo ai dispositivi mobili","ok":false} ],
+      "e": "Il filtro web ragiona su siti e categorie; il controllo applicativo riconosce applicazioni e loro funzioni — permettere Teams ma bloccarne il trasferimento file, o bloccare i programmi di assistenza remota che i dipendenti installano da soli. Sono richieste che il filtro per categoria non può soddisfare." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

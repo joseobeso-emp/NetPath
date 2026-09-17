@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IPS, antivirus di rete e sandboxing — NetPath</title>
+<meta name="description" content="Firme, anomalie, falsi positivi, e come si tara un IPS senza bloccare il gestionale del cliente.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-09">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Sicurezza di rete</span>
+      </nav>
+      <h1 class="lesson-title">IPS, antivirus di rete e sandboxing</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 09</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire cosa rileva un IPS e cosa no</li>
+        <li>Attivare un IPS senza generare disservizi</li>
+        <li>Distinguere antivirus di rete, antivirus sull'endpoint e sandboxing</li>
+        <li>Gestire i falsi positivi con un metodo invece che disattivando tutto</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">L'IPS è la funzione che i clienti pagano e che più spesso viene lasciata in modalità
+decorativa, perché chi l'ha attivata una volta ha bloccato qualcosa di importante e non ci ha più
+riprovato. Questa lezione ti dà il metodo per attivarla sul serio senza fermare l'azienda.</p>
+
+<h2>IDS e IPS: la differenza è dove sta</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>IDS — rilevamento</th><th>IPS — prevenzione</th></tr></thead>
+    <tbody>
+      <tr><td><b>Posizione</b></td><td>A lato, riceve una copia del traffico</td><td><b>In linea:</b> il traffico ci passa attraverso</td></tr>
+      <tr><td><b>Cosa fa</b></td><td>Segnala</td><td>Segnala <b>e blocca</b></td></tr>
+      <tr><td><b>Rischio</b></td><td>Nessuno sul traffico</td><td>Un falso positivo <b>blocca traffico legittimo</b></td></tr>
+      <tr><td><b>Se si guasta</b></td><td>Non passa niente di male</td><td>Può fermare la rete, a seconda di come è configurato</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Sui firewall che usi, IDS e IPS sono la stessa funzione con un interruttore: ogni firma può essere
+impostata su <em>monitora</em> oppure <em>blocca</em>. È esattamente questo interruttore che rende
+possibile il metodo di attivazione graduale.</p>
+
+<h2>Come rileva</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Metodo</th><th>Come funziona</th><th>Punto debole</th></tr></thead>
+    <tbody>
+      <tr><td><b>Firme</b></td><td>Riconosce schemi noti di attacco, come un antivirus</td>
+          <td>Non vede ciò che non è ancora catalogato</td></tr>
+      <tr><td><b>Anomalie di protocollo</b></td><td>Rileva traffico che viola le regole del protocollo</td>
+          <td>Applicazioni scritte male generano falsi positivi</td></tr>
+      <tr><td><b>Comportamento</b></td><td>Rileva schemi sospetti: scansioni, troppi tentativi, esfiltrazioni</td>
+          <td>Va tarato sul traffico normale di quel cliente</td></tr>
+      <tr><td><b>Reputazione</b></td><td>Blocca destinazioni note come malevole</td>
+          <td>Dipende dalla qualità e dall'aggiornamento delle liste</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la guardia all'ingresso
+  </div>
+  <p>Una guardia con l'<b>album dei ricercati</b> riconosce chi è già noto. Efficacissima con i
+  malintenzionati conosciuti, cieca davanti a uno nuovo. Sono le firme.</p>
+  <p>Una guardia che nota <b>i comportamenti strani</b> — uno che prova tutte le maniglie, uno che
+  entra ed esce trenta volte — prende anche chi non è sull'album. Ma ogni tanto ferma un tecnico della
+  manutenzione che sta facendo il suo lavoro: è il <b>falso positivo</b>.</p>
+  <p style="margin-bottom:0">E qui sta il compromesso che governa tutto: <b>una guardia più sospettosa
+  prende più malintenzionati e disturba più persone oneste</b>. Tarare un IPS significa scegliere dove
+  mettere quel punto di equilibrio — e la risposta giusta dipende dal cliente, non dal prodotto.</p>
+</div>
+
+<h2>Il metodo di attivazione</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Sei passi per accendere un IPS senza telefonate
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Attiva tutto in sola osservazione</b> per due settimane. Nessun blocco, solo registrazione.</li>
+    <li><b>Guarda cosa scatta.</b> Troverai due categorie: attacchi veri dall'esterno (tanti, e vanno
+    bloccati) e segnalazioni sul traffico interno legittimo (i futuri falsi positivi).</li>
+    <li><b>Passa in blocco le firme sul traffico in ingresso da Internet.</b> Rischio bassissimo e
+    beneficio immediato: nessuna applicazione aziendale dipende da un attacco proveniente da fuori.</li>
+    <li><b>Analizza una per una le segnalazioni sul traffico interno.</b> Ogni eccezione va capita,
+    non subita: se una firma scatta sul gestionale, verifica <em>perché</em> prima di escluderla.</li>
+    <li><b>Passa in blocco progressivamente</b>, per gruppi di firme e con qualche giorno di
+    osservazione tra un passaggio e l'altro.</li>
+    <li><b>Documenta ogni eccezione</b> con motivo e data, e rivedile ogni sei mesi: spesso vengono
+    create per un'applicazione che nel frattempo è stata aggiornata o dismessa.</li>
+  </ol>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le eccezioni si fanno strette, non larghe
+  </div>
+  <p>Quando una firma blocca il gestionale, la tentazione è disattivarla del tutto. È l'equivalente di
+  togliere la guardia perché ha fermato un tecnico.</p>
+  <p style="margin-bottom:0"><b>L'eccezione corretta è la più stretta possibile:</b> quella firma,
+  <em>solo</em> tra quel client e quel server, <em>solo</em> su quella porta. Così resta attiva per
+  tutto il resto del traffico. Disattivare una firma globalmente è l'ultima risorsa, e va scritto nella
+  documentazione con il motivo.</p>
+</div>
+
+<h2>Antivirus di rete e antivirus sull'endpoint</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Sul firewall</th><th>Sull'endpoint</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cosa vede</b></td><td>I file in transito sulla rete</td><td>Tutto ciò che succede sul dispositivo</td></tr>
+      <tr><td><b>Traffico cifrato</b></td><td>Solo con ispezione TLS</td><td>Lo vede comunque, dopo la decifratura locale</td></tr>
+      <tr><td><b>Chiavette USB</b></td><td>Non le vede</td><td>Le vede</td></tr>
+      <tr><td><b>Dispositivi fuori sede</b></td><td>Non protetti</td><td>Protetti ovunque</td></tr>
+      <tr><td><b>Vantaggio unico</b></td><td>Protegge anche ciò su cui non puoi installare nulla: stampanti, IoT, macchinari</td><td>Vede il comportamento, non solo il file</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p><strong>Non sono alternative: sono strati diversi.</strong> Se un cliente chiede quale scegliere, la
+risposta è che l'endpoint è irrinunciabile e quello di rete aggiunge copertura dove l'endpoint non
+arriva — in particolare sui dispositivi non gestibili, che in un'azienda sono più di quanti si pensi.</p>
+
+<h2>Il sandboxing</h2>
+
+<p>Un file sospetto che nessuna firma riconosce viene mandato in un ambiente isolato, <strong>eseguito
+davvero</strong> e osservato: se cifra file, contatta destinazioni note come malevole o modifica il
+sistema, viene classificato come malevolo.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Modalità</th><th>Come funziona</th><th>Compromesso</th></tr></thead>
+    <tbody>
+      <tr><td><b>Blocca e analizza</b></td><td>Il file viene trattenuto finché l'analisi non finisce</td>
+          <td>Sicuro, ma l'utente aspetta da decine di secondi a qualche minuto</td></tr>
+      <tr><td><b>Consegna e analizza</b></td><td>Il file passa subito, l'analisi avviene in parallelo</td>
+          <td>Nessuna attesa, ma il file è già arrivato: serve che l'endpoint possa poi intervenire</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Il sandboxing è efficace contro ciò che è nuovo e non ancora catalogato, che è esattamente il tipo
+di minaccia che le firme non vedono. Costa in licenza e in latenza, e ha senso soprattutto dove
+arrivano molti allegati e file dall'esterno.</p>
+
+<h2>I limiti da dichiarare al cliente</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Cosa un IPS non può fare
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Non vede nel traffico cifrato</b> senza ispezione TLS — cioè non vede la maggior parte del
+    traffico web.</li>
+    <li><b>Non ferma le credenziali rubate.</b> Un accesso con utente e password validi è indistinguibile
+    da un accesso legittimo: per quello serve l'autenticazione a più fattori.</li>
+    <li><b>Non protegge da ciò che non lo attraversa:</b> traffico tra due PC della stessa VLAN, o tra
+    VLAN instradate da uno switch L3 (lezione 3-01).</li>
+    <li><b>Non sostituisce gli aggiornamenti.</b> Una firma protegge da uno sfruttamento noto di una
+    vulnerabilità che resta lì: è un cerotto, non una cura.</li>
+    <li><b>Con le firme scadute non protegge affatto</b>, pur sembrando attivo (lezione 3-03).</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Dirlo esplicitamente evita che il cliente creda di aver
+  comprato un'immunità, ed è ciò che rende credibile il resto delle tue raccomandazioni.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: IPS e antivirus di rete",
+  "questions": [
+    { "q": "Qual è la differenza tra IDS e IPS?",
+      "a": [ {"t":"L'IPS è in linea e può bloccare; l'IDS riceve una copia del traffico e si limita a segnalare","ok":true},
+             {"t":"L'IDS usa le firme, l'IPS le anomalie","ok":false},
+             {"t":"L'IDS è per il traffico interno, l'IPS per quello esterno","ok":false},
+             {"t":"Sono due nomi per la stessa cosa","ok":false} ],
+      "e": "La differenza è la posizione, e da lì il rischio: un falso positivo su un IDS produce una segnalazione, su un IPS blocca traffico legittimo. Sui firewall moderni è la stessa funzione con un interruttore per firma — ed è proprio quell'interruttore a rendere possibile l'attivazione graduale." },
+
+    { "q": "Qual è il primo passo per attivare un IPS senza creare disservizi?",
+      "a": [ {"t":"Attivarlo in sola osservazione per due settimane e guardare cosa scatta","ok":true},
+             {"t":"Attivare solo le firme critiche in blocco","ok":false},
+             {"t":"Attivarlo di notte per limitare l'impatto","ok":false},
+             {"t":"Attivarlo su un solo PC di prova","ok":false} ],
+      "e": "L'osservazione senza blocco fa emergere le due categorie che ti servono: attacchi veri dall'esterno, da bloccare subito, e segnalazioni sul traffico interno legittimo, che sono i futuri falsi positivi. Senza questa fase si procede alla cieca e la prima telefonata arriva entro un'ora." },
+
+    { "q": "Quale gruppo di firme si può passare in blocco con il rischio più basso?",
+      "a": [ {"t":"Quelle sul traffico in ingresso da Internet","ok":true},
+             {"t":"Quelle sul traffico tra VLAN interne","ok":false},
+             {"t":"Quelle sul traffico verso i server","ok":false},
+             {"t":"Tutte insieme, per coerenza","ok":false} ],
+      "e": "Nessuna applicazione aziendale dipende da un attacco proveniente dall'esterno: bloccare lì dà beneficio immediato e rischio quasi nullo. Il traffico interno è invece dove vivono le applicazioni legittime, e va affrontato con più cautela e una firma alla volta." },
+
+    { "q": "Una firma IPS blocca il gestionale del cliente. Qual è l'eccezione corretta?",
+      "a": [ {"t":"Quella firma, solo tra quel client e quel server, solo su quella porta","ok":true},
+             {"t":"Disattivare la firma globalmente","ok":false},
+             {"t":"Disattivare l'IPS sulla VLAN degli uffici","ok":false},
+             {"t":"Passare tutto l'IPS in sola osservazione","ok":false} ],
+      "e": "L'eccezione va fatta il più stretta possibile, così la firma resta attiva per tutto il resto del traffico. Disattivarla globalmente è l'equivalente di togliere la guardia perché ha fermato un tecnico: è l'ultima risorsa e va documentata con il motivo e una data di revisione." },
+
+    { "q": "Antivirus sul firewall o sull'endpoint?",
+      "a": [ {"t":"Entrambi: sono strati diversi, e quello di rete copre i dispositivi su cui non puoi installare nulla","ok":true},
+             {"t":"Solo sul firewall, che vede tutto il traffico","ok":false},
+             {"t":"Solo sull'endpoint, che è più efficace","ok":false},
+             {"t":"Indifferente, si sovrappongono","ok":false} ],
+      "e": "L'endpoint è irrinunciabile perché vede anche chiavette, traffico cifrato e comportamento, e protegge il dispositivo anche fuori sede. Quello di rete aggiunge copertura su stampanti, telecamere, macchinari e ospiti — tutto ciò su cui un agente non si può installare, che in un'azienda è più di quanto si pensi." },
+
+    { "q": "Cosa NON può fare un IPS?",
+      "a": [ {"t":"Fermare un accesso fatto con credenziali rubate valide","ok":true},
+             {"t":"Riconoscere attacchi noti","ok":false},
+             {"t":"Bloccare traffico verso destinazioni malevole","ok":false},
+             {"t":"Rilevare scansioni della rete","ok":false} ],
+      "e": "Un accesso con utente e password corretti è indistinguibile da uno legittimo: per quello serve l'autenticazione a più fattori. Vale la pena dichiarare anche gli altri limiti — non vede nel traffico cifrato senza ispezione TLS, non vede ciò che non lo attraversa, e con le firme scadute non protegge pur sembrando attivo." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Attacchi di rete comuni e difese — NetPath</title>
+<meta name="description" content="Come si riconoscono e come si fermano gli attacchi che incontrerai davvero in un'azienda italiana.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-11">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Sicurezza di rete</span>
+      </nav>
+      <h1 class="lesson-title">Attacchi di rete comuni e difese</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 11</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Riconoscere i segni di un attacco in corso nei log e nei sintomi</li>
+        <li>Conoscere la difesa concreta per ciascuna famiglia di attacchi</li>
+        <li>Capire perché il movimento laterale è il momento decisivo di un incidente</li>
+        <li>Costruire una lista di controllo difensiva da applicare ai clienti</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Questa lezione è scritta dal lato della difesa: per ogni famiglia di attacchi vedi
+<strong>come si riconosce</strong> e <strong>cosa lo ferma</strong>. Non serve saper attaccare per
+difendere bene; serve capire il meccanismo abbastanza da sapere dove mettere l'ostacolo.</p>
+
+<h2>Il quadro generale: le fasi di un incidente</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 180" role="img" aria-label="Le cinque fasi tipiche di un incidente e dove la rete può intervenire">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dove la rete può fermare un incidente</text>
+    <g stroke-width="1.6">
+      <rect x="14"  y="40" width="124" height="56" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="150" y="40" width="124" height="56" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="286" y="40" width="128" height="56" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2.4"/>
+      <rect x="426" y="40" width="124" height="56" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="562" y="40" width="124" height="56" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="76"  y="62">1 · INGRESSO</text>
+      <text x="212" y="62">2 · APPIGLIO</text>
+      <text x="350" y="62">3 · MOVIMENTO</text>
+      <text x="350" y="78">LATERALE</text>
+      <text x="488" y="62">4 · ESCALATION</text>
+      <text x="624" y="62">5 · IMPATTO</text>
+    </g>
+    <g class="dg-label-sm" text-anchor="middle" fill="var(--dg-text-soft)">
+      <text x="76"  y="86">phishing, VPN</text>
+      <text x="212" y="86">malware sul PC</text>
+      <text x="488" y="86">privilegi di dominio</text>
+      <text x="624" y="86">cifratura, furto dati</text>
+    </g>
+    <text x="350" y="130" text-anchor="middle" class="dg-label-sm">La fase 3 è quella in cui la <tspan font-weight="700">rete</tspan> fa la differenza: senza movimento laterale un incidente resta un PC infetto.</text>
+    <text x="350" y="156" text-anchor="middle" class="dg-label-sm">Con il movimento laterale diventa un disastro aziendale. È lì che va concentrata la difesa di rete.</text>
+  </svg>
+  </div>
+  <figcaption>Le fasi 1, 4 e 5 si difendono soprattutto con endpoint, identità e backup. <b>La fase 3
+  è territorio tuo</b>, ed è quella che trasforma un incidente in una catastrofe.</figcaption>
+</figure>
+
+<h2>Attacchi al livello 2</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Attacco</th><th>Come si riconosce</th><th>Difesa</th></tr></thead>
+    <tbody>
+      <tr><td><b>ARP spoofing</b><br><span style="font-size:.85em">l'attaccante si dichiara gateway</span></td>
+          <td>Il MAC del gateway cambia nelle cache; traffico che rallenta senza motivo</td>
+          <td><b>Dynamic ARP Inspection</b> + DHCP snooping (lezione 2-07)</td></tr>
+      <tr><td><b>DHCP abusivo</b></td>
+          <td>Utenti con indirizzi di una rete sconosciuta; «Server DHCP» inatteso in <code>ipconfig</code></td>
+          <td><b>DHCP snooping</b> con porte fidate</td></tr>
+      <tr><td><b>MAC flooding</b><br><span style="font-size:.85em">riempire la tabella MAC</span></td>
+          <td>Lo switch inizia ad allagare tutto; contatori anomali</td>
+          <td><b>Port security</b> con limite ragionevole</td></tr>
+      <tr><td><b>VLAN hopping</b></td>
+          <td>Traffico che compare in VLAN dove non dovrebbe</td>
+          <td>Native VLAN inutilizzata, niente negoziazione automatica dei trunk (lezione 2-02)</td></tr>
+      <tr><td><b>Root bridge falso</b></td>
+          <td>Cambio inatteso del root; percorsi che si riorganizzano</td>
+          <td><b>Root Guard</b> e <b>BPDU Guard</b> sulle porte utente</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Hanno tutti una caratteristica in comune: <strong>richiedono di essere già dentro la rete
+locale</strong>. Sono quindi gli attacchi tipici di chi ha ottenuto un appiglio — un PC compromesso,
+una presa di rete accessibile, un dispositivo collegato da un visitatore.</p>
+
+<h2>Il movimento laterale: il momento decisivo</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Perché la segmentazione è la difesa che conta di più
+  </div>
+  <p>Un PC che prende un malware è un incidente gestibile: si isola, si reinstalla, si ripristina.
+  Diventa un disastro quando da quel PC si raggiunge tutto il resto — server, backup, telecamere,
+  macchinari — perché la rete è piatta e permissiva.</p>
+  <p><b>Cosa cerca chi si muove lateralmente:</b> condivisioni di rete aperte, credenziali riutilizzate
+  su più sistemi, servizi di amministrazione raggiungibili (desktop remoto, gestione), backup
+  accessibili dalla stessa rete degli utenti.</p>
+  <p style="margin-bottom:0"><b>Le tre difese che pesano di più</b>, in ordine: <b>segmentazione</b>
+  con regole vere tra le VLAN (capitolo 2.1 e lezione 3-12), <b>backup non raggiungibili</b> dalla rete
+  degli utenti con credenziali diverse, <b>autenticazione a più fattori</b> su tutto ciò che è
+  amministrativo.</p>
+</div>
+
+<h2>Attacchi ai servizi di rete</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Attacco</th><th>Segnali</th><th>Difesa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Avvelenamento DNS</b></td><td>Risoluzioni che puntano a indirizzi inattesi</td>
+          <td>DNS interni non esposti, forwarder verso risolutori affidabili, DNSSEC dove disponibile</td></tr>
+      <tr><td><b>Tentativi di accesso ripetuti</b><br><span style="font-size:.85em">VPN, RDP, portali</span></td>
+          <td><b>Migliaia di autenticazioni fallite</b> nei log, spesso da paesi diversi</td>
+          <td>MFA, blocco dopo N tentativi, filtro geografico, restrizione degli indirizzi sorgente</td></tr>
+      <tr><td><b>Sfruttamento di vulnerabilità note</b></td><td>L'IPS segnala tentativi su servizi esposti</td>
+          <td><b>Aggiornamenti tempestivi</b> + IPS in blocco sul traffico in ingresso</td></tr>
+      <tr><td><b>Esfiltrazione di dati</b></td>
+          <td>Traffico in uscita anomalo per volume o orario; connessioni verso destinazioni mai viste</td>
+          <td>NetFlow con allarmi, filtro web, controllo applicativo sull'archiviazione cloud personale</td></tr>
+      <tr><td><b>Canali di comando e controllo</b></td>
+          <td>Connessioni regolari e periodiche verso lo stesso host esterno</td>
+          <td>Filtro per reputazione, blocco dei domini nuovi, IPS</td></tr>
+      <tr><td><b>Saturazione (DoS)</b></td><td>Linea satura, sessioni esaurite, servizi irraggiungibili</td>
+          <td>Limiti di sessione, protezione dell'operatore per i volumi grandi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il segnale più facile da vedere e più spesso ignorato
+  </div>
+  <p><b>Connessioni periodiche e regolari verso lo stesso host esterno</b>, magari ogni 60 secondi,
+  anche di notte e nei fine settimana, da un PC che dovrebbe essere spento.</p>
+  <p style="margin-bottom:0">Il traffico umano è irregolare; quello automatico ha un ritmo. Guardare i
+  dati NetFlow di notte è uno dei modi più semplici per accorgersi che qualcosa non va — e nessuno lo
+  fa, perché di notte non ci sono lamentele.</p>
+</div>
+
+<h2>Cosa la rete non può fermare</h2>
+
+<p>Va detto con chiarezza al cliente, perché imposta aspettative corrette:</p>
+
+<ul class="clean">
+  <li><b>Il phishing che convince un utente</b> a inserire le credenziali su un sito credibile. Si
+  mitiga con MFA e formazione, non con il firewall.</li>
+  <li><b>Un accesso con credenziali valide.</b> È indistinguibile da uno legittimo.</li>
+  <li><b>Un dispositivo compromesso fuori sede.</b> Torna in ufficio già infetto.</li>
+  <li><b>Un fornitore compromesso</b> che ha accesso legittimo ai sistemi del cliente.</li>
+  <li><b>Un errore umano interno.</b> Il caso più frequente di perdita di dati non è un attacco.</li>
+</ul>
+
+<h2>La lista di controllo difensiva</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Le dieci misure, in ordine di rapporto tra efficacia e sforzo
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>MFA su VPN, accessi amministrativi e posta.</b> La singola misura più efficace contro il
+    vettore più comune.</li>
+    <li><b>Backup isolati</b> dalla rete degli utenti, con credenziali diverse, e almeno una copia non
+    modificabile. È ciò che determina se un incidente dura un giorno o tre settimane.</li>
+    <li><b>Niente RDP, SMB o interfacce di amministrazione esposte</b> su Internet (lezione 2-15).</li>
+    <li><b>Aggiornamenti</b> di firewall, VPN e sistemi esposti, con un calendario e non a richiesta.</li>
+    <li><b>Segmentazione</b> con regole vere tra le VLAN, non «tutto verso tutto».</li>
+    <li><b>Protezione sull'endpoint</b> aggiornata e monitorata, su tutti i dispositivi gestiti.</li>
+    <li><b>Log centralizzati</b> con conservazione adeguata (lezione 2-25).</li>
+    <li><b>Protezioni di livello 2</b>: DHCP snooping, BPDU Guard, port security (lezione 2-07).</li>
+    <li><b>Filtro web</b> con categorie di sicurezza e blocco dei domini nuovi.</li>
+    <li><b>Revisione periodica</b> di pubblicazioni, regole e utenti: la rete si sporca da sola.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">Le prime quattro coprono la gran parte del rischio reale
+  e si possono proporre a qualsiasi cliente, anche piccolo. Se ne puoi fare solo una, fai la prima.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Se sospetti un incidente in corso
+  </div>
+  <p>Non improvvisare e non cancellare le tracce. In ordine:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Non riavviare</b> i sistemi coinvolti: si perdono informazioni utili a capire cosa è
+    successo.</li>
+    <li><b>Isola</b> invece di spegnere: scollegare dalla rete conserva lo stato.</li>
+    <li><b>Conserva i log</b> prima che ruotino: esportali subito.</li>
+    <li><b>Avvisa il cliente</b> e, se previsto, chi in azienda gestisce la sicurezza: alcune situazioni
+    comportano adempimenti con scadenze strette.</li>
+    <li><b>Chiama supporto specialistico</b> se la portata supera la gestione ordinaria. Riconoscere il
+    limite è competenza, non debolezza.</li>
+  </ul>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: attacchi e difese",
+  "questions": [
+    { "q": "In quale fase di un incidente la rete fa la differenza maggiore?",
+      "a": [ {"t":"Il movimento laterale: senza, un incidente resta un PC infetto","ok":true},
+             {"t":"L'ingresso iniziale","ok":false},
+             {"t":"L'impatto finale","ok":false},
+             {"t":"L'escalation dei privilegi","ok":false} ],
+      "e": "Ingresso, escalation e impatto si difendono soprattutto con endpoint, identità e backup. Il movimento laterale è territorio della rete: è ciò che trasforma un PC compromesso in un disastro aziendale, e la segmentazione con regole vere è la difesa che pesa di più." },
+
+    { "q": "Un utente riferisce che la rete «va lenta» e noti che il MAC associato al gateway è cambiato. Cosa sospetti?",
+      "a": [ {"t":"ARP spoofing: qualcuno si sta dichiarando gateway","ok":true},
+             {"t":"Un loop di livello 2","ok":false},
+             {"t":"Un problema di MTU","ok":false},
+             {"t":"Il DHCP abusivo","ok":false} ],
+      "e": "Se il MAC del gateway cambia, il traffico di tutti sta passando da qualcun altro, che poi lo inoltra — per questo funziona ma rallenta. La difesa è Dynamic ARP Inspection appoggiata al DHCP snooping. Un loop darebbe saturazione totale; un DHCP abusivo darebbe indirizzi di una rete sconosciuta." },
+
+    { "q": "Qual è il segnale più caratteristico di un canale di comando e controllo?",
+      "a": [ {"t":"Connessioni regolari e periodiche verso lo stesso host esterno, anche di notte","ok":true},
+             {"t":"Un picco improvviso di banda","ok":false},
+             {"t":"Molti tentativi di accesso falliti","ok":false},
+             {"t":"Errori CRC sulle porte","ok":false} ],
+      "e": "Il traffico umano è irregolare, quello automatico ha un ritmo: connessioni ogni 60 secondi da un PC che dovrebbe essere spento sono un segnale forte. Si vede nei dati NetFlow guardando le ore notturne — cosa che quasi nessuno fa, perché di notte non ci sono lamentele." },
+
+    { "q": "Qual è la singola misura più efficace contro il vettore d'ingresso più comune?",
+      "a": [ {"t":"L'autenticazione a più fattori su VPN, accessi amministrativi e posta","ok":true},
+             {"t":"L'IPS in modalità blocco","ok":false},
+             {"t":"Il filtro web per categorie","ok":false},
+             {"t":"La segmentazione in VLAN","ok":false} ],
+      "e": "Le credenziali rubate — con phishing, malware o acquisto — sono il modo più comune in cui qualcuno entra. Nessuna politica di password le rende inutili; un secondo fattore sì. Le altre misure sono importanti ma agiscono su fasi successive o su vettori meno frequenti." },
+
+    { "q": "Cosa rende un attacco ransomware un problema di giorni invece che di settimane?",
+      "a": [ {"t":"Backup isolati dalla rete degli utenti, con credenziali diverse e una copia non modificabile","ok":true},
+             {"t":"Un firewall di nuova generazione","ok":false},
+             {"t":"L'antivirus sull'endpoint","ok":false},
+             {"t":"Il filtro web","ok":false} ],
+      "e": "Le altre misure riducono la probabilità che accada; i backup determinano <b>quanto dura</b> se accade. Un backup raggiungibile dalla stessa rete e con le stesse credenziali viene cifrato insieme a tutto il resto — ed è lo scenario che trasforma un incidente in una crisi aziendale." },
+
+    { "q": "Sospetti un incidente in corso su un server. Cosa NON devi fare?",
+      "a": [ {"t":"Riavviarlo","ok":true},
+             {"t":"Scollegarlo dalla rete","ok":false},
+             {"t":"Esportare subito i log","ok":false},
+             {"t":"Avvisare il cliente","ok":false} ],
+      "e": "Il riavvio cancella informazioni utili a capire cosa è successo e non risolve nulla. Isolare scollegando dalla rete ferma la propagazione conservando lo stato; i log vanno esportati prima che ruotino; il cliente va avvisato perché alcune situazioni comportano adempimenti con scadenze strette." },
+
+    { "q": "Cosa hanno in comune ARP spoofing, DHCP abusivo e MAC flooding?",
+      "a": [ {"t":"Richiedono tutti di essere già dentro la rete locale","ok":true},
+             {"t":"Sono tutti attacchi da Internet","ok":false},
+             {"t":"Si difendono tutti con l'IPS","ok":false},
+             {"t":"Colpiscono solo le reti Wi-Fi","ok":false} ],
+      "e": "Sono attacchi di livello 2 e il livello 2 non attraversa i router: servono un PC compromesso, una presa accessibile o un dispositivo collegato da un visitatore. Per questo si difendono con le protezioni sugli switch — DHCP snooping, DAI, port security — e non con il firewall perimetrale." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
