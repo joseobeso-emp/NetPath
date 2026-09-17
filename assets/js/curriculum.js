@@ -118,10 +118,10 @@ window.NETPATH_CURRICULUM = [
       { id:"l3-03", t:"Dimensionare: throughput, sessioni, licenze", s:"Come si sceglie il modello giusto senza fidarsi del datasheet.", m:24, ready:true }
     ]},
     { title: "WAN e multi-sede", lessons: [
-      { id:"l3-04", t:"BGP essenziale per chi fa MSP", s:"AS, peering, attributi, annunci. Il minimo che serve davvero fuori dai grandi ISP.", m:32, ready:false },
-      { id:"l3-05", t:"SD-WAN: cosa risolve davvero", s:"Oltre il marketing: SLA, health check, regole applicative, failover trasparente.", m:30, ready:false },
-      { id:"l3-06", t:"Overlay: GRE, VXLAN, IPsec overlay", s:"Reti dentro le reti, e perché ormai sono ovunque.", m:28, ready:false },
-      { id:"l3-07", t:"Connettività: FTTH, FWA, MPLS, backup 4G/5G", s:"Cosa vendono gli operatori, cosa consegnano, cosa scrivere nel contratto.", m:24, ready:false }
+      { id:"l3-04", t:"BGP essenziale per chi fa MSP", s:"AS, peering, attributi, annunci. Il minimo che serve davvero fuori dai grandi ISP.", m:32, ready:true },
+      { id:"l3-05", t:"SD-WAN: cosa risolve davvero", s:"Oltre il marketing: SLA, health check, regole applicative, failover trasparente.", m:30, ready:true },
+      { id:"l3-06", t:"Overlay: GRE, VXLAN, IPsec overlay", s:"Reti dentro le reti, e perché ormai sono ovunque.", m:28, ready:true },
+      { id:"l3-07", t:"Connettività: FTTH, FWA, MPLS, backup 4G/5G", s:"Cosa vendono gli operatori, cosa consegnano, cosa scrivere nel contratto.", m:24, ready:true }
     ]},
     { title: "Sicurezza di rete", lessons: [
       { id:"l3-08", t:"SSL/TLS inspection: come e quando", s:"Il compromesso più delicato che farai: cosa vedi, cosa rompi, cosa dice il GDPR.", m:30, ready:false },

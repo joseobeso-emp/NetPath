@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SD-WAN: cosa risolve davvero — NetPath</title>
+<meta name="description" content="Oltre il marketing: misure di qualità, regole applicative, failover trasparente. E quando invece non serve.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-05">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>WAN e multi-sede</span>
+      </nav>
+      <h1 class="lesson-title">SD-WAN: cosa risolve davvero</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 05</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Spiegare cosa fa un SD-WAN senza usare parole da brochure</li>
+        <li>Capire come si misura la qualità di una linea e come si decide di spostare il traffico</li>
+        <li>Distinguere i casi in cui serve da quelli in cui bastano due rotte statiche</li>
+        <li>Conoscere i tranelli pratici che emergono in produzione</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">SD-WAN è il termine più abusato del networking commerciale. Sotto il marketing c'è però
+una tecnologia con un'idea precisa e utile: <strong>misurare in continuazione la qualità di ogni linea
+e spostare il traffico applicazione per applicazione, prima che una linea cada del tutto</strong>.
+Vediamo cosa fa davvero e quando vale il suo costo.</p>
+
+<h2>Il problema che risolve</h2>
+
+<p>Nella lezione 2-09 hai visto il failover con rotte a distanze diverse e controllo attivo. Funziona,
+ma ha tre limiti:</p>
+
+<ul class="clean">
+  <li><b>Ragiona in bianco e nero:</b> la linea è su o è giù. Una linea che funziona ma ha il 5% di
+  perdita e 200 ms di latenza resta «su», e la voce diventa inascoltabile.</li>
+  <li><b>Sposta tutto insieme:</b> non può mandare la voce su una linea e i backup sull'altra.</li>
+  <li><b>Non distingue le applicazioni:</b> per il routing, Microsoft 365 e YouTube sono entrambi
+  «Internet».</li>
+</ul>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 280" role="img" aria-label="L'SD-WAN misura la qualità delle linee e indirizza le applicazioni su quella adatta">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Misura, decide, sposta — in continuazione</text>
+
+    <g stroke-width="1.5">
+      <rect x="20" y="46" width="150" height="34" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="20" y="90" width="150" height="34" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="20" y="134" width="150" height="34" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="20" y="178" width="150" height="34" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="34" y="68">voce / VoIP</text>
+      <text x="34" y="112">videoconferenze</text>
+      <text x="34" y="156">gestionale</text>
+      <text x="34" y="200">backup, aggiorn.</text>
+    </g>
+
+    <rect x="250" y="80" width="190" height="100" rx="10" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2.1"/>
+    <text x="345" y="104" text-anchor="middle" class="dg-label-sm">MOTORE SD-WAN</text>
+    <text x="345" y="126" text-anchor="middle" class="dg-mono-sm">misura ogni linea:</text>
+    <text x="345" y="144" text-anchor="middle" class="dg-mono-sm">latenza · jitter · perdita</text>
+    <text x="345" y="166" text-anchor="middle" class="dg-mono-sm">ogni pochi secondi</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.4" fill="none">
+      <path d="M174 63h50v50h22"/><path d="M174 107h72"/>
+      <path d="M174 151h72"/><path d="M174 195h50v-50h22"/>
+    </g>
+
+    <g stroke-width="1.7">
+      <rect x="520" y="52" width="160" height="42" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="520" y="110" width="160" height="42" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="520" y="168" width="160" height="42" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="600" y="70">WAN1 · fibra</text><text x="600" y="86">12 ms · 0% perdita</text>
+      <text x="600" y="128">WAN2 · FWA</text><text x="600" y="144">35 ms · 0,4%</text>
+      <text x="600" y="186">WAN3 · 4G</text><text x="600" y="202">70 ms · 2%</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.4" fill="none">
+      <path d="M444 113 L 516 73"/><path d="M444 125 L 516 131"/><path d="M444 140 L 516 189"/>
+    </g>
+
+    <text x="350" y="244" text-anchor="middle" class="dg-label-sm">La voce va sulla linea che <tspan font-weight="700">in questo momento</tspan> rispetta la soglia, non su quella «principale».</text>
+    <text x="350" y="266" text-anchor="middle" class="dg-label-sm">Se la fibra degrada, la voce si sposta da sola — senza che la fibra sia caduta.</text>
+  </svg>
+  </div>
+  <figcaption>La differenza con il failover tradizionale è tutta qui: si agisce sul <b>degrado</b>, non
+  solo sul guasto, e si agisce <b>per applicazione</b>, non su tutto il traffico insieme.</figcaption>
+</figure>
+
+<h2>Come misura</h2>
+
+<p>Il firewall manda continuamente sonde attraverso ogni linea verso un bersaglio noto, e misura tre
+grandezze:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Grandezza</th><th>Cosa indica</th><th>Soglia tipica per la voce</th></tr></thead>
+    <tbody>
+      <tr><td><b>Latenza</b></td><td>Quanto ci mette un pacchetto</td><td>sotto 150 ms</td></tr>
+      <tr><td><b>Jitter</b></td><td>Quanto varia la latenza</td><td>sotto 30 ms</td></tr>
+      <tr><td><b>Perdita di pacchetti</b></td><td>Quanti se ne perdono</td><td>sotto l'1%</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Scegliere bene il bersaglio delle sonde
+  </div>
+  <p>Il bersaglio determina cosa stai misurando davvero.</p>
+  <ul style="margin-bottom:0">
+    <li><b>Il gateway dell'operatore:</b> misura solo il primo tratto. Risponde anche quando la sua
+    rete è guasta a monte — lo stesso difetto visto nella lezione 2-09.</li>
+    <li><b>Un bersaglio pubblico generico</b> (1.1.1.1, 8.8.8.8): misura il percorso verso Internet.</li>
+    <li><b>Il servizio che ti interessa davvero</b> — il firewall della sede centrale per i tunnel, o un
+    endpoint del servizio cloud usato dal cliente: <b>è la scelta migliore</b>, perché misura
+    esattamente il percorso che ti interessa.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Usa <b>più bersagli</b> per ogni linea, così il disservizio
+  di un singolo servizio non provoca uno spostamento inutile del traffico.</p>
+</div>
+
+<h2>Le regole: come si decide dove mandare cosa</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Criterio di scelta</th><th>Come funziona</th><th>Per cosa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Best quality</b></td><td>Sceglie la linea con le misure migliori in questo momento</td><td>Voce, video</td></tr>
+      <tr><td><b>Lowest cost / SLA</b></td><td>Usa la linea preferita finché rispetta la soglia, poi cambia</td><td>Applicazioni critiche su linee a consumo</td></tr>
+      <tr><td><b>Manuale con priorità</b></td><td>Ordine fisso, con verifica dello stato</td><td>Traffico che deve uscire da un indirizzo specifico</td></tr>
+      <tr><td><b>Bilanciamento</b></td><td>Distribuisce le sessioni su più linee</td><td>Traffico generico, per usare tutta la banda</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Le regole si applicano in base a <strong>sorgente, destinazione, servizio o applicazione
+riconosciuta</strong> — quest'ultima è il vero valore aggiunto: distinguere Microsoft 365 da un video
+in streaming e trattarli diversamente è qualcosa che il routing tradizionale non può fare.</p>
+
+<h2>Quando serve davvero e quando no</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Situazione</th><th>Serve SD-WAN?</th></tr></thead>
+    <tbody>
+      <tr><td>Sede singola, una linea</td><td><b>No.</b> Non c'è niente da scegliere</td></tr>
+      <tr><td>Sede singola, due linee, traffico generico</td><td><b>No.</b> Bastano due rotte con controllo attivo</td></tr>
+      <tr><td>Sede singola con VoIP e due linee di qualità diversa</td><td><b>Forse.</b> Valuta se la QoS e una scelta statica bastano</td></tr>
+      <tr><td>Più sedi con tunnel e traffico voce/video tra loro</td><td><b>Sì.</b> È il caso tipico</td></tr>
+      <tr><td>Molte sedi (oltre 5-10) da configurare in modo uniforme</td><td><b>Sì,</b> soprattutto per la gestione centralizzata</td></tr>
+      <tr><td>Sostituire l'MPLS con linee Internet</td><td><b>Sì.</b> È la ragione commerciale originaria dell'SD-WAN</td></tr>
+      <tr><td>Cliente che «ha sentito parlare di SD-WAN»</td><td><b>Fai le domande di sopra</b> prima di rispondere</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Quello che l'SD-WAN non fa
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Non crea banda.</b> Se entrambe le linee sono sature, spostare il traffico non aiuta.</li>
+    <li><b>Non migliora una linea che va male sempre.</b> Sceglie la migliore tra quelle che hai: se
+    sono tutte cattive, sceglie la meno cattiva.</li>
+    <li><b>Non risolve i problemi oltre il tuo controllo.</b> Se la congestione è a metà strada verso
+    un servizio cloud, l'unica cosa che può fare è provare l'altra linea — che potrebbe passare
+    dallo stesso punto.</li>
+    <li><b>Non sostituisce la QoS.</b> Decide <em>quale linea</em>; la QoS decide <em>chi passa prima</em>
+    su quella linea. Servono entrambe.</li>
+  </ul>
+</div>
+
+<h2>I tranelli che emergono in produzione</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Problema</th><th>Perché succede</th><th>Come si evita</th></tr></thead>
+    <tbody>
+      <tr><td><b>Sessioni che cadono al cambio linea</b></td>
+          <td>Cambiando uscita cambia l'indirizzo pubblico: le sessioni TCP in corso si spezzano</td>
+          <td>Far passare le applicazioni sensibili dentro <b>tunnel</b>, così l'indirizzo interno non cambia</td></tr>
+      <tr><td><b>Traffico che oscilla tra le linee</b></td>
+          <td>Soglie troppo vicine ai valori reali: la linea entra ed esce di continuo dalla conformità</td>
+          <td>Soglie con isteresi: valori diversi per uscire e per rientrare</td></tr>
+      <tr><td><b>Servizi cloud che chiedono di riautenticarsi</b></td>
+          <td>L'indirizzo pubblico cambia e il servizio lo interpreta come una sessione sospetta</td>
+          <td>Fissare quelle applicazioni su una linea, o usare tunnel</td></tr>
+      <tr><td><b>Il riconoscimento applicativo non funziona</b></td>
+          <td>Traffico cifrato senza ispezione TLS: si riconosce dal nome del server, non sempre sufficiente</td>
+          <td>Ispezione TLS dove accettabile, o regole basate sulle destinazioni note del servizio</td></tr>
+      <tr><td><b>Le misure sono buone ma gli utenti si lamentano</b></td>
+          <td>Le sonde misurano verso un bersaglio diverso da quello che usano gli utenti</td>
+          <td>Cambiare bersaglio: misurare ciò che conta davvero</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Come si presenta a un cliente
+  </div>
+  <p>Evita la parola SD-WAN nella prima frase: non significa niente per lui. Descrivi il risultato:</p>
+  <p style="margin-bottom:0">«Oggi, se la fibra ha un disturbo, le vostre telefonate diventano
+  inascoltabili finché qualcuno non se ne accorge e interviene. Con questa soluzione il sistema misura
+  la qualità delle linee ogni pochi secondi e <b>sposta da solo le telefonate sull'altra linea prima
+  che ve ne accorgiate</b>, riportandole indietro quando la fibra torna a posto. I backup invece
+  restano sempre sulla linea secondaria, così non rubano banda al lavoro.» Poi, se serve, gli dici come
+  si chiama.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: SD-WAN",
+  "questions": [
+    { "q": "Qual è la differenza principale tra SD-WAN e un failover con rotte a distanze diverse?",
+      "a": [ {"t":"L'SD-WAN agisce sul degrado misurato e per singola applicazione, non solo quando la linea cade","ok":true},
+             {"t":"L'SD-WAN è più veloce a rilevare un guasto totale","ok":false},
+             {"t":"L'SD-WAN non richiede configurazione","ok":false},
+             {"t":"L'SD-WAN funziona anche senza una seconda linea","ok":false} ],
+      "e": "Il failover tradizionale ragiona in bianco e nero e sposta tutto insieme: una linea con il 5% di perdita resta «su» e la voce diventa inascoltabile. L'SD-WAN misura latenza, jitter e perdita in continuazione e sposta <em>quella specifica applicazione</em> quando la qualità scende sotto soglia." },
+
+    { "q": "Qual è il bersaglio migliore per le sonde di qualità?",
+      "a": [ {"t":"Il servizio o la sede che interessa davvero, con più bersagli per linea","ok":true},
+             {"t":"Il gateway dell'operatore, che è il più vicino","ok":false},
+             {"t":"Un indirizzo interno della LAN","ok":false},
+             {"t":"È indifferente","ok":false} ],
+      "e": "Il gateway dell'operatore risponde anche quando la sua rete è guasta a monte, quindi misura poco. Misurare il firewall della sede centrale o un endpoint del servizio cloud usato dal cliente verifica esattamente il percorso che interessa. Più bersagli evitano spostamenti inutili dovuti al disservizio di un singolo servizio." },
+
+    { "q": "Un cliente con una sede sola, due linee e traffico di sola navigazione. Serve SD-WAN?",
+      "a": [ {"t":"No: due rotte con controllo attivo ottengono lo stesso risultato","ok":true},
+             {"t":"Sì, è sempre preferibile","ok":false},
+             {"t":"Sì, altrimenti non si può usare la seconda linea","ok":false},
+             {"t":"Solo se le linee sono di operatori diversi","ok":false} ],
+      "e": "Senza voce, video o tunnel tra sedi non c'è niente che giustifichi il costo e la complessità in più: il failover statico con controllo attivo copre il caso. L'SD-WAN inizia a ripagarsi con traffico sensibile alla qualità, più sedi, o la necessità di gestire molte sedi in modo uniforme." },
+
+    { "q": "Perché le sessioni possono cadere quando l'SD-WAN sposta il traffico su un'altra linea?",
+      "a": [ {"t":"Cambia l'indirizzo pubblico di uscita e le sessioni TCP in corso si spezzano","ok":true},
+             {"t":"Perché la nuova linea è più lenta","ok":false},
+             {"t":"Perché il firewall si riavvia","ok":false},
+             {"t":"Perché il DNS deve risolvere di nuovo","ok":false} ],
+      "e": "Il server dall'altra parte vede arrivare pacchetti da un indirizzo diverso e non li associa alla sessione esistente. Si evita facendo passare le applicazioni sensibili dentro tunnel, dove l'indirizzo interno resta invariato indipendentemente da quale linea trasporta il tunnel." },
+
+    { "q": "Cosa NON fa un SD-WAN?",
+      "a": [ {"t":"Non crea banda: se entrambe le linee sono sature, spostare il traffico non aiuta","ok":true},
+             {"t":"Non può distinguere le applicazioni","ok":false},
+             {"t":"Non funziona con tunnel VPN","ok":false},
+             {"t":"Non può misurare la perdita di pacchetti","ok":false} ],
+      "e": "Sceglie la migliore tra le linee che hai: se sono tutte cattive, sceglie la meno cattiva. E non sostituisce la QoS — l'SD-WAN decide <em>quale linea</em>, la QoS decide <em>chi passa prima</em> su quella linea. Servono entrambe e risolvono problemi diversi." },
+
+    { "q": "Il traffico oscilla di continuo tra le due linee. Come si corregge?",
+      "a": [ {"t":"Con soglie a isteresi: valori diversi per uscire e per rientrare nella conformità","ok":true},
+             {"t":"Disattivando una delle due linee","ok":false},
+             {"t":"Aumentando la frequenza delle sonde","ok":false},
+             {"t":"Passando al bilanciamento del carico","ok":false} ],
+      "e": "Se la soglia coincide quasi con il valore reale della linea, questa entra ed esce continuamente dalla conformità e il traffico rimbalza. Con valori diversi per uscire e per rientrare — per esempio esce sopra il 2% di perdita e rientra sotto l'1% — il comportamento si stabilizza. Sonde più frequenti peggiorerebbero l'oscillazione." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

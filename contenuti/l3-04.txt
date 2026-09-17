@@ -1,0 +1,237 @@
+#id: l3-04
+#title: BGP essenziale per chi fa MSP
+#min: 30
+#level: 3
+#chapter: WAN e multi-sede
+#desc: AS, peering, annunci e attributi. Il minimo che serve davvero fuori dai grandi operatori — e dove lo incontrerai.
+#obj: Capire cosa fa BGP e perché è diverso da OSPF
+#obj: Sapere quando un cliente ne ha davvero bisogno
+#obj: Leggere un annuncio BGP e capire perché una rotta è stata scelta
+#obj: Riconoscere BGP quando lo incontri in Azure e nell'SD-WAN
+---
+<p class="lead">BGP è il protocollo che tiene insieme Internet. Nella vita di un MSP lo incontri
+raramente da configurare e spesso da capire: sotto ExpressRoute di Azure, dentro le soluzioni SD-WAN,
+e nei clienti che hanno indirizzi pubblici propri. Questa lezione ti dà quello che serve per non
+essere spiazzato.</p>
+
+<h2>La differenza con OSPF</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>OSPF</th><th>BGP</th></tr></thead>
+    <tbody>
+      <tr><td><b>Dove vive</b></td><td>Dentro un'organizzazione</td><td>Tra organizzazioni diverse</td></tr>
+      <tr><td><b>Sceglie in base a</b></td><td>Il costo, cioè la velocità dei collegamenti</td><td><b>Politiche:</b> accordi commerciali, preferenze, contratti</td></tr>
+      <tr><td><b>Obiettivo</b></td><td>Il percorso più breve</td><td>Il percorso che <b>voglio io</b></td></tr>
+      <tr><td><b>Velocità di convergenza</b></td><td>Secondi</td><td>Da decine di secondi a minuti</td></tr>
+      <tr><td><b>Quante rotte regge</b></td><td>Migliaia</td><td><b>Oltre un milione</b> (la tabella completa di Internet)</td></tr>
+      <tr><td><b>Si fida del vicino?</b></td><td>Sì, è casa tua</td><td><b>No:</b> si filtra sempre ciò che si accetta e ciò che si annuncia</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: le strade di casa e i confini tra stati
+  </div>
+  <p><b>OSPF</b> è come organizzare le strade dentro la tua città. Tutti i vigili lavorano per lo stesso
+  comune, si fidano l'uno dell'altro e hanno un obiettivo comune: far arrivare la gente il più in
+  fretta possibile. La domanda è tecnica: «qual è la strada più corta?».</p>
+  <p><b>BGP</b> è come organizzare il traffico <em>tra stati diversi</em>. Ogni stato ha i suoi
+  interessi. Se per andare in Spagna la strada più corta passa dalla Francia, ma la Francia ti fa
+  pagare il pedaggio mentre il Portogallo ti lascia passare gratis, potresti preferire il giro più
+  lungo. E soprattutto: <b>non ti fidi di quello che dice l'altro stato</b>. Se il Belgio ti annuncia
+  «da me si arriva in Giappone», qualcosa non torna e quell'annuncio lo rifiuti.</p>
+  <p style="margin-bottom:0">Ecco perché BGP sceglie in base a <b>politiche</b> e non a velocità, e
+  perché in BGP si filtra sempre: sono relazioni tra soggetti diversi, con interessi diversi.</p>
+</div>
+
+<h2>I concetti minimi</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Termine</th><th>Significato</th></tr></thead>
+    <tbody>
+      <tr><td><b>AS</b> (Autonomous System)</td>
+          <td>Un insieme di reti sotto un'unica amministrazione, identificato da un numero. Ogni operatore ne ha almeno uno; un'azienda che vuole indirizzi propri deve chiederne uno al RIPE</td></tr>
+      <tr><td><b>eBGP</b></td><td>Sessione tra AS <b>diversi</b>: tu e il tuo operatore</td></tr>
+      <tr><td><b>iBGP</b></td><td>Sessione dentro lo <b>stesso</b> AS: tra i router di un operatore</td></tr>
+      <tr><td><b>Peering</b></td><td>La sessione BGP tra due router. Va configurata esplicitamente da entrambe le parti: BGP non scopre i vicini da solo</td></tr>
+      <tr><td><b>Annuncio</b></td><td>«Da me si raggiunge questa rete». Chi lo riceve decide se crederci e se ripeterlo ad altri</td></tr>
+      <tr><td><b>AS-path</b></td><td>L'elenco degli AS attraversati. Serve a scegliere e a <b>evitare i loop</b>: se vedo il mio AS nell'elenco, scarto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Come BGP sceglie</h2>
+
+<p>La sequenza completa ha una decina di criteri, ma nella pratica ne contano tre:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Criterio</th><th>Chi lo controlla</th><th>A cosa serve</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Weight</b> (solo Cisco, locale)</td><td>Tu</td><td>Preferenza valida solo su quel router</td></tr>
+      <tr><td>2</td><td><b>Local Preference</b></td><td><b>Tu</b></td><td>«Da quale operatore preferisco <b>uscire</b>». Vale in tutto il tuo AS. Valore più alto = preferito</td></tr>
+      <tr><td>3</td><td><b>AS-path più corto</b></td><td>Entrambi</td><td>Meno AS attraversati = preferito. Si può allungare artificialmente (prepending)</td></tr>
+      <tr><td>4</td><td><b>MED</b></td><td>Tu, verso l'esterno</td><td>Suggerisce all'altro da quale dei tuoi collegamenti <b>entrare</b>. È un suggerimento, non un obbligo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La regola pratica da ricordare
+  </div>
+  <p><b>Local Preference governa il traffico in uscita</b> — ed è sotto il tuo controllo completo,
+  quindi funziona sempre.</p>
+  <p><b>AS-path prepending e MED influenzano il traffico in ingresso</b> — ma solo <em>influenzano</em>:
+  la decisione finale spetta agli altri, che possono avere politiche proprie che scavalcano i tuoi
+  suggerimenti.</p>
+  <p style="margin-bottom:0">Da qui l'asimmetria classica di BGP: <b>controlli bene da dove esci,
+  controlli male da dove entri</b>. È una frase da ricordare quando un cliente chiede di «bilanciare
+  le due linee» e si aspetta simmetria.</p>
+</div>
+
+<h2>Dove lo incontrerai davvero</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Scenario</th><th>Serve BGP?</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>Azienda con una linea e IP dell'operatore</td><td><b>No</b></td><td>Basta la rotta di default</td></tr>
+      <tr><td>Due linee di operatori diversi, IP dell'operatore</td><td><b>No</b></td><td>Rotte statiche con controllo attivo, o SD-WAN</td></tr>
+      <tr><td>Azienda con <b>indirizzi pubblici propri</b> e due operatori</td><td><b>Sì</b></td><td>È l'unico modo per mantenere gli stessi IP su entrambe le linee</td></tr>
+      <tr><td><b>Azure ExpressRoute</b></td><td><b>Sì</b></td><td>Lo scambio di rotte è obbligatoriamente BGP</td></tr>
+      <tr><td><b>Azure VPN Gateway</b> in modalità dinamica</td><td>Sì</td><td>Le rotte tra on-premise e Azure si scambiano via BGP</td></tr>
+      <tr><td><b>SD-WAN</b></td><td>Spesso, sotto il cofano</td><td>Molte soluzioni lo usano per distribuire le rotte tra le sedi</td></tr>
+      <tr><td>Data center o hosting</td><td>Sì</td><td>Multi-homing con indirizzi propri</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il caso che giustifica BGP in un'azienda
+  </div>
+  <p>Un cliente pubblica servizi su Internet e vuole che restino raggiungibili anche se un operatore ha
+  un guasto. Con gli indirizzi dell'operatore è impossibile: se cade quella linea, quegli indirizzi
+  non esistono più da nessuna parte, e cambiare i record DNS richiede tempo e propagazione.</p>
+  <p style="margin-bottom:0">Con un <b>AS e un blocco di indirizzi propri</b> (richiesti al RIPE) il
+  cliente annuncia le stesse reti a entrambi gli operatori: se uno cade, l'altro continua ad annunciarle
+  e i servizi restano raggiungibili <b>senza cambiare niente</b>. È un impegno amministrativo e di
+  competenze non banale, e va proposto solo quando la continuità dei servizi pubblicati lo giustifica
+  davvero.</p>
+</div>
+
+<h2>Configurazione minima</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Una sessione eBGP verso un operatore</div>
+<pre><span class="c">═══ FORTIGATE ═══════════════════════════════════════</span>
+<span class="p">config router bgp</span>
+  <span class="p">set as</span> <span class="n">65001</span>
+  <span class="p">set router-id</span> <span class="n">10.10.99.1</span>
+  <span class="p">config neighbor</span>
+    <span class="p">edit</span> <span class="n">203.0.113.1</span>
+      <span class="p">set remote-as</span> <span class="n">64500</span>
+      <span class="p">set prefix-list-in</span> <span class="s">"solo-default"</span>      <span class="c"># FILTRA in ingresso</span>
+      <span class="p">set prefix-list-out</span> <span class="s">"mie-reti"</span>          <span class="c"># FILTRA in uscita</span>
+  <span class="p">config network</span>
+    <span class="p">edit</span> <span class="n">1</span>
+      <span class="p">set prefix</span> <span class="n">198.51.100.0 255.255.255.0</span>
+
+<span class="c">═══ MIKROTIK (RouterOS 7) ═══════════════════════════</span>
+<span class="p">/routing bgp connection add name=</span><span class="s">isp1</span> <span class="p">remote.address=</span><span class="n">203.0.113.1</span> <span class="p">\</span>
+<span class="p">    remote.as=</span><span class="n">64500</span> <span class="p">local.role=</span><span class="s">ebgp</span> <span class="p">as=</span><span class="n">65001</span> <span class="p">\</span>
+<span class="p">    output.filter-chain=</span><span class="s">bgp-out</span> <span class="p">input.filter=</span><span class="s">bgp-in</span>
+
+<span class="c">═══ VERIFICARE ══════════════════════════════════════</span>
+<span class="p">get router info bgp summary</span>            <span class="c"># le sessioni sono ESTABLISHED?</span>
+<span class="p">get router info bgp neighbors</span> <span class="n">203.0.113.1</span> <span class="p">routes</span>
+<span class="p">/routing bgp session print</span>              <span class="c"># MikroTik</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Filtrare sempre, in entrambe le direzioni
+  </div>
+  <p>Sono le due righe più importanti della configurazione, e sono anche quelle che si dimenticano.</p>
+  <p><b>In uscita:</b> se non filtri cosa annunci, un errore può far credere al mondo che tu sia la
+  strada per reti che non ti appartengono. Il traffico di qualcun altro arriva da te e sparisce. Sono
+  incidenti che nel passato hanno reso irraggiungibili servizi a livello internazionale.</p>
+  <p><b>In ingresso:</b> se accetti tutto quello che l'operatore ti manda, ricevi centinaia di migliaia
+  di rotte che possono saturare la memoria del tuo apparato. Nella maggior parte dei casi <b>ti basta
+  la rotta di default</b>: chiedila all'operatore e filtra via il resto.</p>
+  <p style="margin-bottom:0"><b>Regola:</b> annuncia solo ciò che è tuo, accetta solo ciò che ti serve.
+  Metti anche un limite massimo di prefissi accettati, così una sessione impazzita non ti riempie
+  la memoria.</p>
+</div>
+
+<h2>Diagnosticare</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>La sessione resta in <code>Active</code> o <code>Idle</code></td><td>I due router non si raggiungono, o il numero di AS remoto è sbagliato</td></tr>
+      <tr><td>Sessione <code>Established</code> ma zero rotte ricevute</td><td>Il filtro in ingresso le scarta tutte, o l'operatore non annuncia nulla</td></tr>
+      <tr><td>Le tue reti non sono raggiungibili da Internet</td><td>Non le stai annunciando, o il filtro in uscita le blocca</td></tr>
+      <tr><td>Il traffico esce dall'operatore sbagliato</td><td>Local Preference non configurata: verifica quale rotta vince</td></tr>
+      <tr><td>Il traffico entra dall'operatore sbagliato</td><td>Normale: l'ingresso si influenza, non si controlla</td></tr>
+      <tr><td>La sessione cade e risale di continuo</td><td>Superato il limite di prefissi, o problemi sulla linea sottostante</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: BGP",
+  "questions": [
+    { "q": "Qual è la differenza fondamentale tra OSPF e BGP?",
+      "a": [ {"t":"OSPF cerca il percorso più breve, BGP applica politiche tra organizzazioni diverse","ok":true},
+             {"t":"OSPF è più recente e sostituisce BGP","ok":false},
+             {"t":"BGP funziona solo su fibra","ok":false},
+             {"t":"OSPF gestisce IPv4 e BGP IPv6","ok":false} ],
+      "e": "OSPF opera dentro un'organizzazione dove tutti si fidano e l'obiettivo è tecnico: la strada più corta. BGP opera tra soggetti con interessi diversi, quindi sceglie in base a preferenze e accordi commerciali — e per lo stesso motivo <b>si filtra sempre</b> ciò che si accetta e ciò che si annuncia." },
+
+    { "q": "Un cliente ha due linee di operatori diversi e usa gli indirizzi forniti da loro. Serve BGP?",
+      "a": [ {"t":"No: bastano rotte statiche con controllo attivo, o SD-WAN","ok":true},
+             {"t":"Sì, è l'unico modo per usare due operatori","ok":false},
+             {"t":"Sì, altrimenti il failover non funziona","ok":false},
+             {"t":"Solo se le due linee hanno velocità diverse","ok":false} ],
+      "e": "BGP serve quando il cliente ha <b>indirizzi pubblici propri</b> da annunciare a entrambi gli operatori. Con gli indirizzi dell'operatore, il failover si ottiene con rotte a distanze diverse e controllo attivo della raggiungibilità — molto più semplice da gestire e da diagnosticare." },
+
+    { "q": "Quale attributo controlla da quale operatore esce il tuo traffico?",
+      "a": [ {"t":"Local Preference","ok":true}, {"t":"MED","ok":false},
+             {"t":"AS-path prepending","ok":false}, {"t":"Il numero di AS","ok":false} ],
+      "e": "La Local Preference vale in tutto il tuo AS ed è sotto il tuo controllo completo, quindi funziona sempre. MED e AS-path prepending servono a <em>influenzare</em> da dove entra il traffico, ma la decisione finale spetta agli altri: controlli bene l'uscita, male l'ingresso." },
+
+    { "q": "Perché è essenziale filtrare gli annunci BGP in uscita?",
+      "a": [ {"t":"Un errore può far credere al mondo che sei la strada per reti non tue, dirottando traffico altrui","ok":true},
+             {"t":"Per ridurre il consumo di banda","ok":false},
+             {"t":"Perché gli operatori lo richiedono per contratto","ok":false},
+             {"t":"Per accelerare la convergenza","ok":false} ],
+      "e": "Annunciare per errore reti che non ti appartengono fa arrivare da te traffico destinato ad altri, che poi sparisce. Sono incidenti realmente accaduti che hanno reso irraggiungibili servizi su scala internazionale. La regola è: annuncia solo ciò che è tuo, accetta solo ciò che ti serve." },
+
+    { "q": "Perché conviene accettare dall'operatore solo la rotta di default invece della tabella completa?",
+      "a": [ {"t":"La tabella completa è enorme e può saturare la memoria dell'apparato, senza portare benefici reali","ok":true},
+             {"t":"Perché la tabella completa costa di più","ok":false},
+             {"t":"Perché contiene rotte non affidabili","ok":false},
+             {"t":"Perché rallenta il NAT","ok":false} ],
+      "e": "La tabella globale supera il milione di prefissi: pochi apparati da PMI la reggono, e per un'azienda non serve a nulla, perché comunque uscirebbe dallo stesso operatore. Conviene anche impostare un limite massimo di prefissi accettati, così una sessione impazzita non riempie la memoria." },
+
+    { "q": "In quale scenario cloud incontrerai BGP quasi certamente?",
+      "a": [ {"t":"Azure ExpressRoute, dove lo scambio di rotte è obbligatoriamente BGP","ok":true},
+             {"t":"Nella creazione di una VNet","ok":false},
+             {"t":"Nella configurazione di un NSG","ok":false},
+             {"t":"Nella pubblicazione di un sito web","ok":false} ],
+      "e": "ExpressRoute usa BGP per scambiare le rotte tra la rete on-premise e Azure, e lo stesso vale per un VPN Gateway configurato in modalità dinamica. È il motivo principale per cui vale la pena conoscere BGP anche senza gestire reti di operatori." }
+  ]
+}
+</script>

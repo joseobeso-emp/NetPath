@@ -1,0 +1,210 @@
+#id: l3-06
+#title: Overlay: GRE, VXLAN e tunnel sopra tunnel
+#min: 26
+#level: 3
+#chapter: WAN e multi-sede
+#desc: Reti dentro le reti, perché ormai sono ovunque, e il conto dei byte che devi saper fare.
+#obj: Capire cos'è un overlay e quale problema risolve
+#obj: Distinguere GRE, VXLAN e i tunnel IPsec in modalità interfaccia
+#obj: Calcolare quanto spazio utile resta dopo l'incapsulamento
+#obj: Riconoscere gli overlay quando li incontri, anche sotto altri nomi
+---
+<p class="lead">Un overlay è una rete costruita <em>sopra</em> un'altra rete, che ne ignora la
+struttura. Sembra un concetto astratto ed è invece la base di tutto ciò che hai visto negli ultimi
+capitoli: le VPN, l'SD-WAN, il cloud. Capirlo bene chiude un cerchio.</p>
+
+<h2>L'idea</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il container sulla nave
+  </div>
+  <p>Devi spedire mobili da Genova a New York. Sotto ci sono una strada, un porto, una nave, un altro
+  porto, un camion — cinque mondi diversi, con regole diverse, gestiti da persone diverse.</p>
+  <p>La soluzione è il <b>container</b>. Ci metti dentro i mobili, lo chiudi, e da quel momento nessuno
+  sa più cosa c'è dentro né gli interessa: camionisti, gruisti e marinai spostano <em>il container</em>.
+  Per te invece è come se i mobili viaggiassero da casa tua a casa del cliente <b>in un'unica tratta</b>:
+  la complessità sotto è nascosta.</p>
+  <p style="margin-bottom:0">L'overlay è il container. La rete che c'è sotto — Internet, l'operatore,
+  venti router che non conosci — si chiama <b>underlay</b>: esiste, serve, ma la tua rete logica la
+  ignora. E come per il container vero, c'è un prezzo: <b>il container occupa spazio</b>, quindi ci
+  stanno meno mobili per viaggio.</p>
+</div>
+
+<h2>Le tecnologie che incontrerai</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tecnologia</th><th>Incapsula</th><th>Cifra?</th><th>Dove la trovi</th></tr></thead>
+    <tbody>
+      <tr><td><b>GRE</b></td><td>Qualsiasi pacchetto dentro IP</td><td><b>No</b></td>
+          <td>Semplice e universale. Spesso combinato con IPsec per avere anche la cifratura</td></tr>
+      <tr><td><b>IPsec in modalità tunnel</b></td><td>Pacchetti IP dentro IP cifrato</td><td>Sì</td>
+          <td>Le VPN site-to-site classiche (lezione 2-17)</td></tr>
+      <tr><td><b>IPsec in modalità interfaccia</b><br><span style="font-size:.85em">(VTI, route-based)</span></td>
+          <td>Come sopra, ma si comporta come un'interfaccia</td><td>Sì</td>
+          <td><b>La forma moderna:</b> permette rotte, protocolli dinamici, ridondanza</td></tr>
+      <tr><td><b>VXLAN</b></td><td><b>Frame Ethernet</b> dentro UDP</td><td>No, di per sé</td>
+          <td>Data center, e sempre più nelle soluzioni SD-WAN. Estende il livello 2 sopra il livello 3</td></tr>
+      <tr><td><b>WireGuard</b></td><td>Pacchetti IP dentro UDP cifrato</td><td>Sì</td>
+          <td>VPN moderne, leggere e velocissime</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La distinzione che conta: livello 2 o livello 3?
+  </div>
+  <p><b>GRE, IPsec e WireGuard</b> trasportano <b>pacchetti IP</b>: le due estremità restano reti
+  distinte, collegate da un router. È quello che vuoi nella stragrande maggioranza dei casi.</p>
+  <p><b>VXLAN</b> trasporta <b>frame Ethernet</b>: le due estremità diventano <em>la stessa rete di
+  livello 2</em>, come se fossero collegate da un cavo. Serve quando qualcosa deve credere di essere
+  nello stesso segmento — la migrazione di macchine virtuali tra data center, o certi macchinari
+  industriali che parlano solo in broadcast.</p>
+  <p style="margin-bottom:0"><b>Attenzione:</b> estendere il livello 2 tra due sedi significa estendere
+  anche i broadcast e i loop. Un problema in una sede diventa un problema in entrambe. Si fa solo
+  quando serve davvero, mai «perché è comodo».</p>
+</div>
+
+<h2>Il conto dei byte</h2>
+
+<p>Ogni strato di incapsulamento ruba spazio ai dati. È il tema della lezione 1-04 che torna, e qui
+diventa un calcolo che devi saper fare.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 230" role="img" aria-label="Quanto spazio utile resta dopo vari livelli di incapsulamento">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Partendo da un MTU di 1500 byte</text>
+
+    <g stroke-width="1.5">
+      <rect x="40" y="40"  width="620" height="32" rx="6" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="40" y="82"  width="566" height="32" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="40" y="124" width="520" height="32" rx="6" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="40" y="166" width="470" height="32" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="56" y="61">Ethernet — nessun tunnel</text>
+      <text x="56" y="103">+ GRE (24 byte)</text>
+      <text x="56" y="145">+ IPsec ESP (circa 50-60 byte)</text>
+      <text x="56" y="187">+ IPsec su PPPoE, o GRE dentro IPsec</text>
+    </g>
+    <g class="dg-mono-sm" text-anchor="end" fill="var(--dg-text-soft)">
+      <text x="650" y="61">1500</text>
+      <text x="596" y="103">~1476</text>
+      <text x="550" y="145">~1440</text>
+      <text x="500" y="187">~1380 o meno</text>
+    </g>
+    <text x="350" y="220" text-anchor="middle" class="dg-label-sm">I valori esatti variano con algoritmi e opzioni: quello che conta è <tspan font-weight="700">sapere che lo spazio si riduce</tspan> e di quanto circa.</text>
+  </svg>
+  </div>
+  <figcaption>Ogni container va dentro un container più grande, e ogni volta resta meno posto per i
+  mobili. Il sintomo, come sai dalla lezione 2-17, è «il ping funziona ma i file no».</figcaption>
+</figure>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La regola pratica: MSS clamping, sempre
+  </div>
+  <p>Invece di calcolare il valore esatto per ogni combinazione, si imposta l'<b>MSS clamping</b> su
+  ogni interfaccia di tunnel: il firewall interviene sull'handshake TCP e impone alle due parti di
+  usare segmenti che entrano di sicuro.</p>
+  <p style="margin-bottom:0">Un valore di <b>1350</b> è prudente e funziona con praticamente qualsiasi
+  combinazione di incapsulamenti. Perdi qualche punto percentuale di efficienza e ti risparmi un'intera
+  categoria di guasti misteriosi. Molti firewall hanno anche un'opzione di adattamento automatico:
+  se c'è, usala. Il dettaglio lo vediamo nella lezione 3-19.</p>
+</div>
+
+<h2>Perché gli overlay sono ovunque</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Dove</th><th>Cosa risolve l'overlay</th></tr></thead>
+    <tbody>
+      <tr><td><b>VPN tra sedi</b></td><td>Far sembrare due reti distanti un'unica rete privata, usando Internet come trasporto</td></tr>
+      <tr><td><b>SD-WAN</b></td><td>I tunnel esistono su <em>tutte</em> le linee; il traffico si sposta tra di essi senza che le applicazioni se ne accorgano</td></tr>
+      <tr><td><b>Cloud ibrido</b></td><td>La rete aziendale si estende dentro Azure, indipendentemente da come è fatta l'infrastruttura sottostante</td></tr>
+      <tr><td><b>Data center</b></td><td>Le macchine virtuali si spostano tra apparati fisici mantenendo la propria rete</td></tr>
+      <tr><td><b>Reti di operatore</b></td><td>Ogni cliente ha la propria rete logica sulla stessa infrastruttura fisica</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché l'SD-WAN usa gli overlay — il pezzo che chiude il cerchio
+  </div>
+  <p>Nella lezione precedente hai visto il problema delle sessioni che cadono quando il traffico si
+  sposta da una linea all'altra, perché cambia l'indirizzo pubblico.</p>
+  <p>L'overlay lo risolve alla radice: si costruisce <b>un tunnel su ogni linea</b>, e tutto il traffico
+  viaggia dentro i tunnel. L'indirizzo che le applicazioni vedono è quello dell'interfaccia di tunnel,
+  che <b>non cambia mai</b> — cambia solo quale linea fisica trasporta il container in quel momento.</p>
+  <p style="margin-bottom:0">Ecco perché un SD-WAN fatto bene sposta il traffico senza interrompere
+  nulla, mentre un semplice policy routing tra due linee spezza le sessioni. Non è magia: è un container
+  che cambia nave.</p>
+</div>
+
+<h2>Diagnosticare</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa</th></tr></thead>
+    <tbody>
+      <tr><td>Il tunnel è su, il ping passa, i file no</td><td>MTU: manca l'MSS clamping</td></tr>
+      <tr><td>Prestazioni molto inferiori alla banda della linea</td><td>Frammentazione: ogni pacchetto viene spezzato e ricomposto</td></tr>
+      <tr><td>Funziona con un operatore e non con un altro</td><td>PPPoE riduce ulteriormente l'MTU, o l'operatore filtra il protocollo del tunnel</td></tr>
+      <tr><td>GRE non passa ma IPsec sì</td><td>GRE è il protocollo IP 47: alcuni NAT e firewall non lo gestiscono</td></tr>
+      <tr><td>Estendendo il livello 2 tra sedi, problemi in entrambe insieme</td><td>Broadcast e loop si propagano nell'overlay come in un cavo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: overlay",
+  "questions": [
+    { "q": "Cos'è un overlay?",
+      "a": [ {"t":"Una rete logica costruita sopra un'altra rete, che ne ignora la struttura","ok":true},
+             {"t":"Una seconda linea di riserva","ok":false},
+             {"t":"Un protocollo di cifratura","ok":false},
+             {"t":"Un tipo di cablaggio ridondante","ok":false} ],
+      "e": "È il container: dentro ci metti il tuo traffico, e la rete sottostante — l'underlay — lo trasporta senza sapere cosa contiene. Per la tua rete logica, venti router di Internet diventano un'unica tratta. Il prezzo è che il container occupa spazio, quindi resta meno posto per i dati." },
+
+    { "q": "Qual è la differenza fondamentale tra VXLAN e GRE o IPsec?",
+      "a": [ {"t":"VXLAN trasporta frame Ethernet: le due estremità diventano la stessa rete di livello 2","ok":true},
+             {"t":"VXLAN è cifrato e gli altri no","ok":false},
+             {"t":"VXLAN funziona solo su fibra","ok":false},
+             {"t":"VXLAN non riduce l'MTU","ok":false} ],
+      "e": "GRE, IPsec e WireGuard trasportano pacchetti IP e le due estremità restano reti distinte collegate da un router. VXLAN estende il livello 2, quindi estende anche broadcast e loop: un problema in una sede diventa un problema in entrambe. Si usa solo quando qualcosa deve davvero credere di essere nello stesso segmento." },
+
+    { "q": "Perché dentro un tunnel «il ping funziona ma i trasferimenti no»?",
+      "a": [ {"t":"L'incapsulamento riduce lo spazio utile e i pacchetti grandi non passano","ok":true},
+             {"t":"Il tunnel cifra solo i pacchetti piccoli","ok":false},
+             {"t":"Manca una regola firewall per i file","ok":false},
+             {"t":"Il DNS non risolve i nomi dei server","ok":false} ],
+      "e": "Il ping usa pacchetti minuscoli e passa sempre; i trasferimenti usano pacchetti al massimo della dimensione e vengono scartati perché con le intestazioni del tunnel superano l'MTU del percorso. La cura è l'MSS clamping, che va impostato su ogni tunnel per principio, non dopo che il problema si è manifestato." },
+
+    { "q": "Che valore di MSS clamping è prudente e funziona quasi ovunque?",
+      "a": [ {"t":"1350","ok":true}, {"t":"1500","ok":false}, {"t":"1460","ok":false}, {"t":"900","ok":false} ],
+      "e": "1350 lascia margine per praticamente qualsiasi combinazione di incapsulamenti, compreso IPsec sopra PPPoE. Si perde qualche punto percentuale di efficienza e si evita un'intera categoria di guasti. 1500 e 1460 non lasciano margine; 900 sarebbe inutilmente penalizzante." },
+
+    { "q": "Perché un SD-WAN costruito su overlay non interrompe le sessioni quando cambia linea?",
+      "a": [ {"t":"Le applicazioni vedono l'indirizzo dell'interfaccia di tunnel, che non cambia","ok":true},
+             {"t":"Perché il cambio avviene solo di notte","ok":false},
+             {"t":"Perché le sessioni vengono ricreate automaticamente","ok":false},
+             {"t":"Perché usa sempre la stessa linea fisica","ok":false} ],
+      "e": "Si costruisce un tunnel su ogni linea e il traffico viaggia sempre dentro i tunnel: cambia quale linea fisica trasporta il container, non l'indirizzo che le applicazioni vedono. È la stessa idea del container che cambia nave senza che i mobili se ne accorgano." },
+
+    { "q": "GRE non passa attraverso un certo percorso mentre IPsec sì. Perché?",
+      "a": [ {"t":"GRE è il protocollo IP 47 e alcuni NAT e firewall non lo gestiscono","ok":true},
+             {"t":"GRE richiede indirizzi pubblici su entrambi i lati","ok":false},
+             {"t":"GRE non supporta l'MTU ridotta","ok":false},
+             {"t":"GRE funziona solo tra apparati dello stesso produttore","ok":false} ],
+      "e": "GRE non usa TCP né UDP: è un protocollo IP a sé. Molti dispositivi NAT non sanno tradurlo e diversi firewall lo bloccano per impostazione predefinita. IPsec con NAT-Traversal viaggia invece dentro UDP 4500, che passa ovunque — ed è una delle ragioni per cui è più diffuso." }
+  ]
+}
+</script>

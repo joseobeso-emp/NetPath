@@ -1,0 +1,218 @@
+#id: l3-07
+#title: Connettività: FTTH, FWA, MPLS e backup mobile
+#min: 24
+#level: 3
+#chapter: WAN e multi-sede
+#desc: Cosa vendono gli operatori, cosa consegnano davvero, e cosa pretendere che sia scritto nel contratto.
+#obj: Distinguere le tecnologie di accesso e i loro limiti reali
+#obj: Leggere un'offerta di connettività capendo cosa manca
+#obj: Scegliere la linea di riserva giusta per il tipo di guasto che vuoi coprire
+#obj: Sapere cosa chiedere prima di firmare, per non scoprirlo dopo
+---
+<p class="lead">La connettività è l'unica parte dell'infrastruttura che <strong>non controlli</strong>:
+la compri, e quello che ricevi dipende da un contratto che quasi nessuno legge. Sapere cosa chiedere
+prima della firma evita la maggior parte delle discussioni dopo.</p>
+
+<h2>Le tecnologie di accesso</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tecnologia</th><th>Come arriva</th><th>Punti di attenzione</th></tr></thead>
+    <tbody>
+      <tr><td><b>FTTH</b><br>fibra fino all'edificio</td><td>Fibra fino al locale tecnico o all'ufficio</td>
+          <td>La migliore. Verifica se è <b>condivisa</b> (GPON) o dedicata: sulla condivisa la banda è nominale, non garantita</td></tr>
+      <tr><td><b>FTTC</b><br>fibra fino all'armadio</td><td>Fibra fino alla cabina di strada, poi rame</td>
+          <td>Le prestazioni dipendono dalla <b>distanza dall'armadio</b>: il valore commerciale è il massimo teorico, non il tuo</td></tr>
+      <tr><td><b>FWA</b><br>radio fisso</td><td>Antenna verso un ripetitore</td>
+          <td>Utile dove non c'è fibra. Sensibile a meteo, ostacoli e <b>affollamento del ripetitore</b>: può degradare senza guasti</td></tr>
+      <tr><td><b>4G / 5G</b></td><td>Rete mobile</td>
+          <td>Ottimo come riserva. Attenzione ai limiti di traffico e al <b>CGNAT</b>: niente servizi pubblicati</td></tr>
+      <tr><td><b>MPLS</b></td><td>Rete privata dell'operatore</td>
+          <td>Banda e latenza garantite tra le sedi, con SLA veri. Costoso: è il prodotto che l'SD-WAN punta a sostituire</td></tr>
+      <tr><td><b>Fibra dedicata</b><br>(business, punto-punto)</td><td>Fibra non condivisa</td>
+          <td>Banda simmetrica garantita e SLA stringenti. Costo elevato, tempi di attivazione lunghi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Fino a»: le due parole che cambiano tutto
+  </div>
+  <p>Un'offerta «fino a 1 Gbps» non promette 1 Gbps: promette che <b>non supererai</b> 1 Gbps.
+  Su una linea condivisa e in assenza di garanzie contrattuali, la banda effettiva dipende da quanti
+  altri clienti insistono sulla stessa infrastruttura in quel momento.</p>
+  <p style="margin-bottom:0">La differenza sta nel <b>rapporto di condivisione</b> e nella <b>banda
+  minima garantita</b>: sono due voci che nelle offerte al consumo non ci sono e in quelle business
+  devono esserci. Se in un'offerta non compaiono, quella non è un'offerta business — qualunque cosa
+  ci sia scritto in copertina.</p>
+</div>
+
+<h2>L'upload è la metà che nessuno guarda</h2>
+
+<p>Per anni l'upload contava poco. Oggi conta quanto il download, e spesso di più: videochiamate,
+backup in cloud, telecamere che mandano flussi fuori, servizi pubblicati, VPN in ingresso, file
+condivisi su cloud.</p>
+
+<p>Una linea 1000/100 e una 300/300 hanno un numero di copertina molto diverso, ma per un ufficio che
+fa videoconferenze e backup in cloud <strong>la seconda va meglio</strong>. È una delle poche
+osservazioni che fa cambiare idea a un cliente in trenta secondi, perché è verificabile: basta
+guardare i grafici della sua linea attuale (lezione 2-25).</p>
+
+<h2>Cosa deve esserci nel contratto</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Voce</th><th>Perché conta</th></tr></thead>
+    <tbody>
+      <tr><td><b>Banda minima garantita</b></td><td>Il valore su cui puoi contestare. Senza, «fino a» significa «quanto capita»</td></tr>
+      <tr><td><b>Rapporto di condivisione</b></td><td>Quanti clienti condividono la stessa capacità</td></tr>
+      <tr><td><b>SLA di disponibilità</b></td><td>Percentuale annua garantita, e cosa succede se non viene rispettata</td></tr>
+      <tr><td><b>Tempo di ripristino</b></td><td><b>La voce più importante di tutte:</b> in quante ore intervengono in caso di guasto, e in quali fasce orarie</td></tr>
+      <tr><td><b>Penali</b></td><td>Cosa spetta al cliente se lo SLA non è rispettato. Spesso simboliche: vale la pena saperlo prima</td></tr>
+      <tr><td><b>Indirizzo IP pubblico statico</b></td><td>Necessario per servizi pubblicati e VPN in ingresso. Spesso costa a parte</td></tr>
+      <tr><td><b>Record PTR</b></td><td>Se il cliente manda posta dal proprio server, va chiesto all'operatore (lezione 2-24)</td></tr>
+      <tr><td><b>Apparato dell'operatore</b></td><td>Chi lo gestisce, puoi metterlo in bridge, hai le credenziali?</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La domanda che vale più di tutte le altre
+  </div>
+  <p><b>«In quanto tempo ripristinate un guasto, e in quali orari?»</b></p>
+  <p>Una linea velocissima con ripristino «entro 5 giorni lavorativi» è, per un'azienda che lavora,
+  molto peggio di una linea più lenta con intervento entro 4 ore. E la differenza di prezzo tra i due
+  contratti è tipicamente inferiore a quello che il cliente perde in un solo giorno di fermo.</p>
+  <p style="margin-bottom:0">È anche l'argomento con cui si giustifica la seconda linea: se il
+  ripristino è lento, la continuità non la compri dall'operatore — te la costruisci tu.</p>
+</div>
+
+<h2>La linea di riserva: quale scegliere</h2>
+
+<p>Il criterio non è «la più economica»: è <strong>coprire un guasto diverso da quello della linea
+principale</strong>. Due linee che condividono lo stesso cavo, la stessa cabina o lo stesso operatore
+cadono insieme.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Riserva</th><th>Copre</th><th>Non copre</th></tr></thead>
+    <tbody>
+      <tr><td><b>Seconda linea, stesso operatore</b></td><td>Guasto dell'apparato, taglio di un cavo</td>
+          <td>Guasto della centrale o della rete dell'operatore</td></tr>
+      <tr><td><b>Operatore diverso, stessa tecnologia</b></td><td>Anche i guasti di rete dell'operatore</td>
+          <td>Uno scavo che taglia la stessa canalina</td></tr>
+      <tr><td><b>4G/5G</b></td><td><b>Guasti fisici di qualsiasi genere:</b> percorso completamente indipendente</td>
+          <td>Interruzioni di alimentazione della zona. Attenzione a copertura, traffico incluso e CGNAT</td></tr>
+      <tr><td><b>FWA come riserva</b></td><td>Guasti della rete cablata</td><td>Eventi meteo importanti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La combinazione che consiglio nella PMI
+  </div>
+  <p><b>Fibra come principale + 4G/5G come riserva.</b> Il costo del mobile è modesto, il percorso è
+  completamente indipendente da qualsiasi cavo, e copre proprio i guasti più frequenti: escavatori,
+  allagamenti dei pozzetti, guasti in centrale.</p>
+  <p>Tre accortezze che fanno la differenza tra un backup che funziona e uno che delude:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Verifica la copertura dove sta l'antenna</b>, non dove sta il tuo telefono. Il locale
+    tecnico è spesso nel punto peggiore dell'edificio: quasi sempre serve un'antenna esterna.</li>
+    <li><b>Controlla il traffico incluso.</b> Un'azienda che passa in backup per un giorno può bruciare
+    decine di gigabyte: con un piano da pochi GB il backup si spegne da solo nel momento peggiore.</li>
+    <li><b>Configura una QoS diversa per quando è attiva la riserva:</b> in emergenza si dà priorità a
+    gestionale, posta e voce, e si bloccano backup, aggiornamenti e streaming.</li>
+  </ul>
+</div>
+
+<h2>MPLS oggi ha ancora senso?</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>MPLS</th><th>SD-WAN su Internet</th></tr></thead>
+    <tbody>
+      <tr><td>Banda e latenza garantite da contratto</td><td>Nessuna garanzia sul percorso</td></tr>
+      <tr><td>Costo elevato</td><td>Costo molto inferiore</td></tr>
+      <tr><td>Attivazione lenta (settimane o mesi)</td><td>Attivazione rapida</td></tr>
+      <tr><td>Aggiungere una sede è un progetto</td><td>Aggiungere una sede è una configurazione</td></tr>
+      <tr><td>Traffico che non tocca Internet</td><td>Traffico cifrato su Internet</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Per la stragrande maggioranza delle aziende italiane, <strong>due linee Internet con SD-WAN danno un
+risultato migliore a un costo inferiore</strong>. L'MPLS mantiene senso in casi specifici: requisiti
+contrattuali o normativi sulla garanzia di banda, applicazioni estremamente sensibili alla latenza, o
+contesti in cui il traffico non deve transitare su Internet nemmeno cifrato.</p>
+
+<p>Una via di mezzo che si vede spesso e funziona bene: <strong>MPLS mantenuto per le poche sedi
+critiche, Internet con SD-WAN per tutte le altre</strong>, con i tunnel che passano indifferentemente
+sull'uno o sull'altro.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'apparato dell'operatore: chiedi il bridge
+  </div>
+  <p>Molti operatori consegnano un proprio router che fa NAT, DHCP e a volte firewall. Metterci dietro
+  il firewall del cliente crea <b>due livelli di NAT</b>, che complicano port forward, VPN e diagnosi.</p>
+  <p style="margin-bottom:0"><b>Chiedi che l'apparato sia messo in bridge</b> (o in «modem only»), così
+  l'indirizzo pubblico arriva direttamente sul firewall del cliente. Se l'operatore non lo permette,
+  mettilo nel documento di progetto come limite noto: spiega al cliente quali conseguenze avrà, prima
+  che le scopra da solo.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: connettività",
+  "questions": [
+    { "q": "Cosa significa «fino a 1 Gbps» in un'offerta di connettività?",
+      "a": [ {"t":"Che non supererai 1 Gbps, senza alcuna garanzia sul minimo","ok":true},
+             {"t":"Che avrai 1 Gbps garantiti","ok":false},
+             {"t":"Che la media giornaliera sarà di 1 Gbps","ok":false},
+             {"t":"Che 1 Gbps è la velocità in download e in upload","ok":false} ],
+      "e": "È un tetto, non un impegno. Le voci che contano sono <b>banda minima garantita</b> e <b>rapporto di condivisione</b>: se non compaiono nell'offerta, non è un'offerta business, qualunque cosa ci sia scritto in copertina." },
+
+    { "q": "Un ufficio fa molte videoconferenze e backup in cloud. Meglio 1000/100 o 300/300?",
+      "a": [ {"t":"300/300, perché il collo di bottiglia è l'upload","ok":true},
+             {"t":"1000/100, perché ha più banda totale","ok":false},
+             {"t":"Sono equivalenti","ok":false},
+             {"t":"Dipende solo dal numero di utenti","ok":false} ],
+      "e": "Videochiamate, backup verso il cloud, file condivisi e telecamere generano traffico <em>in uscita</em>. Il numero grande in copertina riguarda il download, che in questo profilo d'uso avanza. È un'osservazione verificabile sui grafici della linea attuale, e per questo convince rapidamente." },
+
+    { "q": "Qual è la voce contrattuale più importante per un'azienda che lavora?",
+      "a": [ {"t":"Il tempo di ripristino in caso di guasto, e in quali fasce orarie","ok":true},
+             {"t":"La velocità massima dichiarata","ok":false},
+             {"t":"Il costo mensile","ok":false},
+             {"t":"La durata del contratto","ok":false} ],
+      "e": "Una linea velocissima con ripristino entro cinque giorni lavorativi è molto peggio di una più lenta con intervento entro quattro ore, e la differenza di prezzo è tipicamente inferiore a quello che il cliente perde in un giorno di fermo. È anche l'argomento con cui si giustifica la seconda linea." },
+
+    { "q": "Perché il 4G/5G è una buona linea di riserva?",
+      "a": [ {"t":"Ha un percorso fisico completamente indipendente dai cavi","ok":true},
+             {"t":"Perché è più veloce della fibra","ok":false},
+             {"t":"Perché ha latenza inferiore","ok":false},
+             {"t":"Perché permette di pubblicare servizi","ok":false} ],
+      "e": "Copre i guasti più frequenti — escavatori, pozzetti allagati, guasti in centrale — proprio perché non condivide niente con la linea cablata. Va però verificata la copertura <b>dove sta l'antenna</b> (spesso serve un'antenna esterna), controllato il traffico incluso, e ricordato che con il CGNAT non si pubblica nulla." },
+
+    { "q": "Perché conviene chiedere che l'apparato dell'operatore sia messo in bridge?",
+      "a": [ {"t":"Evita un doppio NAT che complica port forward, VPN e diagnosi","ok":true},
+             {"t":"Aumenta la velocità della linea","ok":false},
+             {"t":"È necessario per attivare l'IPv6","ok":false},
+             {"t":"Riduce il costo del canone","ok":false} ],
+      "e": "Con l'apparato dell'operatore che fa NAT e il firewall del cliente che ne fa un altro, ogni pubblicazione richiede due configurazioni e ogni diagnosi un passaggio in più — su un apparato che spesso non puoi nemmeno amministrare. Se l'operatore non lo permette, va messo nel documento di progetto come limite noto." },
+
+    { "q": "Per quale motivo l'MPLS conserva ancora senso in alcuni casi?",
+      "a": [ {"t":"Quando servono garanzie contrattuali di banda e latenza, o il traffico non deve transitare su Internet","ok":true},
+             {"t":"Perché è più veloce di qualsiasi fibra","ok":false},
+             {"t":"Perché costa meno di due linee Internet","ok":false},
+             {"t":"Perché è più semplice da configurare","ok":false} ],
+      "e": "Per la maggioranza delle aziende italiane due linee Internet con SD-WAN danno un risultato migliore a costo inferiore. L'MPLS resta giustificato da requisiti contrattuali o normativi, applicazioni estremamente sensibili alla latenza, o contesti in cui il traffico non deve passare da Internet nemmeno cifrato — spesso mantenuto solo sulle sedi critiche." }
+  ]
+}
+</script>
