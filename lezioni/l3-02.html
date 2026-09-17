@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alta disponibilità: HA firewall, VRRP e stack — NetPath</title>
+<meta name="description" content="Active-passive, active-active, split brain, e come si collauda un failover sul serio invece di sperare.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-02">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Progettare la LAN</span>
+      </nav>
+      <h1 class="lesson-title">Alta disponibilità: HA firewall, VRRP e stack</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 02</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Decidere se l'alta disponibilità serve, con un criterio economico e non emotivo</li>
+        <li>Capire cosa si sincronizza tra due nodi e cosa no</li>
+        <li>Riconoscere e prevenire lo split brain</li>
+        <li>Collaudare un failover in modo che il cliente veda cosa ha comprato</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">L'alta disponibilità è una delle cose che si vendono più facilmente e si collaudano più
+raramente. Un cluster mai testato non è ridondanza: è una spesa e una speranza. Questa lezione ti dà i
+criteri per proporla quando serve e per dimostrare che funziona.</p>
+
+<h2>Serve davvero? La domanda è economica</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La domanda da fare al cliente, non a te stesso
+  </div>
+  <p><b>«Quanto vi costa un'ora di fermo totale?»</b> Non «vi dà fastidio»: quanto costa, in euro.</p>
+  <p>Fai fare il conto insieme: dipendenti fermi × costo orario, ordini non evasi, produzione ferma,
+  penali contrattuali. In un'azienda con 60 impiegati si arriva facilmente a qualche migliaio di euro
+  l'ora. In un'azienda di produzione, molto di più.</p>
+  <p style="margin-bottom:0">Poi confronta con il costo del secondo apparato e stima realisticamente
+  quante ore servirebbero a sostituire un firewall guasto: reperire l'apparato, configurarlo,
+  ricollegarlo. Tipicamente <b>da mezza giornata a due giorni</b>, se hai il backup della
+  configurazione — e molto di più se non ce l'hai. <b>Il conto lo fa il cliente, la decisione è sua.</b>
+  Il tuo lavoro è mettergli i numeri davanti.</p>
+</div>
+
+<h2>Active-passive e active-active</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Active-passive</th><th>Active-active</th></tr></thead>
+    <tbody>
+      <tr><td><b>Come lavora</b></td><td>Uno elabora tutto, l'altro guarda ed è pronto</td><td>Entrambi elaborano traffico</td></tr>
+      <tr><td><b>Capacità usata</b></td><td>50%</td><td>Fino al 100%… in teoria</td></tr>
+      <tr><td><b>Cosa succede a un guasto</b></td><td>Il passivo prende il posto: capacità invariata</td><td>Resta un nodo solo: <b>metà capacità</b></td></tr>
+      <tr><td><b>Complessità</b></td><td>Bassa</td><td>Alta: sessioni sincronizzate, routing simmetrico, licenze</td></tr>
+      <tr><td><b>Quando</b></td><td><b>Quasi sempre, nelle PMI</b></td><td>Quando un solo apparato non basterebbe comunque</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il paradosso dell'active-active
+  </div>
+  <p>Sembra più efficiente — «uso entrambi gli apparati invece di tenerne uno fermo» — ma contiene una
+  trappola: se dimensioni sul carico che i due reggono <em>insieme</em>, quando uno cade l'altro
+  <b>non ce la fa</b>. Il risultato è un guasto che non ferma la rete ma la rende inutilizzabile,
+  che per il cliente è quasi la stessa cosa.</p>
+  <p style="margin-bottom:0">Perché l'active-active sia utile davvero, <b>ciascun nodo deve poter
+  reggere il carico totale</b> — e a quel punto hai comprato la stessa capacità dell'active-passive,
+  con molta più complessità. Nelle PMI la risposta giusta è quasi sempre <b>active-passive</b>.</p>
+</div>
+
+<h2>Cosa si sincronizza</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Due firewall in HA con collegamento di heartbeat e sincronizzazione di configurazione e sessioni">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Due nodi, un'identità sola</text>
+
+    <rect x="60" y="48" width="200" height="86" rx="10" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="2.2"/>
+    <text x="160" y="70" text-anchor="middle" class="dg-label-sm">NODO A — attivo</text>
+    <text x="160" y="90" text-anchor="middle" class="dg-mono-sm">elabora il traffico</text>
+    <text x="160" y="110" text-anchor="middle" class="dg-mono-sm">possiede gli IP virtuali</text>
+
+    <rect x="440" y="48" width="200" height="86" rx="10" fill="var(--dg-line-soft)" stroke="var(--dg-line)" stroke-width="1.8"/>
+    <text x="540" y="70" text-anchor="middle" class="dg-label-sm">NODO B — passivo</text>
+    <text x="540" y="90" text-anchor="middle" class="dg-mono-sm">non elabora nulla</text>
+    <text x="540" y="110" text-anchor="middle" class="dg-mono-sm">pronto a subentrare</text>
+
+    <path d="M264 78h172" stroke="var(--dg-2)" stroke-width="2.4"/>
+    <path d="M264 104h172" stroke="var(--dg-4)" stroke-width="2.4"/>
+    <text x="350" y="72" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-2)">heartbeat</text>
+    <text x="350" y="126" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-4)">sincronizzazione</text>
+
+    <rect x="40" y="166" width="300" height="72" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.5"/>
+    <text x="190" y="186" text-anchor="middle" class="dg-mono-sm">SI SINCRONIZZA</text>
+    <text x="190" y="204" text-anchor="middle" class="dg-label-sm">configurazione · tabella sessioni · SA IPsec</text>
+    <text x="190" y="222" text-anchor="middle" class="dg-label-sm">tabelle di routing · lease DHCP</text>
+
+    <rect x="360" y="166" width="300" height="72" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.5"/>
+    <text x="510" y="186" text-anchor="middle" class="dg-mono-sm">NON SI SINCRONIZZA</text>
+    <text x="510" y="204" text-anchor="middle" class="dg-label-sm">log e statistiche · sessioni ispezionate (SSL)</text>
+    <text x="510" y="222" text-anchor="middle" class="dg-label-sm">alcune sessioni applicative · stato di certi proxy</text>
+  </svg>
+  </div>
+  <figcaption>La <b>sincronizzazione delle sessioni</b> è ciò che rende il failover trasparente: il
+  nodo che subentra conosce già le conversazioni aperte e non le scarta. Senza, tutte le connessioni
+  cadono e vanno riaperte — e l'utente se ne accorge eccome.</figcaption>
+</figure>
+
+<h3>Il trucco che rende istantaneo il passaggio</h3>
+<p>I due nodi condividono gli stessi indirizzi IP e un <strong>MAC virtuale</strong>. Quando il passivo
+subentra, manda un <span class="term" data-term="arp">gratuitous ARP</span> per dire «adesso quell'IP
+risponde a me», e tutti gli apparati aggiornano la cache all'istante.</p>
+
+<p>È il meccanismo della lezione 1-17, e ha una conseguenza pratica importante: <strong>se uno switch
+filtra i gratuitous ARP, il failover «non funziona»</strong> pur essendo configurato perfettamente.
+È una delle cause più difficili da trovare senza conoscere questo dettaglio.</p>
+
+<h2>Lo split brain</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Quando entrambi si credono attivi
+  </div>
+  <p>Se il collegamento di heartbeat cade ma <b>entrambi i nodi sono vivi</b>, ciascuno conclude che
+  l'altro è morto e si dichiara attivo. Risultato: due apparati con gli stessi indirizzi IP e lo stesso
+  MAC virtuale sulla stessa rete. Il traffico va a caso all'uno o all'altro, le sessioni si spezzano,
+  e la rete si comporta in modo incomprensibile.</p>
+  <p><b>Come si previene:</b></p>
+  <ul style="margin-bottom:0">
+    <li><b>Due collegamenti di heartbeat</b> su porte fisiche diverse, meglio se con percorsi diversi.
+    È la misura singola più efficace.</li>
+    <li><b>Monitoraggio delle interfacce dati:</b> un nodo che perde i collegamenti verso la rete non
+    deve dichiararsi attivo anche se l'heartbeat è a posto.</li>
+    <li><b>Priorità esplicite</b> tra i due nodi, così se si rincontrano sanno chi deve cedere.</li>
+    <li><b>Cavo diretto</b> tra i due apparati per l'heartbeat, senza passare da switch: uno switch in
+    mezzo è un punto di guasto in più proprio sul collegamento che deve essere il più affidabile.</li>
+  </ul>
+</div>
+
+<h2>VRRP e lo stacking</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tecnologia</th><th>Cosa rende ridondante</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td><b>HA proprietario</b><br>(FortiGate, Sophos, WatchGuard)</td>
+          <td>L'intero firewall: configurazione, sessioni, VPN</td>
+          <td>La scelta giusta tra apparati dello stesso produttore. Sincronizza molto più di VRRP</td></tr>
+      <tr><td><b>VRRP / HSRP</b></td>
+          <td>Solo l'<b>indirizzo del gateway</b></td>
+          <td>Standard, funziona tra vendor diversi. Ma non sincronizza sessioni né configurazione: le connessioni cadono al passaggio</td></tr>
+      <tr><td><b>Stacking</b></td>
+          <td>Più switch diventano un apparato logico unico</td>
+          <td>Una sola configurazione, aggregati verso due membri diversi. <b>La soluzione standard per gli switch</b></td></tr>
+      <tr><td><b>MLAG / VPC</b></td>
+          <td>Due switch indipendenti che presentano aggregati comuni</td>
+          <td>Più flessibile dello stack (aggiornamenti senza fermo), più complesso</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il limite dello stack che nessuno dice
+  </div>
+  <p>Due switch in stack sono <b>un apparato logico</b>: hanno una configurazione sola e un firmware
+  solo. Questo significa che <b>l'aggiornamento del firmware riavvia entrambi</b>, quindi comporta un
+  fermo — a meno che il produttore non offra l'aggiornamento senza interruzione, che non è scontato.</p>
+  <p style="margin-bottom:0">Lo stack protegge benissimo dal guasto <em>hardware</em> di un membro e da
+  un cavo rotto. Non protegge da un errore di configurazione o da un problema di firmware, che
+  colpiscono entrambi insieme. È un limite accettabile, ma va detto al cliente invece di lasciargli
+  credere che lo stack renda la rete immortale.</p>
+</div>
+
+<h2>Il collaudo: la parte che quasi nessuno fa</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Come si collauda un cluster, davanti al cliente
+  </div>
+  <p>Non basta spegnere il nodo attivo: è il test più facile e il meno rappresentativo. I guasti veri
+  sono più subdoli. Prova tutti questi casi, cronometrando e annotando:</p>
+  <div class="table-wrap" style="margin:10px 0 0">
+    <table>
+      <thead><tr><th>Prova</th><th>Cosa simula</th><th>Cosa deve succedere</th></tr></thead>
+      <tbody>
+        <tr><td>Spegni il nodo attivo</td><td>Guasto hardware totale</td><td>Passaggio in pochi secondi, sessioni mantenute</td></tr>
+        <tr><td>Scollega il cavo WAN del nodo attivo</td><td>Guasto di una singola porta</td><td>Deve fare failover <b>se</b> il monitoraggio dell'interfaccia è configurato</td></tr>
+        <tr><td>Scollega <b>un solo</b> cavo di heartbeat</td><td>Guasto parziale del collegamento</td><td>Nessun failover, nessun allarme di split brain</td></tr>
+        <tr><td>Scollega <b>tutti</b> gli heartbeat</td><td>Scenario di split brain</td><td>Il secondario non deve attivarsi se vede ancora la rete</td></tr>
+        <tr><td>Riaccendi il nodo caduto</td><td>Ripristino</td><td>Rientra come passivo, senza riprendersi il ruolo se non previsto</td></tr>
+        <tr><td>Verifica una VPN durante il failover</td><td>Continuità dei tunnel</td><td>Il tunnel deve risalire, idealmente senza rinegoziare</td></tr>
+        <tr><td>Verifica una chiamata VoIP in corso</td><td>Continuità delle sessioni</td><td>Si sente un buco, la chiamata non cade</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Fallo davanti al cliente e scrivi i risultati.</b> È il
+  momento in cui un cliente <em>vede</em> cosa ha comprato: senza il collaudo, l'alta disponibilità
+  resta un costo astratto di cui dubiterà per sempre. E il documento del collaudo ti protegge il giorno
+  in cui qualcosa non andrà come previsto.</p>
+</div>
+
+<h2>Cosa l'HA non protegge</h2>
+
+<ul class="clean">
+  <li><b>Errori di configurazione:</b> si sincronizzano su entrambi i nodi istantaneamente.</li>
+  <li><b>Difetti del firmware:</b> stessa versione su entrambi, stesso difetto.</li>
+  <li><b>La linea dell'operatore:</b> per quella serve una seconda linea (lezione 2-09).</li>
+  <li><b>L'alimentazione:</b> due firewall sulla stessa ciabatta cadono insieme. Vanno su due
+  alimentazioni distinte, meglio se su UPS diversi.</li>
+  <li><b>Lo switch a cui sono collegati:</b> se entrambi passano dallo stesso switch, quello è il
+  nuovo punto singolo di guasto.</li>
+</ul>
+
+<p>Questa lista è importante perché un cluster con entrambi i nodi nello stesso armadio, sulla stessa
+ciabatta, collegati allo stesso switch, protegge da <em>un solo</em> tipo di guasto su cinque.
+<strong>La ridondanza vale quanto il suo anello più debole</strong>, e l'anello più debole è quasi sempre
+qualcosa che non è il firewall.</p>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: alta disponibilità",
+  "questions": [
+    { "q": "Qual è la domanda giusta per decidere se un cliente ha bisogno dell'alta disponibilità?",
+      "a": [ {"t":"Quanto gli costa, in euro, un'ora di fermo totale","ok":true},
+             {"t":"Quanti utenti ha","ok":false},
+             {"t":"Se il firewall attuale è vecchio","ok":false},
+             {"t":"Se il budget lo permette","ok":false} ],
+      "e": "È una decisione economica: si confronta il costo del fermo con il costo del secondo apparato e con il tempo realistico di sostituzione (da mezza giornata a due giorni). Il conto lo fa il cliente; il tuo lavoro è mettergli i numeri davanti invece di vendere per abitudine." },
+
+    { "q": "Perché nelle PMI si preferisce active-passive?",
+      "a": [ {"t":"In active-active, se dimensioni sul carico dei due insieme, quando uno cade l'altro non regge","ok":true},
+             {"t":"Perché l'active-active non sincronizza le sessioni","ok":false},
+             {"t":"Perché costa di più in licenze","ok":false},
+             {"t":"Perché non è supportato dai firewall da PMI","ok":false} ],
+      "e": "L'active-active sembra più efficiente ma, perché sia utile davvero, ciascun nodo deve poter reggere il carico totale — e a quel punto hai comprato la stessa capacità dell'active-passive con molta più complessità. Altrimenti il guasto non ferma la rete ma la rende inutilizzabile." },
+
+    { "q": "Cosa rende istantaneo il passaggio da un nodo all'altro?",
+      "a": [ {"t":"Il gratuitous ARP che annuncia che l'indirizzo virtuale risponde ora al nuovo nodo","ok":true},
+             {"t":"La rinegoziazione delle rotte","ok":false},
+             {"t":"Il riavvio degli switch collegati","ok":false},
+             {"t":"La scadenza delle sessioni sul nodo guasto","ok":false} ],
+      "e": "L'indirizzo IP resta lo stesso ma cambia il MAC: senza un annuncio, tutti continuerebbero a mandare i frame al nodo morto finché le cache ARP non scadono, cioè minuti di disservizio. Se uno switch filtra i gratuitous ARP, il failover «non funziona» pur essendo configurato perfettamente — ed è una causa difficilissima da trovare." },
+
+    { "q": "Cos'è lo split brain e come si previene principalmente?",
+      "a": [ {"t":"Entrambi i nodi si credono attivi; si previene con due collegamenti di heartbeat separati","ok":true},
+             {"t":"Il nodo passivo non si attiva mai; si previene aumentando la priorità","ok":false},
+             {"t":"Le sessioni si duplicano; si previene disattivando la sincronizzazione","ok":false},
+             {"t":"La configurazione diverge; si previene con backup frequenti","ok":false} ],
+      "e": "Se l'heartbeat cade ma entrambi i nodi sono vivi, ciascuno conclude che l'altro è morto: due apparati con gli stessi IP e lo stesso MAC virtuale sulla stessa rete. Due collegamenti di heartbeat su porte diverse, con cavo diretto e non attraverso uno switch, è la misura più efficace." },
+
+    { "q": "Quale limite ha lo stacking di due switch?",
+      "a": [ {"t":"È un apparato logico solo: l'aggiornamento del firmware li riavvia entrambi","ok":true},
+             {"t":"Non permette di aggregare collegamenti","ok":false},
+             {"t":"Non supporta le VLAN","ok":false},
+             {"t":"Richiede switch di produttori diversi","ok":false} ],
+      "e": "Lo stack protegge benissimo dal guasto hardware di un membro e dalla rottura di un cavo, ma configurazione e firmware sono condivisi: un errore o un difetto colpisce entrambi insieme, e l'aggiornamento comporta un fermo se il produttore non offre l'aggiornamento senza interruzione. Va detto al cliente." },
+
+    { "q": "Quale prova di failover è la più rappresentativa dei guasti reali?",
+      "a": [ {"t":"Scollegare un solo cavo alla volta e verificare il comportamento in ciascun caso","ok":true},
+             {"t":"Spegnere il nodo attivo","ok":false},
+             {"t":"Riavviare entrambi i nodi","ok":false},
+             {"t":"Scollegare l'alimentazione dell'armadio","ok":false} ],
+      "e": "Spegnere il nodo attivo è il test più facile e il meno rappresentativo: i guasti veri sono parziali — una porta che cade, un heartbeat su due che si interrompe, un'interfaccia WAN scollegata. Sono quelli che rivelano se il monitoraggio delle interfacce è configurato e se lo split brain è prevenuto." },
+
+    { "q": "Due firewall in HA nello stesso armadio, sulla stessa ciabatta, collegati allo stesso switch. Da quali guasti proteggono?",
+      "a": [ {"t":"Solo dal guasto hardware di uno dei due: alimentazione e switch restano punti singoli","ok":true},
+             {"t":"Da tutti i guasti possibili","ok":false},
+             {"t":"Anche dai guasti della linea dell'operatore","ok":false},
+             {"t":"Anche dagli errori di configurazione","ok":false} ],
+      "e": "La ridondanza vale quanto il suo anello più debole. Stessa ciabatta significa che cadono insieme; stesso switch significa che quello diventa il nuovo punto singolo. In più l'HA non protegge da errori di configurazione e difetti di firmware, che si propagano su entrambi i nodi istantaneamente." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

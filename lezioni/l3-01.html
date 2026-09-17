@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Architettura core / distribution / access — NetPath</title>
+<meta name="description" content="I tre livelli classici, il collapsed core, e quando ognuno ha senso davvero in un'azienda italiana.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-01">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Progettare la LAN</span>
+      </nav>
+      <h1 class="lesson-title">Architettura core / distribution / access</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 01</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Riconoscere e disegnare le architetture LAN standard</li>
+        <li>Scegliere tra tre livelli e collapsed core con criteri, non per abitudine</li>
+        <li>Capire dove mettere il routing e dove mettere i confini di sicurezza</li>
+        <li>Dimensionare le dorsali senza sovradimensionare il preventivo</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Da qui in poi cambia il tipo di domanda. Nel Livello 2 imparavi <em>come si configura</em>;
+dal Livello 3 la domanda è <em>come si decide</em>. E la prima decisione strutturale di ogni rete è la
+sua forma: quanti strati di apparati, dove avviene il routing, dove stanno i confini.</p>
+
+<h2>Il modello a tre livelli</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 320" role="img" aria-label="Architettura a tre livelli: access, distribution e core, con le funzioni di ciascuno">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">I tre strati e cosa fa ciascuno</text>
+
+    <rect x="240" y="40" width="220" height="48" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.9"/>
+    <text x="350" y="60" text-anchor="middle" class="dg-label-sm">CORE</text>
+    <text x="350" y="78" text-anchor="middle" class="dg-mono-sm">commuta e basta, il più veloce possibile</text>
+
+    <rect x="110" y="122" width="200" height="48" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <rect x="390" y="122" width="200" height="48" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="210" y="142" text-anchor="middle" class="dg-label-sm">DISTRIBUTION</text>
+    <text x="210" y="160" text-anchor="middle" class="dg-mono-sm">routing tra VLAN, ACL, aggregazione</text>
+    <text x="490" y="142" text-anchor="middle" class="dg-label-sm">DISTRIBUTION</text>
+    <text x="490" y="160" text-anchor="middle" class="dg-mono-sm">edificio B / piano 3-4</text>
+
+    <g stroke="var(--dg-line)" stroke-width="2.2" fill="none">
+      <path d="M300 88 L 230 118"/><path d="M400 88 L 470 118"/>
+      <path d="M320 88 L 250 118"/><path d="M380 88 L 450 118"/>
+    </g>
+
+    <g stroke-width="1.5">
+      <rect x="20"  y="216" width="120" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="152" y="216" width="120" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="300" y="216" width="120" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="440" y="216" width="120" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="572" y="216" width="108" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="80" y="241">ACCESS</text><text x="212" y="241">ACCESS</text><text x="360" y="241">ACCESS</text>
+      <text x="500" y="241">ACCESS</text><text x="626" y="241">ACCESS</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.4" fill="none">
+      <path d="M80 216 L 160 172"/><path d="M212 216 L 200 172"/><path d="M360 216 L 260 172"/>
+      <path d="M500 216 L 460 172"/><path d="M626 216 L 520 172"/>
+    </g>
+
+    <text x="350" y="286" text-anchor="middle" class="dg-label-sm">ACCESS: dove si attaccano PC, telefoni, AP. PoE, VLAN, port security, storm control.</text>
+    <text x="350" y="306" text-anchor="middle" class="dg-label-sm">Il traffico sale solo quanto basta: due dispositivi sullo stesso switch non arrivano mai al core.</text>
+  </svg>
+  </div>
+  <figcaption>Ogni strato ha <b>un mestiere solo</b>. È questa specializzazione che rende l'architettura
+  prevedibile: sai dove cercare un problema di VLAN (access), di routing (distribution) o di
+  saturazione della dorsale (core).</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Livello</th><th>Cosa fa</th><th>Cosa NON deve fare</th></tr></thead>
+    <tbody>
+      <tr><td><b>Access</b></td>
+          <td>Porte per i dispositivi, PoE, assegnazione VLAN, protezioni di livello 2 (lezione 2-07)</td>
+          <td>Instradare, applicare politiche complesse</td></tr>
+      <tr><td><b>Distribution</b></td>
+          <td>Routing tra VLAN, ACL, aggregazione dei collegamenti degli access, confine dello spanning tree</td>
+          <td>Collegarsi direttamente ai dispositivi finali</td></tr>
+      <tr><td><b>Core</b></td>
+          <td>Commutare il più velocemente possibile tra i distribution</td>
+          <td><b>Qualsiasi cosa che lo rallenti:</b> filtri, ispezioni, NAT</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: le strade di una città
+  </div>
+  <p>L'<b>access</b> sono le strade residenziali: ci si affacciano le case, si va piano, ci sono i
+  dossi e i divieti. Ogni casa ne ha una davanti.</p>
+  <p>La <b>distribution</b> sono le circonvallazioni: raccolgono il traffico dei quartieri, ci sono i
+  semafori e i cartelli che decidono chi può andare dove. È lì che si regola la circolazione.</p>
+  <p>Il <b>core</b> è la tangenziale: dritta, larghissima, senza semafori e senza incroci.
+  Il suo unico mestiere è <b>far passare tanto traffico il più in fretta possibile</b>. Mettere un
+  semaforo in tangenziale sarebbe assurdo — ed è esattamente il motivo per cui sul core non si mettono
+  filtri.</p>
+  <p style="margin-bottom:0">E nota la cosa importante: se due case della stessa via si scambiano
+  qualcosa, il traffico <b>non arriva mai in tangenziale</b>. Resta nella strada residenziale. È il
+  principio che rende questa architettura efficiente.</p>
+</div>
+
+<h2>Il collapsed core: la realtà delle PMI italiane</h2>
+
+<p>Tre strati hanno senso quando gli edifici o i piani sono tanti. In un'azienda con un capannone e una
+palazzina — cioè la maggioranza dei tuoi clienti — <strong>core e distribution si fondono in un unico
+apparato</strong>. Si chiama <em>collapsed core</em>, ed è la forma corretta, non un compromesso al
+ribasso.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Architettura collapsed core con due switch centrali in stack e firewall">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Collapsed core — la forma giusta per la PMI</text>
+
+    <rect x="270" y="38" width="160" height="42" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.7"/>
+    <text x="350" y="56" text-anchor="middle" class="dg-label-sm">FIREWALL (in HA)</text>
+    <text x="350" y="72" text-anchor="middle" class="dg-mono-sm">WAN, VPN, sicurezza</text>
+
+    <rect x="230" y="110" width="240" height="52" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2.1"/>
+    <text x="350" y="130" text-anchor="middle" class="dg-label-sm">CORE + DISTRIBUTION</text>
+    <text x="350" y="148" text-anchor="middle" class="dg-mono-sm">2 switch L3 in stack — routing tra VLAN</text>
+
+    <g stroke="var(--dg-line)" stroke-width="2"><path d="M320 80v28"/><path d="M380 80v28"/></g>
+
+    <g stroke-width="1.5">
+      <rect x="30"  y="196" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="190" y="196" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="380" y="196" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="540" y="196" width="130" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="95" y="215">sw-uffici-01</text><text x="95" y="230">24p PoE</text>
+      <text x="255" y="215">sw-uffici-02</text><text x="255" y="230">24p PoE</text>
+      <text x="445" y="215">sw-magazzino</text><text x="445" y="230">24p PoE</text>
+      <text x="605" y="215">sw-server</text><text x="605" y="230">10 Gbps</text>
+    </g>
+    <g stroke="var(--dg-5)" stroke-width="2.2" fill="none">
+      <path d="M95 196 L 250 164"/><path d="M110 196 L 265 164"/>
+      <path d="M255 196 L 290 164"/><path d="M270 196 L 305 164"/>
+      <path d="M445 196 L 410 164"/><path d="M460 196 L 425 164"/>
+      <path d="M605 196 L 450 164"/><path d="M620 196 L 465 164"/>
+    </g>
+    <text x="350" y="184" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-5)">due cavi per switch, uno verso ciascun membro dello stack</text>
+  </svg>
+  </div>
+  <figcaption>Due switch centrali in <b>stack</b> (lezione 2-06) e ogni switch di accesso aggregato con
+  un cavo verso ciascuno dei due. Così nessun singolo apparato o cavo ferma un reparto, e lo spanning
+  tree non deve bloccare niente perché l'aggregato è un collegamento logico solo.</figcaption>
+</figure>
+
+<h2>Dove mettere il routing</h2>
+
+<p>È la decisione che segue immediatamente, e l'hai già incontrata nella lezione 2-03. A questo livello
+la si affronta come scelta architetturale:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Scelta</th><th>Conseguenza</th><th>Quando</th></tr></thead>
+    <tbody>
+      <tr><td><b>Tutto sul firewall</b><br>(router on a stick)</td>
+          <td>Ogni pacchetto tra VLAN è ispezionato; il collegamento firewall-switch porta tutto il traffico interno</td>
+          <td>Fino a ~150 utenti con traffico interno modesto</td></tr>
+      <tr><td><b>Tutto sullo switch L3</b></td>
+          <td>Velocità massima; il firewall non vede nulla del traffico interno</td>
+          <td>Molto traffico interno, poche esigenze di ispezione</td></tr>
+      <tr><td><b>Ibrido</b> — <span style="color:var(--text-mute)">la scelta che consiglio</span></td>
+          <td>Lo switch L3 instrada tra le VLAN che si fidano; le VLAN delicate passano dal firewall</td>
+          <td><b>Quasi sempre, oltre i 100 utenti</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Come si realizza l'ibrido, in pratica
+  </div>
+  <p>Sullo switch L3 crei le interfacce SVI <b>solo</b> per le VLAN che devono instradare localmente:
+  uffici, server, stampanti. Per le VLAN delicate — ospiti, telecamere, IoT, gestione — <b>non crei
+  nessuna SVI</b>: il loro gateway sta sul firewall, quindi tutto il loro traffico è costretto a
+  passare di lì.</p>
+  <p style="margin-bottom:0">È elegante perché la separazione non dipende da una regola che si può
+  dimenticare: dipende da <b>dove hai messo il gateway</b>. Se il gateway di una VLAN è sul firewall,
+  non esiste modo di aggirarlo.</p>
+</div>
+
+<h2>Dimensionare le dorsali</h2>
+
+<p>La regola classica è la <strong>sovrascrizione</strong> (oversubscription): quanto traffico potrebbe
+arrivare al massimo, rispetto a quanto la dorsale può portare.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tratta</th><th>Rapporto accettabile</th><th>Esempio concreto</th></tr></thead>
+    <tbody>
+      <tr><td>Access → Distribution</td><td>da 20:1 a 10:1</td>
+          <td>48 porte da 1 Gbps con 2×10 Gbps aggregati = 48:20, cioè 2,4:1. Abbondante</td></tr>
+      <tr><td>Distribution → Core</td><td>da 4:1 a 2:1</td><td>In un collapsed core non esiste: sono lo stesso apparato</td></tr>
+      <tr><td>Verso i server</td><td><b>1:1</b></td><td>I server vogliono banda piena: 10 Gbps, o 2×10 aggregati</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Non dimensionare sul picco teorico
+  </div>
+  <p>Quarantotto porte da 1 Gbps <b>non</b> generano 48 Gbps: nella realtà gli utenti usano una
+  frazione minima della banda, e mai tutti insieme. Dimensionare sul teorico porta a preventivi
+  fuori mercato che il cliente rifiuta — o peggio, accetta pagando per capacità che non userà mai.</p>
+  <p style="margin-bottom:0"><b>Il modo corretto</b> è guardare i grafici di traffico reali
+  (lezione 2-25) e dimensionare sul <b>picco misurato più un margine del 50%</b>. Se non hai storico
+  perché la rete è nuova, un uplink da 10 Gbps per switch di accesso è abbondante per qualsiasi ufficio
+  e costa poco più di un 1 Gbps.</p>
+</div>
+
+<h2>Gli errori architetturali che vedrai</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Errore</th><th>Conseguenza</th></tr></thead>
+    <tbody>
+      <tr><td><b>Switch a cascata</b> (uno attaccato all'altro in fila)</td>
+          <td>Il traffico dell'ultimo attraversa tutti gli altri; se cade il secondo, cadono anche il terzo e il quarto</td></tr>
+      <tr><td><b>Un solo switch centrale</b></td><td>Punto singolo di guasto per l'intera azienda</td></tr>
+      <tr><td><b>Server attaccati a uno switch di accesso PoE</b></td><td>Il traffico dei server compete con quello degli utenti sullo stesso uplink</td></tr>
+      <tr><td><b>Filtri e ispezioni sul core</b></td><td>Si rinuncia alla velocità proprio dove serve di più</td></tr>
+      <tr><td><b>Tutte le VLAN instradate sul firewall in una rete grande</b></td><td>Il firewall diventa il collo di bottiglia dell'intera azienda</td></tr>
+      <tr><td><b>Nessuna VLAN di gestione</b></td><td>Gli apparati raggiungibili da qualsiasi PC</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    L'architettura di riferimento per un cliente da 100-250 utenti
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Due firewall in alta disponibilità</b>, che terminano WAN e VPN</li>
+    <li><b>Due switch L3 in stack</b> come collapsed core, con le SVI delle VLAN «fidate»</li>
+    <li><b>Switch di accesso PoE</b>, uno o due per zona, ciascuno aggregato con due cavi verso lo stack</li>
+    <li><b>Uno switch dedicato ai server</b>, a 10 Gbps, anch'esso aggregato</li>
+    <li><b>Gateway delle VLAN delicate sul firewall</b>, non sullo stack</li>
+    <li><b>VLAN di gestione</b> raggiungibile solo dai PC dell'IT</li>
+  </ul>
+  <p style="margin-top:10px;margin-bottom:0">È uno schema che puoi riusare su decine di clienti
+  cambiando solo i numeri. Averne uno tuo, riconoscibile, è ciò che ti fa passare da «configuro quello
+  che c'è» a «propongo un'architettura».</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: architettura LAN",
+  "questions": [
+    { "q": "Qual è il compito del livello core?",
+      "a": [ {"t":"Commutare il più velocemente possibile, senza filtri né ispezioni","ok":true},
+             {"t":"Applicare le ACL tra le VLAN","ok":false},
+             {"t":"Fornire PoE agli access point","ok":false},
+             {"t":"Terminare le VPN","ok":false} ],
+      "e": "Il core è la tangenziale: dritta e senza semafori. Mettere filtri o ispezioni lì significa rinunciare alla velocità proprio dove serve di più. Le ACL stanno al livello distribution, il PoE all'access, le VPN sul firewall." },
+
+    { "q": "Cos'è un collapsed core?",
+      "a": [ {"t":"Core e distribution fusi in un unico apparato, tipicamente due switch L3 in stack","ok":true},
+             {"t":"Un core rimasto senza ridondanza dopo un guasto","ok":false},
+             {"t":"Un'architettura in cui il firewall fa anche da switch","ok":false},
+             {"t":"Una rete senza livello access","ok":false} ],
+      "e": "Tre strati separati hanno senso con molti edifici o piani. In un'azienda con un capannone e una palazzina, fondere core e distribution è la forma <b>corretta</b>, non un compromesso: meno apparati, meno salti, stessa funzione." },
+
+    { "q": "Nella soluzione ibrida, come si forza il traffico di una VLAN a passare dal firewall?",
+      "a": [ {"t":"Non creando la sua SVI sullo switch L3: il suo gateway sta sul firewall","ok":true},
+             {"t":"Con una ACL sullo switch che nega il routing locale","ok":false},
+             {"t":"Configurando una policy route sul firewall","ok":false},
+             {"t":"Mettendo quella VLAN su uno switch separato","ok":false} ],
+      "e": "Se il gateway di una VLAN è sul firewall, ogni pacchetto che esce da quella VLAN deve necessariamente arrivarci: la separazione dipende dalla topologia, non da una regola che si può disattivare o dimenticare. È il modo più solido di imporre un confine." },
+
+    { "q": "Quale rapporto di sovrascrizione è accettabile tra access e distribution?",
+      "a": [ {"t":"Da 20:1 a 10:1","ok":true}, {"t":"1:1, sempre","ok":false},
+             {"t":"100:1","ok":false}, {"t":"Non esiste una regola","ok":false} ],
+      "e": "Gli utenti usano una frazione minima della banda delle loro porte e mai tutti insieme, quindi una sovrascrizione elevata è normale e corretta. Il rapporto 1:1 si riserva ai collegamenti verso i server, che invece vogliono banda piena." },
+
+    { "q": "Perché collegare gli switch a cascata è una cattiva idea?",
+      "a": [ {"t":"Il traffico dell'ultimo attraversa tutti gli altri e un guasto intermedio isola tutti quelli a valle","ok":true},
+             {"t":"Perché lo spanning tree non lo supporta","ok":false},
+             {"t":"Perché il PoE non si propaga","ok":false},
+             {"t":"Perché serve un firmware identico su tutti","ok":false} ],
+      "e": "Ogni switch aggiunge un salto e diventa un punto di guasto per tutti quelli dopo di lui, oltre a sommare il traffico su collegamenti non dimensionati per quello. La forma corretta è a stella: ogni switch di accesso collegato direttamente al centro, meglio se con due cavi verso due membri di uno stack." },
+
+    { "q": "Come si dimensiona correttamente una dorsale?",
+      "a": [ {"t":"Sul picco di traffico misurato più un margine, non sulla somma teorica delle porte","ok":true},
+             {"t":"Sulla somma della velocità di tutte le porte di accesso","ok":false},
+             {"t":"Sul numero di utenti moltiplicato per 10 Mbps","ok":false},
+             {"t":"Sempre al massimo disponibile","ok":false} ],
+      "e": "Quarantotto porte da 1 Gbps non generano 48 Gbps reali. Dimensionare sul teorico produce preventivi fuori mercato o capacità mai usata. Si guardano i grafici di traffico e si aggiunge un margine del 50%; se la rete è nuova e non c'è storico, un uplink da 10 Gbps è abbondante per qualsiasi ufficio." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

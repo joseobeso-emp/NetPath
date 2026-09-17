@@ -1,0 +1,234 @@
+#id: l3-03
+#title: Dimensionare: throughput, sessioni e licenze
+#min: 26
+#level: 3
+#chapter: Progettare la LAN
+#desc: Come si sceglie il modello giusto senza fidarsi del datasheet, e come si evita di rifare il lavoro fra due anni.
+#obj: Leggere un datasheet capendo quale numero conta davvero
+#obj: Ricavare i requisiti dai dati reali del cliente invece che a sensazione
+#obj: Prevedere l'impatto dell'ispezione TLS sul dimensionamento
+#obj: Capire i modelli di licenza e cosa succede alla scadenza
+---
+<p class="lead">Scegliere il modello di firewall è una delle poche decisioni che il cliente paga
+direttamente e che non si può correggere facilmente dopo. Sbagliare per eccesso costa soldi suoi;
+sbagliare per difetto costa la tua reputazione, perché il cliente si ritroverà con una rete lenta e
+la colpa sarà tua.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Sui numeri concreti
+  </div>
+  <p>In questa lezione trovi <b>metodo e ordini di grandezza</b>, non valori di modelli specifici: i
+  listini e le prestazioni cambiano a ogni generazione di prodotto. I numeri esatti vanno presi dal
+  datasheet aggiornato del produttore al momento in cui prepari l'offerta.</p>
+  <p style="margin-bottom:0">Quello che non cambia è <b>come si leggono</b> quei numeri, ed è
+  esattamente ciò che questa lezione ti dà.</p>
+</div>
+
+<h2>I numeri del datasheet, dal più ingannevole al più utile</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 260" role="img" aria-label="Scala dei valori di throughput dichiarati, dal firewall puro alla ispezione TLS completa">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Lo stesso apparato, quattro numeri diversi</text>
+    <g stroke-width="1.6">
+      <rect x="40" y="40"  width="620" height="40" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="40" y="90"  width="420" height="40" rx="7" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="40" y="140" width="220" height="40" rx="7" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="40" y="190" width="120" height="40" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="2.2"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="56" y="65">Firewall throughput — solo IP e porte, pacchetti grandi, nessuna ispezione</text>
+      <text x="56" y="115">IPS throughput — con rilevamento intrusioni attivo</text>
+      <text x="56" y="165">Threat protection — IPS + antivirus + controllo applicativo</text>
+      <text x="56" y="215">SSL inspection</text>
+    </g>
+    <g class="dg-mono-sm" text-anchor="end" fill="var(--dg-text-soft)">
+      <text x="656" y="65">il numero della copertina</text>
+      <text x="456" y="115">circa 1/3</text>
+      <text x="256" y="165">circa 1/6</text>
+      <text x="156" y="215">circa 1/10</text>
+    </g>
+    <text x="350" y="252" text-anchor="middle" class="dg-label-sm">Le proporzioni variano molto tra produttori e modelli, ma <tspan font-weight="700">l'ordine è sempre questo</tspan>.</text>
+  </svg>
+  </div>
+  <figcaption>Il numero grande in copertina è misurato a funzioni spente, cioè in una configurazione
+  che <b>nessuno userebbe mai</b>: se compri un firewall di sicurezza e poi non accendi la sicurezza,
+  hai comprato un router. <b>Dimensiona sempre sul numero più basso tra quelli che userai.</b></figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Valore</th><th>Cosa misura</th><th>Quanto ti serve</th></tr></thead>
+    <tbody>
+      <tr><td><b>Firewall throughput</b></td><td>Solo livello 4, pacchetti grandi</td><td>Poco: è uno scenario irreale</td></tr>
+      <tr><td><b>Threat protection throughput</b></td><td>Con le protezioni accese</td><td><b>Molto: è il numero su cui dimensionare</b></td></tr>
+      <tr><td><b>SSL inspection throughput</b></td><td>Con decifratura e ricifratura del traffico</td><td>Fondamentale <b>se farai ispezione TLS</b> (lezione 3-08)</td></tr>
+      <tr><td><b>Sessioni concorrenti</b></td><td>Quante conversazioni contemporanee regge</td><td>Spesso più vincolante del throughput</td></tr>
+      <tr><td><b>Nuove sessioni al secondo</b></td><td>Quanto in fretta ne apre di nuove</td><td>Critico con molti utenti o traffico automatizzato</td></tr>
+      <tr><td><b>Tunnel VPN</b> e <b>throughput IPsec</b></td><td>Quanti tunnel e a che velocità</td><td>Essenziale nelle reti multi-sede</td></tr>
+      <tr><td><b>Utenti consigliati</b></td><td>Una stima commerciale del produttore</td><td>Indicativo: ignora il numero e fai i tuoi conti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le sessioni contano più del throughput, e quasi nessuno le guarda
+  </div>
+  <p>Un cliente con 80 utenti non satura quasi mai il throughput di un apparato moderno. Ma ogni
+  dispositivo apre <b>decine o centinaia di sessioni contemporanee</b> — ogni scheda del browser, ogni
+  app dello smartphone, ogni servizio in background.</p>
+  <p>Stima realistica: <b>100–200 sessioni per dispositivo</b>, e i dispositivi sono due o tre per
+  persona contando i telefoni. Ottanta persone diventano facilmente 200 dispositivi e
+  <b>20.000-40.000 sessioni</b> in un momento di normale attività.</p>
+  <p style="margin-bottom:0">Aggiungi un margine per gli eventi anomali — un PC infetto che scandisce
+  la rete può aprirne centomila da solo — e capisci perché il limite delle sessioni è spesso il vincolo
+  vero. Quando si esaurisce, il sintomo è quello della lezione 2-12: le connessioni esistenti
+  funzionano, le nuove no.</p>
+</div>
+
+<h2>Ricavare i requisiti dai dati reali</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Se il cliente ha già un firewall, i numeri ce li hai già
+  </div>
+  <p>Prima di aprire un listino, guarda l'apparato esistente per un paio di settimane:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Picco di traffico</b> sulla WAN e tra le VLAN (dai grafici della lezione 2-25)</li>
+    <li><b>Picco di sessioni concorrenti</b> e nuove sessioni al secondo</li>
+    <li><b>Utilizzo di CPU e memoria</b> nei momenti di punta</li>
+    <li><b>Numero di tunnel VPN</b> attivi e loro traffico</li>
+    <li><b>Quante volte al giorno</b> qualche soglia è stata superata</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Due settimane di dati valgono più di qualsiasi stima, e
+  soprattutto <b>ti permettono di motivare la proposta</b> al cliente con un grafico invece che con
+  un'opinione. È anche la differenza tra un preventivo che viene discusso e uno che viene approvato.</p>
+</div>
+
+<h3>Quando i dati non ci sono</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Grandezza</th><th>Stima prudente</th></tr></thead>
+    <tbody>
+      <tr><td>Dispositivi per persona</td><td>2,5 (PC, telefono, e qualcosa d'altro)</td></tr>
+      <tr><td>Sessioni per dispositivo</td><td>100–200 in attività normale</td></tr>
+      <tr><td>Banda per utente in ufficio</td><td>2–5 Mbps di picco, molto meno in media</td></tr>
+      <tr><td>Banda per utente con video e cloud</td><td>5–10 Mbps di picco</td></tr>
+      <tr><td>Traffico tra VLAN interne</td><td>Molto variabile: dipende da dove stanno i server</td></tr>
+      <tr><td>Margine di crescita</td><td><b>+50% sul fabbisogno di oggi</b>, su un orizzonte di 5 anni</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>L'ispezione TLS cambia tutto</h2>
+
+<p>Se il cliente vuole il filtro dei contenuti e l'antivirus efficaci sul traffico cifrato — cioè su
+quasi tutto il traffico — serve l'ispezione TLS. Ha un costo computazionale enorme: il firewall deve
+decifrare, analizzare e ricifrare ogni conversazione.</p>
+
+<p>La conseguenza pratica: <strong>un apparato dimensionato senza ispezione TLS può risultare
+insufficiente appena la si accende</strong>. Se c'è una possibilità che venga attivata in futuro, va
+messa nel conto adesso: aggiungerla dopo significa sostituire l'apparato.</p>
+
+<h2>Le licenze: cosa succede alla scadenza</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Componente</th><th>Tipicamente</th><th>Alla scadenza</th></tr></thead>
+    <tbody>
+      <tr><td><b>Hardware</b></td><td>Acquisto una tantum</td><td>Continua a funzionare</td></tr>
+      <tr><td><b>Supporto e RMA</b></td><td>Abbonamento annuale</td><td>Niente sostituzione in garanzia né assistenza</td></tr>
+      <tr><td><b>Aggiornamenti firmware</b></td><td>Spesso legati al supporto</td><td><b>Niente correzioni di sicurezza:</b> il punto più critico</td></tr>
+      <tr><td><b>Firme IPS e antivirus</b></td><td>Abbonamento</td><td>Le funzioni restano attive ma con firme vecchie: protezione illusoria</td></tr>
+      <tr><td><b>Filtro web e categorie</b></td><td>Abbonamento, spesso in cloud</td><td>Il filtro smette di classificare i siti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il firewall con le licenze scadute è la situazione peggiore
+  </div>
+  <p>È peggio di non avere un firewall di sicurezza, per un motivo psicologico: <b>il cliente crede di
+  essere protetto</b>. L'interfaccia mostra antivirus e IPS «attivi», i grafici si popolano, tutto
+  sembra a posto — ma le firme hanno due anni e il firmware ha vulnerabilità note e non corrette.</p>
+  <p style="margin-bottom:0"><b>Cosa fare:</b> tieni un registro delle scadenze di tutti i clienti e
+  avvisa <b>90 giorni prima</b>. Non è solo diligenza: è una fonte di lavoro ricorrente prevedibile, ed
+  è il tipo di attenzione per cui un cliente ti considera il suo fornitore e non un fornitore.</p>
+</div>
+
+<h2>La proposta al cliente</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Presenta sempre due opzioni, non una
+  </div>
+  <p>Una proposta singola mette il cliente davanti a «sì o no», e nel dubbio dice no o chiede un altro
+  preventivo. Due opzioni spostano la domanda su «quale delle due», che è una conversazione molto
+  diversa.</p>
+  <ul style="margin-bottom:0">
+    <li><b>Opzione A — adeguata:</b> copre il fabbisogno misurato più il margine, senza ridondanza.</li>
+    <li><b>Opzione B — con continuità:</b> la stessa cosa in alta disponibilità, con il conto del costo
+    di un'ora di fermo accanto (lezione 3-02).</li>
+  </ul>
+  <p style="margin-top:10px;margin-bottom:0">E in entrambe indica <b>esplicitamente cosa non è
+  incluso</b>: l'ispezione TLS se non l'hai dimensionata, le licenze dopo il primo anno, l'eventuale
+  cablaggio. Le sorprese scoperte dopo costano molto più di una riga in più nel preventivo.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: dimensionamento",
+  "questions": [
+    { "q": "Su quale numero del datasheet si dimensiona un firewall di sicurezza?",
+      "a": [ {"t":"Il throughput con le protezioni attive, o quello con ispezione TLS se la userai","ok":true},
+             {"t":"Il firewall throughput, che è il valore massimo","ok":false},
+             {"t":"Il numero di utenti consigliati","ok":false},
+             {"t":"La media tra i valori dichiarati","ok":false} ],
+      "e": "Il numero grande in copertina è misurato a funzioni spente, cioè in una configurazione che nessuno userebbe: se compri un firewall di sicurezza e non accendi la sicurezza, hai comprato un router. Si dimensiona sul numero più basso tra quelli che effettivamente userai." },
+
+    { "q": "Perché il limite delle sessioni concorrenti è spesso più vincolante del throughput?",
+      "a": [ {"t":"Ogni dispositivo apre centinaia di sessioni, e 80 utenti diventano decine di migliaia","ok":true},
+             {"t":"Perché le sessioni consumano più banda","ok":false},
+             {"t":"Perché il throughput non viene mai raggiunto","ok":false},
+             {"t":"Perché le sessioni non si chiudono mai","ok":false} ],
+      "e": "Con 100-200 sessioni per dispositivo e due o tre dispositivi a persona, un'azienda da 80 utenti arriva facilmente a 20.000-40.000 sessioni in attività normale — mentre il throughput resta ampiamente sotto il limite. Quando la tabella si esaurisce, le connessioni esistenti funzionano e le nuove no." },
+
+    { "q": "Un cliente ha già un firewall e ne vuole uno nuovo. Qual è il primo passo?",
+      "a": [ {"t":"Raccogliere due settimane di dati reali dall'apparato esistente","ok":true},
+             {"t":"Chiedere quanti utenti ha e consultare il listino","ok":false},
+             {"t":"Proporre il modello immediatamente superiore all'attuale","ok":false},
+             {"t":"Chiedere al distributore cosa consiglia","ok":false} ],
+      "e": "Picco di traffico, picco di sessioni, CPU nei momenti di punta e tunnel attivi sono già tutti lì. Due settimane di dati valgono più di qualsiasi stima e — cosa non secondaria — ti permettono di motivare la proposta con un grafico invece che con un'opinione, il che cambia molto la probabilità che venga approvata." },
+
+    { "q": "Perché l'ispezione TLS va decisa al momento del dimensionamento?",
+      "a": [ {"t":"Riduce drasticamente il throughput: attivarla dopo può rendere insufficiente l'apparato","ok":true},
+             {"t":"Perché richiede una licenza separata molto costosa","ok":false},
+             {"t":"Perché va configurata prima dell'installazione","ok":false},
+             {"t":"Perché non è compatibile con l'alta disponibilità","ok":false} ],
+      "e": "Decifrare, analizzare e ricifrare ogni conversazione ha un costo computazionale enorme, spesso un ordine di grandezza. Un apparato scelto senza tenerne conto può rivelarsi insufficiente appena la si accende — e a quel punto l'unica soluzione è sostituirlo." },
+
+    { "q": "Cosa succede quando scadono le licenze di firme IPS e antivirus?",
+      "a": [ {"t":"Le funzioni restano attive ma con firme vecchie: il cliente crede di essere protetto e non lo è","ok":true},
+             {"t":"Il firewall smette di far passare traffico","ok":false},
+             {"t":"Le funzioni si disattivano con un avviso evidente","ok":false},
+             {"t":"L'apparato torna alle impostazioni di fabbrica","ok":false} ],
+      "e": "È la situazione peggiore proprio perché è silenziosa: l'interfaccia mostra tutto attivo, i grafici si popolano, ma le firme hanno due anni e il firmware ha vulnerabilità note non corrette. Serve un registro delle scadenze con avviso 90 giorni prima — che è anche una fonte di lavoro ricorrente prevedibile." },
+
+    { "q": "Perché conviene presentare due opzioni invece di una?",
+      "a": [ {"t":"Sposta la domanda da «sì o no» a «quale delle due»","ok":true},
+             {"t":"Perché il cliente sceglie sempre la più economica","ok":false},
+             {"t":"Per rispettare le procedure di gara","ok":false},
+             {"t":"Per poter aumentare il prezzo della prima","ok":false} ],
+      "e": "Una proposta singola invita al confronto con altri fornitori; due opzioni — adeguata e con continuità, con accanto il costo di un'ora di fermo — spostano la conversazione su quale scegliere. In entrambe va indicato esplicitamente <b>cosa non è incluso</b>: le sorprese scoperte dopo costano più di una riga in più nel preventivo." }
+  ]
+}
+</script>

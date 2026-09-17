@@ -113,9 +113,9 @@ window.NETPATH_CURRICULUM = [
   hours: "120–160 ore",
   chapters: [
     { title: "Progettare la LAN", lessons: [
-      { id:"l3-01", t:"Architettura core / distribution / access", s:"I tre livelli classici, il collapsed core, e quando ognuno ha senso.", m:28, ready:false },
-      { id:"l3-02", t:"Alta disponibilità: HA firewall, VRRP, stack", s:"Active-passive, active-active, split brain e come si testa un failover sul serio.", m:30, ready:false },
-      { id:"l3-03", t:"Dimensionare: throughput, sessioni, licenze", s:"Come si sceglie il modello giusto senza fidarsi del datasheet.", m:24, ready:false }
+      { id:"l3-01", t:"Architettura core / distribution / access", s:"I tre livelli classici, il collapsed core, e quando ognuno ha senso.", m:28, ready:true },
+      { id:"l3-02", t:"Alta disponibilità: HA firewall, VRRP, stack", s:"Active-passive, active-active, split brain e come si testa un failover sul serio.", m:30, ready:true },
+      { id:"l3-03", t:"Dimensionare: throughput, sessioni, licenze", s:"Come si sceglie il modello giusto senza fidarsi del datasheet.", m:24, ready:true }
     ]},
     { title: "WAN e multi-sede", lessons: [
       { id:"l3-04", t:"BGP essenziale per chi fa MSP", s:"AS, peering, attributi, annunci. Il minimo che serve davvero fuori dai grandi ISP.", m:32, ready:false },
