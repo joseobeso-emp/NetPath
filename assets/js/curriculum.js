@@ -135,10 +135,10 @@ window.NETPATH_CURRICULUM = [
       { id:"l3-14", t:"802.1X e NAC in pratica", s:"Autenticare la porta dello switch. Supplicant, authenticator, server, e il piano B.", m:30, ready:true }
     ]},
     { title: "Cloud networking (Azure)", lessons: [
-      { id:"l3-15", t:"VNet, subnet, NSG, UDR", s:"Il networking di Azure mappato uno a uno su quello che già sai.", m:30, ready:false },
-      { id:"l3-16", t:"VPN Gateway, ExpressRoute, Virtual WAN", s:"Le tre strade per entrare in Azure, con costi e limiti reali.", m:28, ready:false },
-      { id:"l3-17", t:"Ibrido: collegare on-prem ad Azure", s:"DNS, routing, overlapping, Entra ID. Il progetto tipo di un'azienda italiana.", m:30, ready:false },
-      { id:"l3-18", t:"Azure Firewall, NVA e hub-and-spoke", s:"La topologia standard e come ci si mette un FortiGate dentro.", m:28, ready:false }
+      { id:"l3-15", t:"VNet, subnet, NSG, UDR", s:"Il networking di Azure mappato uno a uno su quello che già sai.", m:30, ready:true },
+      { id:"l3-16", t:"VPN Gateway, ExpressRoute, Virtual WAN", s:"Le tre strade per entrare in Azure, con costi e limiti reali.", m:28, ready:true },
+      { id:"l3-17", t:"Ibrido: collegare on-prem ad Azure", s:"DNS, routing, overlapping, Entra ID. Il progetto tipo di un'azienda italiana.", m:30, ready:true },
+      { id:"l3-18", t:"Azure Firewall, NVA e hub-and-spoke", s:"La topologia standard e come ci si mette un FortiGate dentro.", m:28, ready:true }
     ]},
     { title: "Performance e analisi", lessons: [
       { id:"l3-19", t:"MTU, MSS clamping, frammentazione", s:"La causa nascosta di 'alcuni siti non si aprono' dentro le VPN.", m:26, ready:false },

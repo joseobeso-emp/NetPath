@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ibrido: collegare l'azienda ad Azure — NetPath</title>
+<meta name="description" content="DNS, routing, identità: il progetto tipo di un'azienda italiana, con i punti dove si inciampa davvero.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-17">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Cloud networking (Azure)</span>
+      </nav>
+      <h1 class="lesson-title">Ibrido: collegare l'azienda ad Azure</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 17</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Progettare la risoluzione dei nomi in un ambiente ibrido</li>
+        <li>Evitare i problemi di indirizzamento prima che diventino irreversibili</li>
+        <li>Capire dove finisce il tuo lavoro e dove inizia quello di chi gestisce le identità</li>
+        <li>Riconoscere i sintomi tipici di un ibrido configurato male</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">«Ibrido» significa che una parte dell'azienda sta in sede e una parte in cloud, e che
+le due devono comportarsi come una cosa sola. È la situazione in cui si trovano ormai quasi tutti i
+tuoi clienti — e il punto in cui più spesso si inciampa non è la connettività, ma il DNS.</p>
+
+<h2>Il progetto tipo</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 260" role="img" aria-label="Schema di un ambiente ibrido con sede, tunnel e VNet Azure">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Come è fatto un ibrido di una PMI italiana</text>
+
+    <rect x="20" y="46" width="260" height="170" rx="10" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.8"/>
+    <text x="150" y="68" text-anchor="middle" class="dg-label-sm">SEDE</text>
+    <g stroke-width="1.3" fill="var(--dg-surface)" stroke="var(--dg-line)">
+      <rect x="40" y="82" width="104" height="30" rx="5"/><rect x="156" y="82" width="104" height="30" rx="5"/>
+      <rect x="40" y="122" width="104" height="30" rx="5"/><rect x="156" y="122" width="104" height="30" rx="5"/>
+      <rect x="40" y="162" width="220" height="30" rx="5"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="92" y="101">PC utenti</text><text x="208" y="101">stampanti</text>
+      <text x="92" y="141">DC + DNS</text><text x="208" y="141">file server</text>
+      <text x="150" y="181">firewall</text>
+    </g>
+
+    <rect x="420" y="46" width="260" height="170" rx="10" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.8"/>
+    <text x="550" y="68" text-anchor="middle" class="dg-label-sm">AZURE — VNet</text>
+    <g stroke-width="1.3" fill="var(--dg-surface)" stroke="var(--dg-line)">
+      <rect x="440" y="82" width="104" height="30" rx="5"/><rect x="556" y="82" width="104" height="30" rx="5"/>
+      <rect x="440" y="122" width="104" height="30" rx="5"/><rect x="556" y="122" width="104" height="30" rx="5"/>
+      <rect x="440" y="162" width="220" height="30" rx="5"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="492" y="101">gestionale</text><text x="608" y="101">DC secondario</text>
+      <text x="492" y="141">backup</text><text x="608" y="141">app varie</text>
+      <text x="550" y="181">VPN gateway</text>
+    </g>
+
+    <path d="M284 178h132" stroke="var(--dg-5)" stroke-width="3"/>
+    <path d="M284 190h132" stroke="var(--dg-5)" stroke-width="3"/>
+    <text x="350" y="168" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-5)">due tunnel IPsec</text>
+    <text x="350" y="212" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-5)">+ BGP</text>
+
+    <text x="350" y="244" text-anchor="middle" class="dg-label-sm">Il tunnel è la parte facile. Le parti difficili sono il <tspan font-weight="700">DNS</tspan> e l'<tspan font-weight="700">indirizzamento</tspan>.</text>
+  </svg>
+  </div>
+  <figcaption>Il secondo domain controller in Azure è una scelta molto comune e sensata: dà
+  autenticazione locale alle macchine cloud anche se il tunnel cade, e fa da copia del dominio in un
+  luogo diverso.</figcaption>
+</figure>
+
+<h2>Il DNS: dove si inciampa davvero</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Azure assegna un DNS proprio, e non conosce il tuo dominio
+  </div>
+  <p>Una macchina virtuale appena creata usa il resolver di Azure, che risolve benissimo Internet e i
+  nomi delle risorse Azure, e <b>non sa nulla del dominio aziendale</b>. Risultato: la macchina non
+  trova il domain controller, non entra nel dominio, e non raggiunge i server in sede per nome.</p>
+  <p style="margin-bottom:0"><b>La correzione:</b> impostare sulla VNet i <b>server DNS personalizzati</b>,
+  puntando ai domain controller — quello in Azure e quello in sede. È una proprietà della VNet, e le
+  macchine la prendono al riavvio della scheda di rete: se cambi l'impostazione, ricordati che le
+  macchine già accese non se ne accorgono subito.</p>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Chi deve risolvere cosa</th><th>Come si ottiene</th></tr></thead>
+    <tbody>
+      <tr><td>Macchine Azure → nomi del dominio aziendale</td><td>DNS personalizzati sulla VNet che puntano ai DC</td></tr>
+      <tr><td>Macchine Azure → Internet</td><td>I DC hanno forwarder verso risolutori pubblici (lezione 2-24)</td></tr>
+      <tr><td>Macchine in sede → risorse Azure per nome privato</td><td>Zone DNS private di Azure, con inoltro condizionale dal DNS aziendale</td></tr>
+      <tr><td>Macchine Azure → servizi PaaS via endpoint privati</td><td>Zone DNS private specifiche del servizio, collegate alla VNet</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Gli endpoint privati e il DNS: il caso che confonde tutti
+  </div>
+  <p>Quando si rende raggiungibile un servizio gestito (un database, un archivio) dalla rete privata
+  invece che da Internet, si crea un <b>endpoint privato</b>: il servizio riceve un indirizzo dentro
+  la tua VNet.</p>
+  <p>Ma il nome del servizio continua a essere quello pubblico. Perché dall'interno risolva l'indirizzo
+  privato serve una <b>zona DNS privata</b> dedicata a quel tipo di servizio, collegata alla VNet — e,
+  se le macchine in sede devono raggiungerlo, anche un inoltro dal DNS aziendale.</p>
+  <p style="margin-bottom:0">È concettualmente lo <b>split DNS</b> della lezione 1-20, applicato al
+  cloud. Il sintomo quando manca: «dalla macchina Azure il database si raggiunge, dalla sede no» —
+  oppure il contrario, con il traffico che esce su Internet invece di restare privato.</p>
+</div>
+
+<h2>L'indirizzamento: gli errori irreversibili</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Errore</th><th>Conseguenza</th><th>Quanto costa correggerlo</th></tr></thead>
+    <tbody>
+      <tr><td><b>VNet sovrapposta alla rete in sede</b></td><td>Il tunnel non può funzionare</td><td>Rifare la VNet: spostare tutte le risorse</td></tr>
+      <tr><td><b>VNet sovrapposta a quella di un partner</b></td><td>Impossibile fare peering in futuro</td><td>Come sopra</td></tr>
+      <tr><td><b>Spazio troppo stretto</b></td><td>Non si possono creare nuove subnet</td><td>Si può ampliare, ma le subnet esistenti non si ridimensionano</td></tr>
+      <tr><td><b>Nessuno spazio riservato per le subnet di servizio</b></td><td>Non si può aggiungere un gateway o un firewall gestito</td><td>Riorganizzazione</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Mezz'ora di progetto che vale anni
+  </div>
+  <p>Prima di creare qualsiasi cosa in Azure, scrivi un <b>unico piano di indirizzamento</b> che
+  comprenda: tutte le reti in sede, tutte le sedi secondarie, le reti dei partner e dei fornitori con
+  cui esiste o potrebbe esistere un collegamento, e i blocchi riservati al cloud — abbondanti, con
+  spazio per le subnet di servizio.</p>
+  <p style="margin-bottom:0">È lo stesso schema della lezione 1-16 esteso al cloud: per esempio
+  <code>10.10.x.x</code> sede, <code>10.20.x.x</code> filiale, <code>10.90.x.x</code> Azure. Mezz'ora
+  ora, contro giorni di migrazione dopo.</p>
+</div>
+
+<h2>L'identità: dove finisce il tuo lavoro</h2>
+
+<p>In un ibrido convivono due mondi di identità: <strong>Active Directory</strong> in sede, che governa
+PC, accessi ai file e autenticazione tradizionale, e <strong>l'identità cloud</strong>, che governa
+l'accesso alle applicazioni in cloud. Un servizio di sincronizzazione li tiene allineati.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Cosa devi sapere, anche se non lo configuri tu
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>La sincronizzazione delle identità richiede connettività</b>: se il server che la esegue non
+    raggiunge il cloud, le modifiche smettono di propagarsi — silenziosamente. Va monitorato.</li>
+    <li><b>Le politiche di accesso condizionale possono usare l'indirizzo pubblico della sede</b> come
+    segnale di fiducia (lezione 3-13): cambiarlo ha conseguenze immediate su tutta l'azienda.</li>
+    <li><b>Un domain controller in Azure ha bisogno del tunnel</b> per replicare: se il tunnel cade a
+    lungo, la replica si degrada e servono interventi specifici per rimetterla a posto.</li>
+    <li><b>L'ora deve essere allineata</b> tra sede e cloud: Kerberos e i certificati non perdonano
+    (lezione 2-25).</li>
+  </ul>
+  <p style="margin-top:10px;margin-bottom:0">Non devi gestire tu l'identità, ma devi <b>sapere che le
+  tue scelte di rete la influenzano</b> — e avvisare prima, non dopo.</p>
+</div>
+
+<h2>I sintomi di un ibrido fatto male</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>La macchina Azure non entra nel dominio</td><td>DNS della VNet non personalizzati, o non raggiunge il DC</td></tr>
+      <tr><td>Dalla sede non si risolvono i nomi privati Azure</td><td>Manca l'inoltro condizionale verso le zone private</td></tr>
+      <tr><td>Un servizio gestito viene raggiunto via Internet invece che privatamente</td><td>Zona DNS privata dell'endpoint mancante o non collegata</td></tr>
+      <tr><td>Il tunnel è su ma il traffico non passa</td><td>Rotte, NSG, o UDR: i soliti tre sospetti (lezione 3-15)</td></tr>
+      <tr><td>Alcune cose funzionano e altre no dentro il tunnel</td><td>MTU: manca l'MSS clamping</td></tr>
+      <tr><td>Le modifiche agli utenti non arrivano in cloud</td><td>Sincronizzazione delle identità ferma</td></tr>
+      <tr><td>Accessi che chiedono improvvisamente il secondo fattore a tutti</td><td>Cambiato l'indirizzo pubblico della sede</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: ambiente ibrido",
+  "questions": [
+    { "q": "Una macchina virtuale appena creata in Azure non riesce a entrare nel dominio aziendale. Causa più probabile?",
+      "a": [ {"t":"La VNet usa il DNS di Azure, che non conosce il dominio aziendale","ok":true},
+             {"t":"Il tunnel VPN non è attivo","ok":false},
+             {"t":"Manca una regola NSG","ok":false},
+             {"t":"La macchina è in una subnet sbagliata","ok":false} ],
+      "e": "Il resolver predefinito di Azure risolve Internet e le risorse Azure, non i nomi del dominio interno: senza i record SRV dei domain controller, l'ingresso nel dominio fallisce. Si imposta il DNS personalizzato sulla VNet puntando ai DC — ricordando che le macchine già accese lo prendono solo al riavvio della scheda di rete." },
+
+    { "q": "Cosa serve perché un endpoint privato venga risolto con l'indirizzo privato?",
+      "a": [ {"t":"Una zona DNS privata dedicata a quel servizio, collegata alla VNet","ok":true},
+             {"t":"Una regola NSG che permetta il traffico","ok":false},
+             {"t":"Una UDR verso l'endpoint","ok":false},
+             {"t":"Nulla: avviene automaticamente","ok":false} ],
+      "e": "Il nome del servizio resta quello pubblico: senza la zona privata, la risoluzione restituisce l'indirizzo pubblico e il traffico esce su Internet invece di restare privato. È lo split DNS della lezione 1-20 applicato al cloud, e se le macchine in sede devono raggiungerlo serve anche l'inoltro dal DNS aziendale." },
+
+    { "q": "Qual è l'errore di indirizzamento più costoso da correggere in Azure?",
+      "a": [ {"t":"Una VNet sovrapposta alla rete in sede o a quella di un partner","ok":true},
+             {"t":"Subnet troppo grandi","ok":false},
+             {"t":"Aver usato indirizzi 10.x invece di 172.x","ok":false},
+             {"t":"Aver creato troppe subnet","ok":false} ],
+      "e": "Una sovrapposizione impedisce al tunnel di funzionare e rende impossibile qualsiasi peering futuro: l'unica correzione è rifare la VNet e spostare tutte le risorse. Mezz'ora di piano di indirizzamento unico — sede, filiali, partner e cloud — evita giorni di migrazione." },
+
+    { "q": "Perché conviene un secondo domain controller in Azure?",
+      "a": [ {"t":"Dà autenticazione locale alle macchine cloud anche se il tunnel cade","ok":true},
+             {"t":"Riduce i costi di licenza","ok":false},
+             {"t":"È obbligatorio per usare le VNet","ok":false},
+             {"t":"Sostituisce il DNS di Azure","ok":false} ],
+      "e": "Senza, ogni autenticazione delle macchine cloud dipende dal tunnel verso la sede: se cade, in cloud non funziona più nulla che richieda il dominio. In più è una copia del dominio in un luogo fisicamente diverso. Richiede però che il tunnel regga per la replica: se cade a lungo, la replica si degrada." },
+
+    { "q": "Quale conseguenza ha, in un ibrido, cambiare l'indirizzo IP pubblico della sede?",
+      "a": [ {"t":"Le politiche di accesso condizionale che lo usano come segnale di fiducia possono chiedere il secondo fattore a tutti","ok":true},
+             {"t":"Il tunnel verso Azure si riconfigura da solo","ok":false},
+             {"t":"Le VNet perdono la connettività Internet","ok":false},
+             {"t":"Nessuna: l'indirizzo pubblico non è rilevante","ok":false} ],
+      "e": "Regole del tipo «se arriva dalla sede non chiedere MFA» si basano sull'indirizzo pubblico: un cambio di linea, di operatore o anche solo un failover su 4G può avere effetti immediati su tutta l'azienda. Non devi gestire tu l'identità, ma devi sapere che le tue scelte di rete la influenzano — e avvisare prima." },
+
+    { "q": "Il tunnel verso Azure è attivo ma alcune applicazioni funzionano e altre no. Primo sospetto?",
+      "a": [ {"t":"MTU: manca l'MSS clamping sul tunnel","ok":true},
+             {"t":"Il DNS della VNet","ok":false},
+             {"t":"La sincronizzazione delle identità","ok":false},
+             {"t":"Il gateway è di classe insufficiente","ok":false} ],
+      "e": "«Alcune cose sì, altre no» dentro un tunnel è la firma classica dell'MTU: le richieste piccole passano, i trasferimenti grandi vengono scartati. Se fosse il DNS non funzionerebbe la risoluzione dei nomi in generale, e non ci sarebbe distinzione tra applicazioni." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

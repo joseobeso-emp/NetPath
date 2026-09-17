@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VPN Gateway, ExpressRoute e Virtual WAN — NetPath</title>
+<meta name="description" content="Le tre strade per entrare in Azure, con i criteri di scelta e i limiti che emergono solo in produzione.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-16">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Cloud networking (Azure)</span>
+      </nav>
+      <h1 class="lesson-title">VPN Gateway, ExpressRoute e Virtual WAN</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 16</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Scegliere tra VPN, ExpressRoute e Virtual WAN con criteri concreti</li>
+        <li>Capire come funziona il gateway VPN di Azure e cosa lo distingue da un firewall</li>
+        <li>Sapere perché ExpressRoute costa così tanto e quando lo giustifica</li>
+        <li>Progettare la ridondanza della connettività verso il cloud</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Collegare la rete aziendale ad Azure è una delle richieste più frequenti che riceverai
+da qui in avanti. Le strade sono tre, con costi molto diversi, e la scelta sbagliata si paga per anni
+di canone o in disservizi.</p>
+
+<h2>Le tre strade</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>VPN site-to-site</th><th>ExpressRoute</th><th>Virtual WAN</th></tr></thead>
+    <tbody>
+      <tr><td><b>Come viaggia</b></td><td>Tunnel IPsec su Internet</td><td>Collegamento privato dedicato</td><td>Servizio gestito che orchestra VPN ed ExpressRoute insieme</td></tr>
+      <tr><td><b>Latenza e banda</b></td><td>Dipendono da Internet</td><td><b>Garantite da contratto</b></td><td>Dipende dal trasporto sottostante</td></tr>
+      <tr><td><b>Costo</b></td><td>Contenuto</td><td><b>Elevato:</b> canone Azure + circuito dell'operatore</td><td>Medio-alto, ma scala bene</td></tr>
+      <tr><td><b>Tempo di attivazione</b></td><td>Ore</td><td>Settimane o mesi</td><td>Giorni</td></tr>
+      <tr><td><b>Quando</b></td><td><b>La scelta giusta per la maggior parte delle PMI</b></td><td>Requisiti di banda o latenza garantite, o dati che non devono passare da Internet</td><td>Molte sedi da collegare in modo uniforme</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La risposta che darai il 90% delle volte
+  </div>
+  <p><b>VPN site-to-site.</b> Con le linee in fibra di oggi, un tunnel IPsec verso Azure ha prestazioni
+  ampiamente sufficienti per il carico tipico di una PMI: accesso a qualche macchina virtuale,
+  autenticazione, backup.</p>
+  <p style="margin-bottom:0">ExpressRoute entra in gioco quando ci sono requisiti contrattuali di
+  latenza o banda, volumi di dati costanti e ingenti, o vincoli che impongono di non far transitare i
+  dati su Internet nemmeno cifrati. Se nessuna di queste condizioni è vera, proporlo significa far
+  spendere al cliente molto di più per un beneficio che non userà.</p>
+</div>
+
+<h2>Il gateway VPN di Azure: cosa lo distingue</h2>
+
+<p>Non è un firewall: è un <strong>terminatore di tunnel</strong>. Non filtra, non ispeziona, non fa
+NAT nel senso tradizionale. Il suo unico mestiere è stabilire tunnel IPsec e instradare.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Aspetto</th><th>Cosa devi sapere</th></tr></thead>
+    <tbody>
+      <tr><td><b>Vive in una subnet dedicata</b></td>
+          <td>Azure richiede una subnet con nome e dimensioni specifiche, riservata solo a lui. Va prevista nel piano di indirizzamento (lezione 3-15)</td></tr>
+      <tr><td><b>Ha classi di prestazioni</b></td>
+          <td>Diverse fasce di banda, tunnel supportati e caratteristiche. La classe più economica spesso non supporta le funzioni che servono</td></tr>
+      <tr><td><b>Rotte statiche o dinamiche</b></td>
+          <td>Con il routing dinamico si usa <b>BGP</b> (lezione 3-04): le reti si annunciano da sole, senza elenchi da mantenere</td></tr>
+      <tr><td><b>Ridondanza</b></td>
+          <td>Può esporre <b>due tunnel</b> verso lo stesso apparato on-premise, per sopravvivere alla manutenzione di uno</td></tr>
+      <tr><td><b>Manutenzione Microsoft</b></td>
+          <td>Il gateway viene aggiornato periodicamente: con un tunnel solo si hanno brevi interruzioni</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Il tunnel verso Azure cade ogni tanto per pochi minuti»
+  </div>
+  <p>Se il cliente lo segnala e non trovi nulla dal tuo lato, il sospetto è la <b>manutenzione
+  programmata di Microsoft</b> sul gateway. Con un tunnel singolo l'interruzione si sente.</p>
+  <p style="margin-bottom:0"><b>La soluzione</b> è configurare i due tunnel che il gateway espone verso
+  il firewall on-premise, con BGP o con rotte a distanze diverse: quando uno viene aggiornato, il
+  traffico passa sull'altro. Va previsto in fase di progetto, non dopo le lamentele.</p>
+</div>
+
+<h2>Configurare il lato on-premise</h2>
+
+<p>Il tunnel verso Azure è un normale IPsec site-to-site, con tutto quello che sai dal capitolo 2.5.
+I punti su cui si concentrano i problemi sono quelli prevedibili:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Punto</th><th>Attenzione</th></tr></thead>
+    <tbody>
+      <tr><td><b>Parametri IKE</b></td><td>Azure supporta insiemi specifici di algoritmi: vanno allineati esattamente (lezione 2-16)</td></tr>
+      <tr><td><b>Selettori di traffico</b></td><td>Con routing statico devono corrispondere; con BGP il problema non si pone</td></tr>
+      <tr><td><b>Indirizzi non sovrapposti</b></td><td>Se la VNet si sovrappone alla rete on-premise, il tunnel non può funzionare</td></tr>
+      <tr><td><b>MTU e MSS</b></td><td>Come sempre nei tunnel: MSS clamping, o «alcune cose non funzionano»</td></tr>
+      <tr><td><b>NAT escluso</b></td><td>Il traffico verso Azure non va mascherato (lezione 2-17)</td></tr>
+      <tr><td><b>Policy firewall</b></td><td>Servono nelle due direzioni, come per qualsiasi tunnel</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Usa BGP se puoi
+  </div>
+  <p>Con il routing statico devi mantenere a mano l'elenco delle reti su entrambi i lati: ogni volta che
+  aggiungi una subnet in Azure o una VLAN in sede, devi ricordarti di aggiornarlo — e chi non lo fa
+  genera guasti che si manifestano settimane dopo.</p>
+  <p style="margin-bottom:0">Con BGP le reti si annunciano da sole. È il caso in cui BGP, che nella
+  lezione 3-04 sembrava lontano dal tuo lavoro, diventa concretamente utile in un progetto da PMI.</p>
+</div>
+
+<h2>ExpressRoute: cosa compri davvero</h2>
+
+<p>Un circuito privato tra la rete del cliente e Azure, che <strong>non passa da Internet</strong>.
+Si acquista in due pezzi: il circuito ExpressRoute lato Azure, e il collegamento fisico da un operatore
+abilitato.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa ottieni</th><th>Cosa NON ottieni</th></tr></thead>
+    <tbody>
+      <tr><td>Banda e latenza garantite da contratto</td><td><b>Cifratura:</b> il circuito è privato ma non cifrato di per sé</td></tr>
+      <tr><td>Traffico che non transita su Internet pubblico</td><td>Ridondanza automatica se non la configuri</td></tr>
+      <tr><td>Prestazioni prevedibili e costanti</td><td>Un firewall: serve comunque</td></tr>
+      <tr><td>Accesso anche ai servizi Microsoft non-Azure, secondo il tipo di peering</td><td>Semplicità: è più complesso da progettare e attivare</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Privato non significa cifrato
+  </div>
+  <p>È un equivoco frequente: ExpressRoute è un collegamento <b>dedicato</b>, non un collegamento
+  <b>cifrato</b>. Se i dati che ci passano richiedono cifratura per policy o per normativa, va
+  aggiunta — tipicamente con un tunnel IPsec sopra il circuito.</p>
+  <p style="margin-bottom:0">Va chiarito con il cliente prima della firma: molti presumono che
+  «privato» implichi «protetto».</p>
+</div>
+
+<h2>Virtual WAN</h2>
+
+<p>È un servizio gestito che fa da <strong>hub centrale</strong>: invece di costruire e mantenere tu la
+topologia dei collegamenti tra sedi, VNet e utenti remoti, Azure la gestisce come servizio.</p>
+
+<p><b>Ha senso</b> quando le sedi da collegare sono molte e vuoi una gestione uniforme, o quando la
+topologia crescerà nel tempo. <b>Non ha senso</b> per un cliente con una sede e una VNet: aggiunge un
+livello di gestione e di costo per risolvere un problema che non ha.</p>
+
+<h2>La ridondanza verso il cloud</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Le domande da fare prima di progettare
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Cosa smette di funzionare se il collegamento cade?</b> Se in Azure c'è solo un archivio di
+    backup, si può tollerare qualche ora. Se c'è il controller di dominio o il gestionale, no.</li>
+    <li><b>Quanto traffico passerà davvero?</b> Misura, non stimare: spesso è molto meno di quanto il
+    cliente immagini.</li>
+    <li><b>Ci sono vincoli sul passaggio dei dati su Internet?</b> Questa domanda decide da sola se
+    ExpressRoute è in gioco.</li>
+    <li><b>Quante sedi dovranno collegarsi, ora e tra due anni?</b> Determina se conviene una topologia
+    a stella gestita da te o un servizio gestito.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0"><b>La configurazione tipica che regge bene:</b> VPN
+  site-to-site con <b>due tunnel</b> dal firewall on-premise verso il gateway, BGP per le rotte, e —
+  se la continuità è critica — una <b>seconda linea Internet</b> in sede, così il tunnel può risalire
+  anche con la fibra guasta. Costa poco più della configurazione minima e toglie di mezzo i due guasti
+  più probabili.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: connettività verso Azure",
+  "questions": [
+    { "q": "Un cliente PMI deve collegare la sede a una VNet con qualche macchina virtuale. Cosa proponi?",
+      "a": [ {"t":"VPN site-to-site con due tunnel e BGP","ok":true},
+             {"t":"ExpressRoute, per avere prestazioni garantite","ok":false},
+             {"t":"Virtual WAN, che semplifica la gestione","ok":false},
+             {"t":"Solo accesso via VPN client per gli utenti","ok":false} ],
+      "e": "Con le linee in fibra di oggi un tunnel IPsec ha prestazioni ampiamente sufficienti per il carico tipico di una PMI. ExpressRoute ha senso con requisiti contrattuali di banda o latenza, volumi costanti e ingenti, o vincoli sul transito dei dati su Internet: senza almeno una di queste condizioni si fa spendere molto per un beneficio non usato." },
+
+    { "q": "Il tunnel verso Azure cade ogni tanto per pochi minuti e dal lato on-premise non trovi nulla. Cosa sospetti?",
+      "a": [ {"t":"La manutenzione programmata di Microsoft sul gateway, con un tunnel singolo","ok":true},
+             {"t":"Un problema di MTU","ok":false},
+             {"t":"Il rekey IPsec","ok":false},
+             {"t":"La saturazione della linea","ok":false} ],
+      "e": "Il gateway viene aggiornato periodicamente e con un tunnel solo l'interruzione si sente. La soluzione è configurare i due tunnel che il gateway espone, con BGP o rotte a distanze diverse. Il rekey darebbe cadute a intervalli <em>regolari</em> coincidenti con le durate configurate, che è un pattern diverso." },
+
+    { "q": "Perché conviene usare BGP invece del routing statico verso Azure?",
+      "a": [ {"t":"Le reti si annunciano da sole: non serve aggiornare elenchi a mano su entrambi i lati","ok":true},
+             {"t":"Perché è più veloce","ok":false},
+             {"t":"Perché il routing statico non è supportato","ok":false},
+             {"t":"Perché cifra meglio il traffico","ok":false} ],
+      "e": "Con il routing statico ogni nuova subnet in Azure o VLAN in sede richiede di ricordarsi di aggiornare l'elenco su entrambi i lati, e chi non lo fa genera guasti che emergono settimane dopo. È il caso in cui BGP, che sembrava lontano dal lavoro quotidiano, diventa concretamente utile anche in un progetto da PMI." },
+
+    { "q": "ExpressRoute cifra il traffico?",
+      "a": [ {"t":"No: è un collegamento dedicato, non cifrato di per sé","ok":true},
+             {"t":"Sì, con IPsec automatico","ok":false},
+             {"t":"Sì, tramite TLS","ok":false},
+             {"t":"Solo per i dati verso i servizi Microsoft","ok":false} ],
+      "e": "«Privato» non implica «protetto», ed è un equivoco frequente. Se i dati richiedono cifratura per policy o normativa, va aggiunta sopra il circuito, tipicamente con un tunnel IPsec. Va chiarito con il cliente prima della firma." },
+
+    { "q": "Quando ha senso Azure Virtual WAN?",
+      "a": [ {"t":"Quando le sedi da collegare sono molte e serve una gestione uniforme","ok":true},
+             {"t":"Sempre, perché è la soluzione più moderna","ok":false},
+             {"t":"Per un cliente con una sede e una VNet","ok":false},
+             {"t":"Solo con ExpressRoute","ok":false} ],
+      "e": "È un servizio gestito che orchestra la topologia al posto tuo: utile con molte sedi o con una topologia destinata a crescere. Per una sede e una VNet aggiunge un livello di gestione e di costo per risolvere un problema che il cliente non ha." },
+
+    { "q": "Quale domanda decide da sola se ExpressRoute è in gioco?",
+      "a": [ {"t":"Ci sono vincoli che impediscono il transito dei dati su Internet?","ok":true},
+             {"t":"Quante macchine virtuali ci sono in Azure?","ok":false},
+             {"t":"Qual è il budget del cliente?","ok":false},
+             {"t":"Quanti utenti ha l'azienda?","ok":false} ],
+      "e": "Insieme ai requisiti contrattuali di banda e latenza, è il criterio che giustifica il costo. Il numero di macchine o di utenti incide sul dimensionamento della banda, ma non sulla scelta della tecnologia: un tunnel IPsec regge carichi considerevoli." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

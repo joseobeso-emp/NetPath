@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Azure Firewall, NVA e hub-and-spoke — NetPath</title>
+<meta name="description" content="La topologia standard del cloud aziendale e come ci si mette dentro un firewall che già conosci.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-18">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Cloud networking (Azure)</span>
+      </nav>
+      <h1 class="lesson-title">Azure Firewall, NVA e hub-and-spoke</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 18</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Progettare una topologia hub-and-spoke e capire perché è lo standard</li>
+        <li>Scegliere tra firewall gestito da Azure e apparato di produttore terzo</li>
+        <li>Forzare il traffico attraverso il firewall con le UDR, senza isolare nulla</li>
+        <li>Capire cosa cambia quando il firewall del cliente è lo stesso in sede e in cloud</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Una volta che un cliente ha più di una VNet, la domanda diventa: dove metto i servizi
+comuni e come controllo il traffico? La risposta standard è la topologia <strong>hub-and-spoke</strong>,
+ed è la stessa idea del collapsed core della lezione 3-01, trasferita nel cloud.</p>
+
+<h2>Hub-and-spoke</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 290" role="img" aria-label="Topologia hub and spoke con VNet hub centrale e VNet spoke collegate in peering">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Un centro con i servizi comuni, tanti raggi con i carichi di lavoro</text>
+
+    <rect x="240" y="96" width="220" height="92" rx="11" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2.2"/>
+    <text x="350" y="120" text-anchor="middle" class="dg-label-sm">VNet HUB</text>
+    <text x="350" y="140" text-anchor="middle" class="dg-mono-sm">firewall</text>
+    <text x="350" y="158" text-anchor="middle" class="dg-mono-sm">gateway VPN / ExpressRoute</text>
+    <text x="350" y="176" text-anchor="middle" class="dg-mono-sm">DNS, servizi condivisi</text>
+
+    <g stroke-width="1.6">
+      <rect x="20"  y="44" width="160" height="50" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="20"  y="190" width="160" height="50" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="520" y="44" width="160" height="50" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="520" y="190" width="160" height="50" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="100" y="66">SPOKE</text><text x="100" y="82">produzione</text>
+      <text x="100" y="212">SPOKE</text><text x="100" y="228">collaudo</text>
+      <text x="600" y="66">SPOKE</text><text x="600" y="82">gestionale</text>
+      <text x="600" y="212">SPOKE</text><text x="600" y="228">sviluppo</text>
+    </g>
+    <g stroke="var(--dg-5)" stroke-width="2" fill="none">
+      <path d="M184 76 L 240 112"/><path d="M184 208 L 240 172"/>
+      <path d="M516 76 L 460 112"/><path d="M516 208 L 460 172"/>
+    </g>
+
+    <path d="M350 188v40" stroke="var(--dg-4)" stroke-width="2.6"/>
+    <text x="350" y="248" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-4)">verso la sede aziendale</text>
+    <text x="350" y="276" text-anchor="middle" class="dg-label-sm">I raggi <tspan font-weight="700">non si parlano tra loro direttamente</tspan>: il traffico passa dall'hub, dove c'è il controllo.</text>
+  </svg>
+  </div>
+  <figcaption>Il peering è <b>non transitivo</b>: due spoke collegati allo stesso hub non si vedono
+  automaticamente. È un limite che qui diventa un vantaggio, perché costringe il traffico a passare dal
+  punto dove hai messo i controlli.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa sta nell'hub</th><th>Cosa sta negli spoke</th></tr></thead>
+    <tbody>
+      <tr><td>Firewall e ispezione del traffico</td><td>Macchine virtuali e applicazioni</td></tr>
+      <tr><td>Gateway VPN o ExpressRoute verso la sede</td><td>Database e archivi</td></tr>
+      <tr><td>Domain controller e DNS</td><td>Ambienti separati: produzione, collaudo, sviluppo</td></tr>
+      <tr><td>Servizi condivisi e gestione</td><td>Carichi di clienti o reparti diversi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Perché è lo standard
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>I servizi costosi si pagano una volta sola.</b> Gateway e firewall stanno nell'hub e servono
+    tutti gli spoke, invece di essere duplicati.</li>
+    <li><b>La separazione è strutturale.</b> Produzione e sviluppo sono VNet diverse: non si parlano se
+    non lo decidi tu, e non per una regola che si può sbagliare.</li>
+    <li><b>Si aggiunge un ambiente senza toccare gli altri:</b> nuova VNet, peering verso l'hub, fine.</li>
+    <li><b>È la microsegmentazione della lezione 3-12</b>, realizzata con la topologia invece che con
+    le regole.</li>
+  </ul>
+</div>
+
+<h2>Firewall gestito o apparato di produttore terzo?</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Firewall gestito da Azure</th><th>NVA — apparato di terze parti</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cos'è</b></td><td>Servizio gestito: nessuna macchina da amministrare</td><td>Il firewall del tuo produttore, eseguito come macchina virtuale</td></tr>
+      <tr><td><b>Gestione</b></td><td>Dal portale Azure</td><td><b>La stessa interfaccia che usi in sede</b></td></tr>
+      <tr><td><b>Aggiornamenti e disponibilità</b></td><td>A carico di Microsoft</td><td>A carico tuo: firmware, licenze, alta disponibilità</td></tr>
+      <tr><td><b>Funzioni</b></td><td>Filtro, regole applicative, informazioni sulle minacce</td><td>Tutto ciò che offre il prodotto, incluso ciò che già configuri</td></tr>
+      <tr><td><b>Regole coerenti con la sede</b></td><td>Da riscrivere in un altro linguaggio</td><td><b>Stesse logiche e stessi oggetti</b></td></tr>
+      <tr><td><b>Costo</b></td><td>Canone del servizio + traffico</td><td>Macchine virtuali + licenze del produttore</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il criterio pratico per un MSP
+  </div>
+  <p>Se il cliente ha già un firewall di un produttore che gestisci — e tu quel prodotto lo conosci —
+  <b>l'apparato di terze parti in cloud ha un vantaggio concreto e sottovalutato: la coerenza</b>.
+  Stessi oggetti, stesse logiche di policy, stesso modo di diagnosticare, stessi log. Un tuo collega
+  che apre il firewall in cloud si orienta subito.</p>
+  <p style="margin-bottom:0">Il firewall gestito da Azure è preferibile quando il cliente è
+  prevalentemente in cloud, quando nessuno vuole gestire macchine virtuali di infrastruttura, o quando
+  si punta a ridurre il numero di cose da mantenere. <b>Non c'è una risposta universale</b>: la domanda
+  giusta è «chi manterrà questa cosa tra due anni, e con quali competenze?».</p>
+</div>
+
+<h2>Forzare il traffico nel firewall</h2>
+
+<p>Ricorda la differenza 1 della lezione 3-15: <strong>Azure instrada già tutto</strong>. Mettere un
+firewall nell'hub non basta — bisogna dire alle subnet degli spoke di passare da lì, con le
+<strong>UDR</strong>.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Lo schema delle rotte, concettualmente</div>
+<pre><span class="c">── Su ogni subnet degli SPOKE ──────────────────────</span>
+0.0.0.0/0          → indirizzo del firewall nell'hub    <span class="c"># Internet</span>
+10.0.0.0/8         → indirizzo del firewall nell'hub    <span class="c"># reti aziendali</span>
+
+<span class="c">── Sulla subnet del GATEWAY nell'hub ───────────────</span>
+rete dello spoke A → indirizzo del firewall            <span class="c"># traffico in arrivo dalla sede</span>
+rete dello spoke B → indirizzo del firewall
+
+<span class="c">── ⚠ NON applicare la rotta di default ─────────────</span>
+<span class="c">   alla subnet del firewall stesso</span>
+<span class="c">   alla subnet del gateway (se non con rotte specifiche)</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il traffico deve passare dal firewall in <em>entrambe</em> le direzioni
+  </div>
+  <p>L'errore più comune: si mettono le UDR sugli spoke, così il traffico in uscita passa dal firewall.
+  Ma il traffico <b>di ritorno</b> dalla sede verso lo spoke segue le rotte automatiche e arriva
+  direttamente, senza passare dal firewall.</p>
+  <p style="margin-bottom:0">Risultato: <b>routing asimmetrico</b> (lezione 2-09), e il firewall
+  stateful scarta le risposte perché non corrispondono a nessuna sessione che lui abbia visto nascere.
+  Servono UDR anche sulla subnet del gateway, che indirizzino verso il firewall il traffico diretto
+  agli spoke.</p>
+</div>
+
+<h2>Errori tipici di questa topologia</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Errore</th><th>Sintomo</th></tr></thead>
+    <tbody>
+      <tr><td>Peering creato da una parte sola</td><td>Le due VNet non si parlano: il peering va creato in entrambe le direzioni</td></tr>
+      <tr><td>Spoke che devono parlarsi ma il peering non è transitivo</td><td>Non si vedono: serve passare dall'hub, con le rotte relative</td></tr>
+      <tr><td>UDR solo in uscita</td><td>Routing asimmetrico, connessioni che non si stabiliscono</td></tr>
+      <tr><td>UDR applicata alla subnet del firewall</td><td>Il firewall si isola e con lui tutto il resto</td></tr>
+      <tr><td>Il peering non è configurato per usare il gateway dell'hub</td><td>Gli spoke non raggiungono la sede: l'opzione va attivata esplicitamente</td></tr>
+      <tr><td>NVA senza ridondanza</td><td>Un solo apparato virtuale è un punto singolo di guasto per tutto il cloud</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La ridondanza dell'NVA è un progetto a sé
+  </div>
+  <p>Un firewall di terze parti come macchina virtuale singola è un punto singolo di guasto per
+  l'<b>intero</b> ambiente cloud: se si ferma, tutto il traffico che passa da lì si ferma.</p>
+  <p style="margin-bottom:0">La ridondanza si realizza con due apparati e un bilanciatore, con le UDR
+  che puntano all'indirizzo del bilanciatore invece che a quello del firewall. È una configurazione
+  ben documentata dai produttori, ma va <b>prevista e preventivata fin dall'inizio</b>: aggiungerla
+  dopo significa rifare tutte le rotte.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: hub-and-spoke e firewall in cloud",
+  "questions": [
+    { "q": "Due VNet spoke collegate in peering allo stesso hub si parlano tra loro?",
+      "a": [ {"t":"No: il peering non è transitivo, il traffico deve passare dall'hub","ok":true},
+             {"t":"Sì, automaticamente","ok":false},
+             {"t":"Sì, se sono nella stessa regione","ok":false},
+             {"t":"Solo se hanno lo stesso spazio di indirizzi","ok":false} ],
+      "e": "La non transitività del peering è un limite che in questa topologia diventa un vantaggio: costringe il traffico tra spoke a passare dall'hub, dove hai messo il firewall. Per farli comunicare servono comunque le rotte che indirizzano verso l'hub." },
+
+    { "q": "Hai messo il firewall nell'hub e le UDR sugli spoke, ma le connessioni dalla sede non si stabiliscono. Perché?",
+      "a": [ {"t":"Il traffico di ritorno non passa dal firewall: routing asimmetrico","ok":true},
+             {"t":"Il firewall è sottodimensionato","ok":false},
+             {"t":"Manca il peering","ok":false},
+             {"t":"Gli NSG bloccano il traffico","ok":false} ],
+      "e": "Con le UDR solo sugli spoke, l'andata passa dal firewall ma il ritorno dalla sede segue le rotte automatiche e arriva diretto. Il firewall stateful scarta le risposte perché non ha mai visto nascere quelle sessioni. Servono UDR anche sulla subnet del gateway." },
+
+    { "q": "Quale vantaggio concreto ha usare in cloud lo stesso firewall che il cliente ha in sede?",
+      "a": [ {"t":"Coerenza: stessi oggetti, stesse logiche di policy, stessi log e stesso modo di diagnosticare","ok":true},
+             {"t":"Costa sempre meno","ok":false},
+             {"t":"Non richiede licenze","ok":false},
+             {"t":"È gestito da Microsoft","ok":false} ],
+      "e": "Per un MSP la coerenza operativa è un valore sottovalutato: un collega che apre il firewall in cloud si orienta subito. Il firewall gestito da Azure è invece preferibile quando il cliente è prevalentemente in cloud o quando si vuole ridurre il numero di cose da mantenere. La domanda giusta è chi lo manterrà tra due anni e con quali competenze." },
+
+    { "q": "A quali subnet NON va applicata la rotta di default verso il firewall?",
+      "a": [ {"t":"Alla subnet del firewall stesso e a quella del gateway","ok":true},
+             {"t":"Alle subnet di produzione","ok":false},
+             {"t":"A quelle con endpoint privati","ok":false},
+             {"t":"A nessuna: va applicata ovunque","ok":false} ],
+      "e": "Il firewall che riceve una rotta che punta a sé stesso manda il traffico in circolo e si isola; il gateway con la rotta di default non riesce più a raggiungere ciò che deve. Sono le due esclusioni da verificare dopo ogni modifica alle rotte." },
+
+    { "q": "Perché un NVA singolo è un problema?",
+      "a": [ {"t":"È un punto singolo di guasto per l'intero ambiente cloud","ok":true},
+             {"t":"Non supporta le UDR","ok":false},
+             {"t":"Non può fare NAT","ok":false},
+             {"t":"Richiede ExpressRoute","ok":false} ],
+      "e": "Tutto il traffico passa da lì per costruzione: se la macchina virtuale si ferma, si ferma tutto. La ridondanza richiede due apparati e un bilanciatore, con le UDR che puntano al bilanciatore — configurazione da prevedere e preventivare dall'inizio, perché aggiungerla dopo significa rifare tutte le rotte." },
+
+    { "q": "Cosa sta nell'hub di una topologia hub-and-spoke?",
+      "a": [ {"t":"Firewall, gateway verso la sede, DNS e servizi condivisi","ok":true},
+             {"t":"Le macchine virtuali di produzione","ok":false},
+             {"t":"I database","ok":false},
+             {"t":"Solo il gateway VPN","ok":false} ],
+      "e": "Nell'hub stanno i servizi costosi e comuni, pagati una volta sola e usati da tutti gli spoke; negli spoke stanno i carichi di lavoro, separati per ambiente o per reparto. È la stessa logica del collapsed core della lezione 3-01, trasferita nel cloud." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VNet, subnet, NSG e UDR — NetPath</title>
+<meta name="description" content="Il networking di Azure mappato uno a uno su quello che già sai, con le differenze che contano.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-15">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Cloud networking (Azure)</span>
+      </nav>
+      <h1 class="lesson-title">VNet, subnet, NSG e UDR</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 15</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Tradurre i concetti di rete tradizionali nei loro equivalenti Azure</li>
+        <li>Capire cosa fa il routing implicito di Azure e quando va scavalcato</li>
+        <li>Scrivere regole NSG sapendo come vengono valutate</li>
+        <li>Riconoscere le differenze che sorprendono chi arriva dal mondo on-premise</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Il networking di Azure spaventa perché cambia tutto il vocabolario. In realtà i concetti
+sono quelli che conosci: subnet, gateway, regole firewall, rotte statiche. Questa lezione fa la
+traduzione e si concentra sulle <strong>quattro differenze</strong> che davvero sorprendono chi arriva
+dall'on-premise.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Nota sull'aggiornamento
+  </div>
+  <p>Azure evolve rapidamente: nomi di servizi, opzioni e limiti cambiano. Questa lezione insegna
+  <b>i concetti e i criteri di progetto</b>, che sono stabili. Per valori, limiti e procedure puntuali
+  fai sempre riferimento alla documentazione Microsoft aggiornata al momento in cui lavori.</p>
+</div>
+
+<h2>Il dizionario</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>On-premise</th><th>Azure</th><th>Differenza principale</th></tr></thead>
+    <tbody>
+      <tr><td>Rete / spazio di indirizzamento</td><td><b>VNet</b></td><td>Esiste in una regione geografica; ha uno o più spazi di indirizzi</td></tr>
+      <tr><td>VLAN + subnet</td><td><b>Subnet</b></td><td>Non c'è distinzione tra VLAN e subnet: sono la stessa cosa</td></tr>
+      <tr><td>Switch e cablaggio</td><td>—</td><td><b>Non esistono:</b> non c'è nulla da configurare al livello 2</td></tr>
+      <tr><td>Regole firewall di base</td><td><b>NSG</b> — Network Security Group</td><td>Si applicano a una subnet o a una scheda di rete</td></tr>
+      <tr><td>Rotte statiche</td><td><b>UDR</b> — User Defined Route, in una route table</td><td>Si applicano a una subnet, non a un apparato</td></tr>
+      <tr><td>Router / gateway</td><td>Implicito</td><td><b>Azure instrada da solo</b> tra tutte le subnet della VNet</td></tr>
+      <tr><td>Collegamento tra reti</td><td><b>VNet peering</b></td><td>Collega due VNet, anche in regioni diverse</td></tr>
+      <tr><td>Firewall d'azienda</td><td><b>Azure Firewall</b> o <b>NVA</b></td><td>L'NVA è un firewall di produttore terzo come macchina virtuale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Differenza 1 — Azure instrada già tutto</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'albergo con tutte le porte aperte
+  </div>
+  <p>Nella tua rete aziendale, due VLAN non si parlano finché non metti un router in mezzo: è come un
+  palazzo dove ogni piano ha una porta chiusa e serve qualcuno che la apra.</p>
+  <p>In Azure è il contrario: <b>tutte le subnet di una VNet si parlano già</b>, senza che tu configuri
+  niente. È un albergo dove tutte le porte interne sono aperte per costruzione, e il tuo lavoro non è
+  aprirle ma <b>decidere quali chiudere</b>.</p>
+  <p style="margin-bottom:0">È il ribaltamento mentale più importante per chi arriva dall'on-premise:
+  <b>in Azure non costruisci la connettività, la limiti.</b></p>
+</div>
+
+<p>Azure crea automaticamente delle rotte di sistema: tra tutte le subnet della VNet, verso le VNet
+collegate in peering, verso i gateway VPN, e una rotta di default verso Internet. Le <strong>UDR</strong>
+servono a <em>scavalcare</em> queste rotte automatiche — tipicamente per forzare il traffico attraverso
+un firewall.</p>
+
+<h2>Differenza 2 — Gli NSG non sono un firewall</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Caratteristica</th><th>NSG</th><th>Firewall tradizionale</th></tr></thead>
+    <tbody>
+      <tr><td><b>Livello</b></td><td>3 e 4: indirizzi, porte, protocolli</td><td>Fino al 7</td></tr>
+      <tr><td><b>Ordine</b></td><td>Per <b>priorità numerica</b>: vince il numero più basso</td><td>Dall'alto verso il basso</td></tr>
+      <tr><td><b>Stateful</b></td><td>Sì</td><td>Sì</td></tr>
+      <tr><td><b>Registrazione</b></td><td>Va attivata a parte (flow log)</td><td>Integrata</td></tr>
+      <tr><td><b>Ispezione dei contenuti</b></td><td><b>Nessuna</b></td><td>Antivirus, IPS, filtro</td></tr>
+      <tr><td><b>Regole predefinite</b></td><td>Permette il traffico dentro la VNet e l'uscita verso Internet</td><td>Tipicamente nega tutto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le regole predefinite sono permissive, non restrittive
+  </div>
+  <p>Un NSG appena creato contiene regole predefinite che <b>permettono</b>: tutto il traffico dentro la
+  VNet, e tutto il traffico in uscita verso Internet. È l'opposto di quello a cui sei abituato con un
+  firewall aziendale.</p>
+  <p style="margin-bottom:0"><b>Conseguenza pratica:</b> una macchina virtuale appena creata può
+  raggiungere qualsiasi altra macchina della VNet e tutto Internet. Se vuoi limitare, devi scrivere
+  regole di negazione con priorità più bassa (numero più basso) di quelle predefinite. Non dare mai per
+  scontato che «non avendo configurato niente, è chiuso»: in Azure è il contrario.</p>
+</div>
+
+<h3>Come si applicano</h3>
+<p>Un NSG può essere associato a una <strong>subnet</strong> o a una <strong>scheda di rete</strong> di
+una singola macchina. Se ci sono entrambi, <strong>vengono applicati tutti e due</strong>: il traffico
+deve essere permesso da entrambi per passare. È la causa più comune di «ho aperto la porta e non
+funziona» in Azure.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    I tag di servizio: la cosa più comoda degli NSG
+  </div>
+  <p>Invece di elencare indirizzi che cambiano, Azure offre <b>tag di servizio</b>: etichette che
+  rappresentano insiemi di indirizzi mantenuti da Microsoft — per esempio quelli di un servizio
+  gestito, di una regione, o della VNet stessa.</p>
+  <p style="margin-bottom:0">Scrivere una regola verso un tag invece che verso una lista di indirizzi
+  significa che <b>quando Microsoft aggiunge indirizzi al servizio, la tua regola continua a
+  funzionare</b>. È l'equivalente degli oggetti con nome parlante della lezione 2-13, ma mantenuti da
+  qualcun altro.</p>
+</div>
+
+<h2>Differenza 3 — Le UDR e il buco nero</h2>
+
+<p>Una UDR dice: «per questa destinazione, manda a questo indirizzo». Si applica a una <strong>subnet
+intera</strong> e scavalca le rotte automatiche. L'uso tipico è forzare tutto il traffico attraverso un
+firewall.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore che isola una subnet in tre secondi
+  </div>
+  <p>Creare una UDR <code>0.0.0.0/0 → indirizzo del firewall</code> e applicarla <b>anche alla subnet
+  dove sta il firewall stesso</b>. Il firewall riceve il traffico, consulta la sua tabella, e la tabella
+  gli dice di mandarlo a sé stesso. Il traffico gira in tondo e muore.</p>
+  <p><b>Stesso errore, variante comune:</b> applicare la UDR alla subnet del gateway VPN, impedendogli
+  di raggiungere ciò che deve raggiungere.</p>
+  <p style="margin-bottom:0"><b>Regola:</b> la subnet del firewall e quella del gateway <b>non</b>
+  ricevono la UDR di default. Vanno escluse esplicitamente, e va verificato dopo ogni modifica.</p>
+</div>
+
+<h2>Differenza 4 — Lo spazio di indirizzamento non si cambia con leggerezza</h2>
+
+<p>Lo spazio di indirizzi di una VNet si può ampliare, ma modificarlo o ridurlo quando ci sono già
+risorse dentro è complicato, e le subnet non si ridimensionano se contengono qualcosa.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Progettare l'indirizzamento Azure: le regole da rispettare
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Non deve sovrapporsi a nulla</b>: né alle reti on-premise, né alle altre VNet, né alle reti
+    dei clienti o dei partner con cui potresti doverti collegare. Una sovrapposizione impedisce il
+    peering e complica enormemente le VPN — lo stesso problema della lezione 2-17.</li>
+    <li><b>Prendi abbondante</b>: un <code>/16</code> per VNet non costa nulla e lascia spazio.</li>
+    <li><b>Riserva blocchi in anticipo</b> per le subnet di servizio che Azure richiede con nomi e
+    dimensioni specifiche — gateway, firewall gestito e altre. Scoprire dopo che non c'è spazio
+    significa rifare.</li>
+    <li><b>Usa uno schema riconoscibile</b>, come per le sedi fisiche: per esempio
+    <code>10.<b>regione</b>.<b>ambiente</b>.0/24</code>.</li>
+    <li><b>Documenta</b> in un unico piano di indirizzamento che comprenda on-premise e cloud insieme.
+    Sono la stessa rete, anche se vivono in posti diversi.</li>
+  </ul>
+</div>
+
+<h2>Diagnosticare</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>Ho aperto la porta nell'NSG e non funziona</td><td>C'è un secondo NSG sulla scheda di rete, o sulla subnet: si applicano entrambi</td></tr>
+      <tr><td>Una macchina non raggiunge Internet</td><td>Una UDR reindirizza il traffico a un apparato che non lo gestisce</td></tr>
+      <tr><td>Due VNet in peering non si parlano</td><td>Il peering è unidirezionale: va creato da entrambe le parti. Oppure gli NSG bloccano</td></tr>
+      <tr><td>Il traffico non passa dal firewall come previsto</td><td>UDR mancante sulla subnet di origine</td></tr>
+      <tr><td>Tutto isolato dopo una modifica alle rotte</td><td>UDR applicata anche alla subnet del firewall o del gateway</td></tr>
+      <tr><td>Non riesco a creare una subnet</td><td>Spazio di indirizzamento esaurito o sovrapposto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Gli strumenti di diagnosi che Azure offre
+  </div>
+  <p>Azure include strumenti che rispondono direttamente alle domande che ti faresti:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Verifica del flusso IP</b>: «questo traffico, da qui a lì, passa o viene bloccato — e da
+    quale regola?» È l'equivalente del <code>diagnose debug flow</code> di FortiGate.</li>
+    <li><b>Rotte effettive</b>: mostra la tabella di routing <em>risultante</em> per una scheda di rete,
+    comprese le rotte di sistema. È il modo per capire davvero dove andrà il traffico.</li>
+    <li><b>Regole NSG effettive</b>: l'insieme risultante di tutte le regole applicate a una scheda.</li>
+    <li><b>Registrazione dei flussi</b>: l'equivalente di NetFlow, da attivare a parte.</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0">Impara a usarli per primi: rispondono in trenta secondi a
+  domande su cui altrimenti si fanno ipotesi per ore.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: networking Azure di base",
+  "questions": [
+    { "q": "Due subnet nella stessa VNet, senza nessuna configurazione aggiuntiva. Si parlano?",
+      "a": [ {"t":"Sì: Azure instrada automaticamente tra tutte le subnet di una VNet","ok":true},
+             {"t":"No, serve configurare un gateway","ok":false},
+             {"t":"Solo se sono nella stessa regione","ok":false},
+             {"t":"Solo se si crea un peering","ok":false} ],
+      "e": "È il ribaltamento mentale più importante per chi arriva dall'on-premise: in Azure la connettività c'è già e il tuo lavoro è <b>limitarla</b>, non costruirla. Il peering serve tra VNet diverse, non tra subnet della stessa VNet." },
+
+    { "q": "Un NSG appena creato cosa permette?",
+      "a": [ {"t":"Tutto il traffico dentro la VNet e tutta l'uscita verso Internet","ok":true},
+             {"t":"Niente: nega tutto per impostazione predefinita","ok":false},
+             {"t":"Solo il traffico di gestione","ok":false},
+             {"t":"Dipende dalla regione","ok":false} ],
+      "e": "Le regole predefinite sono permissive, all'opposto di un firewall aziendale. Una macchina appena creata raggiunge tutta la VNet e tutto Internet. Per limitare bisogna scrivere regole di negazione con priorità numerica più bassa di quelle predefinite: mai dare per scontato che «non configurato» significhi «chiuso»." },
+
+    { "q": "Hai aperto una porta nell'NSG della subnet ma il traffico non passa. Cosa controlli?",
+      "a": [ {"t":"Se c'è un secondo NSG sulla scheda di rete della macchina","ok":true},
+             {"t":"Se la VNet ha abbastanza indirizzi","ok":false},
+             {"t":"Se la regione supporta quella porta","ok":false},
+             {"t":"Se il peering è attivo","ok":false} ],
+      "e": "NSG su subnet e NSG su scheda di rete si applicano <b>entrambi</b>: il traffico deve essere permesso da tutti e due. È la causa più comune di «ho aperto la porta e non funziona», e lo strumento delle regole effettive mostra l'insieme risultante in pochi secondi." },
+
+    { "q": "Qual è l'errore con le UDR che isola completamente una subnet?",
+      "a": [ {"t":"Applicare la rotta di default verso il firewall anche alla subnet del firewall stesso","ok":true},
+             {"t":"Usare un prefisso /16 invece di /24","ok":false},
+             {"t":"Creare più di dieci rotte","ok":false},
+             {"t":"Applicare la UDR a una scheda di rete","ok":false} ],
+      "e": "Il firewall riceve traffico, consulta la tabella, e questa gli dice di mandarlo a sé stesso: il traffico gira in tondo e muore. Stessa cosa applicando la UDR alla subnet del gateway VPN. Quelle subnet vanno escluse esplicitamente, e la verifica va rifatta dopo ogni modifica." },
+
+    { "q": "A cosa servono i tag di servizio negli NSG?",
+      "a": [ {"t":"Rappresentano insiemi di indirizzi mantenuti da Microsoft, così le regole restano valide quando cambiano","ok":true},
+             {"t":"A etichettare le risorse per la fatturazione","ok":false},
+             {"t":"A definire la priorità delle regole","ok":false},
+             {"t":"A raggruppare le macchine virtuali","ok":false} ],
+      "e": "Scrivere una regola verso un tag invece che verso una lista di indirizzi significa che quando Microsoft aggiunge indirizzi a quel servizio la regola continua a funzionare. È l'equivalente degli oggetti con nome parlante della lezione 2-13, con il vantaggio che li mantiene qualcun altro." },
+
+    { "q": "Perché lo spazio di indirizzamento di una VNet va progettato con cura fin dall'inizio?",
+      "a": [ {"t":"Non deve sovrapporsi a on-premise né ad altre VNet, e modificarlo dopo è complicato","ok":true},
+             {"t":"Perché Azure fattura in base al numero di indirizzi","ok":false},
+             {"t":"Perché le subnet non possono superare i 254 indirizzi","ok":false},
+             {"t":"Perché ogni regione ha uno spazio riservato","ok":false} ],
+      "e": "Una sovrapposizione impedisce il peering e complica enormemente le VPN — lo stesso problema di due sedi con la stessa subnet. E le subnet non si ridimensionano se contengono risorse. Conviene prendere abbondante, riservare in anticipo i blocchi per le subnet di servizio, e documentare on-premise e cloud in un unico piano." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
