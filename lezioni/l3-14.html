@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>802.1X e NAC in pratica — NetPath</title>
+<meta name="description" content="Autenticare la porta dello switch: supplicant, authenticator, server — e il piano B per tutto ciò che non sa autenticarsi.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-14">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Identità e accesso</span>
+      </nav>
+      <h1 class="lesson-title">802.1X e NAC in pratica</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 14</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire cosa cambia autenticando le porte cablate</li>
+        <li>Gestire i dispositivi che non supportano 802.1X</li>
+        <li>Progettare un'attivazione graduale che non blocchi l'azienda</li>
+        <li>Sapere cosa aggiunge un NAC rispetto al solo 802.1X</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Nel Wi-Fi l'autenticazione è scontata: nessuno si collega senza credenziali. Sul cavo
+no: <strong>una presa di rete in sala d'attesa dà accesso alla rete aziendale a chiunque ci infili un
+portatile</strong>. L'802.1X chiude questo buco — ed è uno dei progetti più delicati da realizzare,
+perché tocca ogni singola porta.</p>
+
+<h2>Lo schema, già noto</h2>
+
+<p>È lo stesso della lezione 2-22, applicato alle porte cablate: <strong>supplicant</strong> (il PC),
+<strong>authenticator</strong> (lo switch), <strong>server RADIUS</strong>. Finché l'autenticazione non
+va a buon fine, la porta non lascia passare nulla tranne il traffico di autenticazione.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 240" role="img" aria-label="Una porta 802.1X prima e dopo l'autenticazione, con gli esiti possibili">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">La porta è chiusa finché non sai chi c'è dietro</text>
+
+    <rect x="30" y="46" width="180" height="56" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.7"/>
+    <text x="120" y="68" text-anchor="middle" class="dg-label-sm">PRIMA</text>
+    <text x="120" y="86" text-anchor="middle" class="dg-mono-sm">passa solo EAP</text>
+
+    <rect x="260" y="46" width="180" height="56" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.7"/>
+    <text x="350" y="68" text-anchor="middle" class="dg-label-sm">AUTENTICAZIONE</text>
+    <text x="350" y="86" text-anchor="middle" class="dg-mono-sm">il RADIUS decide</text>
+
+    <path d="M214 74h42" stroke="var(--dg-line)" stroke-width="1.7"/>
+
+    <g stroke-width="1.6">
+      <rect x="490" y="30" width="180" height="40" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="490" y="80" width="180" height="40" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="490" y="130" width="180" height="40" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="580" y="47">RIUSCITA</text><text x="580" y="62">→ VLAN prevista</text>
+      <text x="580" y="97">SCONOSCIUTO</text><text x="580" y="112">→ VLAN ospiti</text>
+      <text x="580" y="147">RIFIUTATO</text><text x="580" y="162">→ porta chiusa</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.4" fill="none">
+      <path d="M444 66 L 486 50"/><path d="M444 76 L 486 100"/><path d="M444 86 L 486 148"/>
+    </g>
+
+    <text x="350" y="206" text-anchor="middle" class="dg-label-sm">Il terzo esito è il più importante da progettare: <tspan font-weight="700">cosa succede a chi non sa autenticarsi?</tspan></text>
+    <text x="350" y="228" text-anchor="middle" class="dg-label-sm">Se la risposta è «niente rete», metà dei dispositivi aziendali smette di funzionare.</text>
+  </svg>
+  </div>
+  <figcaption>La differenza tra un progetto 802.1X che funziona e uno che fallisce sta quasi tutta nel
+  <b>piano B</b>: cosa fare con stampanti, telefoni, telecamere e macchinari che non hanno un
+  supplicant.</figcaption>
+</figure>
+
+<h2>Il problema vero: chi non sa autenticarsi</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Categoria</th><th>Supporta 802.1X?</th><th>Come si gestisce</th></tr></thead>
+    <tbody>
+      <tr><td>PC Windows e Mac in dominio</td><td>Sì</td><td>Profilo distribuito via criteri di gruppo</td></tr>
+      <tr><td>Telefoni VoIP</td><td>Spesso sì</td><td>Certificato del produttore, o MAB</td></tr>
+      <tr><td>Stampanti multifunzione</td><td>Alcune sì</td><td>Verificare modello per modello</td></tr>
+      <tr><td>Telecamere IP</td><td>Raramente</td><td><b>MAB</b> o porte dedicate</td></tr>
+      <tr><td>Macchinari e PLC</td><td>Quasi mai</td><td><b>MAB</b> o esclusione della porta</td></tr>
+      <tr><td>Dispositivi vari (badge, allarmi, termostati)</td><td>No</td><td>MAB</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    MAB: la soluzione necessaria e il suo limite
+  </div>
+  <p><b>MAC Authentication Bypass</b>: se il dispositivo non risponde all'autenticazione, lo switch usa
+  il suo indirizzo MAC come credenziale e lo confronta con una lista sul RADIUS.</p>
+  <p><b>È indispensabile</b> — senza, metà dei dispositivi aziendali resta fuori — ma va detto con
+  chiarezza cosa vale: <b>un MAC address si può falsificare in pochi secondi</b>. Chi scollega una
+  telecamera, legge il MAC dall'etichetta e lo imposta sul proprio portatile entra come quella
+  telecamera.</p>
+  <p style="margin-bottom:0"><b>Quindi:</b> i dispositivi autenticati via MAB non vanno nella VLAN degli
+  utenti, ma <b>nella loro VLAN ristretta</b>, con regole che permettono solo ciò che serve. Il MAB non
+  è una prova di identità: è un modo per assegnare il livello di accesso minimo a qualcosa che non sa
+  presentarsi.</p>
+</div>
+
+<h2>Le modalità di attivazione</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Modalità</th><th>Comportamento</th><th>Quando usarla</th></tr></thead>
+    <tbody>
+      <tr><td><b>Monitor / open</b></td><td>Autentica e <b>registra</b>, ma lascia passare tutti</td>
+          <td><b>La fase iniziale obbligatoria:</b> mostra chi passerebbe e chi no, senza rischi</td></tr>
+      <tr><td><b>Low impact</b></td><td>Prima dell'autenticazione permette solo un elenco ristretto di traffico</td>
+          <td>Fase intermedia, utile con avvio da rete e con dispositivi lenti</td></tr>
+      <tr><td><b>Closed</b></td><td>Niente passa finché l'autenticazione non riesce</td><td>L'obiettivo finale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il percorso che funziona, in sei passi
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Inventario completo</b> di cosa è collegato via cavo, con MAC e produttore. Senza questo non
+    si parte: lo hai già imparato nella lezione 2-04.</li>
+    <li><b>RADIUS configurato</b> con criteri per PC in dominio, e lista MAB per i dispositivi noti.</li>
+    <li><b>Modalità monitor su tutte le porte</b> per almeno tre o quattro settimane. Guarda chi
+    fallirebbe: troverai sempre dispositivi che nessuno ricordava.</li>
+    <li><b>Correggi</b>: distribuisci i profili mancanti, aggiungi i MAC alla lista, decidi le VLAN
+    per ciascuna categoria.</li>
+    <li><b>Passa in closed un'area alla volta</b> — un piano, un reparto — con qualche giorno di
+    osservazione tra l'una e l'altra.</li>
+    <li><b>Lascia sempre alcune porte escluse</b> e documentate: per gli interventi tecnici, per i
+    fornitori, per le emergenze. E soprattutto <b>non attivare 802.1X sulle porte tra switch</b>.</li>
+  </ol>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le due cose che ti chiudono fuori
+  </div>
+  <p><b>1. Attivare 802.1X su una porta trunk verso un altro switch.</b> Quello switch non si autentica,
+  la porta resta chiusa, e tutto ciò che c'è dietro sparisce — compresa, spesso, la tua sessione di
+  amministrazione.</p>
+  <p><b>2. RADIUS irraggiungibile.</b> Se il server è spento, in manutenzione, o se il guasto è proprio
+  sulla rete, <b>nessuno si autentica più</b> e l'azienda si ferma progressivamente man mano che i
+  dispositivi si riavviano.</p>
+  <p style="margin-bottom:0"><b>Le difese:</b> due server RADIUS configurati su ogni switch, e la
+  funzione di <b>fallback</b> che molti apparati offrono — se il RADIUS non risponde, le porte
+  restano aperte (o vanno in una VLAN limitata) invece di chiudersi. Va configurata esplicitamente:
+  il comportamento predefinito è spesso il più rigido.</p>
+</div>
+
+<h2>NAC: cosa aggiunge</h2>
+
+<p>L'802.1X risponde a «chi sei». Un <span class="term" data-term="nac">NAC</span> aggiunge <strong>«e
+sei in condizioni di entrare?»</strong>: verifica lo stato del dispositivo prima di concedere l'accesso.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Controllo</th><th>Esempio</th></tr></thead>
+    <tbody>
+      <tr><td><b>Stato di sicurezza</b></td><td>Antivirus presente e aggiornato, disco cifrato, patch recenti</td></tr>
+      <tr><td><b>Appartenenza</b></td><td>È un dispositivo aziendale gestito, o il portatile personale di qualcuno?</td></tr>
+      <tr><td><b>Profilazione</b></td><td>Riconosce automaticamente che tipo di dispositivo è, dal comportamento in rete</td></tr>
+      <tr><td><b>Quarantena</b></td><td>Chi non è conforme va in una VLAN dove può solo aggiornarsi</td></tr>
+      <tr><td><b>Accesso ospiti</b></td><td>Portale di registrazione, accessi a tempo, sponsorizzazione</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p><b>Quando ha senso:</b> aziende oltre le poche centinaia di postazioni, ambienti con requisiti
+normativi, o contesti con molti dispositivi non aziendali. In una PMI sotto i 100 utenti,
+<strong>802.1X con RADIUS copre già la maggior parte del beneficio</strong> a una frazione del costo e
+della complessità — e proporre un NAC in quel contesto significa spesso vendere complessità che nessuno
+manterrà.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    L'alternativa economica che risolve l'80% del problema
+  </div>
+  <p>Se un cliente non può affrontare 802.1X, esiste una misura molto più semplice che copre il rischio
+  principale — la presa accessibile in sala d'attesa o in reception:</p>
+  <p style="margin-bottom:0"><b>Disattiva amministrativamente tutte le porte non utilizzate</b>, e metti
+  quelle nelle aree accessibili al pubblico in una <b>VLAN ospiti</b> con solo accesso a Internet. Costa
+  mezz'ora, non richiede nessun server, e toglie di mezzo lo scenario più concreto. Non è 802.1X, ma è
+  infinitamente meglio di niente — ed è una proposta che qualsiasi cliente accetta.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: 802.1X e NAC",
+  "questions": [
+    { "q": "Qual è il rischio che 802.1X sul cavo va a coprire?",
+      "a": [ {"t":"Una presa di rete accessibile dà accesso alla rete aziendale a chiunque","ok":true},
+             {"t":"Le password degli utenti troppo deboli","ok":false},
+             {"t":"Il traffico non cifrato tra i dispositivi","ok":false},
+             {"t":"I loop di livello 2","ok":false} ],
+      "e": "Nel Wi-Fi nessuno si collega senza credenziali; sul cavo basta infilare un portatile in una presa della sala d'attesa. L'802.1X chiude questo buco autenticando la porta prima di lasciar passare qualsiasi traffico." },
+
+    { "q": "Cos'è il MAB e qual è il suo limite?",
+      "a": [ {"t":"Autenticazione tramite MAC address per i dispositivi che non supportano 802.1X; il MAC si può falsificare","ok":true},
+             {"t":"Un metodo EAP basato su certificati","ok":false},
+             {"t":"Una modalità che disattiva l'autenticazione sulle porte","ok":false},
+             {"t":"Un protocollo per profilare i dispositivi","ok":false} ],
+      "e": "È indispensabile, perché telecamere, macchinari e molte stampanti non hanno un supplicant. Ma un MAC si legge dall'etichetta e si imposta su un portatile in pochi secondi: i dispositivi autenticati via MAB vanno quindi in una VLAN ristretta con regole minime, non in quella degli utenti." },
+
+    { "q": "Qual è la prima fase obbligatoria di un progetto 802.1X?",
+      "a": [ {"t":"Modalità monitor su tutte le porte per alcune settimane","ok":true},
+             {"t":"Attivare la modalità closed su un reparto pilota","ok":false},
+             {"t":"Distribuire i certificati a tutti i dispositivi","ok":false},
+             {"t":"Sostituire gli switch non compatibili","ok":false} ],
+      "e": "La modalità monitor autentica e registra senza bloccare nulla: mostra esattamente chi passerebbe e chi no, senza rischi. In quelle settimane emergono sempre dispositivi che nessuno ricordava di avere — ed è molto meglio scoprirli così che con una telefonata." },
+
+    { "q": "Cosa succede se il server RADIUS diventa irraggiungibile con 802.1X in modalità closed?",
+      "a": [ {"t":"Nessuno si autentica più e l'azienda si ferma progressivamente","ok":true},
+             {"t":"Le porte restano aperte automaticamente","ok":false},
+             {"t":"Gli switch usano una cache locale delle autenticazioni","ok":false},
+             {"t":"Solo i nuovi dispositivi hanno problemi","ok":false} ],
+      "e": "Man mano che i dispositivi si riavviano o si ricollegano, non riescono più a entrare. Le difese sono due server RADIUS configurati su ogni switch e la funzione di fallback — se il RADIUS non risponde, le porte restano aperte o vanno in una VLAN limitata — che va attivata esplicitamente perché il comportamento predefinito è spesso il più rigido." },
+
+    { "q": "Su quali porte NON va attivato 802.1X?",
+      "a": [ {"t":"Sulle porte trunk verso altri switch","ok":true},
+             {"t":"Sulle porte degli access point","ok":false},
+             {"t":"Sulle porte delle stampanti","ok":false},
+             {"t":"Sulle porte dei telefoni VoIP","ok":false} ],
+      "e": "Uno switch non si autentica: la porta resterebbe chiusa e tutto ciò che c'è dietro sparirebbe, spesso inclusa la tua sessione di amministrazione. Stampanti, telefoni e access point si gestiscono invece con 802.1X se lo supportano, o con MAB verso una VLAN dedicata." },
+
+    { "q": "Un cliente da 60 postazioni non può affrontare un progetto 802.1X. Cosa proponi?",
+      "a": [ {"t":"Disattivare le porte inutilizzate e mettere quelle nelle aree pubbliche in VLAN ospiti","ok":true},
+             {"t":"Un NAC completo, che è più semplice","ok":false},
+             {"t":"Nulla: senza 802.1X non c'è protezione possibile","ok":false},
+             {"t":"Filtri per MAC address su tutte le porte","ok":false} ],
+      "e": "Costa mezz'ora, non richiede nessun server e copre lo scenario più concreto: la presa accessibile in reception o in sala d'attesa. Non è 802.1X, ma è infinitamente meglio di niente ed è una proposta che qualsiasi cliente accetta. Un NAC in quel contesto sarebbe complessità che nessuno manterrà." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

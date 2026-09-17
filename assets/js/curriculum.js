@@ -131,8 +131,8 @@ window.NETPATH_CURRICULUM = [
       { id:"l3-12", t:"Segmentazione e Zero Trust", s:"Microsegmentazione, east-west, e come si vende un progetto di segmentazione.", m:28, ready:true }
     ]},
     { title: "Identità e accesso", lessons: [
-      { id:"l3-13", t:"RADIUS, LDAP, SAML: chi sei e cosa puoi", s:"I tre pilastri dell'autenticazione di rete, con i flussi disegnati.", m:28, ready:false },
-      { id:"l3-14", t:"802.1X e NAC in pratica", s:"Autenticare la porta dello switch. Supplicant, authenticator, server, e il piano B.", m:30, ready:false }
+      { id:"l3-13", t:"RADIUS, LDAP, SAML: chi sei e cosa puoi", s:"I tre pilastri dell'autenticazione di rete, con i flussi disegnati.", m:28, ready:true },
+      { id:"l3-14", t:"802.1X e NAC in pratica", s:"Autenticare la porta dello switch. Supplicant, authenticator, server, e il piano B.", m:30, ready:true }
     ]},
     { title: "Cloud networking (Azure)", lessons: [
       { id:"l3-15", t:"VNet, subnet, NSG, UDR", s:"Il networking di Azure mappato uno a uno su quello che già sai.", m:30, ready:false },

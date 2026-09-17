@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RADIUS, LDAP e SAML: chi sei e cosa puoi — NetPath</title>
+<meta name="description" content="I tre pilastri dell'autenticazione di rete, con i flussi disegnati e i casi in cui si usa l'uno o l'altro.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-13">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Identità e accesso</span>
+      </nav>
+      <h1 class="lesson-title">RADIUS, LDAP e SAML: chi sei e cosa puoi</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 13</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere autenticazione, autorizzazione e accounting</li>
+        <li>Sapere quale protocollo si usa in quale scenario</li>
+        <li>Capire il ruolo di RADIUS nelle reti che gestisci</li>
+        <li>Diagnosticare i problemi di autenticazione con un metodo</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Ogni volta che qualcuno si collega al Wi-Fi aziendale, apre la VPN o entra in un
+portale, dietro c'è uno di tre protocolli. Conoscerli ti serve sia per configurarli sia — soprattutto
+— per capire dove guardare quando «non riesce ad autenticarsi».</p>
+
+<h2>Le tre domande: AAA</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Fase</th><th>Domanda</th><th>Esempio</th></tr></thead>
+    <tbody>
+      <tr><td><b>Autenticazione</b></td><td>Chi sei?</td><td>Utente e password, certificato, secondo fattore</td></tr>
+      <tr><td><b>Autorizzazione</b></td><td>Cosa puoi fare?</td><td>In quale VLAN vai, quali risorse raggiungi, per quanto tempo</td></tr>
+      <tr><td><b>Accounting</b></td><td>Cosa hai fatto?</td><td>Quando ti sei collegato, da dove, quanto traffico</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Confondere le prime due è l'errore concettuale più comune: <strong>autenticarsi non significa essere
+autorizzati</strong>. Un utente può dimostrare perfettamente chi è e non avere comunque diritto ad
+accedere a quella risorsa — ed è esattamente così che deve funzionare.</p>
+
+<h2>I tre protocolli</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>LDAP</th><th>RADIUS</th><th>SAML / OIDC</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cos'è</b></td><td>Un protocollo per <b>interrogare una directory</b></td>
+          <td>Un protocollo per <b>autenticare l'accesso alla rete</b></td>
+          <td>Protocolli per il <b>single sign-on</b> tra applicazioni web</td></tr>
+      <tr><td><b>Chi lo usa</b></td><td>Applicazioni che devono verificare credenziali o leggere attributi</td>
+          <td>Switch, access point, concentratori VPN</td>
+          <td>Applicazioni web e servizi cloud</td></tr>
+      <tr><td><b>Restituisce</b></td><td>Dati dell'utente e appartenenza ai gruppi</td>
+          <td>Sì/no + attributi (VLAN, profilo, timeout)</td>
+          <td>Un'asserzione firmata: «questo è Mario, appartiene a questi gruppi»</td></tr>
+      <tr><td><b>Esempio d'uso</b></td><td>Il firewall legge i gruppi per scrivere regole per utente</td>
+          <td>Wi-Fi WPA-Enterprise, 802.1X, VPN</td>
+          <td>Accesso a Microsoft 365 o a un gestionale in cloud con le credenziali aziendali</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: tre modi di farsi riconoscere
+  </div>
+  <p><b>LDAP</b> è l'<b>elenco del personale</b>. Chiunque può consultarlo per sapere se Mario Rossi
+  lavora qui e in che reparto sta. È una fonte di informazioni, non una guardia.</p>
+  <p><b>RADIUS</b> è la <b>guardia al tornello</b>. Mario mostra il badge, la guardia controlla
+  sull'elenco, apre il tornello e <b>gli dice anche a quale piano può andare</b>. Non è l'elenco: è
+  chi decide in base all'elenco.</p>
+  <p><b>SAML</b> è il <b>pass della fiera</b>. Ti registri una volta all'ingresso e ricevi un
+  braccialetto firmato. Da quel momento, in ogni stand, mostri il braccialetto: nessuno ti richiede i
+  documenti, perché si fidano di chi te l'ha dato. È il single sign-on.</p>
+  <p style="margin-bottom:0">Nella pratica lavorano insieme: RADIUS fa la guardia, consulta LDAP come
+  elenco, e SAML gestisce l'accesso alle applicazioni web.</p>
+</div>
+
+<h2>RADIUS: quello che userai di più</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 230" role="img" aria-label="Flusso RADIUS con NPS che interroga Active Directory e restituisce la VLAN">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Il flusso completo, con l'assegnazione della VLAN</text>
+
+    <rect x="16" y="52" width="120" height="48" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="76" y="72" text-anchor="middle" class="dg-label-sm">Utente</text>
+    <text x="76" y="89" text-anchor="middle" class="dg-mono-sm">PC o telefono</text>
+
+    <rect x="196" y="52" width="130" height="48" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="1.6"/>
+    <text x="261" y="72" text-anchor="middle" class="dg-label-sm">AP o switch</text>
+    <text x="261" y="89" text-anchor="middle" class="dg-mono-sm">authenticator</text>
+
+    <rect x="386" y="52" width="130" height="48" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="451" y="72" text-anchor="middle" class="dg-label-sm">RADIUS (NPS)</text>
+    <text x="451" y="89" text-anchor="middle" class="dg-mono-sm">applica i criteri</text>
+
+    <rect x="566" y="52" width="118" height="48" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.6"/>
+    <text x="625" y="72" text-anchor="middle" class="dg-label-sm">Active Directory</text>
+    <text x="625" y="89" text-anchor="middle" class="dg-mono-sm">utenti e gruppi</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.6"><path d="M140 76h52"/><path d="M330 76h52"/><path d="M520 76h42"/></g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="166" y="68">EAP</text><text x="356" y="68">RADIUS</text><text x="541" y="68">LDAP</text>
+    </g>
+
+    <rect x="120" y="140" width="460" height="70" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.3"/>
+    <g class="dg-label-sm">
+      <text x="140" y="162">La risposta del RADIUS non è solo «sì»: contiene anche gli attributi.</text>
+      <text x="140" y="182" fill="var(--dg-text-soft)">Tunnel-Private-Group-ID = 10   →   mettilo nella VLAN 10</text>
+      <text x="140" y="200" fill="var(--dg-text-soft)">Session-Timeout, Filter-Id, e altri, a seconda di cosa supporta l'apparato</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>È lo schema della lezione 2-22 visto dal lato del server. Il punto chiave: <b>l'apparato
+  di rete non decide nulla</b>, applica quello che il RADIUS gli dice — inclusa la VLAN.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Dove usi RADIUS</th><th>Cosa ottieni</th></tr></thead>
+    <tbody>
+      <tr><td><b>Wi-Fi WPA-Enterprise</b></td><td>Credenziali personali invece di una password condivisa</td></tr>
+      <tr><td><b>802.1X su cavo</b></td><td>Autenticazione della porta dello switch (lezione 3-14)</td></tr>
+      <tr><td><b>VPN client</b></td><td>Accesso con le credenziali di dominio, revocabile centralmente</td></tr>
+      <tr><td><b>Amministrazione degli apparati</b></td><td>Accesso a switch e firewall con l'utenza personale, con traccia di chi ha fatto cosa</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    L'ultimo caso è quello che quasi nessuno fa
+  </div>
+  <p>Amministrare switch e firewall con RADIUS invece che con l'utente <code>admin</code> condiviso
+  risolve tre problemi in una volta: si sa <b>chi</b> ha fatto una modifica, si revoca l'accesso di una
+  persona disattivandola in AD, e si possono dare permessi diversi (sola lettura ai junior, scrittura
+  ai senior).</p>
+  <p style="margin-bottom:0"><b>Con un'avvertenza importante:</b> configura sempre un utente locale di
+  emergenza. Se il RADIUS è irraggiungibile — o se il guasto è proprio sulla rete — devi poter entrare
+  comunque. È una delle poche eccezioni in cui un utente locale è la scelta giusta.</p>
+</div>
+
+<h2>SAML e l'accesso condizionale</h2>
+
+<p>SAML e OpenID Connect stanno dietro al single sign-on: ti autentichi una volta con l'identità
+aziendale e accedi a decine di applicazioni senza reinserire la password.</p>
+
+<p>Il pezzo interessante per te non è il protocollo ma quello che ci si costruisce sopra:
+<strong>l'accesso condizionale</strong>. La decisione non è più solo «le credenziali sono giuste?» ma
+«chi sei, da quale dispositivo, da dove, a che ora, per accedere a cosa» — e in base a questo si
+concede, si chiede un secondo fattore, o si nega.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Perché ti riguarda anche se non configuri tu l'accesso condizionale
+  </div>
+  <p>Molte politiche di accesso condizionale usano <b>l'indirizzo IP pubblico dell'azienda</b> come
+  segnale di fiducia: «se arriva dalla sede, non chiedere il secondo fattore».</p>
+  <p style="margin-bottom:0">Questo significa che <b>cambiare l'indirizzo pubblico di un cliente</b> —
+  nuova linea, nuovo operatore, failover su 4G — può far scattare richieste di autenticazione a tutta
+  l'azienda, o bloccare accessi. È una delle conseguenze non ovvie di un intervento di rete, e vale la
+  pena verificarla <em>prima</em> invece di scoprirla il lunedì mattina.</p>
+</div>
+
+<h2>Diagnosticare un problema di autenticazione</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il log da leggere è quello del RADIUS, non quello dell'apparato
+  </div>
+  <p>L'access point o lo switch sanno solo che l'autenticazione è fallita. <b>Il RADIUS sa perché</b>,
+  e lo scrive: utente inesistente, password errata, criterio non corrispondente, certificato non
+  valido, gruppo sbagliato.</p>
+  <p style="margin-bottom:0">Su Windows Server con NPS, il registro eventi <b>Sicurezza</b> contiene un
+  evento per ogni tentativo, con il motivo del rifiuto. È il primo posto dove guardare, e fa risparmiare
+  ore di ipotesi.</p>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa probabile</th></tr></thead>
+    <tbody>
+      <tr><td>Nessun tentativo compare nei log del RADIUS</td><td>L'apparato non riesce a raggiungerlo: rete, porta, o segreto condiviso errato</td></tr>
+      <tr><td>Tentativi rifiutati con «criterio non corrispondente»</td><td>L'utente non appartiene al gruppo previsto, o manca una condizione nel criterio</td></tr>
+      <tr><td>Funziona per alcuni utenti e non per altri</td><td>Appartenenza ai gruppi: verifica il gruppo, non l'utente</td></tr>
+      <tr><td>Funziona su un apparato e non su un altro</td><td>Il nuovo apparato non è registrato come client sul RADIUS</td></tr>
+      <tr><td>Smette di funzionare dopo mesi</td><td><b>Certificato del RADIUS scaduto</b>: è il classico assoluto</td></tr>
+      <tr><td>Il client non chiede nemmeno le credenziali</td><td>Profilo di rete errato sul client, o metodo EAP non concordato</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: identità e accesso",
+  "questions": [
+    { "q": "Qual è la differenza tra autenticazione e autorizzazione?",
+      "a": [ {"t":"L'autenticazione stabilisce chi sei, l'autorizzazione cosa puoi fare","ok":true},
+             {"t":"Sono sinonimi","ok":false},
+             {"t":"L'autenticazione vale per gli utenti, l'autorizzazione per i dispositivi","ok":false},
+             {"t":"L'autorizzazione precede sempre l'autenticazione","ok":false} ],
+      "e": "Dimostrare perfettamente chi sei non ti dà automaticamente diritto ad accedere a una risorsa — ed è così che deve funzionare. Confondere le due è l'errore concettuale più comune in questo ambito." },
+
+    { "q": "Cosa restituisce un server RADIUS oltre al «sì»?",
+      "a": [ {"t":"Attributi come la VLAN da assegnare, il timeout di sessione e il profilo","ok":true},
+             {"t":"Solo l'esito dell'autenticazione","ok":false},
+             {"t":"La password dell'utente","ok":false},
+             {"t":"L'indirizzo IP da assegnare","ok":false} ],
+      "e": "È ciò che rende possibili le VLAN dinamiche: l'apparato di rete non decide nulla, applica gli attributi che il RADIUS gli comunica. L'indirizzo IP arriva invece dal DHCP, dopo che l'accesso è stato concesso." },
+
+    { "q": "Perché conviene amministrare switch e firewall tramite RADIUS?",
+      "a": [ {"t":"Si sa chi ha fatto cosa, si revoca l'accesso da AD e si danno permessi diversi per ruolo","ok":true},
+             {"t":"Perché è più veloce del login locale","ok":false},
+             {"t":"Perché cifra meglio la sessione","ok":false},
+             {"t":"Perché è richiesto dai produttori","ok":false} ],
+      "e": "L'utente <code>admin</code> condiviso rende impossibile sapere chi ha modificato cosa e resta attivo quando una persona lascia l'azienda. Con RADIUS la revoca è immediata e la tracciabilità è reale. <b>Avvertenza:</b> va sempre configurato un utente locale di emergenza, perché se il guasto è sulla rete il RADIUS non è raggiungibile." },
+
+    { "q": "Un'autenticazione Wi-Fi fallisce. Dove guardi per primo?",
+      "a": [ {"t":"Nei log del server RADIUS, che riportano il motivo del rifiuto","ok":true},
+             {"t":"Nei log dell'access point","ok":false},
+             {"t":"Nel registro eventi del PC dell'utente","ok":false},
+             {"t":"Nei log del firewall","ok":false} ],
+      "e": "L'access point sa solo che è fallita; il RADIUS sa <b>perché</b>: utente inesistente, criterio non corrispondente, certificato non valido, gruppo sbagliato. Su Windows Server con NPS ogni tentativo genera un evento nel registro Sicurezza con il motivo, e questo fa risparmiare ore." },
+
+    { "q": "L'autenticazione WPA-Enterprise funzionava e smette dopo mesi, senza modifiche. Causa più probabile?",
+      "a": [ {"t":"Il certificato del server RADIUS è scaduto","ok":true},
+             {"t":"Gli utenti hanno cambiato password","ok":false},
+             {"t":"Gli access point hanno perso la configurazione","ok":false},
+             {"t":"Il DHCP ha esaurito gli indirizzi","ok":false} ],
+      "e": "È il classico assoluto: i certificati hanno una scadenza e nessuno la segna in calendario. Quando scade, i client rifiutano il server e l'autenticazione fallisce per tutti insieme, senza che nessuno abbia toccato niente. Va messo nel monitoraggio delle scadenze insieme agli altri certificati." },
+
+    { "q": "Perché cambiare l'indirizzo IP pubblico di un cliente può causare problemi di autenticazione?",
+      "a": [ {"t":"Molte politiche di accesso condizionale usano l'IP della sede come segnale di fiducia","ok":true},
+             {"t":"Perché il RADIUS filtra per indirizzo sorgente","ok":false},
+             {"t":"Perché SAML richiede un indirizzo fisso","ok":false},
+             {"t":"Perché LDAP non funziona con IP dinamici","ok":false} ],
+      "e": "Regole come «se arriva dalla sede non chiedere il secondo fattore» si basano sull'indirizzo pubblico: cambiarlo — nuova linea, nuovo operatore, o anche solo un failover su 4G — può far scattare richieste di autenticazione a tutta l'azienda. È una conseguenza non ovvia di un intervento di rete, e va verificata prima." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
