@@ -1,0 +1,239 @@
+#id: l3-21
+#title: Latenza, jitter e perdita: misurare sul serio
+#min: 24
+#level: 3
+#chapter: Performance e analisi
+#desc: Come si dimostra che il problema non è tuo, con numeri invece che con opinioni.
+#obj: Misurare le tre grandezze che descrivono la qualità di un collegamento
+#obj: Distinguere un problema di banda da uno di qualità
+#obj: Produrre una prova utilizzabile in una segnalazione all'operatore
+#obj: Capire quali valori sono accettabili per quale servizio
+---
+<p class="lead">«Va lento» è la segnalazione più frequente e più inutile che riceverai. Trasformarla in
+un numero è quello che ti permette di risolverla — o di dimostrare che la causa è altrove, il che a
+volte vale ancora di più.</p>
+
+<h2>Le tre grandezze, e cosa rompono</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Grandezza</th><th>Cos'è</th><th>Cosa rompe quando è alta</th></tr></thead>
+    <tbody>
+      <tr><td><b>Latenza</b></td><td>Quanto ci mette un pacchetto ad arrivare</td>
+          <td>Applicazioni interattive, desktop remoto, database. Sopra i 150 ms la voce diventa fastidiosa</td></tr>
+      <tr><td><b>Jitter</b></td><td>Quanto <em>varia</em> la latenza</td>
+          <td><b>Voce e video:</b> è la causa principale dell'audio che gracchia</td></tr>
+      <tr><td><b>Perdita</b></td><td>Quanti pacchetti spariscono</td>
+          <td>Tutto, ma in modo sproporzionato: l'1% può dimezzare la velocità TCP (lezione 1-22)</td></tr>
+      <tr><td><b>Banda</b></td><td>Quanti dati passano al secondo</td>
+          <td>Trasferimenti grandi. <b>È quella che tutti guardano e che spesso non è il problema</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Servizio</th><th>Latenza</th><th>Jitter</th><th>Perdita</th></tr></thead>
+    <tbody>
+      <tr><td><b>Voce</b></td><td>&lt; 150 ms</td><td>&lt; 30 ms</td><td>&lt; 1%</td></tr>
+      <tr><td><b>Videoconferenza</b></td><td>&lt; 150 ms</td><td>&lt; 30 ms</td><td>&lt; 1%</td></tr>
+      <tr><td><b>Desktop remoto</b></td><td>&lt; 100 ms per essere confortevole</td><td>poco rilevante</td><td>&lt; 1%</td></tr>
+      <tr><td><b>Applicazioni web e gestionali</b></td><td>&lt; 200 ms</td><td>poco rilevante</td><td>&lt; 1%</td></tr>
+      <tr><td><b>Trasferimenti e backup</b></td><td>poco rilevante</td><td>irrilevante</td><td><b>&lt; 0,1% se la latenza è alta</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il tapis roulant della pizzeria
+  </div>
+  <p>Una pizzeria manda le pizze ai tavoli su un nastro trasportatore.</p>
+  <p><b>Banda</b> = quante pizze stanno sul nastro contemporaneamente.<br>
+  <b>Latenza</b> = quanto tempo impiega una pizza ad arrivare al tavolo.<br>
+  <b>Jitter</b> = se le pizze arrivano a intervalli regolari oppure a raffica e poi il vuoto.<br>
+  <b>Perdita</b> = quante pizze cadono per strada.</p>
+  <p style="margin-bottom:0">Per una <b>festa</b> (un backup) conta solo quante pizze arrivano in
+  totale: se ci mettono un po' di più, pazienza. Per una <b>conversazione a tavola</b> (una
+  telefonata) conta che arrivino <b>regolari</b>: una pizza ogni 30 secondi è meglio di dieci pizze
+  insieme e poi cinque minuti di niente. Ecco perché il jitter rovina la voce e non il backup.</p>
+</div>
+
+<h2>Gli strumenti</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Strumento</th><th>Misura</th><th>Quando</th></tr></thead>
+    <tbody>
+      <tr><td><code>ping -n 100</code></td><td>Latenza e perdita verso una destinazione</td><td>Prima verifica, sempre disponibile</td></tr>
+      <tr><td><b>mtr</b> / <b>WinMTR</b></td><td>Latenza e perdita <b>salto per salto</b>, in continuo</td><td><b>Lo strumento più utile</b> per capire dove si degrada</td></tr>
+      <tr><td><b>iperf3</b></td><td>Banda reale tra due punti, TCP e UDP; con UDP misura anche jitter e perdita</td><td>Quando serve sapere quanto passa davvero</td></tr>
+      <tr><td><b>Monitoraggio continuo</b></td><td>Le stesse grandezze, nel tempo</td><td>Per i problemi intermittenti: l'unico modo di coglierli</td></tr>
+      <tr><td><b>Speedtest</b></td><td>Banda verso un server pubblico</td><td><b>Il meno utile:</b> misura una cosa sola, verso una destinazione che non è la tua</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Perché lo speedtest inganna
+  </div>
+  <p>Apre molte connessioni in parallelo verso un server vicino e scelto per essere veloce. Questo
+  maschera proprio i problemi che stai cercando: con l'1% di perdita, una singola connessione crolla
+  ma venti connessioni parallele danno comunque un numero alto.</p>
+  <p style="margin-bottom:0">Risultato: il cliente ti mostra uno speedtest a 900 Mbps e ti dice che la
+  linea è perfetta, mentre il suo gestionale è inutilizzabile. <b>Non è il cliente che sbaglia: è lo
+  strumento che misura la cosa sbagliata.</b> Saperlo spiegare con calma vale più di avere ragione.</p>
+</div>
+
+<h2>mtr: lo strumento che userai di più</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Misurare salto per salto</div>
+<pre><span class="c"># Linux / macOS</span>
+<span class="p">mtr -n -c 200 --report 8.8.8.8</span>
+<span class="p">mtr -n -T -P 443 www.azienda.it</span>    <span class="c"># in TCP: passa dove ICMP è bloccato</span>
+
+<span class="c"># Windows: WinMTR, oppure in PowerShell per una misura semplice</span>
+<span class="p">ping -n 200 8.8.8.8</span>
+
+<span class="c"># banda reale tra due punti (serve un server dall'altro lato)</span>
+<span class="p">iperf3 -s</span>                          <span class="c"># sul server</span>
+<span class="p">iperf3 -c 10.20.10.5 -t 30</span>         <span class="c"># TCP, 30 secondi</span>
+<span class="p">iperf3 -c 10.20.10.5 -u -b 100M</span>    <span class="c"># UDP: misura jitter e perdita</span>
+<span class="p">iperf3 -c 10.20.10.5 -R</span>             <span class="c"># direzione inversa: spesso è lì il problema</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Come si legge un mtr senza sbagliare
+  </div>
+  <p>È la stessa trappola del traceroute (lezione 1-24), e vale la pena ripeterla perché qui la vedrai
+  in forma numerica:</p>
+  <ul>
+    <li><b>Perdita a un salto intermedio che NON si ripete nei salti successivi</b> → quel router
+    limita le risposte ai messaggi di servizio, ma inoltra il traffico perfettamente.
+    <b>Non è un problema.</b></li>
+    <li><b>Perdita che inizia a un salto e continua fino alla fine</b> → il problema è reale e comincia
+    lì. <b>Questo è il dato che conta.</b></li>
+    <li><b>Latenza alta a un salto ma normale dopo</b> → stesso discorso: quel router risponde
+    lentamente per sé, ma non rallenta il traffico.</li>
+    <li><b>Latenza che sale da un salto in poi e resta alta</b> → degrado reale da quel punto.</li>
+  </ul>
+  <p style="margin-bottom:0">Portare a un operatore un mtr letto male è il modo più rapido per
+  perdere credibilità e vedersi chiudere la segnalazione.</p>
+</div>
+
+<h2>Il metodo per isolare</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Misura a cerchi concentrici
+  </div>
+  <p>Parti da vicino e allontanati: il primo punto in cui il valore peggiora è dove sta il problema.</p>
+  <ol style="margin-bottom:0">
+    <li><b>Verso il gateway locale</b> → se qui c'è già perdita, il problema è nella LAN: cablaggio,
+    switch, Wi-Fi.</li>
+    <li><b>Verso il firewall</b> → isola la rete interna.</li>
+    <li><b>Verso il primo salto dell'operatore</b> → isola il tratto fino al modem.</li>
+    <li><b>Verso un bersaglio pubblico</b> (1.1.1.1) → isola la rete dell'operatore.</li>
+    <li><b>Verso il servizio di cui si lamenta l'utente</b> → se solo qui c'è degrado, il problema è
+    oltre l'operatore, o del servizio stesso.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">Cinque misure, dieci minuti, e sai <b>in quale tratto</b>
+  sta il problema — che è l'informazione che serve per decidere chi deve intervenire.</p>
+</div>
+
+<h2>Il problema intermittente</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    «Succede ogni tanto» si risolve solo misurando in continuo
+  </div>
+  <p>Se il degrado dura dieci minuti due volte al giorno, una misura fatta quando arrivi tu non troverà
+  mai niente — e il cliente inizierà a pensare che sia colpa dei suoi PC.</p>
+  <p><b>La soluzione è lasciare una misura attiva</b>: un sistema di monitoraggio che esegue in
+  continuazione ping o mtr verso alcuni bersagli e ne conserva lo storico. Quando il cliente segnala
+  «è successo alle 15:20», tu guardi il grafico di quel momento.</p>
+  <p style="margin-bottom:0">È anche il modo con cui si scoprono le correlazioni: il degrado che
+  coincide con l'orario dei backup, con l'accensione di un macchinario, o con l'arrivo dei visitatori
+  che si collegano al Wi-Fi.</p>
+</div>
+
+<h2>Presentare la prova all'operatore</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Cosa allegare perché la segnalazione venga presa sul serio
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Il codice del contratto o della linea</b>, non solo il nome del cliente.</li>
+    <li><b>Date e orari precisi</b> degli episodi, con il fuso orario.</li>
+    <li><b>L'output di un mtr</b> con almeno 200 pacchetti, che mostri la perdita che <em>continua</em>
+    fino alla destinazione.</li>
+    <li><b>La prova che il problema non è dentro la rete del cliente</b>: la stessa misura verso il
+    gateway locale, pulita.</li>
+    <li><b>La ripetibilità</b>: succede ogni giorno? a che ora? da più dispositivi?</li>
+    <li><b>Cosa hai già escluso</b>: cavi, apparati, saturazione. Elencarlo evita il primo giro di
+    domande standard.</li>
+  </ul>
+  <p style="margin-top:10px;margin-bottom:0">Una segnalazione così arriva al secondo livello di
+  supporto invece che fermarsi al primo — e questo, nella pratica, è la differenza tra un problema
+  risolto in due giorni e uno che si trascina per settimane.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: misurare la qualità",
+  "questions": [
+    { "q": "Un cliente mostra uno speedtest a 900 Mbps e dice che la linea è perfetta, ma il gestionale è inutilizzabile. Cosa spieghi?",
+      "a": [ {"t":"Lo speedtest usa molte connessioni parallele e maschera la perdita di pacchetti","ok":true},
+             {"t":"Lo speedtest è sbagliato e va rifatto","ok":false},
+             {"t":"Il problema è certamente il PC del cliente","ok":false},
+             {"t":"Serve aumentare la banda","ok":false} ],
+      "e": "Con l'1% di perdita una singola connessione crolla, ma venti connessioni parallele danno comunque un numero alto verso un server vicino scelto per essere veloce. Non è il cliente che sbaglia: è lo strumento che misura la cosa sbagliata, e saperlo spiegare con calma vale più di avere ragione." },
+
+    { "q": "In un mtr vedi il 20% di perdita al salto 4, ma zero perdita nei salti successivi. Cosa concludi?",
+      "a": [ {"t":"Quel router limita le risposte ai messaggi di servizio, ma inoltra il traffico correttamente","ok":true},
+             {"t":"Il problema è al salto 4","ok":false},
+             {"t":"Il percorso si interrompe lì","ok":false},
+             {"t":"C'è un loop di routing","ok":false} ],
+      "e": "Se i salti successivi non mostrano perdita, il traffico è passato perfettamente: quel router semplicemente dà bassa priorità a generare risposte per sé. Il dato che conta è la perdita che <b>inizia a un salto e continua fino alla destinazione</b>. Portare a un operatore un mtr letto male fa perdere credibilità." },
+
+    { "q": "Quale grandezza rovina principalmente l'audio di una telefonata VoIP?",
+      "a": [ {"t":"Il jitter, cioè la variazione della latenza","ok":true},
+             {"t":"La banda insufficiente","ok":false},
+             {"t":"La latenza assoluta","ok":false},
+             {"t":"L'MTU","ok":false} ],
+      "e": "Una chiamata consuma pochissima banda e tollera una latenza costante di 100-150 ms. Ciò che la rovina è l'irregolarità: pacchetti che arrivano a raffica e poi il vuoto. È la differenza tra pizze che arrivano regolari e dieci insieme seguite da cinque minuti di niente." },
+
+    { "q": "Come si isola in quale tratto sta un problema di qualità?",
+      "a": [ {"t":"Misurando a cerchi concentrici: gateway, firewall, primo salto operatore, Internet, servizio","ok":true},
+             {"t":"Facendo uno speedtest da più PC","ok":false},
+             {"t":"Riavviando gli apparati uno alla volta","ok":false},
+             {"t":"Aumentando la banda e vedendo se migliora","ok":false} ],
+      "e": "Il primo punto in cui il valore peggiora è dove sta il problema. Cinque misure e dieci minuti bastano a sapere in quale tratto cercare — e quindi chi deve intervenire, che è l'informazione davvero utile." },
+
+    { "q": "Un degrado dura dieci minuti due volte al giorno. Come lo affronti?",
+      "a": [ {"t":"Lasciando una misura attiva in continuo, con storico","ok":true},
+             {"t":"Facendo un mtr quando arrivi in azienda","ok":false},
+             {"t":"Chiedendo al cliente di chiamarti mentre succede","ok":false},
+             {"t":"Sostituendo gli apparati sospetti","ok":false} ],
+      "e": "Una misura fatta quando arrivi tu non troverà mai niente, e il cliente inizierà a dubitare di sé. Il monitoraggio continuo permette di guardare il grafico dell'orario segnalato e, spesso, di scoprire la correlazione: i backup, un macchinario che si accende, i visitatori che si collegano al Wi-Fi." },
+
+    { "q": "Cosa rende una segnalazione all'operatore efficace?",
+      "a": [ {"t":"Codice linea, orari precisi, mtr con perdita che continua fino alla destinazione, e cosa hai già escluso","ok":true},
+             {"t":"Un elenco dettagliato dei disagi subiti dal cliente","ok":false},
+             {"t":"Uno speedtest con un valore basso","ok":false},
+             {"t":"La richiesta di sostituire il modem","ok":false} ],
+      "e": "Una segnalazione documentata arriva al secondo livello di supporto invece di fermarsi al primo giro di domande standard. Elencare cosa hai già escluso — cavi, apparati, saturazione — evita che ti facciano rifare le verifiche di base, e nella pratica è la differenza tra due giorni e due settimane." }
+  ]
+}
+</script>

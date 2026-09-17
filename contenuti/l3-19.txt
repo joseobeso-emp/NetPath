@@ -1,0 +1,253 @@
+#id: l3-19
+#title: MTU, MSS clamping e frammentazione
+#min: 26
+#level: 3
+#chapter: Performance e analisi
+#desc: La causa nascosta di «alcuni siti non si aprono» dentro le VPN, spiegata fino in fondo e risolta per sempre.
+#obj: Capire cosa succede quando un pacchetto è più grande di quanto il percorso consente
+#obj: Diagnosticare un problema di MTU in cinque minuti invece che in tre ore
+#obj: Applicare l'MSS clamping sapendo esattamente cosa fa
+#obj: Capire perché bloccare tutto l'ICMP crea questo problema
+---
+<p class="lead">Questo è il problema che hai incontrato in quattro lezioni diverse e che adesso
+chiudiamo definitivamente. È anche uno dei pochi guasti con una firma diagnostica così precisa che,
+una volta imparata, lo riconosci in trenta secondi — mentre chi non la conosce ci passa mezza giornata.</p>
+
+<h2>I tre numeri</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Termine</th><th>Cos'è</th><th>Valore tipico</th></tr></thead>
+    <tbody>
+      <tr><td><b>MTU</b></td><td>Il pacchetto più grande che un collegamento può trasportare</td><td>1500 su Ethernet, 1492 su PPPoE</td></tr>
+      <tr><td><b>MSS</b></td><td>Quanti byte di <em>dati</em> stanno in un segmento TCP</td><td>MTU − 40 (intestazioni IP e TCP) = 1460</td></tr>
+      <tr><td><b>Path MTU</b></td><td>L'MTU <b>più piccola</b> lungo tutto il percorso</td><td>È quella che comanda davvero</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il tunnel basso
+  </div>
+  <p>Un camion alto 4 metri parte da Milano. Lungo la strada c'è un sottopasso alto 3,5 metri.</p>
+  <p>Ci sono tre cose che possono succedere:</p>
+  <ul>
+    <li><b>Il camion viene diviso</b> in due carichi più bassi che proseguono separatamente: è la
+    <b>frammentazione</b>. Funziona, ma è lento e inefficiente.</li>
+    <li><b>Qualcuno avvisa il mittente</b>: «il tuo camion non passa, il limite è 3,5». Il mittente
+    ricarica tutto su camion più bassi e riparte. È la <b>scoperta della Path MTU</b>, e funziona
+    <em>solo se il messaggio arriva</em>.</li>
+    <li><b>Il camion viene fermato e nessuno avvisa nessuno.</b> Il mittente continua a mandare camion
+    alti che spariscono nel nulla. È il <b>buco nero</b>, ed è il caso che genera il ticket.</li>
+  </ul>
+  <p style="margin-bottom:0">Il terzo caso succede quando qualcuno ha bloccato i messaggi di avviso —
+  che nella rete sono pacchetti <b>ICMP</b>. Ecco perché «bloccare tutto l'ICMP per sicurezza» crea un
+  problema che sembra magico.</p>
+</div>
+
+<h2>La firma diagnostica</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 230" role="img" aria-label="Sintomi caratteristici di un problema di MTU">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Se vedi questa combinazione, è MTU</text>
+    <g stroke-width="1.6">
+      <rect x="30" y="42"  width="640" height="36" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="30" y="86"  width="640" height="36" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="30" y="130" width="640" height="36" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="30" y="174" width="640" height="36" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="50" y="65">✓  Il ping normale funziona</text>
+      <text x="50" y="109">✓  La connessione si stabilisce: la pagina inizia a caricare, il login riesce</text>
+      <text x="50" y="153">✗  Il trasferimento si blocca a metà, o la pagina resta bianca</text>
+      <text x="50" y="197">✗  Succede solo con alcuni siti, o solo dentro il tunnel</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>Il motivo è sempre lo stesso: i pacchetti <b>piccoli</b> — ping, handshake, richieste —
+  passano; quelli <b>grandi</b> — risposte, file, pagine complete — no. Nessun altro guasto produce
+  questa combinazione.</figcaption>
+</figure>
+
+<h2>La prova in trenta secondi</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Trovare la Path MTU a mano</div>
+<pre><span class="c"># Windows: -l dimensione dati, -f vieta la frammentazione</span>
+<span class="p">ping -f -l 1472 8.8.8.8</span>      <span class="c"># 1472 + 28 di intestazioni = 1500</span>
+<span class="p">ping -f -l 1400 8.8.8.8</span>
+<span class="p">ping -f -l 1300 8.8.8.8</span>
+
+<span class="c"># macOS / Linux</span>
+<span class="p">ping -D -s 1472 8.8.8.8</span>      <span class="c"># macOS</span>
+<span class="p">ping -M do -s 1472 8.8.8.8</span>   <span class="c"># Linux</span>
+
+<span class="c"># Se 1472 fallisce e 1300 funziona, l'MTU del percorso sta in mezzo.</span>
+<span class="c"># Dimezza finché non trovi il confine: MTU = valore che passa + 28</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il messaggio che conferma la diagnosi
+  </div>
+  <p>Su Windows, quando il pacchetto è troppo grande e la frammentazione è vietata, compare:
+  <b>«Il pacchetto deve essere frammentato ma DF è impostato»</b>. Quel messaggio è la conferma
+  definitiva: hai un problema di MTU, non di firewall, non di DNS, non di routing.</p>
+  <p style="margin-bottom:0">Se invece ricevi semplicemente <b>«Richiesta scaduta»</b> con i pacchetti
+  grandi e risposte con quelli piccoli, hai un <b>buco nero</b>: qualcuno scarta senza avvisare, ed è
+  lo scenario peggiore perché il sistema non può correggersi da solo.</p>
+</div>
+
+<h2>Dove nasce il problema</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Causa</th><th>MTU risultante</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td><b>Tunnel IPsec</b></td><td>circa 1420–1440</td><td>Il caso più frequente</td></tr>
+      <tr><td><b>PPPoE</b></td><td>1492</td><td>Tipico di molte connessioni con autenticazione</td></tr>
+      <tr><td><b>GRE dentro IPsec</b></td><td>circa 1380 o meno</td><td>Incapsulamenti annidati (lezione 3-06)</td></tr>
+      <tr><td><b>WireGuard</b></td><td>circa 1420</td><td>Più efficiente di IPsec, ma comunque incapsula</td></tr>
+      <tr><td><b>Collegamenti verso il cloud</b></td><td>variabile</td><td>Alcuni ambienti hanno limiti propri</td></tr>
+      <tr><td><b>ICMP bloccato lungo il percorso</b></td><td>—</td><td><b>Non riduce l'MTU: impedisce di scoprirla</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>La soluzione: MSS clamping</h2>
+
+<p>Invece di sperare che la scoperta automatica funzioni, si interviene <strong>all'inizio della
+conversazione</strong>. Durante l'handshake TCP le due parti si dicono quanto grandi vogliono i
+segmenti: il firewall intercetta quel valore e lo <strong>riduce</strong>.</p>
+
+<p>Il risultato è che entrambe le parti, spontaneamente, useranno segmenti che entrano di sicuro.
+Nessun pacchetto troppo grande viene mai generato, quindi non c'è niente da frammentare né da scartare.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>MSS clamping sui tre apparati</div>
+<pre><span class="c">═══ MIKROTIK ════════════════════════════════════════</span>
+<span class="p">/ip firewall mangle add chain=</span><span class="s">forward</span> <span class="p">protocol=</span><span class="s">tcp</span> <span class="p">\</span>
+<span class="p">    tcp-flags=</span><span class="s">syn</span> <span class="p">out-interface=</span><span class="s">tunnel-filiale</span> <span class="p">\</span>
+<span class="p">    action=</span><span class="s">change-mss</span> <span class="p">new-mss=</span><span class="n">1350</span>
+<span class="c"># oppure, meglio: adattamento automatico</span>
+<span class="p">    action=</span><span class="s">change-mss</span> <span class="p">new-mss=</span><span class="s">clamp-to-pmtu</span>
+
+<span class="c">═══ FORTIGATE — sulla policy verso il tunnel ════════</span>
+<span class="p">config firewall policy</span>
+  <span class="p">edit</span> <span class="n">10</span>
+    <span class="p">set tcp-mss-sender</span> <span class="n">1350</span>
+    <span class="p">set tcp-mss-receiver</span> <span class="n">1350</span>
+
+<span class="c">═══ CISCO — sull'interfaccia del tunnel ═════════════</span>
+<span class="p">interface Tunnel0</span>
+ <span class="p">ip tcp adjust-mss</span> <span class="n">1350</span>
+ <span class="p">ip mtu</span> <span class="n">1400</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il limite dell'MSS clamping
+  </div>
+  <p>Funziona <b>solo per TCP</b>, perché agisce su un campo dell'handshake TCP. Il traffico
+  <b>UDP</b> — DNS con risposte grandi, VoIP, QUIC, alcuni protocolli di tunnel — non ha nessun
+  meccanismo equivalente.</p>
+  <p style="margin-bottom:0">Per UDP le strade sono altre: ridurre l'MTU dell'interfaccia del tunnel
+  così che il sistema operativo generi pacchetti più piccoli, permettere la frammentazione, oppure
+  configurare l'applicazione. Nella pratica il 95% dei problemi riguarda TCP, e l'MSS clamping li
+  risolve tutti.</p>
+</div>
+
+<h2>Perché non bisogna bloccare tutto l'ICMP</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Blocchiamo l'ICMP per sicurezza» è un errore classico
+  </div>
+  <p>La scoperta automatica della Path MTU dipende da un messaggio ICMP specifico —
+  <b>«destinazione irraggiungibile: frammentazione necessaria»</b> — che il router manda indietro al
+  mittente quando un pacchetto è troppo grande.</p>
+  <p>Se un firewall lungo il percorso blocca <em>tutto</em> l'ICMP, quel messaggio non arriva: il
+  mittente non sa che deve rimpicciolire i pacchetti e continua a mandarne di troppo grandi, che
+  spariscono. È il buco nero.</p>
+  <p style="margin-bottom:0"><b>La regola:</b> si può limitare l'ICMP, ma <b>quel tipo specifico va
+  sempre lasciato passare</b>. È anche uno dei motivi per cui, quando erediti la configurazione di un
+  cliente e trovi «deny all ICMP», vale la pena guardarci dentro.</p>
+</div>
+
+<h2>La lista di controllo</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Da fare su ogni tunnel, sempre
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>MSS clamping attivo</b> su ogni interfaccia di tunnel, con 1350 o con l'adattamento
+    automatico se l'apparato lo supporta. Non aspettare che il problema si manifesti.</li>
+    <li><b>ICMP «frammentazione necessaria» permesso</b> in entrambe le direzioni.</li>
+    <li><b>Collaudo con pacchetti grandi</b> prima di consegnare il lavoro (lezione 2-17).</li>
+    <li><b>Se il cliente ha PPPoE</b>, verifica anche l'MTU dell'interfaccia WAN.</li>
+    <li><b>Documenta il valore scelto</b>: tra un anno, quando qualcuno vorrà «ottimizzare», saprà
+    perché era lì.</li>
+  </ol>
+  <p style="margin-top:10px;margin-bottom:0">Costa due minuti per tunnel e ti toglie dalla lista dei
+  ticket un'intera categoria di guasti che, senza questa conoscenza, richiedono ore e spesso finiscono
+  con «abbiamo riavviato e ora va».</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: MTU e frammentazione",
+  "questions": [
+    { "q": "Quale combinazione di sintomi indica con certezza un problema di MTU?",
+      "a": [ {"t":"Il ping funziona, la connessione si apre, ma i trasferimenti si bloccano","ok":true},
+             {"t":"Nessuna connessione riesce","ok":false},
+             {"t":"Il ping fallisce ma i siti si aprono","ok":false},
+             {"t":"Tutto è lento in modo uniforme","ok":false} ],
+      "e": "I pacchetti piccoli — ping, handshake, richieste — passano; quelli grandi — risposte, file, pagine complete — no. Nessun altro guasto produce questa combinazione, ed è ciò che permette di riconoscerlo in trenta secondi invece che in mezza giornata." },
+
+    { "q": "Cosa fa esattamente l'MSS clamping?",
+      "a": [ {"t":"Riduce il valore che le due parti si scambiano nell'handshake TCP, così useranno segmenti più piccoli","ok":true},
+             {"t":"Frammenta i pacchetti troppo grandi","ok":false},
+             {"t":"Aumenta l'MTU dell'interfaccia","ok":false},
+             {"t":"Blocca i pacchetti oltre una certa dimensione","ok":false} ],
+      "e": "Interviene all'inizio della conversazione, modificando il valore annunciato durante l'handshake: da quel momento entrambe le parti generano spontaneamente segmenti che entrano. Non c'è niente da frammentare né da scartare perché i pacchetti troppo grandi non nascono proprio." },
+
+    { "q": "Perché bloccare tutto l'ICMP crea problemi di MTU?",
+      "a": [ {"t":"Impedisce al messaggio «frammentazione necessaria» di raggiungere il mittente","ok":true},
+             {"t":"Riduce l'MTU dei collegamenti","ok":false},
+             {"t":"Impedisce il funzionamento di TCP","ok":false},
+             {"t":"Blocca la negoziazione delle VPN","ok":false} ],
+      "e": "La scoperta automatica della Path MTU dipende proprio da quel messaggio: senza, il mittente non sa che deve rimpicciolire i pacchetti e continua a mandarne di troppo grandi che spariscono. Si può limitare l'ICMP, ma quel tipo specifico va sempre lasciato passare." },
+
+    { "q": "Quale comando conferma un problema di MTU su Windows?",
+      "a": [ {"t":"<code>ping -f -l 1472</code>, che vieta la frammentazione con un pacchetto grande","ok":true},
+             {"t":"<code>tracert</code>","ok":false},
+             {"t":"<code>nslookup</code>","ok":false},
+             {"t":"<code>netstat -ano</code>","ok":false} ],
+      "e": "Il flag <code>-f</code> vieta la frammentazione: se il pacchetto è troppo grande compare «Il pacchetto deve essere frammentato ma DF è impostato», che è la conferma definitiva. Se invece arriva «Richiesta scaduta» solo con i pacchetti grandi, siamo nel caso peggiore: qualcuno scarta senza avvisare." },
+
+    { "q": "L'MSS clamping risolve anche i problemi sul traffico UDP?",
+      "a": [ {"t":"No: agisce su un campo dell'handshake TCP, che in UDP non esiste","ok":true},
+             {"t":"Sì, funziona su qualsiasi protocollo","ok":false},
+             {"t":"Sì, ma solo per il DNS","ok":false},
+             {"t":"Solo se si attiva la frammentazione","ok":false} ],
+      "e": "UDP non ha handshake né negoziazione della dimensione, quindi non c'è nessun campo da modificare. Per UDP si riduce l'MTU dell'interfaccia del tunnel, si permette la frammentazione o si configura l'applicazione. Nella pratica il 95% dei casi riguarda TCP." },
+
+    { "q": "Quando va configurato l'MSS clamping su un tunnel?",
+      "a": [ {"t":"Sempre, al momento della creazione, senza aspettare che il problema si manifesti","ok":true},
+             {"t":"Solo quando il cliente segnala problemi","ok":false},
+             {"t":"Solo sui tunnel verso il cloud","ok":false},
+             {"t":"Solo se la linea usa PPPoE","ok":false} ],
+      "e": "Costa due minuti, non fa danni, e previene un'intera categoria di guasti che altrimenti emergono settimane dopo come «il gestionale ogni tanto si blocca» — e che senza questa conoscenza richiedono ore per essere diagnosticati." }
+  ]
+}
+</script>

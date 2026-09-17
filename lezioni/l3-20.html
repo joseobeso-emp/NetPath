@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wireshark avanzato: dalla cattura alla causa — NetPath</title>
+<meta name="description" content="Filtri, follow stream, expert info e grafici. Come si passa da milioni di pacchetti a una risposta.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l3-20">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l3">Livello 3</a><span class="sep">/</span>
+        <span>Performance e analisi</span>
+      </nav>
+      <h1 class="lesson-title">Wireshark avanzato: dalla cattura alla causa</h1>
+      <div class="lesson-meta">
+        <span class="badge lv3">Livello 3</span>
+        <span class="chip">Lezione 20</span>
+        <span class="chip">34 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Catturare nel punto giusto e nel modo giusto</li>
+        <li>Usare gli strumenti di sintesi prima di guardare i singoli pacchetti</li>
+        <li>Riconoscere le firme dei guasti più comuni in una cattura</li>
+        <li>Presentare una prova a un operatore o a un fornitore</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Wireshark è lo strumento che usi quando le ipotesi sono finite. Il problema è che una
+cattura di due minuti contiene centinaia di migliaia di pacchetti, e chi ci si tuffa dentro si perde.
+Questa lezione ti dà il metodo per arrivare alla risposta partendo dall'alto, non dal basso.</p>
+
+<h2>Prima di catturare: tre decisioni</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Decisione</th><th>Criterio</th></tr></thead>
+    <tbody>
+      <tr><td><b>Dove</b></td><td>Il più vicino possibile al problema. Se non basta, cattura <b>su due punti contemporaneamente</b>: è così che si scopre chi sta perdendo i pacchetti</td></tr>
+      <tr><td><b>Cosa</b></td><td>Un filtro <b>di cattura</b> stretto (host e porta): riduce il file di ordini di grandezza e rende tutto gestibile</td></tr>
+      <tr><td><b>Quando</b></td><td>Mentre riproduci il problema, annotando l'ora esatta. Una cattura «a caso» non serve</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Filtro di cattura e filtro di visualizzazione sono due cose diverse
+  </div>
+  <p>Il <b>filtro di cattura</b> si imposta <em>prima</em> e decide cosa finisce nel file. Usa una
+  sintassi diversa (quella di tcpdump) e non si può cambiare dopo.</p>
+  <p>Il <b>filtro di visualizzazione</b> si applica <em>dopo</em>, sul file già catturato, e si può
+  cambiare quante volte vuoi.</p>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Le due sintassi</div>
+<pre><span class="c"># FILTRO DI CATTURA (prima)</span>
+host 10.10.10.50 and port 443
+host 10.10.10.50 and not port 22
+
+<span class="c"># FILTRO DI VISUALIZZAZIONE (dopo)</span>
+ip.addr == 10.10.10.50 &amp;&amp; tcp.port == 443
+tcp.analysis.retransmission
+</pre>
+  </div>
+</div>
+
+<h2>Il metodo: dall'alto verso il basso</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Non aprire i pacchetti per primi
+  </div>
+  <p>L'errore di chi inizia è scorrere l'elenco dei pacchetti sperando di notare qualcosa. Il metodo
+  che funziona parte dalle <b>sintesi</b>:</p>
+  <ol style="margin-bottom:0">
+    <li><b>Statistiche → Riepilogo della cattura.</b> Quanti pacchetti, quanto tempo, quale velocità
+    media. Ti dice subito se il file è quello che ti aspettavi.</li>
+    <li><b>Statistiche → Conversazioni.</b> Chi parla con chi, quanti byte, quanto dura. Ordina per
+    byte: spesso il colpevole salta fuori qui, senza aprire un solo pacchetto.</li>
+    <li><b>Analizza → Expert Information.</b> Wireshark ha già trovato le anomalie per te:
+    ritrasmissioni, reset, finestre piene, pacchetti fuori ordine. <b>È il singolo strumento più
+    sottovalutato.</b></li>
+    <li><b>Statistiche → Grafici IO.</b> Il traffico nel tempo: vedi i buchi, i picchi, il momento in
+    cui qualcosa si è fermato.</li>
+    <li><b>Solo adesso</b> filtra e guarda i pacchetti, sapendo già cosa cerchi.</li>
+  </ol>
+</div>
+
+<h2>Le firme dei guasti</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa vedi</th><th>Cosa significa</th></tr></thead>
+    <tbody>
+      <tr><td><b>SYN ripetuti senza risposta</b></td><td>Qualcosa scarta in silenzio: firewall in «drop», o host inesistente</td></tr>
+      <tr><td><b>SYN → RST</b></td><td>L'host c'è ma la porta non ascolta, o un firewall risponde in «reject»</td></tr>
+      <tr><td><b>Ritrasmissioni frequenti</b></td><td><b>Perdita di pacchetti</b> lungo il percorso</td></tr>
+      <tr><td><b>Duplicate ACK ripetuti</b></td><td>Il ricevente segnala un buco nella sequenza: precede la ritrasmissione</td></tr>
+      <tr><td><b>TCP Zero Window</b></td><td>Il ricevente dice «fermati, non riesco a smaltire»: il problema è <b>l'applicazione o il server</b>, non la rete</td></tr>
+      <tr><td><b>Handshake ok poi silenzio</b></td><td><b>MTU</b> (lezione 3-19)</td></tr>
+      <tr><td><b>Molti RST dopo poco traffico</b></td><td>Qualcosa chiude le connessioni: applicazione, firewall, o timeout</td></tr>
+      <tr><td><b>Tanti ARP per lo stesso indirizzo</b></td><td>Host irraggiungibile, o problema di livello 2</td></tr>
+      <tr><td><b>Lo stesso IP con MAC diversi</b></td><td>Indirizzo duplicato, o ARP spoofing</td></tr>
+      <tr><td><b>DNS con risposte lente o assenti</b></td><td>Il collo di bottiglia è la risoluzione, non il trasferimento</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Zero Window: la scoperta che cambia il ticket
+  </div>
+  <p>È una delle distinzioni più preziose che Wireshark ti offre. Se vedi <b>TCP Zero Window</b>, la
+  rete sta facendo il suo lavoro perfettamente: è <b>il ricevente</b> che non riesce a elaborare i dati
+  abbastanza in fretta e chiede di fermarsi.</p>
+  <p style="margin-bottom:0">Significa che il problema è il server, il database, il disco o
+  l'applicazione — non la banda, non il firewall, non il cablaggio. È il momento in cui un ticket
+  «la rete è lenta» diventa correttamente un ticket per chi gestisce quel server, con una prova
+  in mano.</p>
+</div>
+
+<h2>I filtri che userai davvero</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Filtri di visualizzazione, per scopo</div>
+<pre><span class="c">── PROBLEMI DI PRESTAZIONI ─────────────────────────</span>
+tcp.analysis.flags                      <span class="c"># tutte le anomalie TCP insieme</span>
+tcp.analysis.retransmission             <span class="c"># perdita di pacchetti</span>
+tcp.analysis.zero_window                <span class="c"># il ricevente non smaltisce</span>
+tcp.analysis.duplicate_ack
+
+<span class="c">── CONNESSIONI CHE NON SI APRONO ───────────────────</span>
+tcp.flags.syn==1 &amp;&amp; tcp.flags.ack==0     <span class="c"># chi bussa</span>
+tcp.flags.reset==1                       <span class="c"># chi dice di no</span>
+icmp.type==3                             <span class="c"># destinazione irraggiungibile</span>
+icmp.type==3 &amp;&amp; icmp.code==4             <span class="c"># frammentazione necessaria → MTU</span>
+
+<span class="c">── UN PROBLEMA SPECIFICO ───────────────────────────</span>
+ip.addr==10.10.10.50 &amp;&amp; tcp.port==1433
+dns.time &gt; 0.5                           <span class="c"># risoluzioni lente</span>
+http.response.code &gt;= 400
+tls.handshake.type==1                    <span class="c"># inizio handshake TLS: c'è dentro l'SNI</span>
+
+<span class="c">── RUMORE DA TOGLIERE ──────────────────────────────</span>
+!(arp or stp or cdp or lldp or mdns)
+</pre>
+</div>
+
+<h2>Catturare in due punti</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La tecnica che risolve le discussioni con l'operatore
+  </div>
+  <p>Cattura <b>contemporaneamente</b> su due punti — per esempio prima e dopo il firewall, o in due
+  sedi collegate da un tunnel — filtrando la stessa conversazione.</p>
+  <p>Poi confronta: se un pacchetto si vede al punto A e non al punto B, <b>si è perso nel mezzo</b>.
+  Hai individuato il tratto con certezza, e non con un'ipotesi.</p>
+  <p style="margin-bottom:0">È lo strumento con cui si chiude una discussione del tipo «il problema è
+  vostro» / «no, è vostro»: porti due catture sincronizzate e mostri esattamente dove i pacchetti
+  spariscono. Perché funzioni, <b>gli orologi dei due punti devono essere allineati</b> — ecco l'ennesimo
+  motivo per cui NTP conta.</p>
+</div>
+
+<h2>Catturare sugli apparati</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Portare la cattura dentro Wireshark</div>
+<pre><span class="c">═══ FORTIGATE — cattura e la porti su PC ════════════</span>
+<span class="p">diagnose sniffer packet any</span> <span class="s">"host 10.10.10.50 and port 443"</span> <span class="n">6 0 a</span>
+<span class="c"># il livello 6 produce un formato esportabile;</span>
+<span class="c"># si converte in file .pcap con gli strumenti del produttore</span>
+
+<span class="c">═══ MIKROTIK — flusso in diretta verso Wireshark ════</span>
+<span class="p">/tool sniffer set filter-interface=</span><span class="s">ether1</span> <span class="p">\</span>
+<span class="p">    streaming-enabled=</span><span class="s">yes</span> <span class="p">streaming-server=</span><span class="n">10.10.10.37</span>
+<span class="p">/tool sniffer start</span>
+<span class="c"># su Wireshark: cattura filtrata su udp port 37008</span>
+
+<span class="c">═══ LINUX / SOPHOS ═════════════════════════════════</span>
+<span class="p">tcpdump -i any -n -s0 -w /tmp/cattura.pcap host 10.10.10.50</span>
+<span class="c"># -s0 cattura il pacchetto intero, non solo l'inizio</span>
+
+<span class="c">═══ SWITCH — port mirroring ════════════════════════</span>
+<span class="c"># copia il traffico di una porta verso quella dove sta il tuo PC</span>
+<span class="p">monitor session</span> <span class="n">1</span> <span class="p">source interface Gi1/0/5</span>
+<span class="p">monitor session</span> <span class="n">1</span> <span class="p">destination interface Gi1/0/24</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una cattura contiene dati reali
+  </div>
+  <p>In un file di cattura ci possono essere credenziali di protocolli non cifrati, contenuti di
+  documenti, messaggi, dati personali di clienti e dipendenti. <b>È a tutti gli effetti materiale
+  sensibile.</b></p>
+  <p style="margin-bottom:0"><b>Quindi:</b> cattura il minimo indispensabile, conservala solo per il
+  tempo necessario, non lasciarla su condivisioni accessibili a tutti, e quando la mandi a un fornitore
+  o a un operatore verifica cosa contiene. Se serve condividerla, esistono strumenti per rimuovere o
+  sostituire le parti sensibili.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: analisi con Wireshark",
+  "questions": [
+    { "q": "Qual è il primo strumento da usare dopo aver aperto una cattura?",
+      "a": [ {"t":"Le sintesi: conversazioni ed Expert Information","ok":true},
+             {"t":"Scorrere l'elenco dei pacchetti dall'inizio","ok":false},
+             {"t":"Il filtro per indirizzo IP","ok":false},
+             {"t":"Follow TCP Stream sul primo pacchetto","ok":false} ],
+      "e": "Una cattura contiene centinaia di migliaia di pacchetti: chi ci si tuffa dentro si perde. Le conversazioni mostrano chi parla con chi e quanto, ed Expert Information ha già trovato per te ritrasmissioni, reset e anomalie. Ai singoli pacchetti si arriva alla fine, sapendo cosa cercare." },
+
+    { "q": "In una cattura vedi molti <code>TCP Zero Window</code>. Cosa concludi?",
+      "a": [ {"t":"Il ricevente non riesce a smaltire i dati: il problema è il server o l'applicazione, non la rete","ok":true},
+             {"t":"C'è perdita di pacchetti lungo il percorso","ok":false},
+             {"t":"La banda è insufficiente","ok":false},
+             {"t":"È un problema di MTU","ok":false} ],
+      "e": "La finestra a zero è il ricevente che dice «fermati, non ce la faccio»: la rete sta consegnando perfettamente. È il momento in cui un ticket «la rete è lenta» diventa correttamente un ticket per chi gestisce quel server, con una prova in mano invece che con un'opinione." },
+
+    { "q": "Qual è la differenza tra filtro di cattura e filtro di visualizzazione?",
+      "a": [ {"t":"Il primo decide cosa finisce nel file e si imposta prima; il secondo si applica dopo e si può cambiare","ok":true},
+             {"t":"Sono la stessa cosa con nomi diversi","ok":false},
+             {"t":"Il primo vale per TCP, il secondo per UDP","ok":false},
+             {"t":"Il primo è più lento","ok":false} ],
+      "e": "Usano anche sintassi diverse: il filtro di cattura usa quella di tcpdump (<code>host 10.0.0.1 and port 443</code>), quello di visualizzazione la sintassi di Wireshark (<code>ip.addr == 10.0.0.1</code>). Un buon filtro di cattura riduce il file di ordini di grandezza e rende l'analisi gestibile." },
+
+    { "q": "Come si dimostra con certezza in quale tratto si perdono i pacchetti?",
+      "a": [ {"t":"Catturando contemporaneamente in due punti e confrontando la stessa conversazione","ok":true},
+             {"t":"Guardando le ritrasmissioni in una sola cattura","ok":false},
+             {"t":"Facendo un traceroute","ok":false},
+             {"t":"Controllando i contatori delle interfacce","ok":false} ],
+      "e": "Se un pacchetto si vede al punto A e non al punto B, si è perso nel mezzo: è una prova, non un'ipotesi, ed è ciò che chiude le discussioni del tipo «il problema è vostro». Perché funzioni gli orologi dei due punti devono essere allineati — ennesimo motivo per cui NTP conta." },
+
+    { "q": "Vedi SYN ripetuti senza alcuna risposta. Cosa significa?",
+      "a": [ {"t":"Qualcosa scarta in silenzio: un firewall in «drop», o l'host non esiste","ok":true},
+             {"t":"La porta è chiusa sull'host di destinazione","ok":false},
+             {"t":"C'è un problema di MTU","ok":false},
+             {"t":"Il server è sovraccarico","ok":false} ],
+      "e": "Il silenzio indica che qualcuno scarta senza rispondere. Se la porta fosse semplicemente chiusa arriverebbe un <b>RST</b>, che è una risposta attiva e sposta il sospetto sul servizio invece che su un firewall in mezzo." },
+
+    { "q": "Perché un file di cattura va trattato come materiale sensibile?",
+      "a": [ {"t":"Contiene dati reali: credenziali in chiaro, contenuti, dati personali","ok":true},
+             {"t":"Perché occupa molto spazio","ok":false},
+             {"t":"Perché può essere alterato","ok":false},
+             {"t":"Perché scade dopo poco tempo","ok":false} ],
+      "e": "Protocolli non cifrati, documenti, messaggi e dati di clienti e dipendenti finiscono tutti nel file. Va catturato il minimo indispensabile, conservato per il tempo necessario, non lasciato su condivisioni aperte, e verificato prima di mandarlo a un fornitore o a un operatore." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

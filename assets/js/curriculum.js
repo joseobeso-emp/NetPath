@@ -141,9 +141,9 @@ window.NETPATH_CURRICULUM = [
       { id:"l3-18", t:"Azure Firewall, NVA e hub-and-spoke", s:"La topologia standard e come ci si mette un FortiGate dentro.", m:28, ready:true }
     ]},
     { title: "Performance e analisi", lessons: [
-      { id:"l3-19", t:"MTU, MSS clamping, frammentazione", s:"La causa nascosta di 'alcuni siti non si aprono' dentro le VPN.", m:26, ready:false },
-      { id:"l3-20", t:"Wireshark avanzato: leggere un problema", s:"Filtri, follow stream, expert info, grafici IO. Dalla cattura alla causa.", m:34, ready:false },
-      { id:"l3-21", t:"Latenza, jitter, perdita: misurare sul serio", s:"iperf, mtr, smokeping. Come si dimostra che il problema non è tuo.", m:24, ready:false }
+      { id:"l3-19", t:"MTU, MSS clamping, frammentazione", s:"La causa nascosta di 'alcuni siti non si aprono' dentro le VPN.", m:26, ready:true },
+      { id:"l3-20", t:"Wireshark avanzato: leggere un problema", s:"Filtri, follow stream, expert info, grafici IO. Dalla cattura alla causa.", m:34, ready:true },
+      { id:"l3-21", t:"Latenza, jitter, perdita: misurare sul serio", s:"iperf, mtr, smokeping. Come si dimostra che il problema non è tuo.", m:24, ready:true }
     ]}
   ]
 },
