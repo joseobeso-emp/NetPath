@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La rete di sicurezza: Safe Mode, backup, export — NetPath</title>
+<meta name="description" content="La lezione più importante del modulo. Da qui in poi puoi sbagliare qualsiasi cosa e tornare indietro in tre secondi.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="mt-04">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#mt">Modulo MikroTik</a><span class="sep">/</span>
+        <span>Prima di toccare</span>
+      </nav>
+      <h1 class="lesson-title">La rete di sicurezza: Safe Mode, backup, export</h1>
+      <div class="lesson-meta">
+        <span class="badge lvmt">Modulo MikroTik</span>
+        <span class="chip">Lezione 04</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Usare la Safe Mode e capire esattamente cosa protegge e cosa no</li>
+        <li>Distinguere backup binario ed export testuale, e quando serve l'uno o l'altro</li>
+        <li>Portare le copie fuori dall'apparato, sul Mac</li>
+        <li>Costruirti l'abitudine che ti permetterà di sperimentare senza paura</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Se di tutto il modulo ricordassi una lezione sola, dovrebbe essere questa. Non insegna
+a configurare niente: insegna a <strong>tornare indietro</strong>. Ed è precisamente ciò che separa chi
+sperimenta e impara in fretta da chi ha paura di toccare e resta fermo per anni.</p>
+
+<h2>Safe Mode: la rete sotto il trapezio</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'interruttore dell'uomo morto
+  </div>
+  <p>Sui treni c'è un pedale che il macchinista deve tenere premuto. Se lo lascia — perché si è
+  sentito male — <b>il treno si ferma da solo</b>. Non serve che qualcuno se ne accorga: il sistema
+  interpreta il silenzio come un guaio e reagisce.</p>
+  <p>La Safe Mode di RouterOS è quel pedale. Mentre è attiva, tu sei collegato e tutto procede. Ma
+  <b>se la connessione cade</b> — perché hai scritto una regola che ti ha tagliato fuori —
+  l'apparato aspetta qualche secondo e poi <b>annulla da solo tutte le modifiche</b> fatte da quando
+  l'hai accesa.</p>
+  <p style="margin-bottom:0">È geniale proprio perché sfrutta il sintomo: <b>l'errore che ti chiude
+  fuori è lo stesso evento che fa scattare il rimedio.</b></p>
+</div>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 210" role="img" aria-label="Come funziona la Safe Mode: le modifiche vengono annullate se la sessione cade">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Cosa succede con e senza Safe Mode</text>
+
+    <rect x="20" y="40" width="320" height="150" rx="10" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="1.8"/>
+    <text x="180" y="64" text-anchor="middle" class="dg-label-sm">SENZA Safe Mode</text>
+    <g class="dg-mono-sm" text-anchor="middle" fill="var(--dg-text-soft)">
+      <text x="180" y="90">scrivi una regola sbagliata</text>
+      <text x="180" y="112">la sessione cade</text>
+      <text x="180" y="134">la regola resta</text>
+    </g>
+    <text x="180" y="166" text-anchor="middle" class="dg-label-sm" fill="var(--dg-3)">sei fuori, e ci resti</text>
+
+    <rect x="360" y="40" width="320" height="150" rx="10" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.8"/>
+    <text x="520" y="64" text-anchor="middle" class="dg-label-sm">CON Safe Mode</text>
+    <g class="dg-mono-sm" text-anchor="middle" fill="var(--dg-text-soft)">
+      <text x="520" y="90">scrivi una regola sbagliata</text>
+      <text x="520" y="112">la sessione cade</text>
+      <text x="520" y="134">l'apparato annulla tutto da solo</text>
+    </g>
+    <text x="520" y="166" text-anchor="middle" class="dg-label-sm" fill="var(--dg-1)">rientri come prima</text>
+  </svg>
+  </div>
+  <figcaption>Le modifiche annullate sono <b>solo quelle fatte dopo l'attivazione</b>. Tutto ciò che
+  c'era prima resta dov'è.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Dove</th><th>Come si attiva</th><th>Come si esce tenendo le modifiche</th></tr></thead>
+    <tbody>
+      <tr><td><b>WinBox</b></td><td>Pulsante <em>Safe Mode</em> in alto a sinistra: diventa rosso</td>
+          <td>Premilo di nuovo</td></tr>
+      <tr><td><b>SSH / Terminale</b></td><td><b>Ctrl + X</b> — compare <code>[Safe Mode taken]</code></td>
+          <td><b>Ctrl + X</b> di nuovo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Cosa la Safe Mode NON protegge
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Non annulla se la sessione resta aperta.</b> Se sbagli ma continui a essere collegato, non
+    succede niente: è il <em>distacco</em> a far scattare il ripristino. Per gli errori che non ti
+    tagliano fuori serve un backup.</li>
+    <li><b>Ha una memoria limitata.</b> Registra un numero finito di modifiche: se ne fai centinaia
+    di seguito, le più vecchie escono dall'elenco. Si lavora a piccoli blocchi, non in maratona.</li>
+    <li><b>Non sopravvive a un riavvio</b> né a un aggiornamento.</li>
+    <li><b>Non protegge da un errore fisico</b>: se stacchi il cavo sbagliato, la Safe Mode non ti
+    aiuta.</li>
+  </ul>
+</div>
+
+<h2>Backup ed export: due cose diverse</h2>
+
+<p>Sono entrambi «copie della configurazione» e vengono continuamente confusi. Servono a due cose
+opposte, e in produzione <strong>si fanno tutti e due</strong>.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Backup <code>.backup</code></th><th>Export <code>.rsc</code></th></tr></thead>
+    <tbody>
+      <tr><td><b>Cos'è</b></td><td>File binario, illeggibile</td><td><b>Testo</b>, leggibile e modificabile</td></tr>
+      <tr><td><b>Contiene</b></td><td><b>Tutto</b>: anche utenti, password, certificati, chiavi</td>
+          <td>Solo i comandi di configurazione</td></tr>
+      <tr><td><b>Si ripristina</b></td><td>Solo sullo <b>stesso modello</b></td><td>Su qualsiasi apparato: sono comandi</td></tr>
+      <tr><td><b>Si può leggere e confrontare</b></td><td>No</td><td><b>Sì — ed è il suo valore vero</b></td></tr>
+      <tr><td><b>Serve per</b></td><td>Rimettere in piedi <em>questo</em> apparato com'era</td>
+          <td>Documentare, confrontare due date, rifare la configurazione altrove</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    L'export è la tua documentazione, gratis
+  </div>
+  <p>Un export è un file di testo. Questo significa che puoi <b>confrontare la configurazione di oggi
+  con quella del mese scorso</b> e vedere in trenta secondi cosa è cambiato e chi l'ha cambiato.</p>
+  <p style="margin-bottom:0">È il motivo per cui nella lezione 42 metteremo gli export sotto controllo
+  di versione con git: a quel punto ogni modifica su ogni apparato diventa tracciata, confrontabile e
+  reversibile. Ma la base è questa, e la impari adesso.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Parte 1 · Fai una copia, e portala fuori dall'apparato
+  </div>
+  <div class="code" style="margin:0 0 12px">
+    <div class="code__bar"><span class="dot"></span>Sul router, via SSH</div>
+<pre><span class="c">── copia binaria completa ──────────────────────────</span>
+<span class="p">/system/backup/save name=</span><span class="s">"prima-di-iniziare"</span>
+
+<span class="c">── copia testuale leggibile ────────────────────────</span>
+<span class="p">/export file=</span><span class="s">"prima-di-iniziare"</span>
+
+<span class="c">── con anche password e chiavi (trattalo con cura) ─</span>
+<span class="p">/export show-sensitive file=</span><span class="s">"completo"</span>
+
+<span class="c">── cosa c'e adesso nella memoria dell'apparato ─────</span>
+<span class="p">/file/print</span>
+</pre>
+  </div>
+  <div class="code">
+    <div class="code__bar"><span class="dot"></span>Dal Terminale del Mac — scarica le copie</div>
+<pre><span class="c"># RouterOS espone un server SFTP: scp funziona gia</span>
+<span class="p">mkdir -p ~/mikrotik/lab-hapax2</span>
+<span class="p">cd ~/mikrotik/lab-hapax2</span>
+
+<span class="p">scp admin@192.168.88.1:prima-di-iniziare.backup .</span>
+<span class="p">scp admin@192.168.88.1:prima-di-iniziare.rsc .</span>
+
+<span class="c"># guarda l'export: e leggibile</span>
+<span class="p">less prima-di-iniziare.rsc</span>
+</pre>
+  </div>
+  <div class="code" style="margin-top:12px">
+    <div class="code__bar"><span class="dot"></span>Dal Prompt dei comandi di Windows</div>
+<pre><span class="c">:: scp e incluso in Windows 10 e 11</span>
+<span class="p">scp admin@192.168.88.1:prima-di-iniziare.rsc .</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Perché portarle fuori:</b> hai 128 MB di
+  archiviazione, e soprattutto <b>un backup che vive solo dentro l'apparato non serve a niente</b> il
+  giorno in cui è l'apparato ad avere un problema.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Parte 2 · Chiuditi fuori di proposito, e guarda la Safe Mode salvarti
+  </div>
+  <p>Questa è la prova che vale più di qualsiasi spiegazione. Falla adesso, su un apparato che non
+  serve a nessuno, così saprai per certo che funziona.</p>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>L'esperimento</div>
+<pre><span class="c">1. Collegati via SSH</span>
+<span class="p">ssh admin@192.168.88.1</span>
+
+<span class="c">2. Attiva la Safe Mode: premi Ctrl + X</span>
+<span class="c">   Deve comparire:  [Safe Mode taken]</span>
+
+<span class="c">3. Ora taglia il ramo su cui sei seduto:</span>
+<span class="c">   togli l'indirizzo IP dell'interfaccia da cui sei entrato</span>
+<span class="p">/ip/address/print</span>
+<span class="p">/ip/address/disable</span> <span class="n">0</span>
+
+<span class="c">4. La sessione si blocca. Aspetta.</span>
+<span class="c">   Dopo qualche secondo il collegamento cade del tutto.</span>
+
+<span class="c">5. Ricollegati</span>
+<span class="p">ssh admin@192.168.88.1</span>
+<span class="p">/ip/address/print</span>
+<span class="c">   L'indirizzo e tornato attivo: l'apparato ha annullato</span>
+<span class="c">   la modifica da solo.</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Se qualcosa va storto</b> e non rientri: stacca e
+  riattacca l'alimentazione. Le modifiche fatte in Safe Mode non sono state salvate, quindi
+  all'accensione l'apparato riparte com'era. Ed è proprio questo il punto.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    L'abitudine da prendere, valida su qualsiasi apparato di qualsiasi marca
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Prima di toccare: export.</b> Costa tre secondi e ti dice esattamente com'era.</li>
+    <li><b>Su un apparato remoto: Safe Mode, sempre.</b> Non è pignoleria, è l'unica cosa che ti separa
+    da un viaggio in macchina.</li>
+    <li><b>Modifiche a piccoli blocchi</b>, verificando dopo ciascuno. Non venti cambiamenti e poi la
+    prova finale.</li>
+    <li><b>Alla fine: nuovo export</b>, e confronta con quello di partenza. Se è cambiato qualcosa che
+    non ricordi di aver toccato, indaga adesso, non fra un mese.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la rete di sicurezza",
+  "questions": [
+    { "q": "Cosa fa scattare l'annullamento automatico della Safe Mode?",
+      "a": [ {"t":"La caduta della sessione di amministrazione","ok":true},
+             {"t":"Un comando di annullamento esplicito","ok":false},
+             {"t":"Il riavvio dell'apparato","ok":false},
+             {"t":"Un errore di sintassi nel comando","ok":false} ],
+      "e": "È l'idea geniale della Safe Mode: l'errore che ti chiude fuori è esattamente l'evento che fa partire il rimedio, come il pedale che ferma il treno quando il macchinista lo lascia. Se resti collegato non succede nulla, anche se hai sbagliato." },
+
+    { "q": "Qual è la differenza fondamentale fra backup ed export?",
+      "a": [ {"t":"Il backup è binario e contiene anche le password; l'export è testo leggibile e portabile","ok":true},
+             {"t":"Il backup si fa da WinBox, l'export dalla riga di comando","ok":false},
+             {"t":"Il backup contiene solo il firewall","ok":false},
+             {"t":"L'export funziona solo sullo stesso modello","ok":false} ],
+      "e": "Il backup rimette in piedi <em>questo</em> apparato com'era, password comprese, ma solo sullo stesso modello e senza poterlo leggere. L'export è una sequenza di comandi: si legge, si confronta con quello del mese scorso, si modifica e si applica altrove. In produzione si fanno entrambi." },
+
+    { "q": "Perché un backup che resta dentro l'apparato non basta?",
+      "a": [ {"t":"Il giorno in cui il problema è l'apparato stesso, il backup è irraggiungibile","ok":true},
+             {"t":"Perché occupa troppo spazio","ok":false},
+             {"t":"Perché scade dopo trenta giorni","ok":false},
+             {"t":"Perché non include il firewall","ok":false} ],
+      "e": "Un guasto hardware, un aggiornamento andato male o un ripristino di fabbrica portano via anche la copia. Con 128 MB di archiviazione lo spazio è un motivo in più, ma quello vero è che una copia deve stare altrove — sul tuo Mac, e possibilmente anche in un terzo posto." },
+
+    { "q": "In quale caso la Safe Mode NON ti protegge?",
+      "a": [ {"t":"Quando fai un errore che non ti disconnette","ok":true},
+             {"t":"Quando togli l'indirizzo IP dell'interfaccia da cui sei entrato","ok":false},
+             {"t":"Quando scrivi una regola firewall che blocca la tua sessione","ok":false},
+             {"t":"Quando sbagli il gateway predefinito","ok":false} ],
+      "e": "Il meccanismo reagisce al distacco della sessione: se resti collegato, per la Safe Mode va tutto bene. Cancellare per sbaglio una regola importante senza perdere l'accesso è esattamente il caso in cui serve l'export fatto prima. Gli altri tre esempi disconnettono, quindi fanno scattare il ripristino." },
+
+    { "q": "Su un apparato remoto, qual è la prima cosa da fare prima di modificare qualcosa?",
+      "a": [ {"t":"Un export, e poi attivare la Safe Mode","ok":true},
+             {"t":"Riavviare l'apparato","ok":false},
+             {"t":"Disattivare il firewall","ok":false},
+             {"t":"Aggiornare RouterOS","ok":false} ],
+      "e": "L'export ti dice com'era e costa tre secondi; la Safe Mode ti riporta indietro se ti chiudi fuori. Insieme trasformano un intervento remoto rischioso in un intervento normale — ed è la differenza fra lavorare sereno e fare un viaggio in macchina." },
+
+    { "q": "Perché la Safe Mode va usata a piccoli blocchi invece che per lunghe sessioni?",
+      "a": [ {"t":"Registra un numero limitato di modifiche: le più vecchie escono dall'elenco","ok":true},
+             {"t":"Perché scade dopo cinque minuti","ok":false},
+             {"t":"Perché rallenta l'apparato","ok":false},
+             {"t":"Perché impedisce di salvare la configurazione","ok":false} ],
+      "e": "La memoria delle modifiche da annullare è finita. Con centinaia di cambiamenti consecutivi le prime non sono più recuperabili, e il ripristino risulta parziale — che è peggio di nessun ripristino, perché ti lascia in uno stato che non conosci." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

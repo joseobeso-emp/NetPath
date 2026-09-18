@@ -13,7 +13,8 @@ Intestazione riconosciuta:
   #id:       l1-01                (obbligatorio, deve esistere in curriculum.js)
   #title:    Titolo della lezione (obbligatorio)
   #min:      18                   (minuti di lettura)
-  #level:    1                    (1-4)
+  #level:    1                    (1-4, oppure la sigla di un modulo: mt)
+  #lvname:   Modulo MikroTik      (etichetta mostrata; default 'Livello N')
   #chapter:  Nome del capitolo
   #desc:     Descrizione per i motori di ricerca
   #obj:      Un obiettivo          (ripetibile: una riga per obiettivo)
@@ -48,12 +49,12 @@ HEAD = '''<!doctype html>
     <div class="lesson-top">
       <nav class="crumbs">
         <a href="../index.html">Home</a><span class="sep">/</span>
-        <a href="../percorso.html#l{lvl}">Livello {lvl}</a><span class="sep">/</span>
+        <a href="../percorso.html#{lvanchor}">{lvname}</a><span class="sep">/</span>
         <span>{chapter}</span>
       </nav>
       <h1 class="lesson-title">{title}</h1>
       <div class="lesson-meta">
-        <span class="badge lv{lvl}">Livello {lvl}</span>
+        <span class="badge lv{lvl}">{lvname}</span>
         <span class="chip">Lezione {num}</span>
         <span class="chip">{minutes} min di lettura</span>
       </div>
@@ -109,9 +110,14 @@ def build(path):
 
     lid = meta["id"]
     lvl = meta.get("level") or lid[1]
+    # I moduli dedicati a un produttore usano una sigla al posto del numero:
+    # "mt" produce ancora "#mt" ed etichetta "Modulo MikroTik".
+    # I livelli da 1 a 4 continuano a comportarsi come prima.
+    lvanchor = ("l" + lvl) if lvl.isdigit() else lvl
+    lvname = meta.get("lvname") or ("Livello " + lvl)
     num = lid.split("-")[1]
     out = HEAD.format(
-        lid=lid, lvl=lvl, num=num,
+        lid=lid, lvl=lvl, num=num, lvanchor=lvanchor, lvname=lvname,
         title=meta["title"],
         desc=meta.get("desc", meta["title"]).replace('"', "&quot;"),
         chapter=meta.get("chapter", ""),

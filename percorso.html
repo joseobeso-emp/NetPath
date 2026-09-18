@@ -95,7 +95,7 @@ window.NP_PAGE_INIT = function () {
     var st = p.levels[lv.id];
     var h = '<section class="lv-block" id="' + lv.id + '" style="--lvc:var(--' + lv.key + ')">';
     h += '<div class="lv-head">' +
-           '<div class="lv-n">Livello ' + lv.n + ' · ' + esc(lv.subtitle) + '</div>' +
+           '<div class="lv-n">' + esc(lv.label || ('Livello ' + lv.n)) + ' · ' + esc(lv.subtitle) + '</div>' +
            '<h2>' + esc(lv.title) + '</h2>' +
            '<p>' + esc(lv.blurb) + '</p>' +
            '<div class="lv-outcome"><b>Quando hai finito questo livello:</b> ' + esc(lv.outcome) + '</div>' +

@@ -38,7 +38,7 @@ ok.append(f"{nquiz} quiz, {nq} domande — JSON valido, 1 sola risposta corretta
 
 # --- 2. lezioni dichiarate pronte --------------------------------------------
 cur = open("assets/js/curriculum.js", encoding="utf-8").read()
-entries = re.findall(r'\{ id:"(l\d-\d\d)", t:"(.*?)".*?ready:(true|false) \}', cur)
+entries = re.findall(r'\{ id:"((?:l\d|[a-z]{2})-\d\d)", t:"(.*?)".*?ready:(true|false) \}', cur)
 missing, extra = [], []
 declared = {}
 for lid, title, ready in entries:

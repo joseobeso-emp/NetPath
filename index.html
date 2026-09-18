@@ -205,10 +205,9 @@ window.NP_PAGE_INIT = function () {
     txt.textContent = "Non hai ancora completato nessuna lezione. Si comincia dalla prima: dieci minuti bastano.";
   } else {
     txt.innerHTML = "<b>" + p.done + "</b> lezioni completate su " + p.total +
-      ". Livello 1: " + p.levels.l1.done + "/" + p.levels.l1.total +
-      " · Livello 2: " + p.levels.l2.done + "/" + p.levels.l2.total +
-      " · Livello 3: " + p.levels.l3.done + "/" + p.levels.l3.total +
-      " · Livello 4: " + p.levels.l4.done + "/" + p.levels.l4.total + ".";
+      ". " + window.NETPATH_CURRICULUM.map(function (lv) {
+        return NP.esc(lv.title) + ": " + p.levels[lv.id].done + "/" + p.levels[lv.id].total;
+      }).join(" · ") + ".";
   }
 
   // riprendi
@@ -228,7 +227,7 @@ window.NP_PAGE_INIT = function () {
     var st = p.levels[lv.id];
     var nL = lv.chapters.reduce(function (a, c) { return a + c.lessons.length; }, 0);
     return '<a class="level-card ' + lv.id + '" href="percorso.html#' + lv.id + '">' +
-      '<div class="lv-n">Livello ' + lv.n + " · " + NP.esc(lv.subtitle) + "</div>" +
+      '<div class="lv-n">' + NP.esc(lv.label || ("Livello " + lv.n)) + " · " + NP.esc(lv.subtitle) + "</div>" +
       "<h3>" + NP.esc(lv.title) + "</h3>" +
       "<p>" + NP.esc(lv.blurb) + "</p>" +
       '<div class="lv-stats"><span>' + nL + " lezioni</span><span>" + lv.hours + "</span></div>" +

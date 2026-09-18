@@ -35,6 +35,10 @@
   --lv4:           #b8590a;
   --lv4-soft:      #fbeee0;
 
+  /* moduli dedicati a un produttore */
+  --mt:            #0b7285;
+  --mt-soft:       #d9f0f6;
+
   /* Semantic */
   --ok:            #12795a;
   --ok-soft:       #e2f3ec;
@@ -116,6 +120,7 @@
     --lv2:           #5b9bf8;  --lv2-soft: #10243f;
     --lv3:           #a988f5;  --lv3-soft: #221a3d;
     --lv4:           #eb9a4a;  --lv4-soft: #33220f;
+    --mt:            #22d3ee;  --mt-soft:  #072b33;
 
     --ok:            #3ac48f;  --ok-soft:   #0d2b22;
     --warn:          #e0a93f;  --warn-soft: #2e2412;
@@ -162,6 +167,7 @@
   --lv2:           #5b9bf8;  --lv2-soft: #10243f;
   --lv3:           #a988f5;  --lv3-soft: #221a3d;
   --lv4:           #eb9a4a;  --lv4-soft: #33220f;
+  --mt:            #22d3ee;  --mt-soft:  #072b33;
 
   --ok:            #3ac48f;  --ok-soft:   #0d2b22;
   --warn:          #e0a93f;  --warn-soft: #2e2412;
@@ -726,6 +732,7 @@ figcaption b { color: var(--text-soft); font-weight: 650; }
 .badge.lv2 { color: var(--lv2); background: var(--lv2-soft); }
 .badge.lv3 { color: var(--lv3); background: var(--lv3-soft); }
 .badge.lv4 { color: var(--lv4); background: var(--lv4-soft); }
+.badge.lvmt { color: var(--mt); background: var(--mt-soft); }
 .badge.soon { color: var(--text-faint); background: var(--bg-sunken); border-color: var(--border); }
 .badge.done { color: var(--ok); background: var(--ok-soft); }
 
@@ -933,6 +940,7 @@ a.card:hover { border-color: var(--border-strong); transform: translateY(-2px); 
 .level-card .lv-stats { display: flex; gap: 14px; font-size: .78rem; color: var(--text-faint); font-family: var(--font-mono); }
 .level-card.l1 { --lvc: var(--lv1); }
 .level-card.l2 { --lvc: var(--lv2); }
+.level-card.mt { --lvc: var(--mt); }
 .level-card.l3 { --lvc: var(--lv3); }
 .level-card.l4 { --lvc: var(--lv4); }
 

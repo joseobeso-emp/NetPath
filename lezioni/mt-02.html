@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RouterOS, RouterBOOT e i livelli di licenza — NetPath</title>
+<meta name="description" content="Due software diversi dentro la stessa scatola, e perché confonderli è il modo più rapido per non riuscire più ad accendere l'apparato.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="mt-02">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#mt">Modulo MikroTik</a><span class="sep">/</span>
+        <span>Prima di toccare</span>
+      </nav>
+      <h1 class="lesson-title">RouterOS, RouterBOOT e i livelli di licenza</h1>
+      <div class="lesson-meta">
+        <span class="badge lvmt">Modulo MikroTik</span>
+        <span class="chip">Lezione 02</span>
+        <span class="chip">18 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere RouterBOOT da RouterOS e sapere cosa fa ciascuno</li>
+        <li>Capire perché vanno aggiornati entrambi, e in quale ordine</li>
+        <li>Leggere il livello di licenza e sapere cosa consente</li>
+        <li>Interrogare l'apparato per sapere cosa sta girando davvero</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Dentro il tuo router ci sono <strong>due software distinti</strong>, scritti dalla
+stessa azienda ma con compiti diversi. Quasi nessuno lo sa, e da questa confusione nascono sia gli
+apparati che restano indietro per anni, sia quelli che non si riaccendono più.</p>
+
+<h2>I due strati</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="RouterBOOT sotto e RouterOS sopra, con i rispettivi compiti">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Due software, uno sopra l'altro</text>
+
+    <rect x="90" y="40" width="520" height="80" rx="10" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2"/>
+    <text x="350" y="66" text-anchor="middle" class="dg-label-sm">RouterOS</text>
+    <text x="350" y="86" text-anchor="middle" class="dg-mono-sm">il sistema operativo: interfacce, firewall, VPN, Wi-Fi…</text>
+    <text x="350" y="105" text-anchor="middle" class="dg-mono-sm">è tutto quello che configurerai in questo modulo</text>
+
+    <rect x="90" y="136" width="520" height="80" rx="10" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="2"/>
+    <text x="350" y="162" text-anchor="middle" class="dg-label-sm">RouterBOOT</text>
+    <text x="350" y="182" text-anchor="middle" class="dg-mono-sm">l'avviatore: accende l'hardware e carica RouterOS</text>
+    <text x="350" y="201" text-anchor="middle" class="dg-mono-sm">gestisce il pulsante di reset e il Netinstall</text>
+
+    <path d="M350 136 L 350 124" stroke="var(--dg-line)" stroke-width="2"/>
+    <path d="M344 124 L 350 116 L 356 124 Z" fill="var(--dg-line)"/>
+    <text x="640" y="180" text-anchor="end" class="dg-label-sm" fill="var(--dg-text-soft)"> </text>
+    <text x="350" y="240" text-anchor="middle" class="dg-label-sm">Hanno <tspan font-weight="700">numeri di versione diversi</tspan> e si aggiornano con due comandi diversi.</text>
+  </svg>
+  </div>
+  <figcaption>RouterBOOT sta sotto e si vede solo quando qualcosa va storto. RouterOS sta sopra ed è
+  tutto quello con cui lavorerai.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il quadro elettrico e gli uffici
+  </div>
+  <p>Immagina un palazzo di uffici. <b>RouterOS sono gli uffici</b>: le persone, le scrivanie, il
+  lavoro. È lì che succede tutto, ed è lì che passi le giornate.</p>
+  <p><b>RouterBOOT è il quadro elettrico nel seminterrato.</b> Non ci scendi mai. Fa una cosa sola: al
+  mattino dà corrente e accende le luci degli uffici. Se un giorno il palazzo non si accende, il
+  problema è lì sotto — e allora scopri che esiste.</p>
+  <p style="margin-bottom:0">Il punto che conta: <b>puoi rifare completamente gli uffici e lasciare il
+  quadro elettrico degli anni Settanta.</b> Funziona lo stesso, fino al giorno in cui i nuovi uffici
+  chiedono più corrente di quella che il vecchio quadro sa dare. È esattamente ciò che succede quando
+  si aggiorna RouterOS per anni senza aggiornare mai RouterBOOT.</p>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore da non fare: aggiornare RouterBOOT senza riavviare, o riavviare a metà
+  </div>
+  <p>L'aggiornamento di RouterBOOT <b>riscrive l'avviatore</b>. Se durante quell'operazione manca la
+  corrente, l'apparato può non riaccendersi più: non c'è più il software che sa come accendersi.</p>
+  <p><b>Le regole:</b></p>
+  <ul style="margin-bottom:0">
+    <li><b>Prima RouterOS, poi RouterBOOT.</b> Il nuovo avviatore arriva insieme al nuovo sistema
+    operativo: se inverti l'ordine, aggiorni all'avviatore vecchio.</li>
+    <li><b>Mai durante un temporale, mai senza gruppo di continuità</b> se l'apparato è in produzione.</li>
+    <li><b>Un riavvio solo, e aspettare.</b> L'operazione richiede più tempo di un avvio normale.
+    Staccare la corrente perché «sembra bloccato» è il modo tipico di rovinare un apparato.</li>
+  </ul>
+</div>
+
+<h2>I livelli di licenza</h2>
+
+<p>RouterOS è lo stesso software su ogni apparato: quello che cambia è <strong>quanto ti lascia
+fare</strong>. La licenza è legata all'hardware, arriva già attiva e non scade.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Livello</th><th>Dove lo trovi</th><th>Limiti principali</th></tr></thead>
+    <tbody>
+      <tr><td><b>1</b> — demo</td><td>Solo software, gratuito</td><td>Configurazione minima, per provare</td></tr>
+      <tr><td><b>3</b></td><td>Alcuni apparati client</td><td><b>Non può fare da access point</b>: solo client wireless</td></tr>
+      <tr><td><b>4</b></td><td><b>Il tuo hAP ax²</b>, e la maggior parte degli apparati MikroTik</td>
+          <td>200 tunnel VPN · 200 utenti hotspot · <b>VLAN illimitate</b> · access point senza limiti</td></tr>
+      <tr><td><b>5</b></td><td>Apparati di fascia superiore</td><td>500 tunnel, 500 utenti hotspot</td></tr>
+      <tr><td><b>6</b></td><td>Apparati da operatore</td><td>Nessun limite</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Per te il livello 4 non è un limite
+  </div>
+  <p>Duecento tunnel VPN contemporanei e VLAN illimitate coprono qualsiasi cosa farai in questo modulo
+  e qualsiasi piccola azienda. I limiti del livello 4 si toccano solo in scenari da operatore, con
+  centinaia di clienti collegati insieme.</p>
+  <p style="margin-bottom:0"><b>Vale però la pena saperlo quando compri:</b> se un giorno prendi un
+  apparato di livello 3 pensando di usarlo come access point, scoprirai che non può farlo — e non è un
+  guasto, è la licenza.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Interroga l'apparato: cosa sta girando davvero
+  </div>
+  <p>Questi tre comandi sono i primi che darai su <em>qualsiasi</em> MikroTik che ti capiti fra le
+  mani, tuo o di un cliente. Ti dicono in dieci secondi con cosa hai a che fare. Li eseguirai
+  concretamente nella prossima lezione, appena saremo dentro.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>I tre comandi di orientamento</div>
+<pre><span class="c">── Cosa sta girando e su che hardware ──────────────</span>
+<span class="p">/system/resource/print</span>
+<span class="c">   version          → la versione di RouterOS</span>
+<span class="c">   board-name       → il modello</span>
+<span class="c">   architecture-name→ arm64 sul tuo apparato</span>
+<span class="c">   free-hdd-space   → lo spazio libero: guardalo sempre</span>
+<span class="c">   uptime           → da quanto è acceso</span>
+
+<span class="c">── Lo strato di sotto ──────────────────────────────</span>
+<span class="p">/system/routerboard/print</span>
+<span class="c">   current-firmware → la versione di RouterBOOT in uso</span>
+<span class="c">   upgrade-firmware → quella disponibile</span>
+<span class="c">   se i due numeri differiscono, c'e un aggiornamento</span>
+<span class="c">   di RouterBOOT in attesa (lezione 9)</span>
+
+<span class="c">── La licenza ──────────────────────────────────────</span>
+<span class="p">/system/license/print</span>
+<span class="c">   nlevel → il livello. Sul tuo deve dire 4</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Annota i valori su un foglio.</b> Fra qualche lezione
+  aggiorneremo l'apparato e vorrai poter confrontare il prima con il dopo. Prendere nota dello stato di
+  partenza prima di toccare qualcosa è un'abitudine che vale in tutto il mestiere, non solo qui.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: i due software e la licenza",
+  "questions": [
+    { "q": "Qual è il compito di RouterBOOT?",
+      "a": [ {"t":"Accendere l'hardware, caricare RouterOS e gestire il pulsante di reset","ok":true},
+             {"t":"Gestire il firewall e il NAT","ok":false},
+             {"t":"Controllare la licenza","ok":false},
+             {"t":"Fornire l'interfaccia grafica","ok":false} ],
+      "e": "È il quadro elettrico nel seminterrato: non ci scendi mai, fa una cosa sola, e te ne accorgi solo quando il palazzo non si accende. Firewall, NAT, interfaccia e tutto il resto sono RouterOS, lo strato sopra." },
+
+    { "q": "In quale ordine vanno aggiornati i due software?",
+      "a": [ {"t":"Prima RouterOS, poi RouterBOOT","ok":true},
+             {"t":"Prima RouterBOOT, poi RouterOS","ok":false},
+             {"t":"Insieme, con un solo comando","ok":false},
+             {"t":"L'ordine non conta","ok":false} ],
+      "e": "Il nuovo RouterBOOT viene consegnato <em>dentro</em> il pacchetto di RouterOS: aggiornando prima l'avviatore si installerebbe la versione vecchia, quella che è già sull'apparato. Prima il sistema operativo, poi l'avviatore, poi un riavvio solo — e si aspetta, perché è più lento del normale." },
+
+    { "q": "Perché aggiornare RouterBOOT è l'operazione più delicata?",
+      "a": [ {"t":"Riscrive l'avviatore: se manca la corrente a metà, l'apparato può non riaccendersi","ok":true},
+             {"t":"Perché cancella la configurazione","ok":false},
+             {"t":"Perché invalida la licenza","ok":false},
+             {"t":"Perché richiede una connessione a Internet permanente","ok":false} ],
+      "e": "Durante la riscrittura non esiste un avviatore valido: se in quel momento manca l'alimentazione, non c'è più il software che sa come accendere l'apparato. Da qui le regole: mai senza gruppo di continuità in produzione, e non staccare mai la corrente perché «sembra bloccato»." },
+
+    { "q": "Cosa consente il livello di licenza 4 del tuo hAP ax²?",
+      "a": [ {"t":"200 tunnel VPN, 200 utenti hotspot, VLAN illimitate e funzione di access point","ok":true},
+             {"t":"Un numero illimitato di tunnel","ok":false},
+             {"t":"Solo funzioni da client wireless","ok":false},
+             {"t":"Nessuna VPN","ok":false} ],
+      "e": "È il livello con cui esce la maggior parte degli apparati MikroTik e copre ampiamente sia questo modulo sia una piccola azienda. I suoi limiti si toccano solo con centinaia di clienti collegati insieme, cioè in scenari da operatore. Il livello 3, invece, è quello che <b>non</b> può fare da access point." },
+
+    { "q": "Quale campo di <code>/system/resource/print</code> va guardato prima di ogni aggiornamento?",
+      "a": [ {"t":"free-hdd-space, lo spazio libero","ok":true},
+             {"t":"uptime, da quanto è acceso","ok":false},
+             {"t":"board-name, il modello","ok":false},
+             {"t":"architecture-name","ok":false} ],
+      "e": "Con soli 128 MB di archiviazione, lo spazio esaurito è la causa più comune di aggiornamento fallito su questo tipo di apparati. Gli altri campi servono a capire con cosa hai a che fare, ma è lo spazio libero quello che può far fallire l'operazione." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

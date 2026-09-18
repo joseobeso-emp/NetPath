@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le quattro strade per entrare, da Mac e da Windows — NetPath</title>
+<meta name="description" content="WinBox, WebFig, SSH e l'accesso via indirizzo MAC: quale usare, quando, e quello che ti salva quando hai perso l'indirizzo IP.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="mt-03">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#mt">Modulo MikroTik</a><span class="sep">/</span>
+        <span>Prima di toccare</span>
+      </nav>
+      <h1 class="lesson-title">Le quattro strade per entrare, da Mac e da Windows</h1>
+      <div class="lesson-meta">
+        <span class="badge lvmt">Modulo MikroTik</span>
+        <span class="chip">Lezione 03</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Installare e usare WinBox su macOS e su Windows</li>
+        <li>Scegliere consapevolmente fra le quattro vie di accesso</li>
+        <li>Capire l'accesso via MAC e perché è la tua rete di salvataggio</li>
+        <li>Fare il primo accesso e mettere in sicurezza l'utenza di amministrazione</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Ci sono quattro modi di entrare in un MikroTik. Non sono alternative di gusto: uno di
+essi <strong>funziona anche quando l'apparato non ha più un indirizzo IP valido</strong>, ed è la
+ragione per cui in questo modulo potrai sbagliare senza conseguenze.</p>
+
+<h2>Le quattro vie, a confronto</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Via</th><th>Cos'è</th><th>Quando usarla</th><th>Funziona senza IP?</th></tr></thead>
+    <tbody>
+      <tr><td><b>WinBox</b></td><td>Applicazione dedicata, per Mac, Windows e Linux</td>
+          <td><b>Il tuo strumento principale.</b> Veloce, completa, mostra tutto</td><td><b>Sì</b></td></tr>
+      <tr><td><b>WebFig</b></td><td>Interfaccia web, dal browser</td>
+          <td>Da un computer su cui non puoi installare niente, o dal telefono</td><td>No</td></tr>
+      <tr><td><b>SSH</b></td><td>Riga di comando, dal Terminale</td>
+          <td>Comandi rapidi, script, copia-incolla di configurazioni</td><td>No</td></tr>
+      <tr><td><b>Accesso via MAC</b></td><td>WinBox che parla all'apparato <em>senza</em> usare IP</td>
+          <td><b>Quando ti sei chiuso fuori.</b> È la rete di salvataggio</td><td><b>Sì</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'indirizzo e il citofono
+  </div>
+  <p>Per andare a casa di qualcuno normalmente usi <b>l'indirizzo</b>: via Roma 12. È l'IP. Se però il
+  tuo amico sbaglia a scrivere il numero civico sulla porta, tu suoni a un campanello sbagliato e non
+  lo trovi più — anche se lui è lì dentro, a due metri da te.</p>
+  <p>L'<b>accesso via MAC</b> è come <b>bussare direttamente al muro</b>: non usa il numero civico, usa
+  il fatto che siete fisicamente vicini. Funziona solo se sei sullo stesso pianerottolo — cioè
+  collegato allo stesso segmento di rete, con un cavo o sullo stesso Wi-Fi — ma <b>funziona anche se il
+  numero civico è sbagliato o non c'è.</b></p>
+  <p style="margin-bottom:0">Ecco perché questa via esiste e perché la impari prima di configurare
+  qualsiasi cosa: è quella che ti riporta dentro dopo che hai scritto una regola sbagliata.</p>
+</div>
+
+<h2>WinBox: installazione</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Scaricalo solo dal sito ufficiale
+  </div>
+  <p>Da <b>mikrotik.com/download/winbox</b>. Al momento della scrittura la versione è la <b>4.4</b>,
+  e per macOS viene distribuito un <b>binario universale</b>: gira nativo sia sui Mac Apple Silicon
+  (M1…M4) sia su quelli Intel, senza emulazione.</p>
+  <p style="margin-bottom:0">Per Windows ci sono due pacchetti distinti, <b>x64</b> e <b>ARM64</b>: se
+  lo usi dentro una macchina virtuale Windows su un Mac Apple Silicon, prendi quello ARM64 — è nativo
+  e va più liscio.</p>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Su macOS: il permesso «Rete locale»
+  </div>
+  <p>Questo è il problema numero uno di chi usa WinBox su un Mac recente, e non lo scrive quasi
+  nessuno.</p>
+  <p>WinBox trova gli apparati vicini mandando un messaggio in <b>diffusione sulla rete locale</b>. Le
+  versioni recenti di macOS richiedono che ogni applicazione <b>chieda il permesso</b> di comunicare
+  con i dispositivi della rete locale. Se al primo avvio rispondi «Non consentire» — o se la richiesta
+  non compare — <b>l'elenco dei dispositivi vicini resta vuoto per sempre</b>, e tu concludi che
+  l'apparato è guasto.</p>
+  <p style="margin-bottom:0"><b>Dove si sistema:</b> <em>Impostazioni di Sistema → Privacy e
+  sicurezza → Rete locale</em>, e attiva l'interruttore accanto a WinBox. Se WinBox non compare
+  nell'elenco, chiudilo e riaprilo: si registra alla prima richiesta.</p>
+</div>
+
+<p>Al primo avvio macOS potrebbe rifiutarsi di aprire l'applicazione perché scaricata da Internet.
+Si risolve da <em>Impostazioni di Sistema → Privacy e sicurezza</em>, dove compare un pulsante per
+aprirla comunque. Fallo solo perché sai di averla presa dal sito ufficiale.</p>
+
+<h2>Il primo accesso</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Utente e password di fabbrica
+  </div>
+  <p>L'utente è <code>admin</code>. La password <b>dipende da quando è stato prodotto l'apparato</b>:</p>
+  <ul style="margin-bottom:0">
+    <li>Sugli apparati più vecchi è <b>vuota</b>, e RouterOS ti obbliga a impostarne una al primo
+    accesso.</li>
+    <li>Su molti apparati recenti c'è una <b>password unica stampata sull'etichetta sotto la
+    scocca</b>. Guarda lì prima di concludere che non entri.</li>
+  </ul>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Entra in tutti e quattro i modi
+  </div>
+  <p>Non farne solo uno: l'obiettivo è che tu sappia usarli tutti <em>prima</em> di averne bisogno.</p>
+
+  <p style="margin-top:14px"><b>1 · WinBox per indirizzo IP</b><br>
+  Apri WinBox, scheda <em>Neighbors</em>. Dovresti vedere il tuo apparato. Fai clic sulla riga: WinBox
+  compila l'indirizzo da solo. Utente <code>admin</code>, password quella dell'etichetta o vuota, poi
+  <em>Connect</em>.</p>
+
+  <p style="margin-top:12px"><b>2 · WinBox per indirizzo MAC — il più importante</b><br>
+  Nella stessa scheda <em>Neighbors</em>, invece di cliccare sull'indirizzo IP <b>clicca sulla colonna
+  MAC Address</b>. WinBox si collegherà senza usare IP. Provalo <b>adesso che tutto funziona</b>, così
+  saprai che aspetto ha quando ne avrai davvero bisogno.</p>
+
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>3 · SSH dal Terminale del Mac</div>
+<pre><span class="p">ssh admin@192.168.88.1</span>
+
+<span class="c"># RouterOS ti accoglie con il suo prompt. Prova subito</span>
+<span class="c"># i tre comandi della lezione precedente:</span>
+<span class="p">/system/resource/print</span>
+<span class="p">/system/routerboard/print</span>
+<span class="p">/system/license/print</span>
+
+<span class="c"># per uscire</span>
+<span class="p">/quit</span>
+</pre>
+  </div>
+
+  <p style="margin-top:14px"><b>4 · WebFig dal browser</b><br>
+  Apri <code>http://192.168.88.1</code>. È la stessa configurazione vista da un'altra finestra: le
+  modifiche fatte in un posto compaiono nell'altro.</p>
+
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>5 · Metti in sicurezza l'accesso — fallo ora</div>
+<pre><span class="c">── una password vera sull'utente admin ─────────────</span>
+<span class="p">/user/set admin password=</span><span class="s">"una-password-lunga-e-solo-tua"</span>
+
+<span class="c">── un utente personale, e admin lo terremo di scorta</span>
+<span class="p">/user/add name=</span><span class="s">jose</span> <span class="p">group=</span><span class="s">full</span> <span class="p">password=</span><span class="s">"un'altra-password"</span>
+
+<span class="c">── diamo un nome all'apparato, cosi lo riconosci</span>
+<span class="p">/system/identity/set name=</span><span class="s">"lab-hapax2"</span>
+
+<span class="c">── verifica</span>
+<span class="p">/user/print</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Non disattivare ancora l'utente <code>admin</code> e
+  non toccare i servizi di accesso:</b> lo faremo nella lezione 45, quando avrai la rete di sicurezza
+  completa e saprai rientrare comunque. Chiudere le porte prima di sapere come si riaprono è il modo
+  classico di restare fuori.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Quale userai davvero, nel lavoro
+  </div>
+  <p><b>WinBox per il 90% del tempo.</b> Mostra più informazioni delle altre vie, ha i grafici in
+  tempo reale, e la sezione <em>Log</em> sempre a portata di mano.</p>
+  <p><b>SSH quando sai già cosa scrivere.</b> Incollare venti righe di configurazione in un terminale è
+  più rapido di qualsiasi finestra, ed è l'unico modo sensato di applicare la stessa modifica su più
+  apparati.</p>
+  <p style="margin-bottom:0"><b>L'accesso via MAC nei momenti brutti</b> — e c'è un limite da
+  conoscere fin d'ora: <b>funziona solo se sei sullo stesso segmento di rete</b>, quindi in pratica se
+  sei fisicamente lì con un cavo. Da remoto, attraverso un router, non passa. È il motivo per cui su un
+  apparato lontano si lavora sempre in Safe Mode — ed è la lezione che viene adesso.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: entrare nell'apparato",
+  "questions": [
+    { "q": "Quale via di accesso funziona anche se l'apparato non ha un indirizzo IP valido?",
+      "a": [ {"t":"WinBox collegandosi all'indirizzo MAC","ok":true},
+             {"t":"WebFig dal browser","ok":false},
+             {"t":"SSH dal Terminale","ok":false},
+             {"t":"Nessuna: serve sempre un indirizzo IP","ok":false} ],
+      "e": "È come bussare al muro invece di cercare il numero civico: non usa l'indirizzo IP, usa la vicinanza fisica sul segmento di rete. WebFig e SSH viaggiano entrambi su IP e quindi cadono insieme a esso. È la rete di salvataggio che rende possibile sbagliare senza conseguenze." },
+
+    { "q": "Su un Mac recente WinBox non mostra nessun dispositivo vicino. Prima cosa da controllare?",
+      "a": [ {"t":"Il permesso «Rete locale» in Privacy e sicurezza","ok":true},
+             {"t":"Che il cavo sia collegato a ether1","ok":false},
+             {"t":"Che il firewall del router sia disattivato","ok":false},
+             {"t":"Che WinBox sia la versione per Intel","ok":false} ],
+      "e": "WinBox individua gli apparati mandando un messaggio in diffusione sulla rete locale, e macOS richiede un permesso esplicito per farlo. Negato quel permesso, l'elenco resta vuoto per sempre e sembra un guasto dell'apparato. Si attiva da Impostazioni di Sistema → Privacy e sicurezza → Rete locale." },
+
+    { "q": "Qual è il limite dell'accesso via MAC?",
+      "a": [ {"t":"Funziona solo sullo stesso segmento di rete: da remoto non passa","ok":true},
+             {"t":"Permette solo la lettura, non la scrittura","ok":false},
+             {"t":"Funziona solo via cavo, mai via Wi-Fi","ok":false},
+             {"t":"Richiede comunque di conoscere l'indirizzo IP","ok":false} ],
+      "e": "Non usando IP, non può essere instradato: vive solo dentro il proprio dominio di diffusione. In pratica serve essere fisicamente lì, con un cavo o sullo stesso Wi-Fi. È esattamente per questo che su un apparato lontano si lavora sempre in Safe Mode." },
+
+    { "q": "Quale versione di WinBox conviene usare dentro una macchina virtuale Windows su un Mac Apple Silicon?",
+      "a": [ {"t":"Quella per Windows ARM64","ok":true},
+             {"t":"Quella per Windows x64","ok":false},
+             {"t":"Quella per macOS","ok":false},
+             {"t":"Quella per Linux","ok":false} ],
+      "e": "Su un Mac con chip M-series la macchina virtuale Windows è Windows ARM: il pacchetto ARM64 gira nativo, mentre quello x64 verrebbe emulato. Funzionerebbe comunque, ma più lentamente e senza alcun vantaggio." },
+
+    { "q": "Perché conviene provare l'accesso via MAC subito, mentre tutto funziona?",
+      "a": [ {"t":"Per sapere già come si fa quando servirà davvero, cioè in un momento difficile","ok":true},
+             {"t":"Perché è l'unico modo di impostare la password","ok":false},
+             {"t":"Perché altrimenti non viene abilitato","ok":false},
+             {"t":"Perché è più veloce dell'accesso per IP","ok":false} ],
+      "e": "Una via di fuga si prova quando non serve. Scoprire come funziona l'accesso via MAC nel momento in cui ti sei appena chiuso fuori da un apparato, magari a casa di un cliente, è il modo peggiore di impararlo." },
+
+    { "q": "Cosa NON va fatto in questa lezione, pur essendo tecnicamente possibile?",
+      "a": [ {"t":"Disattivare l'utente admin e chiudere i servizi di accesso","ok":true},
+             {"t":"Impostare una password sull'utente admin","ok":false},
+             {"t":"Creare un utente personale","ok":false},
+             {"t":"Dare un nome all'apparato","ok":false} ],
+      "e": "La messa in sicurezza completa arriva nella lezione 45, quando avrai la rete di salvataggio e saprai rientrare in ogni caso. Chiudere le porte prima di sapere come si riaprono è il modo classico di restare fuori: password e utente personale sì, chiusure no." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

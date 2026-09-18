@@ -25,11 +25,11 @@ def fix(m):
         cambi.append((lid, stato, giusto))
     return f'{{ id:"{lid}"{resto}ready:{giusto} }}'
 
-nuovo = re.sub(r'\{ id:"(l\d-\d\d)"(.*?)ready:(true|false) \}', fix, src, flags=re.S)
+nuovo = re.sub(r'\{ id:"((?:l\d|[a-z]{2})-\d\d)"(.*?)ready:(true|false) \}', fix, src, flags=re.S)
 open("assets/js/curriculum.js", "w", encoding="utf-8").write(nuovo)
 
-pronte = len(re.findall(r'id:"l\d-\d\d".*?ready:true', nuovo, re.S))
-totale = len(re.findall(r'id:"l\d-\d\d"', nuovo))
+pronte = len(re.findall(r'id:"(?:l\d|[a-z]{2})-\d\d".*?ready:true', nuovo, re.S))
+totale = len(re.findall(r'id:"(?:l\d|[a-z]{2})-\d\d"', nuovo))
 if cambi:
     for lid, vecchio, nuovo_s in cambi:
         print(f"  {lid}: ready {vecchio} → {nuovo_s}")

@@ -182,8 +182,86 @@ window.NETPATH_CURRICULUM = [
       { id:"l4-16", t:"Carriera e certificazioni", s:"Quali certificazioni valgono davvero in Italia per un MSP, in che ordine, e quanto costano.", m:22, ready:false }
     ]}
   ]
+},
+{
+  id: "mt", n: "MT", key: "mt", label: "Modulo MikroTik",
+  title: "MikroTik RouterOS",
+  subtitle: "Pratico · hAP ax²",
+  blurb: "Un apparato vero sulla scrivania, dalla scatola alla configurazione da senior. Qui non si legge soltanto: ogni lezione finisce con le mani sulla tastiera. Si configura, si rompe di proposito, si ripara.",
+  outcome: "Sai progettare, configurare, mettere in sicurezza e diagnosticare un MikroTik in produzione — VLAN, firewall, VPN, Wi-Fi 6, QoS, automazione — e soprattutto sai rientrare quando ti sei chiuso fuori.",
+  hours: "70–90 ore",
+  chapters: [
+    { title: "Prima di toccare", lessons: [
+      { id:"mt-01", t:"Il tuo hAP ax²: cosa hai davvero in mano", s:"CPU, memoria, porte, radio e i limiti fisici che decideranno cosa potrai farci e cosa no.", m:20, ready:true },
+      { id:"mt-02", t:"RouterOS, RouterBOOT e i livelli di licenza", s:"Due software diversi dentro la stessa scatola, e perché confonderli è il modo più rapido per non riuscire più ad accendere l'apparato.", m:18, ready:true },
+      { id:"mt-03", t:"Le quattro strade per entrare, da Mac e da Windows", s:"WinBox, WebFig, SSH e l'accesso via MAC: quale usare, quando, e quello che ti salva quando hai perso l'indirizzo IP.", m:26, ready:true },
+      { id:"mt-04", t:"La rete di sicurezza: Safe Mode, backup, export", s:"La lezione più importante del modulo. Da qui in poi puoi sbagliare qualsiasi cosa e tornare indietro in tre secondi.", m:28, ready:true },
+      { id:"mt-05", t:"Reset e recupero: quando ti sei chiuso fuori", s:"I tempi esatti del pulsante di reset, il Netinstall dalla VM Windows, e cosa fare prima di andare nel panico.", m:24, ready:true }
+    ]},
+    { title: "Orientarsi in RouterOS", lessons: [
+      { id:"mt-06", t:"La mappa del menu: dove vive ogni cosa", s:"L'albero di RouterOS spiegato una volta per tutte, così smetti di cercare e inizi a sapere dove andare.", m:24, ready:false },
+      { id:"mt-07", t:"La riga di comando: print, find, where", s:"Dieci minuti che ti fanno risparmiare ore. La CLI di RouterOS è una lingua piccola e regolarissima.", m:26, ready:false },
+      { id:"mt-08", t:"La configurazione predefinita, letta riga per riga", s:"Cosa c'è davvero dentro un hAP ax² appena tolto dalla scatola, e perché va capita prima di cambiarla.", m:28, ready:false },
+      { id:"mt-09", t:"Aggiornare RouterOS e RouterBOOT senza sorprese", s:"L'ordine giusto, i due aggiornamenti che tutti dimenticano di fare entrambi, e come si torna indietro.", m:22, ready:false }
+    ]},
+    { title: "La rete di base", lessons: [
+      { id:"mt-10", t:"Interfacce e bridge: il primo disegno", s:"Cos'è un bridge su RouterOS, perché non è esattamente uno switch, e come si decide cosa ci va dentro.", m:24, ready:false },
+      { id:"mt-11", t:"Indirizzi e rotte", s:"Assegnare indirizzi, leggere la tabella di routing e capire da dove esce ogni pacchetto.", m:22, ready:false },
+      { id:"mt-12", t:"DHCP: server e client", s:"Distribuire indirizzi, le prenotazioni statiche, e leggere la lista dei lease per sapere chi c'è in rete.", m:24, ready:false },
+      { id:"mt-13", t:"DNS: risolutore, voci statiche, DNS dinamico", s:"Il router come risolutore della rete, i nomi interni, e raggiungere casa senza indirizzo fisso.", m:24, ready:false },
+      { id:"mt-14", t:"NAT: uscire su Internet", s:"Il masquerade in una riga, cosa fa davvero, e perché da qui in poi nessuno ti vede più da fuori.", m:24, ready:false }
+    ]},
+    { title: "Firewall", lessons: [
+      { id:"mt-15", t:"Connection tracking e le catene", s:"Come RouterOS decide il destino di un pacchetto. Il concetto che rende ovvio tutto il resto.", m:28, ready:false },
+      { id:"mt-16", t:"Il firewall di base che scriverai sempre", s:"Un insieme di regole completo, spiegato riga per riga, da riusare su ogni apparato che configurerai.", m:32, ready:false },
+      { id:"mt-17", t:"Address list, RAW e difesa dalle scansioni", s:"Bloccare per elenco invece che per indirizzo, e fermare il traffico spazzatura prima che costi CPU.", m:26, ready:false },
+      { id:"mt-18", t:"Pubblicare un servizio: port forward fatto bene", s:"Il dst-nat, il NAT a giro che fa impazzire tutti, e le regole da non scrivere mai.", m:26, ready:false },
+      { id:"mt-19", t:"Fasttrack: prestazioni, e cosa ci perdi", s:"Perché senza fasttrack un ax² non regge il gigabit, e cosa smette di funzionare quando lo accendi.", m:22, ready:false }
+    ]},
+    { title: "VLAN e switching", lessons: [
+      { id:"mt-20", t:"Chip switch e bridge: cosa cambia davvero", s:"Due modi diversi di far passare i frame nello stesso apparato, e come si sceglie fra loro.", m:26, ready:false },
+      { id:"mt-21", t:"Bridge VLAN filtering: il punto dove sbagliano tutti", s:"La configurazione che chiude fuori più tecnici di qualsiasi altra, con l'ordine esatto dei passaggi per non farlo.", m:34, ready:false },
+      { id:"mt-22", t:"Tag, PVID, ingresso e uscita", s:"Cosa succede a un frame in ogni punto del percorso, disegnato passo per passo.", m:28, ready:false },
+      { id:"mt-23", t:"Hardware offload: averlo, e perderlo senza accorgersene", s:"La differenza fra 940 Mbit/s e 180. Quali configurazioni lo spengono in silenzio.", m:24, ready:false },
+      { id:"mt-24", t:"Rete ospiti e IoT isolate", s:"Il primo progetto completo: tre reti separate sullo stesso apparato, con le regole giuste fra loro.", m:28, ready:false }
+    ]},
+    { title: "Wi-Fi 6", lessons: [
+      { id:"mt-25", t:"Il pacchetto wifi: canali, larghezza, potenza", s:"Perché sull'ax² il menu wireless classico non esiste, e come si sceglie un canale con criterio.", m:28, ready:false },
+      { id:"mt-26", t:"Più SSID su VLAN diverse", s:"Una rete per la famiglia, una per gli ospiti, una per i dispositivi: tutte sulla stessa radio.", m:26, ready:false },
+      { id:"mt-27", t:"WPA2, WPA3 e l'autenticazione con RADIUS", s:"Password condivisa contro credenziali personali, e come si collega il router a un server RADIUS.", m:26, ready:false },
+      { id:"mt-28", t:"CAPsMAN: governare più access point", s:"Configurare una volta sola e distribuire a tutti gli apparati. Il passo che separa la casa dall'azienda.", m:28, ready:false }
+    ]},
+    { title: "VPN", lessons: [
+      { id:"mt-29", t:"WireGuard: la VPN che userai davvero", s:"Veloce, semplice, moderna. In venti minuti hai un tunnel funzionante e capisci esattamente perché funziona.", m:30, ready:false },
+      { id:"mt-30", t:"Raggiungere casa dal Mac e dall'iPhone", s:"Il profilo client, il codice QR, il routing selettivo e il DNS dentro il tunnel.", m:26, ready:false },
+      { id:"mt-31", t:"IPsec site-to-site verso un altro apparato", s:"Lo standard che incontri in azienda: fasi, proposte, selettori, e i punti esatti in cui non sale.", m:34, ready:false },
+      { id:"mt-32", t:"L2TP/IPsec e OpenVPN: quando servono ancora", s:"I protocolli che trovi già installati dai clienti e che devi saper far funzionare.", m:24, ready:false },
+      { id:"mt-33", t:"EoIP e GRE: estendere una rete", s:"Portare una VLAN da una parte all'altra di Internet, e perché farlo con molta prudenza.", m:24, ready:false }
+    ]},
+    { title: "Traffico: QoS e multi-WAN", lessons: [
+      { id:"mt-34", t:"Queue simple e queue tree", s:"Limitare, garantire e dare priorità, con il disegno di cosa succede davvero alla coda.", m:28, ready:false },
+      { id:"mt-35", t:"Bufferbloat: la lentezza che nessuno misura", s:"Perché la videochiamata si rompe mentre parte un backup, anche con la fibra. E come si risolve in due righe.", m:26, ready:false },
+      { id:"mt-36", t:"Mangle e policy routing", s:"Marcare il traffico e mandarlo dove vuoi tu invece che dove dice la tabella di routing.", m:30, ready:false },
+      { id:"mt-37", t:"Due linee: failover e bilanciamento", s:"Passare sulla riserva quando la principale cade, e accorgersi davvero che è caduta.", m:30, ready:false }
+    ]},
+    { title: "Monitoraggio e automazione", lessons: [
+      { id:"mt-38", t:"Log, SNMP e grafici", s:"Vedere cosa è successo alle tre di notte invece di provare a indovinarlo.", m:24, ready:false },
+      { id:"mt-39", t:"Netwatch e scheduler", s:"Far reagire il router da solo: controlli periodici, azioni automatiche e avvisi.", m:24, ready:false },
+      { id:"mt-40", t:"Scripting RouterOS", s:"Il linguaggio interno: variabili, cicli, condizioni, con gli script che userai davvero.", m:30, ready:false },
+      { id:"mt-41", t:"API e Python dal Mac", s:"Configurare venti apparati senza aprire venti finestre. È qui che inizia il lavoro da senior.", m:32, ready:false },
+      { id:"mt-42", t:"Backup automatici e versionamento con git", s:"La configurazione come codice: ogni modifica tracciata, confrontabile e recuperabile.", m:28, ready:false }
+    ]},
+    { title: "Da senior", lessons: [
+      { id:"mt-43", t:"Il packet flow: l'ordine in cui RouterOS decide", s:"Il diagramma che spiega ogni comportamento strano che incontrerai. Lo studi una volta e lo usi per sempre.", m:32, ready:false },
+      { id:"mt-44", t:"Sniffer, torch e Wireshark dal Mac", s:"Guardare il traffico vero invece di fare ipotesi, con la cattura che arriva in diretta sul tuo portatile.", m:28, ready:false },
+      { id:"mt-45", t:"Messa in sicurezza completa", s:"La lista di controllo da applicare a ogni apparato prima di consegnarlo a un cliente.", m:30, ready:false },
+      { id:"mt-46", t:"Container su ARM64", s:"Far girare software dentro il router. Cosa ci sta davvero nei 128 MB dell'ax² e cosa no.", m:26, ready:false },
+      { id:"mt-47", t:"Progetto finale: la rete completa", s:"Tutto insieme: VLAN, Wi-Fi, firewall, VPN, QoS, monitoraggio e documentazione. Da consegnare a te stesso.", m:40, ready:false }
+    ]}
+  ]
 }
 ];
+
 
 /* --- Indice piatto, usato da nav, ricerca, prev/next --- */
 window.NETPATH_FLAT = (function () {

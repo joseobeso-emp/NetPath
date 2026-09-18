@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reset e recupero: quando ti sei chiuso fuori — NetPath</title>
+<meta name="description" content="I tempi esatti del pulsante di reset, il Netinstall dalla VM Windows, e cosa fare prima di andare nel panico.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="mt-05">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#mt">Modulo MikroTik</a><span class="sep">/</span>
+        <span>Prima di toccare</span>
+      </nav>
+      <h1 class="lesson-title">Reset e recupero: quando ti sei chiuso fuori</h1>
+      <div class="lesson-meta">
+        <span class="badge lvmt">Modulo MikroTik</span>
+        <span class="chip">Lezione 05</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Conoscere la scala dei rimedi, dal più leggero al più drastico</li>
+        <li>Eseguire un ripristino via comando con le opzioni giuste</li>
+        <li>Usare il pulsante di reset senza finire per sbaglio in modalità CAP</li>
+        <li>Sapere cos'è il Netinstall e da dove si esegue avendo solo un Mac</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Prima o poi ti chiuderai fuori. Non è un'ipotesi: è un passaggio normale
+dell'apprendimento, e chi non ci è mai passato semplicemente non ha ancora provato niente. Questa
+lezione ti dà la <strong>scala dei rimedi</strong>, dal più leggero al più drastico, così quando
+succede non improvvisi.</p>
+
+<h2>La scala, dall'alto verso il basso</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 280" role="img" aria-label="I cinque gradini del recupero, dal meno invasivo al più drastico">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Prova sempre il gradino più alto che puoi</text>
+    <g stroke-width="1.6">
+      <rect x="40" y="38"  width="620" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="40" y="86"  width="620" height="40" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="40" y="134" width="620" height="40" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="40" y="182" width="620" height="40" rx="7" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="40" y="230" width="620" height="40" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-label-sm">
+      <text x="60" y="63">1 · Aspetta — se eri in Safe Mode, annulla da solo in pochi secondi</text>
+      <text x="60" y="111">2 · Entra via MAC con WinBox — non serve un indirizzo IP valido</text>
+      <text x="60" y="159">3 · Riavvia — annulla ciò che non era stato salvato</text>
+      <text x="60" y="207">4 · Reset della configurazione — via comando, o col pulsante</text>
+      <text x="60" y="255">5 · Netinstall — reinstalla RouterOS da zero. Serve Windows o Linux</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>I primi tre gradini non perdono niente. Il quarto azzera la configurazione ma tu hai
+  l'export della lezione precedente. Il quinto è l'ultima spiaggia — e quasi non lo userai mai.</figcaption>
+</figure>
+
+<h2>Gradino 4 · Il ripristino via comando</h2>
+
+<p>Se riesci ancora a entrare, questo è il modo pulito. Ha delle opzioni che cambiano molto il
+risultato, e vale la pena conoscerle prima di averne bisogno.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Le varianti del ripristino</div>
+<pre><span class="c">── torna alla configurazione di fabbrica ───────────</span>
+<span class="p">/system/reset-configuration</span>
+
+<span class="c">── apparato completamente vuoto, nessuna rete ──────</span>
+<span class="c">   dopo questo ci si entra SOLO via MAC</span>
+<span class="p">/system/reset-configuration no-defaults=</span><span class="s">yes</span>
+
+<span class="c">── azzera ma conserva le utenze e le password ──────</span>
+<span class="p">/system/reset-configuration keep-users=</span><span class="s">yes</span>
+
+<span class="c">── azzera e riapplica subito una tua configurazione ─</span>
+<span class="c">   il file .rsc deve essere gia sull'apparato</span>
+<span class="p">/system/reset-configuration run-after-reset=</span><span class="s">miaconfig.rsc</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    <code>no-defaults=yes</code>: leggi bene prima di premere invio
+  </div>
+  <p>Con questa opzione l'apparato riparte <b>completamente vuoto</b>: nessun indirizzo IP, nessun
+  bridge, nessun DHCP. Non risponde a niente.</p>
+  <p style="margin-bottom:0">Non è un guasto ed è anzi il punto di partenza giusto quando vuoi
+  costruire una configurazione tua da zero — lo faremo nel progetto finale. Ma <b>ci si rientra solo
+  con l'accesso via MAC</b>. Se non hai ancora provato quella via (lezione 3), provala <em>prima</em>
+  di usare questa opzione.</p>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    <code>run-after-reset</code>: il comando che ti farà risparmiare ore
+  </div>
+  <p>Azzera l'apparato e <b>applica subito un tuo file di configurazione</b>. Significa che, una volta
+  scritta la tua configurazione di riferimento, puoi riportare qualsiasi apparato a uno stato noto con
+  <b>un comando solo</b>.</p>
+  <p style="margin-bottom:0">È la base del lavoro ripetibile: invece di riconfigurare a mano ogni
+  volta, carichi il file e resetti. Ci torneremo nelle lezioni 41 e 42.</p>
+</div>
+
+<h2>Gradino 4b · Il pulsante di reset</h2>
+
+<p>Quando non entri più in nessun modo, resta il pulsante. Sul hAP ax² <strong>lo stesso pulsante fa
+tre cose diverse</strong> a seconda di quanto lo tieni premuto, e sbagliare il momento del rilascio
+porta a un risultato inatteso.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Rilasci quando…</th><th>Circa</th><th>Cosa ottieni</th></tr></thead>
+    <tbody>
+      <tr><td>il LED <b>inizia a lampeggiare</b></td><td>5 s</td><td><b>Ripristino della configurazione</b> — è quello che vuoi quasi sempre</td></tr>
+      <tr><td>il LED diventa <b>fisso</b></td><td>10 s</td><td><b>Modalità CAP</b> — l'apparato cerca un controllore remoto</td></tr>
+      <tr><td>il LED <b>si spegne</b></td><td>15 s</td><td><b>Attesa del Netinstall</b> — pronto a farsi reinstallare</td></tr>
+      <tr><td>tieni premuto <b>prima</b> di dare corrente</td><td>—</td><td>Avvia l'<b>avviatore di riserva</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La modalità CAP è la trappola: sembra un apparato morto
+  </div>
+  <p>Se tieni premuto qualche secondo di troppo finisci in <b>modalità CAP</b>: l'apparato smette di
+  comportarsi da router e si mette a cercare in rete un controllore che gli dica cosa fare (lo vedremo
+  nella lezione 28). Non distribuisce indirizzi, non risponde dove ti aspetti. <b>Sembra rotto, e non
+  lo è.</b></p>
+  <p style="margin-bottom:0"><b>Come ne esci:</b> rifai il reset rilasciando al momento giusto — appena
+  il LED comincia a lampeggiare. Oppure entra via MAC e disattiva la modalità da lì. Il motivo per cui
+  te lo dico adesso è che, senza saperlo, è il genere di cosa che fa comprare un apparato nuovo.</p>
+</div>
+
+<h2>Gradino 5 · Il Netinstall, e la questione del Mac</h2>
+
+<p>Il Netinstall <strong>reinstalla RouterOS da zero</strong> attraverso il cavo di rete, parlando
+direttamente con l'avviatore. Funziona anche quando sull'apparato non c'è più un sistema operativo
+valido: è la vera ultima spiaggia.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Non esiste una versione per macOS
+  </div>
+  <p>MikroTik distribuisce il Netinstall per <b>Windows</b> e per <b>Linux</b>. Non c'è una versione
+  per Mac, e non è un dettaglio che si aggira: lo strumento parla un protocollo di basso livello sulla
+  scheda di rete.</p>
+  <p><b>Le tue strade, in ordine di praticità:</b></p>
+  <ol style="margin-bottom:0">
+    <li><b>La tua macchina virtuale Windows.</b> È la soluzione. Un requisito non negoziabile: la rete
+    della macchina virtuale deve essere in modalità <b>bridge</b> (collegata direttamente alla scheda
+    fisica), non condivisa né NAT. In modalità condivisa il Netinstall non vede l'apparato.</li>
+    <li><b>Un PC fisico</b> con Windows o Linux, se la macchina virtuale fa storie.</li>
+  </ol>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Provalo una volta, quando non ti serve
+  </div>
+  <p>Il Netinstall è l'unica procedura di questo modulo che non puoi imparare nel momento del bisogno:
+  richiede di scaricare lo strumento, il pacchetto di RouterOS, configurare un indirizzo fisso sul PC
+  e prendere i tempi del pulsante.</p>
+  <p style="margin-bottom:0"><b>Dedicagli mezz'ora in una sera tranquilla</b>, con l'apparato sulla
+  scrivania e niente in produzione. Farlo una volta da serena significa saperlo fare il giorno in cui
+  serve davvero. Costruiremo la procedura completa, passo per passo, quando arriveremo alla parte
+  degli aggiornamenti.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Il ciclo completo: azzera e rimetti a posto
+  </div>
+  <p>Chiude il capitolo e ti lascia con la certezza di saper tornare indietro. <b>Prerequisito:</b>
+  aver scaricato sul Mac il backup della lezione precedente.</p>
+  <ol>
+    <li><b>Verifica di avere le copie</b> sul Mac:
+      <code>ls -l ~/mikrotik/lab-hapax2/</code> — devono esserci il <code>.backup</code> e il
+      <code>.rsc</code>.</li>
+    <li><b>Azzera</b>, conservando le utenze così non devi rifare le password:
+      <br><code>/system/reset-configuration keep-users=yes</code>
+      <br>L'apparato si riavvia e la sessione cade: è previsto.</li>
+    <li><b>Rientra</b> e guarda cos'è tornato: <code>/ip/address/print</code> e
+      <code>/interface/bridge/print</code>. È la configurazione di fabbrica della lezione 1.</li>
+    <li><b>Rimetti il backup.</b> Ricarica il file sull'apparato e ripristinalo:</li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Dal Mac, e poi sul router</div>
+<pre><span class="c"># dal Terminale del Mac: rimanda su il file</span>
+<span class="p">scp ~/mikrotik/lab-hapax2/prima-di-iniziare.backup \</span>
+<span class="p">    admin@192.168.88.1:</span>
+
+<span class="c"># sul router, via SSH</span>
+<span class="p">/file/print</span>
+<span class="p">/system/backup/load name=</span><span class="s">"prima-di-iniziare"</span>
+<span class="c">  chiede conferma e riavvia</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Cosa hai dimostrato a te stesso:</b> puoi azzerare
+  completamente l'apparato e riportarlo esattamente com'era, in due minuti. Da adesso, nelle prossime
+  quaranta lezioni, puoi provare qualsiasi cosa.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: reset e recupero",
+  "questions": [
+    { "q": "Ti sei chiuso fuori e non eri in Safe Mode. Qual è il primo tentativo da fare?",
+      "a": [ {"t":"Collegarsi via MAC con WinBox","ok":true},
+             {"t":"Premere subito il pulsante di reset","ok":false},
+             {"t":"Eseguire il Netinstall","ok":false},
+             {"t":"Riavviare staccando l'alimentazione","ok":false} ],
+      "e": "L'accesso via MAC non usa l'indirizzo IP, quindi funziona anche quando la configurazione di rete è compromessa — e non perde nulla. Il reset azzera tutto e il Netinstall reinstalla il sistema: sono gradini più bassi, si usano solo quando i precedenti hanno fallito." },
+
+    { "q": "Cosa lascia sull'apparato <code>reset-configuration no-defaults=yes</code>?",
+      "a": [ {"t":"Niente: nessun indirizzo, nessun bridge, nessun DHCP","ok":true},
+             {"t":"La configurazione di fabbrica","ok":false},
+             {"t":"Solo il firewall","ok":false},
+             {"t":"Gli indirizzi IP ma non le utenze","ok":false} ],
+      "e": "L'apparato riparte completamente vuoto e non risponde a niente. È il punto di partenza giusto per costruire una configurazione propria da zero, ma ci si rientra <b>solo</b> con l'accesso via MAC: da usare dopo aver verificato che quella via funzioni." },
+
+    { "q": "Tenendo il pulsante di reset fino a quando il LED diventa fisso, cosa ottieni?",
+      "a": [ {"t":"La modalità CAP: l'apparato cerca un controllore remoto","ok":true},
+             {"t":"Il ripristino della configurazione","ok":false},
+             {"t":"L'attesa del Netinstall","ok":false},
+             {"t":"L'avvio dell'avviatore di riserva","ok":false} ],
+      "e": "È la trappola del pulsante: qualche secondo di troppo e l'apparato smette di comportarsi da router e si mette a cercare un controllore. Sembra rotto e non lo è. Il ripristino della configurazione si ottiene rilasciando prima, appena il LED <em>inizia a lampeggiare</em>." },
+
+    { "q": "Da dove puoi eseguire il Netinstall, avendo un Mac?",
+      "a": [ {"t":"Dalla macchina virtuale Windows, con la rete in modalità bridge","ok":true},
+             {"t":"Direttamente da macOS, scaricando lo strumento","ok":false},
+             {"t":"Da WinBox, tramite l'accesso via MAC","ok":false},
+             {"t":"Dal browser, via WebFig","ok":false} ],
+      "e": "Il Netinstall esiste solo per Windows e Linux, perché parla un protocollo di basso livello direttamente sulla scheda di rete. La macchina virtuale va bene, ma la rete deve essere in bridge sulla scheda fisica: in modalità condivisa lo strumento non vede l'apparato." },
+
+    { "q": "A cosa serve l'opzione <code>run-after-reset</code>?",
+      "a": [ {"t":"Azzera l'apparato e applica subito un tuo file di configurazione","ok":true},
+             {"t":"Riavvia l'apparato dopo il reset","ok":false},
+             {"t":"Conserva le utenze durante il reset","ok":false},
+             {"t":"Esegue un backup prima del reset","ok":false} ],
+      "e": "È ciò che rende il lavoro ripetibile: scritta una volta la configurazione di riferimento, riporti qualsiasi apparato a uno stato noto con un comando solo, invece di riconfigurarlo a mano. È la base dell'automazione che vedremo nelle lezioni 41 e 42." },
+
+    { "q": "Perché conviene provare il Netinstall prima di averne bisogno?",
+      "a": [ {"t":"Richiede preparazione — strumento, pacchetto, indirizzo fisso, tempi del pulsante — che non si improvvisa nell'emergenza","ok":true},
+             {"t":"Perché va attivato preventivamente sull'apparato","ok":false},
+             {"t":"Perché scade se non usato","ok":false},
+             {"t":"Perché cancella i backup esistenti","ok":false} ],
+      "e": "È l'unica procedura del modulo che non si impara nel momento del bisogno: serve scaricare lo strumento e il pacchetto giusto, configurare un indirizzo fisso sul PC e prendere confidenza con i tempi del pulsante. Mezz'ora in una sera tranquilla, con l'apparato sulla scrivania." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

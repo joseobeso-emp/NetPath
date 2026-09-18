@@ -1,0 +1,232 @@
+#id: mt-01
+#title: Il tuo hAP ax²: cosa hai davvero in mano
+#min: 20
+#level: mt
+#lvname: Modulo MikroTik
+#chapter: Prima di toccare
+#desc: CPU, memoria, porte e radio del hAP ax², e i limiti fisici che decideranno cosa potrai farci e cosa no.
+#obj: Sapere esattamente quali componenti hai e cosa ciascuno determina
+#obj: Capire i tre limiti fisici che condizioneranno tutto il modulo
+#obj: Riconoscere le porte e sapere quale fa cosa nella configurazione di fabbrica
+#obj: Collegare l'apparato e trovarlo dal tuo Mac
+---
+<p class="lead">Prima di configurare qualcosa conviene sapere cosa si ha in mano. Non per curiosità:
+tre caratteristiche fisiche di questo apparato decideranno, nelle prossime quaranta lezioni, cosa
+potrai fare e cosa no — e sono esattamente le tre che nessuno guarda quando compra.</p>
+
+<h2>La scheda tecnica, tradotta</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Componente</th><th>Valore</th><th>Cosa determina, in pratica</th></tr></thead>
+    <tbody>
+      <tr><td><b>Processore</b></td><td>Qualcomm IPQ-6010<br>ARM 64 bit, 4 core, 864 MHz</td>
+          <td>Quanto traffico riesce a elaborare quando il pacchetto <em>non</em> può essere gestito dall'hardware. È il tetto di firewall, VPN e code</td></tr>
+      <tr><td><b>Memoria RAM</b></td><td>1 GB</td>
+          <td>Abbondante per RouterOS. È ciò che rende possibili tabelle di connessione grandi e — in teoria — i container</td></tr>
+      <tr><td><b>Memoria di archiviazione</b></td><td><b>128 MB</b> NAND</td>
+          <td><b>Il limite più stretto dell'apparato.</b> Qui dentro stanno RouterOS, i pacchetti aggiuntivi, i backup e i log su disco. Non è molto</td></tr>
+      <tr><td><b>Porte</b></td><td>5 × Gigabit Ethernet</td>
+          <td>Una per la linea, quattro per la rete. Nessuna porta seriale di console</td></tr>
+      <tr><td><b>Alimentazione</b></td><td>12–28 V DC, oppure PoE passivo in ingresso.<br>Una porta fornisce PoE in uscita</td>
+          <td>Puoi alimentarlo via cavo di rete, e lui può alimentare un altro apparato</td></tr>
+      <tr><td><b>Radio</b></td><td>Wi-Fi 6 (802.11ax) doppia banda<br>2,4 GHz e 5 GHz, 2 catene ciascuna</td>
+          <td>574 Mbit/s teorici a 2,4 GHz, 1200 a 5 GHz. "2 catene" significa due antenne per banda</td></tr>
+      <tr><td><b>Sistema</b></td><td>RouterOS 7, licenza <b>livello 4</b></td>
+          <td>Il livello 4 copre tutto ciò che farai: fino a 200 tunnel VPN e 200 utenti hotspot</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: non è una scatola, è un computer
+  </div>
+  <p>Un router sembra un oggetto passivo, come una presa multipla. Non lo è: <b>è un computer
+  completo</b>, con processore, memoria, disco e sistema operativo. Ha una tastiera e uno schermo che
+  non vedi — ci arrivi dalla rete invece che da una scrivania.</p>
+  <p>E come ogni computer ha due parti che lavorano insieme: dei <b>circuiti specializzati</b> che
+  fanno una cosa sola ma velocissima — spostare i frame da una porta all'altra — e un <b>processore
+  generico</b> che sa fare tutto ma più lentamente.</p>
+  <p style="margin-bottom:0">Metà di questo modulo consiste, in fondo, nell'imparare <b>quali
+  configurazioni lasciano il lavoro ai circuiti veloci e quali lo scaricano sul processore</b>. È la
+  differenza fra un apparato che regge il gigabit e lo stesso apparato che arranca a 180 Mbit/s.</p>
+</div>
+
+<h2>I tre limiti da tenere a mente per tutto il modulo</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    1 · I 128 MB di archiviazione
+  </div>
+  <p>Sembrano tanti finché non ci metti dentro RouterOS (che ne occupa una buona parte), qualche
+  pacchetto aggiuntivo, i backup e i file di log.</p>
+  <p style="margin-bottom:0"><b>Conseguenze che incontrerai:</b> non puoi tenere mesi di log sul
+  dispositivo, i container sono al limite del praticabile (lezione 46), e prima di ogni aggiornamento
+  va verificato che ci sia spazio libero — è la causa più comune di aggiornamento fallito su questi
+  apparati.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    2 · Il processore, quando entra in gioco
+  </div>
+  <p>Finché il traffico passa semplicemente da una porta all'altra, se ne occupa il chip di
+  commutazione e il processore resta fermo. Ma appena chiedi <b>firewall con ispezione di stato, NAT,
+  code di qualità, VPN cifrata</b>, il pacchetto deve salire al processore.</p>
+  <p style="margin-bottom:0">864 MHz per quattro core è dignitoso, ma la <b>cifratura è costosa</b>:
+  su una VPN il tetto reale è nell'ordine di qualche centinaio di Mbit/s, non del gigabit. Lo misureremo
+  davvero nella lezione 29, invece di fidarci dei numeri di copertina.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    3 · Nessuna porta di console
+  </div>
+  <p>Sugli apparati professionali c'è una presa seriale: se il sistema non risponde più in rete, ci
+  colleghi un cavo e rientri comunque. <b>Qui non c'è.</b></p>
+  <p style="margin-bottom:0">Quindi la tua rete di salvataggio è fatta di altro: il <b>pulsante di
+  reset</b>, l'<b>accesso via indirizzo MAC</b> e, nei casi estremi, il <b>Netinstall</b>. Sono
+  esattamente gli argomenti delle lezioni 3, 4 e 5 — e non a caso vengono prima di qualsiasi
+  configurazione.</p>
+</div>
+
+<h2>Le porte, e cosa fanno appena esci dalla scatola</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 220" role="img" aria-label="Le cinque porte del hAP ax2 e il loro ruolo nella configurazione di fabbrica">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Configurazione di fabbrica: una porta guarda fuori, quattro guardano dentro</text>
+
+    <rect x="60" y="44" width="580" height="62" rx="10" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.6"/>
+    <g stroke-width="1.6">
+      <rect x="82"  y="60" width="92" height="32" rx="5" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="196" y="60" width="92" height="32" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="310" y="60" width="92" height="32" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="424" y="60" width="92" height="32" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="538" y="60" width="92" height="32" rx="5" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="128" y="81">ether1</text><text x="242" y="81">ether2</text>
+      <text x="356" y="81">ether3</text><text x="470" y="81">ether4</text><text x="584" y="81">ether5</text>
+    </g>
+
+    <text x="128" y="128" text-anchor="middle" class="dg-label-sm" fill="var(--dg-3)">VERSO LA LINEA</text>
+    <text x="128" y="145" text-anchor="middle" class="dg-label-sm" fill="var(--dg-text-soft)">prende l'indirizzo</text>
+    <text x="128" y="160" text-anchor="middle" class="dg-label-sm" fill="var(--dg-text-soft)">dal modem</text>
+
+    <path d="M196 128h388" stroke="var(--dg-1)" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="390" y="120" text-anchor="middle" class="dg-label-sm" fill="var(--dg-1)">VERSO LA TUA RETE — tutte insieme in un bridge, con il Wi-Fi</text>
+    <text x="390" y="147" text-anchor="middle" class="dg-label-sm" fill="var(--dg-text-soft)">indirizzo del router 192.168.88.1 · distribuisce indirizzi via DHCP</text>
+
+    <rect x="140" y="176" width="420" height="30" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+    <text x="350" y="196" text-anchor="middle" class="dg-label-sm">Questa divisione è una <tspan font-weight="700">scelta della configurazione di fabbrica</tspan>, non una legge dell'hardware.</text>
+  </svg>
+  </div>
+  <figcaption>Nella lezione 8 apriremo questa configurazione riga per riga. Per ora ti serve sapere
+  una cosa sola: <b>ether1 è quella che va al modem, le altre quattro sono la tua rete.</b></figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    PoE: può essere alimentato, e può alimentare
+  </div>
+  <p>L'apparato accetta <b>PoE passivo in ingresso</b>: puoi alimentarlo con un solo cavo di rete che
+  porta dati e corrente insieme, utile quando la presa elettrica è scomoda.</p>
+  <p style="margin-bottom:0"><b>Attenzione al "passivo":</b> non è lo standard 802.3af/at dei
+  telefoni e degli access point aziendali (lezione 1-08). Il PoE passivo manda tensione sul cavo
+  <em>senza negoziare</em>. Collegare un apparato che non se lo aspetta può danneggiarlo. Verifica
+  sempre cosa c'è dall'altra parte prima di accendere l'uscita PoE.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Primo contatto: collega e trova l'apparato
+  </div>
+  <p><b>Cosa ti serve:</b> il router, l'alimentatore, un cavo di rete. Non collegarlo ancora al modem
+  di casa — per ora lavoriamo isolati.</p>
+  <ol>
+    <li><b>Alimenta il router</b> e aspetta un minuto che finisca di avviarsi.</li>
+    <li><b>Collega il cavo</b> fra il tuo Mac e una porta qualsiasi <b>fra ether2 e ether5</b>.
+    Se il Mac mini ha una sola porta di rete e ti serve per Internet, va bene anche via Wi-Fi: la rete
+    di fabbrica si chiama <code>MikroTik-</code> seguito da alcune cifre.</li>
+    <li><b>Verifica di aver preso un indirizzo</b> dal router.</li>
+  </ol>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Dal Terminale del Mac</div>
+<pre><span class="c"># che indirizzo ho preso, e da chi</span>
+<span class="p">ipconfig getifaddr en0</span>
+<span class="p">ipconfig getpacket en0 | grep -E 'router|server_id'</span>
+
+<span class="c"># il router risponde?</span>
+<span class="p">ping -c 3 192.168.88.1</span>
+</pre>
+  </div>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Dal Prompt dei comandi di Windows</div>
+<pre><span class="p">ipconfig /all</span>
+<span class="p">ping 192.168.88.1</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Risultato atteso:</b> un indirizzo del tipo
+  <code>192.168.88.x</code> e il router che risponde al ping su <code>192.168.88.1</code>. Se è così,
+  nella prossima lezione entriamo dentro. Se non è così, <b>non forzare nulla</b>: la lezione 5 spiega
+  come riportarlo allo stato di fabbrica in trenta secondi.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: conoscere l'apparato",
+  "questions": [
+    { "q": "Qual è il limite fisico più stretto del hAP ax²?",
+      "a": [ {"t":"I 128 MB di memoria di archiviazione","ok":true},
+             {"t":"Il gigabyte di RAM","ok":false},
+             {"t":"Le cinque porte Ethernet","ok":false},
+             {"t":"Le due catene radio per banda","ok":false} ],
+      "e": "1 GB di RAM è abbondante per RouterOS e cinque porte bastano per quasi tutto. I 128 MB di archiviazione invece devono contenere il sistema, i pacchetti aggiuntivi, i backup e i log: è la risorsa che finisce per prima, ed è la causa più comune di aggiornamento fallito su questi apparati." },
+
+    { "q": "Quando il traffico deve passare dal processore invece che dai circuiti di commutazione?",
+      "a": [ {"t":"Quando serve firewall con stato, NAT, code di qualità o cifratura","ok":true},
+             {"t":"Sempre: ogni pacchetto passa dal processore","ok":false},
+             {"t":"Solo sul Wi-Fi","ok":false},
+             {"t":"Solo quando la porta è a 100 Mbit/s","ok":false} ],
+      "e": "Spostare un frame da una porta all'altra è lavoro da chip di commutazione, velocissimo e senza costo per il processore. Appena serve una decisione — stato della connessione, traduzione degli indirizzi, priorità, cifratura — il pacchetto sale al processore. Imparare quali configurazioni provocano questo salto è metà del modulo." },
+
+    { "q": "Nella configurazione di fabbrica, a cosa serve ether1?",
+      "a": [ {"t":"È la porta verso la linea: prende l'indirizzo dal modem","ok":true},
+             {"t":"È la porta di gestione riservata","ok":false},
+             {"t":"È una porta come le altre quattro","ok":false},
+             {"t":"È l'unica che fornisce PoE in uscita","ok":false} ],
+      "e": "Di fabbrica ether1 è configurata come client DHCP verso la linea, mentre ether2–ether5 e il Wi-Fi stanno insieme in un bridge con l'indirizzo 192.168.88.1. È una scelta della configurazione predefinita, non un vincolo dell'hardware: nella lezione 8 la leggeremo riga per riga e vedrai che si può cambiare." },
+
+    { "q": "Perché l'assenza di una porta seriale di console conta?",
+      "a": [ {"t":"Se l'apparato non risponde in rete non esiste una via fisica alternativa per entrare","ok":true},
+             {"t":"Perché non si può aggiornare il firmware","ok":false},
+             {"t":"Perché limita la velocità delle porte","ok":false},
+             {"t":"Perché impedisce di usare la riga di comando","ok":false} ],
+      "e": "Sugli apparati con console basta un cavo per rientrare quando la rete è compromessa. Qui la rete di salvataggio è fatta d'altro: pulsante di reset, accesso via indirizzo MAC e Netinstall. È il motivo per cui le lezioni 3, 4 e 5 vengono prima di qualsiasi configurazione." },
+
+    { "q": "Cosa significa che il PoE in ingresso è «passivo»?",
+      "a": [ {"t":"Manda tensione sul cavo senza negoziare con il dispositivo collegato","ok":true},
+             {"t":"Che fornisce meno potenza dello standard","ok":false},
+             {"t":"Che funziona solo su cavi schermati","ok":false},
+             {"t":"Che va abilitato via software su ogni porta","ok":false} ],
+      "e": "Lo standard 802.3af/at negozia prima di alimentare, quindi è sicuro anche verso dispositivi che non lo supportano. Il PoE passivo no: la tensione c'è e basta, e collegare un apparato che non se l'aspetta può danneggiarlo. Va verificato sempre cosa c'è dall'altra parte del cavo prima di accendere l'uscita." },
+
+    { "q": "Cosa consente la licenza di livello 4 di cui dispone questo apparato?",
+      "a": [ {"t":"Fino a 200 tunnel VPN e 200 utenti hotspot, VLAN illimitate","ok":true},
+             {"t":"Un solo tunnel VPN alla volta","ok":false},
+             {"t":"Nessun limite su niente","ok":false},
+             {"t":"Solo funzionalità di client, non di access point","ok":false} ],
+      "e": "Il livello 4 è quello con cui esce la maggior parte degli apparati MikroTik ed è ampiamente sufficiente per tutto quello che farai in questo modulo e in una piccola azienda. I limiti sui tunnel e sugli utenti hotspot si incontrano solo in scenari da operatore." }
+  ]
+}
+</script>
