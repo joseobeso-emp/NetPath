@@ -117,6 +117,28 @@ unknown = used - set(gids)
 if unknown: err.append(f"data-term che non esistono nel glossario: {sorted(unknown)}")
 ok.append(f"glossario: {len(gids)} termini, {len(used)} richiamati nelle lezioni")
 
+# --- 7. leggibilita su telefono -----------------------------------------------
+# Un elemento piu largo dello schermo fa scorrere in orizzontale tutta la pagina
+# e il testo finisce incollato al bordo. Le tabelle e i diagrammi larghi devono
+# quindi stare dentro un contenitore che scorre per conto proprio.
+nudi_tab, nudi_svg = [], []
+for p in pages:
+    s_ = open(p, encoding="utf-8").read()
+    if "<table" in re.sub(r'<div class="table-wrap"[^>]*>.*?</table>\s*</div>', "", s_, flags=re.S):
+        nudi_tab.append(p)
+    if re.search(r'<figure class="diagram">\s*<svg',
+                 re.sub(r'<div class="scroll-x"[^>]*>.*?</svg>\s*</div>', "", s_, flags=re.S)):
+        nudi_svg.append(p)
+if nudi_tab: err.append(f"tabelle fuori da .table-wrap (sfondano su telefono): {nudi_tab}")
+if nudi_svg: err.append(f"diagrammi fuori da .scroll-x (sfondano su telefono): {nudi_svg}")
+if not nudi_tab and not nudi_svg:
+    ok.append("telefono: tutte le tabelle e i diagrammi sono incapsulati")
+
+css = open("assets/css/style.css", encoding="utf-8").read()
+mancanti = [t for t in ("--gutter", "--safe-l", "safe-area-inset-left") if t not in css]
+if mancanti: err.append(f"CSS: manca la gestione del margine laterale {mancanti}")
+else: ok.append("telefono: margine laterale e safe-area configurati")
+
 # --- esito -------------------------------------------------------------------
 print("\n" + "=" * 66)
 for o in ok:   print("  OK    " + o)
