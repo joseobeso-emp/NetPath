@@ -1,0 +1,213 @@
+#id: mt-06
+#title: La mappa del menu: dove vive ogni cosa
+#min: 24
+#level: mt
+#lvname: Modulo MikroTik
+#chapter: Orientarsi in RouterOS
+#desc: L'albero di RouterOS spiegato una volta per tutte, così smetti di cercare e inizi a sapere dove andare.
+#obj: Capire il criterio con cui RouterOS è organizzato
+#obj: Sapere a memoria dove vivono le dieci cose che toccherai ogni giorno
+#obj: Passare da WinBox alla riga di comando senza riorientarti ogni volta
+#obj: Trovare da solo un menu che non hai mai usato
+---
+<p class="lead">La sensazione di «non so dove guardare» non dipende dal fatto che RouterOS sia
+complicato. Dipende dal fatto che è organizzato secondo un criterio preciso che nessuno ti dice
+esplicitamente. Te lo dico adesso, e da domani ti orienti.</p>
+
+<h2>Il criterio</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il ferramenta
+  </div>
+  <p>Entri in un ferramenta per costruire una mensola. Ti aspetteresti un reparto «Mensole». Non
+  c'è. C'è il reparto <b>viti</b>, il reparto <b>legno</b>, il reparto <b>staffe</b>, il reparto
+  <b>vernici</b>.</p>
+  <p>Il negozio non è organizzato per <b>quello che vuoi fare</b>, ma per <b>che tipo di cosa
+  è</b>. All'inizio è frustrante: per una sola mensola giri quattro reparti. Ma dopo tre volte è il
+  sistema più veloce possibile, perché sai sempre dove sta ogni materiale, anche per progetti che non
+  hai mai fatto.</p>
+  <p style="margin-bottom:0"><b>RouterOS è esattamente così.</b> Non esiste il menu «pubblica un
+  server»: esiste il menu delle <em>regole di traduzione</em> e quello delle <em>regole di
+  filtro</em>, e la pubblicazione si costruisce toccandoli entrambi. Una volta capito questo, smetti
+  di cercare il reparto sbagliato.</p>
+</div>
+
+<h2>L'albero, con le cose che userai davvero</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 330" role="img" aria-label="I menu principali di RouterOS e cosa contengono">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">I sette rami che coprono il 95% del lavoro</text>
+    <g stroke-width="1.6">
+      <rect x="20" y="36"  width="150" height="42" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="20" y="88"  width="150" height="42" rx="7" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="20" y="140" width="150" height="42" rx="7" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="20" y="192" width="150" height="42" rx="7" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="20" y="244" width="150" height="42" rx="7" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g class="dg-mono-sm"><text x="34" y="62">/interface</text><text x="34" y="114">/ip</text>
+      <text x="34" y="166">/system</text><text x="34" y="218">/tool</text><text x="34" y="270">/queue · /user</text></g>
+    <g class="dg-label-sm" fill="var(--dg-text-soft)">
+      <text x="190" y="52">tutto ciò che è «un'interfaccia»: porte fisiche, bridge,</text>
+      <text x="190" y="68">VLAN, Wi-Fi, tunnel VPN. Anche quelle che non esistono fisicamente</text>
+      <text x="190" y="104">il livello 3: indirizzi, rotte, DHCP, DNS,</text>
+      <text x="190" y="120">e dentro <tspan font-weight="700">/ip/firewall</tspan> tutte le regole</text>
+      <text x="190" y="156">l'apparato in quanto computer: orario, licenza,</text>
+      <text x="190" y="172">pacchetti, backup, script, pianificazione, riavvio</text>
+      <text x="190" y="208">gli strumenti di diagnosi: ping, traceroute,</text>
+      <text x="190" y="224">torch, sniffer, netwatch, prova di banda</text>
+      <text x="190" y="260">le code di qualità · le utenze e i gruppi</text>
+    </g>
+    <rect x="20" y="298" width="660" height="26" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.3"/>
+    <text x="350" y="316" text-anchor="middle" class="dg-label-sm">Se una cosa «è» qualcosa sta in /interface o /ip. Se «fa» qualcosa sta in /system o /tool.</text>
+  </svg>
+  </div>
+  <figcaption>Ci sono altri rami — <code>/routing</code>, <code>/certificate</code>,
+  <code>/file</code>, <code>/log</code>, <code>/container</code> — ma li incontrerai quando
+  serviranno.</figcaption>
+</figure>
+
+<h2>Le dieci destinazioni da sapere a memoria</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Quando vuoi…</th><th>Vai in</th><th>In WinBox</th></tr></thead>
+    <tbody>
+      <tr><td>vedere le porte e il loro stato</td><td><code>/interface</code></td><td>Interfaces</td></tr>
+      <tr><td>assegnare un indirizzo</td><td><code>/ip/address</code></td><td>IP → Addresses</td></tr>
+      <tr><td>guardare o scrivere rotte</td><td><code>/ip/route</code></td><td>IP → Routes</td></tr>
+      <tr><td>distribuire indirizzi</td><td><code>/ip/dhcp-server</code></td><td>IP → DHCP Server</td></tr>
+      <tr><td>vedere <b>chi c'è in rete</b></td><td><code>/ip/dhcp-server/lease</code></td><td>IP → DHCP Server → Leases</td></tr>
+      <tr><td>scrivere regole di blocco</td><td><code>/ip/firewall/filter</code></td><td>IP → Firewall → Filter Rules</td></tr>
+      <tr><td>mascherare o pubblicare</td><td><code>/ip/firewall/nat</code></td><td>IP → Firewall → NAT</td></tr>
+      <tr><td>vedere le connessioni in corso</td><td><code>/ip/firewall/connection</code></td><td>IP → Firewall → Connections</td></tr>
+      <tr><td>capire cos'è successo</td><td><code>/log</code></td><td>Log</td></tr>
+      <tr><td>vedere il traffico in diretta</td><td><code>/tool/torch</code></td><td>Tools → Torch</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    WinBox e la riga di comando sono lo stesso albero
+  </div>
+  <p>Non sono due sistemi da imparare: sono <b>due finestre sulla stessa struttura</b>. Il menu
+  <em>IP → Firewall → NAT</em> di WinBox è il percorso <code>/ip/firewall/nat</code>, carattere per
+  carattere. Le colonne della tabella sono i campi del comando.</p>
+  <p style="margin-bottom:0"><b>Sfrutta questa corrispondenza per imparare il doppio in metà tempo:</b>
+  configura una cosa in WinBox, poi vai in <em>New Terminal</em> (dentro WinBox stesso) e dai
+  <code>/ip/firewall/nat/print</code>. Vedrai la stessa cosa scritta come comando. Dopo due settimane
+  la CLI ti verrà naturale senza averla studiata a parte.</p>
+</div>
+
+<h2>Il pulsante che quasi nessuno usa</h2>
+
+<p>Ogni menu ha un proprio <strong>export</strong>: se lo esegui mentre sei dentro un ramo, ti
+restituisce <em>solo quel ramo</em>, come comandi pronti da incollare.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Export mirato: la funzione più sottovalutata</div>
+<pre><span class="c">── tutta la configurazione ─────────────────────────</span>
+<span class="p">/export</span>
+
+<span class="c">── solo il firewall ────────────────────────────────</span>
+<span class="p">/ip/firewall/export</span>
+
+<span class="c">── solo le regole di traduzione ────────────────────</span>
+<span class="p">/ip/firewall/nat/export</span>
+
+<span class="c">── solo le interfacce, senza i valori predefiniti ──</span>
+<span class="p">/interface/export</span>
+</pre>
+</div>
+
+<p>È il modo più rapido per <strong>capire una configurazione che non hai scritto tu</strong>: invece
+di cliccare in venti finestre, chiedi l'export del ramo che ti interessa e lo leggi in dieci
+secondi. Su un apparato di un cliente è spesso la prima cosa da fare.</p>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Il giro di ricognizione
+  </div>
+  <p>Collegati via SSH e fai questo giro. Non modifichi niente: guardi soltanto. L'obiettivo è che
+  fra una settimana questi percorsi ti vengano in mente da soli.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Dieci comandi di sola lettura</div>
+<pre><span class="c">── cosa c'e fisicamente ────────────────────────────</span>
+<span class="p">/interface/print</span>
+<span class="p">/interface/ethernet/print</span>
+
+<span class="c">── come e indirizzato ──────────────────────────────</span>
+<span class="p">/ip/address/print</span>
+<span class="p">/ip/route/print</span>
+
+<span class="c">── chi c'e in rete adesso ──────────────────────────</span>
+<span class="p">/ip/dhcp-server/lease/print</span>
+
+<span class="c">── cosa protegge l'apparato ────────────────────────</span>
+<span class="p">/ip/firewall/filter/print</span>
+<span class="p">/ip/firewall/nat/print</span>
+
+<span class="c">── cosa sta succedendo ora ─────────────────────────</span>
+<span class="p">/ip/firewall/connection/print</span>
+<span class="p">/log/print</span>
+
+<span class="c">── e l'apparato in quanto computer ─────────────────</span>
+<span class="p">/system/resource/print</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>Poi l'esercizio che vale doppio.</b> Apri WinBox e ritrova <em>ognuna</em>
+  di quelle dieci cose nella finestra grafica. Il percorso del menu ti dice già dove guardare. Quando
+  le hai trovate tutte, l'orientamento è fatto.</p>
+  <p style="margin-bottom:0"><b>Infine:</b> <code>/ip/firewall/export</code> e leggi il risultato.
+  Non capirai ancora tutte le righe — è normale, le smontiamo nella lezione 8 — ma comincia a
+  riconoscere la forma.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: orientarsi nei menu",
+  "questions": [
+    { "q": "Con quale criterio è organizzato RouterOS?",
+      "a": [ {"t":"Per tipo di oggetto, non per compito da svolgere","ok":true},
+             {"t":"Per ordine di importanza delle funzioni","ok":false},
+             {"t":"Per livello del modello OSI","ok":false},
+             {"t":"Per frequenza d'uso","ok":false} ],
+      "e": "Come un ferramenta: c'è il reparto viti e il reparto legno, non il reparto mensole. Non esiste un menu «pubblica un server»; esistono le regole di traduzione e quelle di filtro, e la pubblicazione si costruisce toccando entrambi. Capito questo, smetti di cercare il reparto sbagliato." },
+
+    { "q": "Dove vedi quali dispositivi sono collegati alla rete in questo momento?",
+      "a": [ {"t":"<code>/ip/dhcp-server/lease</code>","ok":true},
+             {"t":"<code>/interface/print</code>","ok":false},
+             {"t":"<code>/ip/address/print</code>","ok":false},
+             {"t":"<code>/system/resource/print</code>","ok":false} ],
+      "e": "L'elenco dei lease mostra nome, indirizzo MAC e indirizzo IP di ogni dispositivo che ha chiesto un indirizzo: è il modo più rapido per sapere chi c'è. Le interfacce mostrano le porte, non chi ci sta dietro; gli indirizzi mostrano quelli del router." },
+
+    { "q": "Che rapporto c'è fra i menu di WinBox e i percorsi della riga di comando?",
+      "a": [ {"t":"Sono la stessa struttura: IP → Firewall → NAT corrisponde a /ip/firewall/nat","ok":true},
+             {"t":"Sono due organizzazioni diverse da imparare separatamente","ok":false},
+             {"t":"WinBox mostra solo una parte dei menu","ok":false},
+             {"t":"La riga di comando usa nomi abbreviati diversi","ok":false} ],
+      "e": "Sono due finestre sulla stessa struttura, carattere per carattere, e le colonne delle tabelle sono i campi dei comandi. Conviene sfruttarlo: configura in WinBox, poi dai il <code>print</code> corrispondente da terminale e vedi la stessa cosa scritta come comando. Si impara il doppio in metà tempo." },
+
+    { "q": "Cosa restituisce <code>/ip/firewall/nat/export</code>?",
+      "a": [ {"t":"Solo le regole di traduzione, come comandi pronti da incollare","ok":true},
+             {"t":"L'intera configurazione dell'apparato","ok":false},
+             {"t":"Un file binario da ripristinare","ok":false},
+             {"t":"Le statistiche di utilizzo delle regole","ok":false} ],
+      "e": "Ogni menu ha il proprio export limitato a quel ramo. È il modo più rapido per capire una configurazione scritta da altri: invece di cliccare in venti finestre, chiedi l'export del ramo che ti interessa e lo leggi in dieci secondi. Su un apparato di un cliente è spesso la prima mossa." },
+
+    { "q": "Un tunnel VPN, in RouterOS, dove vive?",
+      "a": [ {"t":"Sotto <code>/interface</code>: per RouterOS è un'interfaccia come le altre","ok":true},
+             {"t":"Sotto <code>/ip</code>, con gli indirizzi","ok":false},
+             {"t":"Sotto <code>/system</code>","ok":false},
+             {"t":"Sotto <code>/tool</code>","ok":false} ],
+      "e": "È uno dei punti che sbloccano la comprensione: porte fisiche, bridge, VLAN, Wi-Fi e tunnel sono tutti «interfacce». Significa che a un tunnel puoi assegnare un indirizzo, metterlo in una regola firewall o in una rotta esattamente come faresti con una porta Ethernet." }
+  ]
+}
+</script>

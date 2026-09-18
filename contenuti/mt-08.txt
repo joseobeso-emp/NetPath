@@ -1,0 +1,269 @@
+#id: mt-08
+#title: La configurazione predefinita, letta riga per riga
+#min: 28
+#level: mt
+#lvname: Modulo MikroTik
+#chapter: Orientarsi in RouterOS
+#desc: Cosa c'è davvero dentro un hAP ax² appena tolto dalla scatola, e perché va capita prima di cambiarla.
+#obj: Riconoscere ogni blocco della configurazione di fabbrica e cosa fa
+#obj: Capire che contiene già un firewall funzionante, e quale
+#obj: Sapere cosa si perde azzerando l'apparato senza rimettere le protezioni
+#obj: Leggere il TUO export e ritrovarci ogni pezzo
+---
+<p class="lead">Quasi tutti, imparando MikroTik, cominciano azzerando l'apparato «per partire puliti».
+È l'errore più costoso del principiante: <strong>insieme alla configurazione di fabbrica si butta via
+un firewall già scritto e già funzionante</strong>, e si resta esposti senza accorgersene. Qui la
+leggiamo pezzo per pezzo.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il marcatore che ti dice cosa è tuo e cosa no
+  </div>
+  <p>Ogni voce creata dalla configurazione di fabbrica porta il commento <code>defconf</code>. È una
+  convenzione preziosa: su qualsiasi apparato, tuo o di un cliente, <b>distingui in un colpo d'occhio
+  ciò che c'era in origine da ciò che qualcuno ha aggiunto</b>.</p>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="c">── cosa ha aggiunto qualcuno alle regole di filtro? ─</span>
+<span class="p">/ip/firewall/filter/print where comment!~</span><span class="s">"defconf"</span>
+</pre>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0">Su un apparato ereditato è spesso la prima domanda utile:
+  <em>cosa è stato toccato rispetto all'origine?</em></p>
+</div>
+
+<h2>I sette blocchi</h2>
+
+<h3>1 · Il bridge: le quattro porte diventano una sola rete</h3>
+
+<div class="code">
+<pre><span class="p">/interface/bridge/add name=</span><span class="s">bridge</span> <span class="p">comment=</span><span class="s">defconf</span>
+<span class="p">/interface/bridge/port/add bridge=</span><span class="s">bridge</span> <span class="p">interface=</span><span class="s">ether2</span> <span class="p">comment=</span><span class="s">defconf</span>
+<span class="c">   ... e cosi per ether3, ether4, ether5 e le due radio</span>
+</pre>
+</div>
+
+<p>Il <span class="term" data-term="bridge">bridge</span> fa comportare porte diverse come se fossero
+un unico switch: un dispositivo su ether3 e uno sul Wi-Fi si vedono direttamente, senza passare dal
+routing. <strong>ether1 resta fuori</strong> — ed è ciò che la rende la porta verso la linea.</p>
+
+<h3>2 · Le liste di interfacce: dentro e fuori</h3>
+
+<div class="code">
+<pre><span class="p">/interface/list/add name=</span><span class="s">WAN</span> <span class="p">comment=</span><span class="s">defconf</span>
+<span class="p">/interface/list/add name=</span><span class="s">LAN</span> <span class="p">comment=</span><span class="s">defconf</span>
+<span class="p">/interface/list/member/add interface=</span><span class="s">bridge</span> <span class="p">list=</span><span class="s">LAN</span> <span class="p">comment=</span><span class="s">defconf</span>
+<span class="p">/interface/list/member/add interface=</span><span class="s">ether1</span> <span class="p">list=</span><span class="s">WAN</span> <span class="p">comment=</span><span class="s">defconf</span>
+</pre>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Questo è il blocco più intelligente di tutta la configurazione
+  </div>
+  <p>Le liste sono <b>etichette</b> applicate alle interfacce. Le regole successive non dicono «ether1»
+  ma «tutto ciò che è nella lista WAN».</p>
+  <p style="margin-bottom:0">Il vantaggio è enorme e si vede più avanti: il giorno che aggiungi una
+  seconda linea, o un tunnel VPN, ti basta <b>metterlo nella lista giusta</b> e tutte le regole di
+  firewall e di NAT si applicano automaticamente. Senza le liste dovresti ritoccare ogni singola
+  regola. È lo stesso principio degli oggetti con nome parlante che usi su un firewall aziendale.</p>
+</div>
+
+<h3>3 · Gli indirizzi: uno fisso dentro, uno chiesto fuori</h3>
+
+<div class="code">
+<pre><span class="p">/ip/address/add address=</span><span class="n">192.168.88.1/24</span> <span class="p">interface=</span><span class="s">bridge</span> <span class="p">comment=</span><span class="s">defconf</span>
+<span class="p">/ip/dhcp-client/add interface=</span><span class="s">ether1</span> <span class="p">comment=</span><span class="s">defconf</span>
+</pre>
+</div>
+
+<p>Dentro, il router è <code>192.168.88.1</code>. Fuori, <strong>chiede</strong> un indirizzo al modem
+comportandosi da normale client. È la ragione per cui collegando ether1 a un modem tutto funziona
+senza configurare niente.</p>
+
+<h3>4 · Il DHCP: distribuire indirizzi alla rete interna</h3>
+
+<div class="code">
+<pre><span class="p">/ip/pool/add name=</span><span class="s">default-dhcp</span> <span class="p">ranges=</span><span class="n">192.168.88.10-192.168.88.254</span>
+<span class="p">/ip/dhcp-server/add interface=</span><span class="s">bridge</span> <span class="p">address-pool=</span><span class="s">default-dhcp</span> <span class="p">\</span>
+<span class="p">    disabled=</span><span class="s">no</span> <span class="p">comment=</span><span class="s">defconf</span>
+<span class="p">/ip/dhcp-server/network/add address=</span><span class="n">192.168.88.0/24</span> <span class="p">\</span>
+<span class="p">    gateway=</span><span class="n">192.168.88.1</span> <span class="p">dns-server=</span><span class="n">192.168.88.1</span> <span class="p">comment=</span><span class="s">defconf</span>
+</pre>
+</div>
+
+<p>Tre oggetti distinti, ed è tipico di RouterOS: <strong>l'intervallo</strong> di indirizzi, il
+<strong>servizio</strong> che li distribuisce, e le <strong>informazioni</strong> da consegnare
+insieme all'indirizzo. Nota che il DNS consegnato è il router stesso.</p>
+
+<h3>5 · Il DNS: il router fa da risolutore</h3>
+
+<div class="code">
+<pre><span class="p">/ip/dns/set allow-remote-requests=</span><span class="s">yes</span>
+</pre>
+</div>
+
+<p>Il router accetta interrogazioni DNS dalla rete, le inoltra fuori e mette in memoria le risposte.
+<strong>Quel <code>yes</code> sarebbe pericoloso</strong> se il router rispondesse anche dall'esterno:
+diventerebbe uno strumento per attacchi di amplificazione. Non succede — ed è merito del blocco
+successivo.</p>
+
+<h3>6 · Il firewall: la parte che non va buttata</h3>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Le regole di fabbrica, nell'ordine in cui vengono valutate</div>
+<pre><span class="c">═══ catena INPUT — traffico diretto AL router ══════</span>
+<span class="p">accept</span>  connection-state=<span class="s">established,related,untracked</span>
+<span class="p">drop</span>    connection-state=<span class="s">invalid</span>
+<span class="p">accept</span>  protocol=<span class="s">icmp</span>
+<span class="p">accept</span>  in-interface=<span class="s">lo</span>        <span class="c"># dialogo interno</span>
+<span class="p">drop</span>    in-interface-list=<span class="s">!LAN</span>  <span class="c"># ← LA REGOLA CHIAVE</span>
+
+<span class="c">═══ catena FORWARD — traffico che ATTRAVERSA ═══════</span>
+<span class="p">accept</span>  ipsec-policy=<span class="s">in,ipsec</span>    <span class="c"># traffico da VPN</span>
+<span class="p">accept</span>  ipsec-policy=<span class="s">out,ipsec</span>
+<span class="p">fasttrack</span> connection-state=<span class="s">established,related</span>
+<span class="p">accept</span>  connection-state=<span class="s">established,related,untracked</span>
+<span class="p">drop</span>    connection-state=<span class="s">invalid</span>
+<span class="p">drop</span>    connection-state=<span class="s">new</span> connection-nat-state=<span class="s">!dstnat</span> <span class="p">\</span>
+        in-interface-list=<span class="s">WAN</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le due righe che ti stanno proteggendo in questo momento
+  </div>
+  <p><b><code>drop in-interface-list=!LAN</code> nella catena input</b> significa: <em>tutto ciò che
+  non arriva dalla rete interna e vuole parlare col router viene scartato</em>. È questa riga — non
+  altro — che impedisce a chiunque su Internet di raggiungere WinBox, SSH, WebFig e il risolutore DNS
+  del tuo apparato.</p>
+  <p><b><code>drop … in-interface-list=WAN</code> nella catena forward</b> significa: <em>nessuno da
+  fuori può iniziare una connessione verso la tua rete</em>, tranne il traffico esplicitamente
+  pubblicato.</p>
+  <p style="margin-bottom:0"><b>Con <code>reset-configuration no-defaults=yes</code> queste righe
+  spariscono.</b> Se poi colleghi il router a Internet senza riscriverle, hai un apparato con
+  amministrazione aperta al mondo e un risolutore DNS aperto. È il modo più comune in cui un MikroTik
+  finisce compromesso — e ora sai perché.</p>
+</div>
+
+<h3>7 · Il NAT, e la chiusura dei servizi di scoperta</h3>
+
+<div class="code">
+<pre><span class="p">/ip/firewall/nat/add chain=</span><span class="s">srcnat</span> <span class="p">out-interface-list=</span><span class="s">WAN</span> <span class="p">\</span>
+<span class="p">    ipsec-policy=</span><span class="s">out,none</span> <span class="p">action=</span><span class="s">masquerade</span> <span class="p">comment=</span><span class="s">defconf</span>
+
+<span class="c">── scoperta e accesso via MAC: solo dall'interno ───</span>
+<span class="p">/ip/neighbor/discovery-settings/set discover-interface-list=</span><span class="s">LAN</span>
+<span class="p">/tool/mac-server/set allowed-interface-list=</span><span class="s">LAN</span>
+<span class="p">/tool/mac-server/mac-winbox/set allowed-interface-list=</span><span class="s">LAN</span>
+</pre>
+</div>
+
+<p>La prima riga è il <span class="term" data-term="nat">NAT</span> in uscita: tutta la rete interna
+esce con l'unico indirizzo pubblico. Le tre successive limitano alla rete interna sia la scoperta
+degli apparati vicini sia <strong>l'accesso via MAC</strong> — quello della lezione 3. Ottima cosa:
+significa che la tua via di salvataggio non è esposta a Internet.</p>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Leggi la tua, non la mia
+  </div>
+  <p>Quella qui sopra è la forma tipica. <b>La tua può differire nei dettagli</b> secondo la versione
+  di RouterOS. L'esercizio è proprio questo: <b>prendere il tuo export e ritrovarci i sette blocchi</b>.
+  È l'abilità che ti servirà su ogni apparato di ogni cliente.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Scarica la tua configurazione e leggila sul Mac</div>
+<pre><span class="c"># sul router</span>
+<span class="p">/export file=</span><span class="s">"fabbrica"</span>
+
+<span class="c"># dal Terminale del Mac</span>
+<span class="p">cd ~/mikrotik/lab-hapax2</span>
+<span class="p">scp admin@192.168.88.1:fabbrica.rsc .</span>
+<span class="p">less fabbrica.rsc</span>
+
+<span class="c"># quante righe? (di solito meno di quante ci si aspetti)</span>
+<span class="p">grep -vc '^#\|^$' fabbrica.rsc</span>
+
+<span class="c"># le regole di filtro, isolate</span>
+<span class="p">grep -A30 'ip firewall filter' fabbrica.rsc</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>Le cinque domande a cui devi saper rispondere leggendo il tuo file:</b></p>
+  <ol>
+    <li>Quali interfacce sono dentro il bridge, e quale è rimasta fuori?</li>
+    <li>Cosa c'è nella lista <code>WAN</code> e cosa nella lista <code>LAN</code>?</li>
+    <li>Qual è la regola che impedisce l'accesso al router dall'esterno?</li>
+    <li>Il router risponde alle interrogazioni DNS di chiunque, o solo della rete interna? Perché?</li>
+    <li>Se aggiungessi una seconda linea su ether2, quale singola modifica farebbe applicare
+    automaticamente tutte le regole esistenti anche a lei?</li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Verifica finale: chi è protetto e chi no</div>
+<pre><span class="c"># le regole di fabbrica hanno gia fermato qualcosa?</span>
+<span class="p">/ip/firewall/filter/print stats</span>
+
+<span class="c"># cosa e stato aggiunto rispetto all'origine?</span>
+<span class="p">/ip/firewall/filter/print where comment!~</span><span class="s">"defconf"</span>
+<span class="p">/ip/firewall/nat/print where comment!~</span><span class="s">"defconf"</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0">Se hai collegato il router a Internet, guarda i contatori
+  della regola <code>drop in-interface-list=!LAN</code>: stanno già salendo. <b>Quello è traffico
+  indesiderato che qualcuno ha mandato al tuo indirizzo pubblico</b>, e che quella riga sta buttando
+  via da quando l'hai acceso.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la configurazione di fabbrica",
+  "questions": [
+    { "q": "Perché azzerare l'apparato con <code>no-defaults=yes</code> è rischioso se poi lo si collega a Internet?",
+      "a": [ {"t":"Spariscono le regole firewall che impediscono l'accesso dall'esterno","ok":true},
+             {"t":"Perché si perde la licenza","ok":false},
+             {"t":"Perché il Wi-Fi smette di funzionare","ok":false},
+             {"t":"Perché non si può più aggiornare RouterOS","ok":false} ],
+      "e": "La configurazione di fabbrica contiene già un firewall funzionante. Senza le sue due righe chiave resti con amministrazione e risolutore DNS raggiungibili dal mondo: è il modo più comune in cui un MikroTik finisce compromesso. Se azzeri tutto, il firewall va riscritto <em>prima</em> di collegare la linea." },
+
+    { "q": "Cosa fa la regola <code>drop in-interface-list=!LAN</code> nella catena input?",
+      "a": [ {"t":"Scarta tutto ciò che non arriva dalla rete interna e vuole parlare col router","ok":true},
+             {"t":"Blocca il traffico fra la rete interna e Internet","ok":false},
+             {"t":"Impedisce ai client della LAN di raggiungersi fra loro","ok":false},
+             {"t":"Blocca solo il protocollo ICMP","ok":false} ],
+      "e": "La catena input riguarda il traffico diretto <em>al router stesso</em>: WinBox, SSH, WebFig, DNS. Questa riga è l'unica cosa che impedisce a chiunque su Internet di raggiungerli. Il traffico che attraversa il router è governato dalla catena forward, che ha una sua regola equivalente." },
+
+    { "q": "A cosa servono le liste di interfacce WAN e LAN?",
+      "a": [ {"t":"Sono etichette: le regole si applicano alla lista, così basta aggiungerci un'interfaccia","ok":true},
+             {"t":"Definiscono la velocità delle porte","ok":false},
+             {"t":"Servono solo a scopo documentale","ok":false},
+             {"t":"Determinano l'ordine di avvio delle interfacce","ok":false} ],
+      "e": "È il blocco più intelligente della configurazione di fabbrica. Il giorno che aggiungi una seconda linea o un tunnel VPN, basta metterlo nella lista giusta e tutte le regole di firewall e NAT si applicano da sole. Senza liste, andrebbe ritoccata ogni singola regola." },
+
+    { "q": "A cosa serve il commento <code>defconf</code>?",
+      "a": [ {"t":"Marca tutto ciò che ha creato la configurazione di fabbrica, così distingui cosa ha aggiunto qualcuno","ok":true},
+             {"t":"Indica le regole che non si possono cancellare","ok":false},
+             {"t":"Segnala le regole disattivate","ok":false},
+             {"t":"È un residuo senza significato","ok":false} ],
+      "e": "Su un apparato ereditato è spesso la prima domanda utile: cosa è stato toccato rispetto all'origine? Si risponde in un comando, con <code>print where comment!~«defconf»</code>." },
+
+    { "q": "Nella configurazione di fabbrica, quale interfaccia resta fuori dal bridge?",
+      "a": [ {"t":"ether1, che diventa così la porta verso la linea","ok":true},
+             {"t":"ether5","ok":false},
+             {"t":"Le due interfacce Wi-Fi","ok":false},
+             {"t":"Nessuna: sono tutte nel bridge","ok":false} ],
+      "e": "ether2–ether5 e le due radio stanno insieme nel bridge e formano un'unica rete interna; ether1 resta isolata, ha il client DHCP e appartiene alla lista WAN. È questa esclusione, non una proprietà dell'hardware, a renderla la porta verso il modem." },
+
+    { "q": "Perché <code>allow-remote-requests=yes</code> sul DNS non è pericoloso su questo apparato?",
+      "a": [ {"t":"Il firewall di fabbrica impedisce comunque alle interrogazioni esterne di arrivare al router","ok":true},
+             {"t":"Perché il DNS ascolta solo sull'indirizzo interno","ok":false},
+             {"t":"Perché RouterOS limita automaticamente le richieste al secondo","ok":false},
+             {"t":"Perché il servizio è attivo solo se c'è un client collegato","ok":false} ],
+      "e": "Da solo quel parametro renderebbe il router un risolutore aperto, sfruttabile per attacchi di amplificazione. È la regola <code>drop in-interface-list=!LAN</code> a renderlo sicuro — ed è esattamente il motivo per cui le due cose non vanno separate: togliendo il firewall, quel <code>yes</code> diventa un problema serio." }
+  ]
+}
+</script>

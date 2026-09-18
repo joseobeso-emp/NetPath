@@ -1,0 +1,267 @@
+#id: mt-09
+#title: Aggiornare RouterOS e RouterBOOT senza sorprese
+#min: 22
+#level: mt
+#lvname: Modulo MikroTik
+#chapter: Orientarsi in RouterOS
+#desc: L'ordine giusto, i due aggiornamenti che tutti dimenticano di fare entrambi, e come si torna indietro.
+#obj: Scegliere consapevolmente fra i canali di aggiornamento
+#obj: Eseguire l'aggiornamento nell'ordine corretto e verificarlo
+#obj: Sapere tornare indietro se la nuova versione dà problemi
+#obj: Costruirti una procedura ripetibile da usare anche sugli apparati dei clienti
+---
+<p class="lead">Aggiornare è l'operazione più banale e insieme quella che fa più danni, perché si fa di
+fretta e su apparati che stanno lavorando. Qui costruiamo una procedura che puoi ripetere a occhi
+chiusi — sul tuo apparato e, un domani, su quello di un cliente.</p>
+
+<h2>I canali</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Canale</th><th>Cosa contiene</th><th>Per chi</th></tr></thead>
+    <tbody>
+      <tr><td><b>long-term</b></td><td>Solo correzioni di sicurezza e di guasti. Nessuna funzione nuova</td>
+          <td><b>Produzione.</b> È il canale che metti su un apparato di un cliente</td></tr>
+      <tr><td><b>stable</b></td><td>Versione corrente, con le funzioni nuove già collaudate</td>
+          <td><b>Il tuo laboratorio.</b> È dove impari le cose prima che arrivino in produzione</td></tr>
+      <tr><td><b>testing</b></td><td>In collaudo</td><td>Solo per provare una funzione specifica, mai su qualcosa che serve</td></tr>
+      <tr><td><b>development</b></td><td>In sviluppo</td><td>Non usarlo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La scelta che farei io, e perché
+  </div>
+  <p><b>Sul tuo hAP ax² di laboratorio: <code>stable</code>.</b> Vuoi vedere le funzioni recenti, e se
+  qualcosa si rompe non danneggi nessuno — anzi, impari.</p>
+  <p style="margin-bottom:0"><b>Su un apparato che serve a qualcuno: <code>long-term</code>.</b> La
+  domanda giusta non è «qual è l'ultima versione» ma <b>«cosa mi serve che non ho già»</b>. Se la
+  risposta è «niente», aggiorni solo per le correzioni di sicurezza — e il canale long-term fa
+  esattamente questo, senza portarsi dietro comportamenti nuovi da riscoprire.</p>
+</div>
+
+<h2>L'ordine, e perché è quello</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 200" role="img" aria-label="La sequenza corretta di aggiornamento in cinque passi">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Cinque passi, in quest'ordine</text>
+    <g stroke-width="1.6">
+      <rect x="14"  y="46" width="124" height="54" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="152" y="46" width="124" height="54" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="290" y="46" width="124" height="54" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+      <rect x="428" y="46" width="124" height="54" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="566" y="46" width="120" height="54" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="76"  y="70">1 · COPIE</text><text x="76"  y="88">backup + export</text>
+      <text x="214" y="70">2 · RouterOS</text><text x="214" y="88">scarica e installa</text>
+      <text x="352" y="70">3 · RIAVVIO</text><text x="352" y="88">e aspetta</text>
+      <text x="490" y="70">4 · RouterBOOT</text><text x="490" y="88">upgrade</text>
+      <text x="626" y="70">5 · RIAVVIO</text><text x="626" y="88">e verifica</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.6">
+      <path d="M140 73h10"/><path d="M278 73h10"/><path d="M416 73h10"/><path d="M554 73h10"/>
+    </g>
+    <text x="350" y="140" text-anchor="middle" class="dg-label-sm">Il nuovo RouterBOOT arriva <tspan font-weight="700">dentro</tspan> il pacchetto di RouterOS: per questo va aggiornato dopo.</text>
+    <text x="350" y="166" text-anchor="middle" class="dg-label-sm">Invertire i passi 2 e 4 significa installare l'avviatore vecchio, cioè quello che c'è già.</text>
+  </svg>
+  </div>
+  <figcaption>Due riavvii, non uno. È la parte che quasi tutti saltano, ed è il motivo per cui si
+  trovano apparati con RouterOS aggiornatissimo e un avviatore di sei anni fa.</figcaption>
+</figure>
+
+<h2>Prima di premere invio: tre verifiche</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>I controlli che evitano i problemi</div>
+<pre><span class="c">── 1. C'e spazio? E la causa piu comune di fallimento</span>
+<span class="p">/system/resource/print</span>
+<span class="c">   guarda free-hdd-space: servono almeno 20-30 MB liberi</span>
+<span class="c">   se sono pochi, fai pulizia:</span>
+<span class="p">/file/print</span>
+<span class="p">/file/remove [find name~</span><span class="s">"vecchio"</span><span class="p">]</span>
+
+<span class="c">── 2. Cosa c'e installato adesso</span>
+<span class="p">/system/package/print</span>
+<span class="c">   sul tuo ax2 deve comparire il pacchetto della radio</span>
+<span class="c">   Wi-Fi: senza quello, niente rete wireless</span>
+
+<span class="c">── 3. Lo stato dell'avviatore</span>
+<span class="p">/system/routerboard/print</span>
+<span class="c">   current-firmware e upgrade-firmware: se differiscono,</span>
+<span class="c">   c'e gia un aggiornamento in attesa</span>
+</pre>
+</div>
+
+<h2>La procedura</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Aggiornamento completo, passo per passo</div>
+<pre><span class="c">═══ PASSO 1 — le copie ═════════════════════════════</span>
+<span class="p">/system/backup/save name=</span><span class="s">"prima-aggiornamento"</span>
+<span class="p">/export file=</span><span class="s">"prima-aggiornamento"</span>
+<span class="c">  e poi scaricale sul Mac con scp: se l'apparato</span>
+<span class="c">  ha problemi, le copie che stanno solo li non servono</span>
+
+<span class="c">═══ PASSO 2 — RouterOS ═════════════════════════════</span>
+<span class="p">/system/package/update/set channel=</span><span class="s">stable</span>
+<span class="p">/system/package/update/check-for-updates</span>
+<span class="c">  mostra installed-version e latest-version</span>
+
+<span class="p">/system/package/update/download</span>
+<span class="c">  scarica soltanto; non installa ancora</span>
+
+<span class="c">═══ PASSO 3 — riavvio ══════════════════════════════</span>
+<span class="p">/system/reboot</span>
+<span class="c">  l'installazione avviene durante l'avvio.</span>
+<span class="c">  ASPETTA: puo richiedere qualche minuto.</span>
+
+<span class="c">  verifica al rientro:</span>
+<span class="p">/system/resource/print</span>
+
+<span class="c">═══ PASSO 4 — RouterBOOT ═══════════════════════════</span>
+<span class="p">/system/routerboard/print</span>
+<span class="c">  se upgrade-firmware > current-firmware:</span>
+<span class="p">/system/routerboard/upgrade</span>
+
+<span class="c">═══ PASSO 5 — secondo riavvio e verifica ═══════════</span>
+<span class="p">/system/reboot</span>
+<span class="p">/system/routerboard/print</span>
+<span class="c">  ora i due numeri devono coincidere</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Durante il passo 4 e 5 non staccare la corrente. Mai.
+  </div>
+  <p>L'aggiornamento dell'avviatore riscrive il software che serve ad accendere l'apparato. Se manca
+  l'alimentazione in quel momento, non c'è più niente che sappia avviarlo: si recupera solo con il
+  Netinstall, e sugli apparati sfortunati nemmeno quello.</p>
+  <p style="margin-bottom:0">Il riavvio dopo un aggiornamento è <b>più lento del normale</b>. Sembra
+  bloccato e non lo è. Dagli qualche minuto prima di preoccuparti, e <b>non toccare l'alimentatore</b>.
+  Su un apparato in produzione questo è il momento in cui serve un gruppo di continuità.</p>
+</div>
+
+<h2>Tornare indietro</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Se la nuova versione dà problemi</div>
+<pre><span class="c">── torna alla versione precedente ──────────────────</span>
+<span class="p">/system/package/downgrade</span>
+<span class="c">  chiede conferma e riavvia. Funziona solo se il</span>
+<span class="c">  pacchetto precedente e ancora sull'apparato:</span>
+<span class="c">  per questo NON si cancella subito dopo</span>
+
+<span class="c">── oppure installa a mano una versione precisa ─────</span>
+<span class="c">  1. scarica il .npk per arm64 da mikrotik.com/download</span>
+<span class="c">  2. dal Mac:</span>
+<span class="c">     scp routeros-7.x.x-arm64.npk admin@192.168.88.1:</span>
+<span class="c">  3. sul router:</span>
+<span class="p">/system/reboot</span>
+<span class="c">  RouterOS trova il pacchetto e lo installa all'avvio</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'avviatore non si riporta indietro
+  </div>
+  <p>RouterOS si può riportare a una versione precedente. <b>RouterBOOT no</b>: è un'operazione a senso
+  unico.</p>
+  <p style="margin-bottom:0">È un motivo in più per non aggiornarlo con leggerezza su un apparato di
+  produzione, e per farlo sempre in una finestra concordata invece che «già che ci sono».</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Aggiorna il tuo apparato, e prendi nota
+  </div>
+  <p>Serve che ether1 sia collegata a Internet, perché il router deve poter scaricare.</p>
+  <ol>
+    <li><b>Annota lo stato di partenza</b> — versione di RouterOS, versione dell'avviatore, spazio
+    libero. Ti serviranno per il confronto.</li>
+    <li><b>Fai backup ed export</b>, e <b>scaricali sul Mac</b>.</li>
+    <li><b>Esegui i cinque passi</b> nell'ordine, senza saltarne nessuno.</li>
+    <li><b>Verifica alla fine:</b> versione nuova, i due numeri dell'avviatore coincidono, la
+    configurazione è intatta.</li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>La verifica finale, in quattro comandi</div>
+<pre><span class="p">/system/resource/print</span>        <span class="c"># versione e spazio</span>
+<span class="p">/system/routerboard/print</span>     <span class="c"># i due numeri coincidono?</span>
+<span class="p">/system/package/print</span>         <span class="c"># i pacchetti ci sono tutti?</span>
+<span class="p">/ip/address/print</span>             <span class="c"># la configurazione e intatta?</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>E l'ultimo passo, quello che rende tutto riutilizzabile:</b> fai un
+  nuovo export e confrontalo con quello di prima.</p>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Dal Mac: cosa è cambiato davvero</div>
+<pre><span class="p">scp admin@192.168.88.1:dopo-aggiornamento.rsc .</span>
+<span class="p">diff prima-aggiornamento.rsc dopo-aggiornamento.rsc</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0">Quasi sempre <code>diff</code> mostra poche righe, o
+  nessuna. Ma le volte in cui una nuova versione <b>cambia il nome di un parametro o ne introduce uno
+  nuovo</b>, lo vedi qui in dieci secondi invece di scoprirlo fra tre settimane. È la stessa disciplina
+  che nella lezione 42 renderemo automatica con git.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: aggiornamenti",
+  "questions": [
+    { "q": "Quale canale metteresti su un apparato in produzione da un cliente?",
+      "a": [ {"t":"long-term: solo correzioni, nessuna funzione nuova","ok":true},
+             {"t":"stable, per avere sempre l'ultima versione","ok":false},
+             {"t":"testing, per anticipare i problemi","ok":false},
+             {"t":"development","ok":false} ],
+      "e": "La domanda giusta non è «qual è l'ultima versione» ma «cosa mi serve che non ho già». Se la risposta è niente, si aggiorna solo per le correzioni di sicurezza, ed è esattamente ciò che fa il canale long-term senza portare comportamenti nuovi da riscoprire. Il canale stable sta bene sul tuo laboratorio." },
+
+    { "q": "Perché RouterBOOT va aggiornato dopo RouterOS e non prima?",
+      "a": [ {"t":"Il nuovo avviatore viene consegnato dentro il pacchetto di RouterOS","ok":true},
+             {"t":"Perché altrimenti si perde la configurazione","ok":false},
+             {"t":"Perché RouterBOOT richiede più spazio libero","ok":false},
+             {"t":"L'ordine è indifferente","ok":false} ],
+      "e": "Aggiornando prima l'avviatore si installerebbe la versione già presente, cioè quella vecchia. Da qui la sequenza con <b>due</b> riavvii, che è la parte che quasi tutti saltano — ed è il motivo per cui si trovano apparati con RouterOS recentissimo e un avviatore di anni fa." },
+
+    { "q": "Qual è la causa più comune di aggiornamento fallito su questi apparati?",
+      "a": [ {"t":"Spazio di archiviazione insufficiente","ok":true},
+             {"t":"Memoria RAM insufficiente","ok":false},
+             {"t":"Licenza di livello troppo basso","ok":false},
+             {"t":"Connessione a Internet lenta","ok":false} ],
+      "e": "Con 128 MB complessivi, fra sistema, pacchetti, backup e log lo spazio finisce facilmente. Va controllato <code>free-hdd-space</code> prima di iniziare: servono qualche decina di megabyte liberi, e se non ci sono si fa pulizia in <code>/file</code>." },
+
+    { "q": "Cosa NON si può riportare a una versione precedente?",
+      "a": [ {"t":"RouterBOOT: il suo aggiornamento è a senso unico","ok":true},
+             {"t":"RouterOS","ok":false},
+             {"t":"I pacchetti aggiuntivi","ok":false},
+             {"t":"La configurazione","ok":false} ],
+      "e": "RouterOS si riporta indietro con <code>/system/package/downgrade</code>, purché il pacchetto precedente sia ancora sull'apparato. L'avviatore no: una volta aggiornato resta così. È un motivo in più per non farlo «già che ci sono» su un apparato di produzione." },
+
+    { "q": "Perché conviene confrontare l'export prima e dopo l'aggiornamento?",
+      "a": [ {"t":"Perché una nuova versione può cambiare o aggiungere parametri, e lo vedi subito","ok":true},
+             {"t":"Per verificare che il backup sia valido","ok":false},
+             {"t":"Perché l'aggiornamento cancella i commenti","ok":false},
+             {"t":"Per liberare spazio","ok":false} ],
+      "e": "Quasi sempre il confronto non mostra nulla. Ma le volte in cui una versione rinomina un parametro o ne introduce uno, lo scopri in dieci secondi invece che fra tre settimane, magari durante un guasto. È la disciplina che nella lezione 42 diventa automatica con git." },
+
+    { "q": "Il riavvio dopo l'aggiornamento sembra bloccato da qualche minuto. Cosa fai?",
+      "a": [ {"t":"Aspetti: dopo un aggiornamento l'avvio è più lento del normale","ok":true},
+             {"t":"Stacchi e riattacchi l'alimentazione","ok":false},
+             {"t":"Premi il pulsante di reset","ok":false},
+             {"t":"Avvii subito il Netinstall","ok":false} ],
+      "e": "È il momento più delicato dell'intera operazione, soprattutto se sta riscrivendo l'avviatore: togliere corrente lì può lasciare l'apparato senza nulla che sappia accenderlo. L'avvio dopo un aggiornamento richiede legittimamente più tempo — si aspetta, e in produzione si lavora con un gruppo di continuità." }
+  ]
+}
+</script>

@@ -1,0 +1,282 @@
+#id: mt-07
+#title: La riga di comando: print, find, where
+#min: 26
+#level: mt
+#lvname: Modulo MikroTik
+#chapter: Orientarsi in RouterOS
+#desc: Dieci minuti che ti fanno risparmiare ore. La riga di comando di RouterOS è una lingua piccola e regolarissima.
+#obj: Scrivere comandi RouterOS senza copiarli da Internet
+#obj: Filtrare l'output invece di leggere pagine intere
+#obj: Capire perché i numeri delle righe sono pericolosi e cosa usare al loro posto
+#obj: Usare i commenti come strumento di lavoro, non come decorazione
+---
+<p class="lead">La riga di comando di RouterOS spaventa perché sembra criptica. In realtà è una lingua
+con <strong>cinque verbi e una regola</strong>. Quando li hai visti, leggi e scrivi qualsiasi comando —
+compresi quelli per funzioni che non hai mai usato.</p>
+
+<h2>La regola: percorso, verbo, campi</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La forma di ogni comando RouterOS</div>
+<pre><span class="p">/ip/address/add</span> <span class="p">address=</span><span class="n">192.168.50.1/24</span> <span class="p">interface=</span><span class="s">bridge</span>
+<span class="c">└──── dove ────┘└─verbo┘ └────────── campi ──────────────┘</span>
+
+<span class="c">Funzionano entrambe le scritture, scegli quella che preferisci:</span>
+<span class="p">/ip/address/print</span>
+<span class="p">/ip address print</span>
+
+<span class="c">Puoi anche entrare nel menu e restarci:</span>
+<span class="p">/ip/address</span>
+<span class="p">print</span>
+<span class="p">add address=</span><span class="n">10.0.0.1/24</span> <span class="p">interface=</span><span class="s">bridge</span>
+<span class="p">..</span>            <span class="c"># sali di un livello</span>
+<span class="p">/</span>             <span class="c"># torna alla radice</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Verbo</th><th>Cosa fa</th></tr></thead>
+    <tbody>
+      <tr><td><code>print</code></td><td>Mostra. Non modifica mai niente: usalo senza timore</td></tr>
+      <tr><td><code>add</code></td><td>Crea una voce nuova</td></tr>
+      <tr><td><code>set</code></td><td>Modifica una voce esistente</td></tr>
+      <tr><td><code>remove</code></td><td>Cancella</td></tr>
+      <tr><td><code>enable</code> / <code>disable</code></td><td>Spegne senza cancellare — <b>quasi sempre meglio di <code>remove</code></b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Disabilita invece di cancellare
+  </div>
+  <p>Una regola disabilitata resta lì, visibile, con il suo commento, e si riattiva in un secondo. Una
+  regola cancellata va riscritta a memoria, di solito nel momento peggiore.</p>
+  <p style="margin-bottom:0">Quando fai diagnosi, <b>disabilita e prova</b>. Se il problema sparisce
+  hai trovato il colpevole; se non sparisce riattivi e vai avanti, senza aver perso niente. È
+  un'abitudine che vale su ogni apparato di ogni marca.</p>
+</div>
+
+<h2>Il tasto <kbd>?</kbd> e il tasto <kbd>Tab</kbd></h2>
+
+<p>Non serve ricordare i nomi dei campi. RouterOS te li dice.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Chiedere invece di ricordare</div>
+<pre><span class="c">── quali campi accetta questo comando? ─────────────</span>
+<span class="p">/ip/address/add ?</span>
+
+<span class="c">── quali comandi ci sono qui dentro? ───────────────</span>
+<span class="p">/ip/firewall ?</span>
+
+<span class="c">── completamento: scrivi poco e premi Tab ──────────</span>
+<span class="p">/ip/addr</span><span class="c">[Tab]</span>  <span class="c">→ diventa /ip/address</span>
+<span class="p">/ip/fi</span><span class="c">[Tab]</span>    <span class="c">→ diventa /ip/firewall</span>
+
+<span class="c">── e le abbreviazioni funzionano da sole, se non</span>
+<span class="c">   sono ambigue:</span>
+<span class="p">/ip/addr/pr</span>     <span class="c">≡  /ip/address/print</span>
+</pre>
+</div>
+
+<h2>Filtrare invece di leggere</h2>
+
+<p>Su un apparato in produzione un <code>print</code> senza filtro restituisce pagine. Le varianti che
+seguono sono quelle che userai ogni giorno.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Le varianti di print</div>
+<pre><span class="c">── tutti i dettagli invece della tabella stretta ───</span>
+<span class="p">/ip/address/print detail</span>
+
+<span class="c">── solo le righe che rispettano una condizione ─────</span>
+<span class="p">/ip/route/print where dst-address=</span><span class="n">0.0.0.0/0</span>
+<span class="p">/interface/print where running=</span><span class="s">yes</span>
+<span class="p">/ip/firewall/filter/print where action=</span><span class="s">drop</span>
+<span class="p">/ip/dhcp-server/lease/print where status=</span><span class="s">bound</span>
+
+<span class="c">── i contatori: quante volte una regola ha colpito ─</span>
+<span class="p">/ip/firewall/filter/print stats</span>
+
+<span class="c">── aggiornamento continuo, come un cruscotto ───────</span>
+<span class="p">/interface/print stats interval=</span><span class="n">1</span>
+<span class="c">   (Ctrl + C per uscire)</span>
+
+<span class="c">── senza fermarsi a ogni schermata ─────────────────</span>
+<span class="p">/ip/firewall/filter/print without-paging</span>
+</pre>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    <code>print stats</code> è il comando che chiude le discussioni
+  </div>
+  <p>Mostra <b>quanti pacchetti e quanti byte ha effettivamente colpito ogni regola</b>. Una regola
+  con contatore a zero non è mai stata usata: o è inutile, o sta sotto un'altra che la copre, o il
+  traffico non passa da lì.</p>
+  <p style="margin-bottom:0">È l'equivalente di quello che fai su un firewall di qualsiasi marca per
+  dimostrare che una regola è davvero quella che agisce — invece di supporlo.</p>
+</div>
+
+<h2>I numeri sono una trappola</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    I numeri che vedi in <code>print</code> non sono identificatori stabili
+  </div>
+  <p>Quando dai <code>print</code>, RouterOS numera le righe <b>0, 1, 2, 3…</b>. Sembrano
+  identificatori. <b>Non lo sono:</b> sono posizioni nell'elenco che ti è stato appena mostrato.</p>
+  <p>Se cancelli la riga 1, quella che era la 2 diventa la 1. Se hai usato un filtro, la numerazione
+  è quella del <em>risultato filtrato</em>, non dell'elenco completo. E in uno script, scritto oggi ed
+  eseguito fra sei mesi, il numero 3 indicherà con ogni probabilità un'altra cosa.</p>
+  <p style="margin-bottom:0"><b>Lo scenario concreto:</b> fai <code>print where action=drop</code>,
+  vedi tre righe numerate 0, 1, 2, dai <code>remove 1</code> — e cancelli la regola numero 1
+  dell'elenco <em>completo</em>, che è tutt'altra cosa. È un errore che si fa una volta sola, e si
+  ricorda.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La soluzione: <code>find</code></div>
+<pre><span class="c">── invece del numero, descrivi CHE COSA vuoi ───────</span>
+<span class="p">/ip/address/remove [find interface=</span><span class="s">ether3</span><span class="p">]</span>
+<span class="p">/ip/firewall/filter/disable [find comment=</span><span class="s">"prova"</span><span class="p">]</span>
+<span class="p">/interface/set [find name=</span><span class="s">ether5</span><span class="p">] comment=</span><span class="s">"porta di soccorso"</span>
+
+<span class="c">── find puo restituire piu voci: agisce su tutte ───</span>
+<span class="p">/ip/firewall/filter/enable [find disabled=</span><span class="s">yes</span><span class="p">]</span>
+
+<span class="c">── VERIFICA SEMPRE PRIMA con print, stesso filtro ──</span>
+<span class="p">/ip/firewall/filter/print where comment=</span><span class="s">"prova"</span>
+<span class="c">   guardi cosa esce...</span>
+<span class="p">/ip/firewall/filter/remove [find comment=</span><span class="s">"prova"</span><span class="p">]</span>
+<span class="c">   ...e solo dopo cancelli</span>
+</pre>
+</div>
+
+<h2>I commenti non sono decorazione</h2>
+
+<p>Ogni voce di ogni menu accetta un commento. Su RouterOS non è un vezzo: è <strong>il modo in cui si
+selezionano le cose in modo sicuro</strong>, come hai appena visto con <code>find</code>.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Commentare mentre scrivi, non dopo</div>
+<pre><span class="p">/ip/firewall/filter/add chain=</span><span class="s">input</span> <span class="p">action=</span><span class="s">accept</span> <span class="p">\</span>
+<span class="p">    protocol=</span><span class="s">tcp</span> <span class="p">dst-port=</span><span class="n">8291</span> <span class="p">src-address=</span><span class="n">192.168.88.0/24</span> <span class="p">\</span>
+<span class="p">    comment=</span><span class="s">"WinBox solo dalla LAN — mt-16"</span>
+
+<span class="c">── e da qui in poi la ritrovi e la manovri per nome ─</span>
+<span class="p">/ip/firewall/filter/print where comment~</span><span class="s">"WinBox"</span>
+<span class="c">   il carattere ~ cerca dentro il testo</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La convenzione che ti consiglio
+  </div>
+  <p>Nel commento scrivi <b>perché</b>, non cosa. Il «cosa» è già scritto nella regola: chiunque vede
+  che apre la porta 8291. Quello che si perde dopo sei mesi è il motivo.</p>
+  <p style="margin-bottom:0">E se sei in azienda, aggiungi il <b>numero del ticket</b> o la data che ha
+  motivato la regola. È la differenza fra una configurazione che si può manutenere e una che nessuno
+  osa più toccare — compreso chi l'ha scritta.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Prendi confidenza, senza rompere niente
+  </div>
+  <p>Tutta la prima parte è di sola lettura. La seconda crea e cancella una cosa innocua, per farti
+  fare il ciclo completo.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Parte 1 — guardare</div>
+<pre><span class="p">/interface/print where running=</span><span class="s">yes</span>
+<span class="p">/ip/route/print detail</span>
+<span class="p">/ip/firewall/filter/print stats</span>
+<span class="p">/ip/dhcp-server/lease/print where status=</span><span class="s">bound</span>
+<span class="p">/interface/print stats interval=</span><span class="n">1</span>   <span class="c"># Ctrl+C per uscire</span>
+</pre>
+  </div>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Parte 2 — creare, ritrovare, cancellare</div>
+<pre><span class="c"># 1. attiva la rete di sicurezza</span>
+<span class="c">   Ctrl + X       → [Safe Mode taken]</span>
+
+<span class="c"># 2. crea una lista di indirizzi di prova</span>
+<span class="p">/ip/firewall/address-list/add list=</span><span class="s">PROVA</span> <span class="p">\</span>
+<span class="p">    address=</span><span class="n">203.0.113.0/24</span> <span class="p">comment=</span><span class="s">"esercizio mt-07"</span>
+
+<span class="c"># 3. ritrovala per commento, non per numero</span>
+<span class="p">/ip/firewall/address-list/print where comment~</span><span class="s">"mt-07"</span>
+
+<span class="c"># 4. modificala usando find</span>
+<span class="p">/ip/firewall/address-list/set [find comment~</span><span class="s">"mt-07"</span><span class="p">] \</span>
+<span class="p">    comment=</span><span class="s">"esercizio mt-07 — modificato"</span>
+
+<span class="c"># 5. cancellala nello stesso modo</span>
+<span class="p">/ip/firewall/address-list/remove [find comment~</span><span class="s">"mt-07"</span><span class="p">]</span>
+
+<span class="c"># 6. esci dalla Safe Mode tenendo le modifiche</span>
+<span class="c">   Ctrl + X</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Il punto dell'esercizio</b> non è la lista di indirizzi:
+  è il ciclo <em>crea → ritrova per commento → modifica → cancella</em> senza mai scrivere un numero di
+  riga. Se prendi questa abitudine adesso, non farai mai l'errore del riquadro rosso.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la riga di comando",
+  "questions": [
+    { "q": "Perché i numeri mostrati da <code>print</code> sono pericolosi?",
+      "a": [ {"t":"Sono posizioni nell'elenco mostrato, non identificatori: cambiano","ok":true},
+             {"t":"Perché partono da zero invece che da uno","ok":false},
+             {"t":"Perché sono visibili solo agli amministratori","ok":false},
+             {"t":"Perché non funzionano con il comando set","ok":false} ],
+      "e": "Cancellata una voce, le successive si rinumerano; e se hai usato un filtro, la numerazione è quella del risultato filtrato, non dell'elenco completo. Da qui l'errore classico: <code>print where action=drop</code> mostra tre righe, dai <code>remove 1</code> e cancelli tutt'altra regola." },
+
+    { "q": "Cosa si usa al posto del numero di riga?",
+      "a": [ {"t":"<code>[find ...]</code>, descrivendo la voce con una condizione","ok":true},
+             {"t":"Il nome dell'interfaccia","ok":false},
+             {"t":"L'ordine di creazione","ok":false},
+             {"t":"L'identificatore interno mostrato con detail","ok":false} ],
+      "e": "<code>find</code> seleziona per contenuto — interfaccia, commento, azione — quindi resta valido anche se l'elenco cambia. La disciplina completa è: prima <code>print</code> con lo stesso filtro per vedere cosa verrebbe colpito, poi il comando che modifica." },
+
+    { "q": "A cosa serve <code>print stats</code> sulle regole firewall?",
+      "a": [ {"t":"Mostra quanti pacchetti e byte ha effettivamente colpito ogni regola","ok":true},
+             {"t":"Mostra l'utilizzo di CPU e memoria","ok":false},
+             {"t":"Ordina le regole per importanza","ok":false},
+             {"t":"Elenca le connessioni aperte","ok":false} ],
+      "e": "È il comando che chiude le discussioni: una regola con contatore a zero non è mai stata usata — o è inutile, o è coperta da una che le sta sopra, o il traffico non passa da lì. Dimostra quale regola agisce davvero invece di farlo supporre." },
+
+    { "q": "Perché conviene disabilitare una regola invece di cancellarla?",
+      "a": [ {"t":"Resta visibile con il suo commento e si riattiva in un secondo","ok":true},
+             {"t":"Perché cancellare richiede la Safe Mode","ok":false},
+             {"t":"Perché disabilitare libera memoria","ok":false},
+             {"t":"Perché cancellare non è reversibile nemmeno con il backup","ok":false} ],
+      "e": "In diagnosi si disabilita e si prova: se il problema sparisce hai trovato il colpevole, se non sparisce riattivi senza aver perso nulla. Una regola cancellata va invece riscritta a memoria, di solito nel momento peggiore." },
+
+    { "q": "Cosa conviene scrivere nel commento di una regola?",
+      "a": [ {"t":"Il motivo per cui esiste, e l'eventuale riferimento al ticket","ok":true},
+             {"t":"Cosa fa tecnicamente la regola","ok":false},
+             {"t":"La data dell'ultima modifica","ok":false},
+             {"t":"Il nome di chi l'ha scritta","ok":false} ],
+      "e": "Il «cosa» è già leggibile nella regola stessa: chiunque vede che apre la porta 8291. Quello che si perde dopo sei mesi è il perché. È la differenza fra una configurazione manutenibile e una che nessuno osa più toccare, compreso chi l'ha scritta." },
+
+    { "q": "Come si cercano le voci il cui commento contiene una certa parola?",
+      "a": [ {"t":"Con l'operatore <code>~</code>: <code>print where comment~«WinBox»</code>","ok":true},
+             {"t":"Con <code>=</code>, che cerca già dentro il testo","ok":false},
+             {"t":"Con <code>find-text</code>","ok":false},
+             {"t":"Non è possibile: si può solo confrontare il commento intero","ok":false} ],
+      "e": "L'uguale confronta il valore per intero, quindi troverebbe solo il commento identico carattere per carattere. La tilde cerca <em>dentro</em> il testo, ed è ciò che rende i commenti uno strumento di selezione e non una decorazione." }
+  ]
+}
+</script>

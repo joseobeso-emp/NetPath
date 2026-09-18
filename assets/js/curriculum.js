@@ -199,10 +199,10 @@ window.NETPATH_CURRICULUM = [
       { id:"mt-05", t:"Reset e recupero: quando ti sei chiuso fuori", s:"I tempi esatti del pulsante di reset, il Netinstall dalla VM Windows, e cosa fare prima di andare nel panico.", m:24, ready:true }
     ]},
     { title: "Orientarsi in RouterOS", lessons: [
-      { id:"mt-06", t:"La mappa del menu: dove vive ogni cosa", s:"L'albero di RouterOS spiegato una volta per tutte, così smetti di cercare e inizi a sapere dove andare.", m:24, ready:false },
-      { id:"mt-07", t:"La riga di comando: print, find, where", s:"Dieci minuti che ti fanno risparmiare ore. La CLI di RouterOS è una lingua piccola e regolarissima.", m:26, ready:false },
-      { id:"mt-08", t:"La configurazione predefinita, letta riga per riga", s:"Cosa c'è davvero dentro un hAP ax² appena tolto dalla scatola, e perché va capita prima di cambiarla.", m:28, ready:false },
-      { id:"mt-09", t:"Aggiornare RouterOS e RouterBOOT senza sorprese", s:"L'ordine giusto, i due aggiornamenti che tutti dimenticano di fare entrambi, e come si torna indietro.", m:22, ready:false }
+      { id:"mt-06", t:"La mappa del menu: dove vive ogni cosa", s:"L'albero di RouterOS spiegato una volta per tutte, così smetti di cercare e inizi a sapere dove andare.", m:24, ready:true },
+      { id:"mt-07", t:"La riga di comando: print, find, where", s:"Dieci minuti che ti fanno risparmiare ore. La CLI di RouterOS è una lingua piccola e regolarissima.", m:26, ready:true },
+      { id:"mt-08", t:"La configurazione predefinita, letta riga per riga", s:"Cosa c'è davvero dentro un hAP ax² appena tolto dalla scatola, e perché va capita prima di cambiarla.", m:28, ready:true },
+      { id:"mt-09", t:"Aggiornare RouterOS e RouterBOOT senza sorprese", s:"L'ordine giusto, i due aggiornamenti che tutti dimenticano di fare entrambi, e come si torna indietro.", m:22, ready:true }
     ]},
     { title: "La rete di base", lessons: [
       { id:"mt-10", t:"Interfacce e bridge: il primo disegno", s:"Cos'è un bridge su RouterOS, perché non è esattamente uno switch, e come si decide cosa ci va dentro.", m:24, ready:false },
