@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Il primo giro su un apparato che non conosci — NetPath</title>
+<meta name="description" content="I dieci comandi da dare quando ti mettono davanti un firewall di cui non sai niente, e in che ordine.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-04">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Orientarsi</span>
+      </nav>
+      <h1 class="lesson-title">Il primo giro su un apparato che non conosci</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 04</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Ricostruire in dieci minuti lo stato di un apparato mai visto prima</li>
+        <li>Riconoscere subito i segnali che meritano attenzione</li>
+        <li>Sapere cosa annotare, perché ti servirà dopo</li>
+        <li>Porre la domanda di perimetro prima di qualsiasi analisi tecnica</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Ti mettono davanti un FortiGate di cui non sai niente. Prima di toccare qualsiasi cosa
+servono dieci minuti per capire <strong>con cosa hai a che fare</strong>. Questa è la sequenza —
+usala così com'è, sempre nello stesso ordine, finché non la sai a memoria.</p>
+
+<h2>Passo zero: è nostro?</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La domanda che precede tutte le altre
+  </div>
+  <p><b>Questo apparato rientra nel nostro perimetro di gestione?</b> Non è una domanda burocratica: è
+  quella che fa perdere più tempo quando non viene posta all'inizio.</p>
+  <p style="margin-bottom:0">Capita di passare ore ad analizzare un firewall che gestisce qualcun
+  altro, o di consigliare una modifica su un apparato di cui non siamo responsabili. Se la risposta
+  non è chiara, si chiarisce <b>prima</b> — e una dichiarazione di perimetro scritta a un cliente ha
+  peso, quindi si concorda con chi di dovere invece di improvvisarla in una mail.</p>
+</div>
+
+<h2>I dieci comandi, nell'ordine</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Sequenza di ricognizione — tutti in sola lettura</div>
+<pre><span class="c">═══ 1. CHI SEI ═════════════════════════════════════</span>
+<span class="p">get system status</span>
+<span class="c">   modello, versione e build di FortiOS, numero di serie,</span>
+<span class="c">   nome dell'apparato, se i VDOM sono attivi</span>
+
+<span class="c">═══ 2. COME STAI ═══════════════════════════════════</span>
+<span class="p">get system performance status</span>
+<span class="c">   processore, memoria, da quanto e acceso, sessioni attive</span>
+
+<span class="c">═══ 3. SEI ANCORA PROTETTO? ════════════════════════</span>
+<span class="p">diagnose autoupdate versions</span>
+<span class="c">   versioni delle firme e SCADENZA DEL CONTRATTO.</span>
+<span class="c">   Se le date sono passate, meta delle funzioni di</span>
+<span class="c">   sicurezza e decorativa (lezione 1)</span>
+
+<span class="c">═══ 4. COM'E COLLEGATO ═════════════════════════════</span>
+<span class="p">get system interface physical</span>
+<span class="p">show system interface</span>
+<span class="c">   quali porte hanno il cavo, a che velocita, con che</span>
+<span class="c">   indirizzo, e quali servizi di accesso sono permessi</span>
+
+<span class="c">═══ 5. DOVE MANDA IL TRAFFICO ══════════════════════</span>
+<span class="p">get router info routing-table all</span>
+<span class="c">   la rotta predefinita, le rotte verso i tunnel,</span>
+<span class="c">   distanze e priorita</span>
+
+<span class="c">═══ 6. COSA PERMETTE ═══════════════════════════════</span>
+<span class="p">show firewall policy</span>
+<span class="c">   quante regole? ce ne sono con sorgente, destinazione</span>
+<span class="c">   e servizio tutti aperti?</span>
+
+<span class="c">═══ 7. CON CHI PARLA ═══════════════════════════════</span>
+<span class="p">get vpn ipsec tunnel summary</span>
+<span class="c">   i tunnel configurati e quali sono attivi</span>
+
+<span class="c">═══ 8. CHI PUO ENTRARE ═════════════════════════════</span>
+<span class="p">show system admin</span>
+<span class="c">   quante utenze, da quali indirizzi, con quale profilo</span>
+
+<span class="c">═══ 9. C'E UNO STORICO? ════════════════════════════</span>
+<span class="p">execute disk list</span>
+<span class="p">show log setting</span>
+<span class="c">   se non c'e disco, i log vivono in memoria e durano</span>
+<span class="c">   pochissimo: ogni analisi retrospettiva sara cieca</span>
+
+<span class="c">═══ 10. HA AVUTO PROBLEMI? ═════════════════════════</span>
+<span class="p">diagnose debug crashlog read</span>
+<span class="c">   riavvii anomali e blocchi registrati</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Se il passo 1 dice che i VDOM sono attivi, fermati
+  </div>
+  <p>Su un apparato diviso in partizioni, i comandi dei passi successivi vanno dati <b>dentro il VDOM
+  giusto</b>, altrimenti guardi la configurazione sbagliata e ne trai conclusioni sbagliate.</p>
+  <p style="margin-bottom:0">Prima capisci quanti VDOM ci sono e quale ti interessa, poi entri
+  con <code>config vdom</code> ed <code>edit</code>, e solo allora prosegui. È esattamente il genere
+  di passaggio che, saltato, fa dire «ma qui non c'è nessuna regola» quando invece ce ne sono
+  ottanta.</p>
+</div>
+
+<h2>Cosa guardare in ciò che esce</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Se vedi…</th><th>Significa</th><th>Quanto è grave</th></tr></thead>
+    <tbody>
+      <tr><td><b>Versione di FortiOS fuori supporto</b></td><td>Vulnerabilità note non più corrette</td><td><b>Alta</b> — soprattutto se ha servizi pubblicati</td></tr>
+      <tr><td><b>Contratto FortiGuard scaduto</b></td><td>Firme ferme, filtro per categoria non funzionante</td><td><b>Alta</b> — e il cliente crede di essere protetto</td></tr>
+      <tr><td><b>Processore costantemente sopra il 70%</b></td><td>Apparato sottodimensionato o profilo di ispezione troppo pesante</td><td>Media</td></tr>
+      <tr><td><b>Regole con tutto aperto</b></td><td>Sorgente, destinazione e servizio senza restrizioni</td><td>Media — da capire <em>perché</em> prima di toccare</td></tr>
+      <tr><td><b>Regole senza registrazione attiva</b></td><td>Traffico che passa senza lasciare traccia: diagnosi impossibile</td><td>Media</td></tr>
+      <tr><td><b>Nessun disco e nessun log esterno</b></td><td>Storico di poche decine di minuti</td><td>Media — va portata al cliente come decisione</td></tr>
+      <tr><td><b>Utenze amministrative condivise</b></td><td>Impossibile sapere chi ha fatto cosa</td><td>Media</td></tr>
+      <tr><td><b>Tunnel configurati e mai saliti</b></td><td>Residui di progetti abbandonati, o guasti non notati</td><td>Bassa, ma da chiarire</td></tr>
+      <tr><td><b>Voci nel registro dei blocchi</b></td><td>L'apparato si è riavviato da solo</td><td>Dipende dalla frequenza</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    «Tutto aperto» non è automaticamente da chiudere
+  </div>
+  <p>Trovare una regola permissiva su un apparato di un cliente è normale, e la reazione istintiva —
+  restringerla subito — è quasi sempre sbagliata.</p>
+  <p style="margin-bottom:0"><b>Prima si capisce cosa ci passa davvero</b>, guardando i registri per
+  qualche giorno. Poi si propone la restrizione, con l'elenco di ciò che si è osservato. Restringere
+  al buio significa rompere qualcosa che nessuno sapeva ci fosse — e sarai tu ad averlo rotto. Su
+  questo torniamo nella lezione 11.</p>
+</div>
+
+<h2>Cosa annotare</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La scheda dell'apparato, da riempire una volta e riusare per anni
+  </div>
+  <p>Dieci minuti di ricognizione valgono solo se restano scritti. Quella che segue è la scheda che ti
+  conviene compilare ogni volta, e che vale come documentazione:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Identità:</b> modello, numero di serie, versione e build di FortiOS, nome</li>
+    <li><b>Ruolo:</b> cosa fa — perimetro di una sede, concentratore di VPN, pubblicazione di servizi</li>
+    <li><b>Collegamenti:</b> quali porte, verso cosa, con quali indirizzi pubblici</li>
+    <li><b>Tunnel:</b> nome, controparte, <b>chi è il referente dall'altro lato</b> — è il dato che
+    manca sempre quando serve</li>
+    <li><b>Contratti:</b> cosa è attivo e fino a quando</li>
+    <li><b>Accessi:</b> come ci si entra, da dove, con quali utenze</li>
+    <li><b>Log:</b> dove finiscono e per quanto restano</li>
+    <li><b>Rilievi aperti:</b> cosa hai trovato, con una priorità</li>
+  </ul>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    E prima di toccare qualunque cosa: la copia
+  </div>
+  <p>Vale su FortiGate come sul MikroTik, e come su qualsiasi apparato di qualsiasi marca.</p>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="p">execute backup config flash</span> <span class="s">prima-intervento</span>
+<span class="c">   copia sulla memoria interna, immediata</span>
+
+<span class="p">execute backup config tftp</span> <span class="s">file.conf 10.0.0.5</span>
+<span class="c">   oppure portala subito fuori dall'apparato</span>
+</pre>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0">Dalla finestra grafica si scarica con un clic dal menu di
+  sistema. <b>Falla comunque</b>, anche se sei convinto di dover solo guardare: la copia costa dieci
+  secondi, e il giorno in cui serve non c'è modo di farla a posteriori.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Fai il giro sul 60D, e compila la scheda
+  </div>
+  <ol>
+    <li><b>Esegui i dieci comandi</b> nell'ordine, sul tuo apparato di laboratorio.</li>
+    <li><b>Compila la scheda</b> con quello che trovi. Tienila: ti servirà da riferimento per tutto
+    il modulo, e sarà il tuo primo documento di apparato.</li>
+    <li><b>Confronta con le attese:</b> il 60D dovrebbe dirti FortiOS 6.0, contratti scaduti, nessun
+    tunnel, poche regole e — probabilmente — nessuno spazio per i log. <b>Se invece trovi una
+    configurazione piena</b>, fermati: contiene i dati di un cliente, e va azzerata prima di
+    proseguire.</li>
+  </ol>
+  <p style="margin-top:12px;margin-bottom:0"><b>L'esercizio che rende la cosa un'abitudine:</b> dai gli
+  stessi dieci comandi una seconda volta, a distanza di qualche giorno, senza guardare questa pagina.
+  Quando ti vengono in mente da soli, nell'ordine giusto, questa lezione ha funzionato.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la prima ricognizione",
+  "questions": [
+    { "q": "Qual è la domanda che precede qualsiasi analisi tecnica?",
+      "a": [ {"t":"Questo apparato rientra nel nostro perimetro di gestione?","ok":true},
+             {"t":"Che versione di FortiOS ha?","ok":false},
+             {"t":"Quante regole firewall ci sono?","ok":false},
+             {"t":"Il contratto è attivo?","ok":false} ],
+      "e": "Non è burocrazia: è la domanda che fa perdere più tempo quando non viene posta. Capita di analizzare per ore un firewall gestito da altri, o di consigliare modifiche su un apparato di cui non siamo responsabili. E una dichiarazione di perimetro scritta a un cliente ha peso, quindi si concorda invece di improvvisarla." },
+
+    { "q": "Il comando del passo 1 dice che i VDOM sono attivi. Cosa fai?",
+      "a": [ {"t":"Ti fermi, capisci quale partizione ti interessa e ci entri prima di proseguire","ok":true},
+             {"t":"Prosegui normalmente: i comandi valgono per tutto l'apparato","ok":false},
+             {"t":"Disattivi i VDOM per semplificare","ok":false},
+             {"t":"Passi alla finestra grafica, che non ha questo problema","ok":false} ],
+      "e": "Senza entrare nel contesto giusto guardi la configurazione sbagliata e ne trai conclusioni sbagliate. È il passaggio che, saltato, fa dire «ma qui non c'è nessuna regola» quando invece ce ne sono ottanta, in un'altra partizione." },
+
+    { "q": "Perché il passo 3 — la verifica dei contratti — è fra i primi?",
+      "a": [ {"t":"Con i contratti scaduti metà delle funzioni di sicurezza è decorativa, ma sembra attiva","ok":true},
+             {"t":"Perché senza contratto l'apparato si blocca","ok":false},
+             {"t":"Perché serve per aggiornare il firmware","ok":false},
+             {"t":"Perché altrimenti i log non vengono registrati","ok":false} ],
+      "e": "Nella configurazione tutto continua ad apparire acceso: le regole ci sono, i profili sono agganciati. Ma le firme sono ferme e il filtro per categoria non ha più su cosa decidere. È uno dei rilievi più frequenti quando si prende in carico un apparato, e il cliente in genere non lo sa." },
+
+    { "q": "Trovi una regola con sorgente, destinazione e servizio tutti aperti. Cosa fai?",
+      "a": [ {"t":"Guardi i registri per qualche giorno per capire cosa ci passa, poi proponi la restrizione","ok":true},
+             {"t":"La restringi subito: è un rischio","ok":false},
+             {"t":"La disattivi e aspetti le segnalazioni","ok":false},
+             {"t":"La lasci com'è: se c'è, serve","ok":false} ],
+      "e": "Restringere al buio significa rompere qualcosa che nessuno sapeva ci fosse — e sarai tu ad averlo rotto. Prima si osserva cosa passa davvero, poi si propone la restrizione con l'elenco di ciò che si è visto. Lasciarla e basta non va bene, ma la fretta è peggio." },
+
+    { "q": "Perché il passo 9 verifica se esiste uno spazio per i log?",
+      "a": [ {"t":"Senza disco né log esterno lo storico dura pochissimo e ogni analisi retrospettiva è cieca","ok":true},
+             {"t":"Perché senza disco l'apparato non può essere aggiornato","ok":false},
+             {"t":"Perché i log occupano memoria e rallentano l'apparato","ok":false},
+             {"t":"Perché serve per attivare i profili di ispezione","ok":false} ],
+      "e": "Su molti apparati senza archiviazione interna i log vivono in memoria per poche decine di minuti. Significa che quando il cliente segnala un problema di ieri non c'è niente da guardare. È una decisione da portargli — log esterni o analizzatore — non un dettaglio tecnico da tenere per sé." },
+
+    { "q": "Qual è il dato che, nella scheda dell'apparato, manca sempre proprio quando serve?",
+      "a": [ {"t":"Chi è il referente dall'altro lato di ogni tunnel","ok":true},
+             {"t":"Il numero di serie","ok":false},
+             {"t":"La versione di FortiOS","ok":false},
+             {"t":"L'indirizzo di gestione","ok":false} ],
+      "e": "Un tunnel ha due estremità e la maggior parte dei problemi si risolve solo parlando con chi gestisce l'altra. Modello, versione e indirizzi si ricavano in dieci secondi dall'apparato; il nome e il contatto del referente remoto no, e quando serve — di solito durante un disservizio — non c'è tempo per cercarlo." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

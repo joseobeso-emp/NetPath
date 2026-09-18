@@ -259,8 +259,75 @@ window.NETPATH_CURRICULUM = [
       { id:"mt-47", t:"Progetto finale: la rete completa", s:"Tutto insieme: VLAN, Wi-Fi, firewall, VPN, QoS, monitoraggio e documentazione. Da consegnare a te stesso.", m:40, ready:false }
     ]}
   ]
+},
+{
+  id: "fg", n: "FG", key: "fg", label: "Modulo Fortinet",
+  title: "FortiGate e FortiOS",
+  subtitle: "Pratico · il firewall di ogni giorno",
+  blurb: "Il firewall che trovi più spesso dai clienti. Si parte dal problema vero — «accedo e non so dove guardare» — e si arriva a costruirne uno da zero e a diagnosticarlo con metodo invece che per tentativi.",
+  outcome: "Sai orientarti in FortiOS, leggere un log e capire chi ha bloccato cosa, collocare un guasto sull'anello giusto della catena, costruire policy, NAT, VPN e profili di ispezione, e dimostrare con i contatori che una modifica ha davvero effetto.",
+  hours: "60–80 ore",
+  chapters: [
+    { title: "Orientarsi", lessons: [
+      { id:"fg-01", t:"Cos'è un FortiGate e com'è fatto dentro", s:"Hardware, licenze, servizi in abbonamento: cosa stai amministrando davvero e cosa smette di funzionare quando scade qualcosa.", m:24, ready:true },
+      { id:"fg-02", t:"La mappa della GUI: dove vive ogni cosa", s:"Il menu di FortiOS spiegato una volta per tutte, e la regola che ti fa trovare da solo anche ciò che non hai mai usato.", m:28, ready:true },
+      { id:"fg-03", t:"La riga di comando: config, edit, set, next, end", s:"Cinque parole e una struttura ad albero. Dopo questa lezione leggi e scrivi qualsiasi configurazione FortiOS.", m:28, ready:true },
+      { id:"fg-04", t:"Il primo giro su un apparato che non conosci", s:"I dieci comandi da dare quando ti mettono davanti un firewall di cui non sai niente, e in che ordine.", m:26, ready:true },
+      { id:"fg-05", t:"Leggere i log: ogni campo, cosa significa", s:"La lezione che risolve «non so interpretare i dati». Campo per campo, con il significato diagnostico di ciascuno.", m:30, ready:true }
+    ]},
+    { title: "Il metodo diagnostico", lessons: [
+      { id:"fg-06", t:"La catena dei sette anelli", s:"Quasi ogni ticket è «non riesco a raggiungere X». Il metodo che colloca il guasto invece di provare rimedi a caso.", m:28, ready:false },
+      { id:"fg-07", t:"Anelli 1 e 2: client, rete locale, routing e selettori", s:"Sovrapposizioni di indirizzi, proxy sul dispositivo, rotte che puntano dove non c'è nessuno.", m:30, ready:false },
+      { id:"fg-08", t:"Anelli 3, 4 e 5: policy, servizio, NAT", s:"La coppia di interfacce, l'oggetto servizio troppo stretto, il NAT che manca. Le tre cause più frequenti in assoluto.", m:30, ready:false },
+      { id:"fg-09", t:"Anelli 6 e 7: ispezione e destinazione", s:"Quando a bloccare non è la regola ma il motore di ispezione — e quando il problema non è affatto tuo.", m:28, ready:false }
+    ]},
+    { title: "Costruire", lessons: [
+      { id:"fg-10", t:"Interfacce, zone e VLAN", s:"Come FortiOS vede la rete, e perché una zona che non contiene un tunnel è la trappola più silenziosa.", m:28, ready:false },
+      { id:"fg-11", t:"Gli oggetti: indirizzi, servizi, pianificazioni", s:"Le convenzioni di nome che rendono una configurazione manutenibile, e la regola sugli oggetti condivisi.", m:26, ready:false },
+      { id:"fg-12", t:"Le policy: coppia di interfacce e deny implicito", s:"Il principio che genera più ticket di tutti, e il più controintuitivo per chi non ha formazione di rete.", m:32, ready:false },
+      { id:"fg-13", t:"NAT: SNAT, DNAT e i VIP", s:"Mascherare in uscita, pubblicare in ingresso, e la coerenza fra VIP e oggetto servizio.", m:30, ready:false },
+      { id:"fg-14", t:"Routing: statiche, distanza, priorità, multi-WAN", s:"Come si decide da dove esce un pacchetto, e come si legge una tabella di routing senza fare ipotesi.", m:28, ready:false }
+    ]},
+    { title: "Pubblicare servizi", lessons: [
+      { id:"fg-15", t:"VIP e port forward fatti bene", s:"La procedura completa, con le sole porte necessarie e il collaudo che dimostra che funziona.", m:28, ready:false },
+      { id:"fg-16", t:"Gli errori di pubblicazione che pagano tutti", s:"Porta del VIP che non combacia col servizio, due VIP sullo stesso indirizzo, regole che nessuno raggiunge.", m:26, ready:false },
+      { id:"fg-17", t:"Restrizioni per sorgente e geolocalizzazione", s:"Chiudere per paese o per indirizzo, e perché il test fatto dalla tua sede non dimostra niente.", m:26, ready:false }
+    ]},
+    { title: "VPN", lessons: [
+      { id:"fg-18", t:"SSL-VPN: impostazioni, portale, pool, policy", s:"L'accesso remoto degli utenti, e il pezzo che tutti dimenticano: entrare nella VPN non significa arrivare da qualche parte.", m:32, ready:false },
+      { id:"fg-19", t:"IPsec site-to-site: fase 1, fase 2, selettori", s:"Il tunnel fra due sedi costruito da zero, con i parametri che devono coincidere e quelli che no.", m:34, ready:false },
+      { id:"fg-20", t:"Quando un tunnel non sale", s:"I comandi che dicono esattamente a quale passo si è fermata la negoziazione, e cosa significa ciascun messaggio.", m:30, ready:false },
+      { id:"fg-21", t:"Il tunnel è su ma il traffico non passa", s:"Selettori, rotte, policy e MTU: le quattro cause, in ordine di frequenza, e come si distinguono.", m:30, ready:false },
+      { id:"fg-22", t:"VPN e NAT: quando la sorgente non è accettabile", s:"Il caso in cui devi tradurre l'indirizzo per essere ammesso dall'altra parte, e i pacchetti scartati in silenzio.", m:28, ready:false }
+    ]},
+    { title: "Ispezione e UTM", lessons: [
+      { id:"fg-23", t:"Come funziona l'ispezione: certificato o completa", s:"Le due modalità, cosa vede ciascuna, e perché sceglierne una è una decisione e non un interruttore.", m:30, ready:false },
+      { id:"fg-24", t:"Filtro web e filtro DNS, e quando si contraddicono", s:"Il caso più istruttivo che esista: due livelli che dicono cose opposte sullo stesso traffico.", m:30, ready:false },
+      { id:"fg-25", t:"allow non è exempt: l'errore classico", s:"Perché una lista di eccezioni scritta bene continua a non sbloccare niente.", m:24, ready:false },
+      { id:"fg-26", t:"Antivirus, IPS e controllo applicativo", s:"Cosa ispezionano davvero, e il caso dell'antivirus configurato ma di fatto cieco.", m:28, ready:false },
+      { id:"fg-27", t:"Leggere un log UTM e capire chi ha bloccato", s:"Distinguere in tre secondi se a fermare il traffico è stata la policy o un motore di ispezione.", m:26, ready:false }
+    ]},
+    { title: "Diagnosi avanzata", lessons: [
+      { id:"fg-28", t:"Catturare il traffico: diagnose sniffer packet", s:"Vedere i pacchetti veri sull'apparato, con i filtri giusti e la trappola che genera falsi positivi.", m:30, ready:false },
+      { id:"fg-29", t:"Seguire un pacchetto: diagnose debug flow", s:"Lo strumento che mostra la decisione del firewall passo per passo. Il più potente e il più sottoutilizzato.", m:32, ready:false },
+      { id:"fg-30", t:"Le sessioni: cosa sta passando adesso", s:"Filtrare, leggere e interpretare la tabella delle sessioni, e il filtro che resta impostato e inganna.", m:26, ready:false },
+      { id:"fg-31", t:"Dimostrare che il firewall è fuori causa", s:"Come si prova — con i contatori, non con le opinioni — che il problema è da un'altra parte.", m:28, ready:false }
+    ]},
+    { title: "Gestione quotidiana", lessons: [
+      { id:"fg-32", t:"Log e storico: e cosa fare quando non c'è", s:"Dove finiscono i log, quanto durano, e perché senza storico ogni ticket retrospettivo è cieco.", m:26, ready:false },
+      { id:"fg-33", t:"Monitoraggio e automazioni, con le loro trappole", s:"Controlli periodici e azioni automatiche che falliscono in silenzio da mesi senza che nessuno se ne accorga.", m:28, ready:false },
+      { id:"fg-34", t:"Backup, aggiornamenti e rollback", s:"La procedura ripetibile, la finestra di intervento e il ritorno indietro scritto prima di partire.", m:28, ready:false },
+      { id:"fg-35", t:"La messa in sicurezza: la lista di controllo", s:"I rilievi che ricorrono su apparati e clienti diversi, raccolti in una lista da applicare a ogni presa in carico.", m:30, ready:false }
+    ]},
+    { title: "Da senior", lessons: [
+      { id:"fg-36", t:"Costruire un FortiGate da zero: gli undici passi", s:"Dalla scatola alla consegna, in ordine di dipendenza, con la verifica a ogni passo.", m:36, ready:false },
+      { id:"fg-37", t:"Rischio operativo, finestre e rollback", s:"Le quattro domande da farsi prima di ogni modifica su un apparato che sta lavorando.", m:26, ready:false },
+      { id:"fg-38", t:"Prendere in carico un apparato che non conosci", s:"Il metodo completo: perimetro, inventario, rilievi, priorità e cosa dire al cliente.", m:32, ready:false }
+    ]}
+  ]
 }
 ];
+
 
 
 /* --- Indice piatto, usato da nav, ricerca, prev/next --- */

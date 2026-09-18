@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leggere i log: ogni campo, cosa significa — NetPath</title>
+<meta name="description" content="La lezione che risolve «non so interpretare i dati». Campo per campo, con il significato diagnostico di ciascuno.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-05">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Orientarsi</span>
+      </nav>
+      <h1 class="lesson-title">Leggere i log: ogni campo, cosa significa</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 05</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Scegliere il registro giusto per la domanda che ti stai facendo</li>
+        <li>Leggere una riga di log campo per campo e capire cosa è successo</li>
+        <li>Distinguere in tre secondi se a bloccare è stata la regola o un motore di ispezione</li>
+        <li>Filtrare i log dalla finestra grafica e dalla riga di comando</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Questa è la lezione che risolve il problema che ti sei posto all'inizio. I dati ci
+sono già, sull'apparato, in questo momento. Quello che manca è <strong>sapere cosa vuol dire
+ciascuna colonna</strong> — e sono una ventina in tutto.</p>
+
+<h2>Primo: il registro giusto</h2>
+
+<p>La causa numero uno di «ho guardato i log e non c'era niente» non è che il log manchi: è che si
+stava guardando quello sbagliato.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Registro</th><th>Contiene</th><th>Ci cerchi…</th></tr></thead>
+    <tbody>
+      <tr><td><b>Forward Traffic</b></td><td>Il traffico che <b>attraversa</b> il firewall: da una rete all'altra, verso Internet, dentro un tunnel</td>
+          <td><b>Il 90% dei casi.</b> «Il PC non raggiunge il server»</td></tr>
+      <tr><td><b>Local Traffic</b></td><td>Il traffico <b>diretto al firewall stesso</b>: accesso amministrativo, negoziazione VPN, interrogazioni DNS al firewall</td>
+          <td><b>«L'utente non riesce a collegarsi alla VPN»</b><br>«Non riesco ad accedere all'apparato»</td></tr>
+      <tr><td><b>Sniffer Traffic</b></td><td>Traffico catturato da una regola di cattura dedicata</td><td>Casi specifici</td></tr>
+      <tr><td><b>Event</b></td><td>Cosa è successo <b>all'apparato</b>: sistema, utenti, routing, VPN, alta disponibilità</td>
+          <td>«Il tunnel è caduto», «l'apparato si è riavviato»</td></tr>
+      <tr><td><b>Security</b></td><td>Cosa hanno fatto i <b>motori di ispezione</b>: antivirus, filtro web, DNS, IPS, applicazioni</td>
+          <td>«Il sito è bloccato ma non so da cosa»</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore che farai una volta sola
+  </div>
+  <p>Un utente non riesce a collegarsi alla VPN. Vai in <b>Forward Traffic</b>, filtri per il suo
+  indirizzo, non trovi niente, e concludi che il traffico non arriva nemmeno.</p>
+  <p style="margin-bottom:0"><b>Non c'è perché non è quel registro.</b> Un tentativo di collegamento
+  alla VPN è traffico diretto <em>al firewall</em>, quindi sta in <b>Local Traffic</b>. Quando l'utente
+  sarà dentro la VPN e proverà a raggiungere un server, <em>allora</em> comparirà in Forward Traffic.
+  Sono due fasi diverse, in due registri diversi.</p>
+</div>
+
+<h2>I campi, e cosa ti dicono</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Campo</th><th>Cosa contiene</th><th>Valore diagnostico</th></tr></thead>
+    <tbody>
+      <tr><td><code>srcip</code> · <code>srcport</code></td><td>Chi ha iniziato</td><td>Identifica il dispositivo. Attenzione: dietro un NAT vedi l'apparato, non l'utente</td></tr>
+      <tr><td><code>dstip</code> · <code>dstport</code></td><td>Verso cosa</td><td>La porta dice quale servizio stava cercando</td></tr>
+      <tr><td><code>srcintf</code> · <code>dstintf</code></td><td>Da quale interfaccia a quale</td><td><b>È la coppia che determina quale regola può applicarsi</b></td></tr>
+      <tr><td><code>policyid</code></td><td>Quale regola ha deciso</td><td><b>Il campo più importante.</b> <code>0</code> significa <b>nessuna regola</b>: ha deciso il rifiuto implicito</td></tr>
+      <tr><td><code>action</code></td><td>Cosa ha fatto il firewall</td><td>Vedi la tabella sotto</td></tr>
+      <tr><td><code>utmaction</code></td><td>Cosa ha fatto l'<b>ispezione</b></td><td><b>Distingue «la regola ha rifiutato» da «un motore ha bloccato»</b></td></tr>
+      <tr><td><code>service</code> · <code>proto</code></td><td>Servizio e protocollo riconosciuti</td><td>Utile quando la porta non basta a capire</td></tr>
+      <tr><td><code>sentbyte</code> · <code>rcvdbyte</code></td><td>Byte nelle due direzioni</td><td>Uno squilibrio racconta molto — vedi sotto</td></tr>
+      <tr><td><code>duration</code></td><td>Durata della sessione</td><td>Sessioni lunghissime o brevissime sono entrambe segnali</td></tr>
+      <tr><td><code>countdns</code> · <code>countssl</code> · <code>countweb</code></td><td>Quale motore ha contato la sessione</td><td><b>Dice quale motore è intervenuto</b>: filtro DNS, motore SSL, filtro web</td></tr>
+      <tr><td><code>app</code> · <code>appcat</code></td><td>Applicazione riconosciuta</td><td>Solo se il controllo applicativo è attivo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il campo <code>action</code>, valore per valore</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Valore</th><th>Cosa è successo</th><th>Dove guardare dopo</th></tr></thead>
+    <tbody>
+      <tr><td><code>accept</code></td><td>La regola ha permesso</td><td>Se comunque non funziona: ispezione o destinazione</td></tr>
+      <tr><td><code>deny</code></td><td><b>Il firewall ha rifiutato.</b> Una regola di blocco, o il rifiuto implicito</td>
+          <td>Guarda <code>policyid</code>: se è <code>0</code> non c'è una regola che permetta</td></tr>
+      <tr><td><code>close</code></td><td>Chiusura regolare</td><td>Niente: è andato tutto bene</td></tr>
+      <tr><td><code>timeout</code></td><td>La sessione è scaduta senza chiudersi</td><td>Spesso l'altro capo ha smesso di rispondere</td></tr>
+      <tr><td><code>client-rst</code></td><td><b>Il client</b> ha interrotto la connessione che aveva aperto</td>
+          <td>Il problema è dal lato di chi chiede: certificato rifiutato, applicazione che rinuncia</td></tr>
+      <tr><td><code>server-rst</code></td><td><b>Il server remoto</b> ha chiuso</td><td>Il problema è dall'altra parte: servizio non in ascolto, rifiuto applicativo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    <code>client-rst</code> e <code>server-rst</code> ti dicono <em>da che parte</em> guardare
+  </div>
+  <p>Sono due valori che quasi nessuno legge e che valgono oro, perché <b>spostano l'indagine</b>.</p>
+  <p style="margin-bottom:0">Se è il client ad aver chiuso, il firewall ha fatto il suo lavoro e il
+  problema sta sul computer o nel browser dell'utente. Se è il server, il firewall ha consegnato e
+  l'altro capo ha rifiutato. In entrambi i casi <b>hai appena dimostrato che il firewall non è la
+  causa</b> — e lo hai fatto con un dato, non con un'opinione.</p>
+</div>
+
+<h2>La distinzione che conta di più</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Differenza fra action e utmaction: chi ha bloccato il traffico">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Due punti diversi in cui il traffico può fermarsi</text>
+
+    <rect x="24" y="46" width="130" height="50" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="89" y="76" text-anchor="middle" class="dg-mono-sm">il pacchetto</text>
+
+    <rect x="200" y="42" width="180" height="58" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="2"/>
+    <text x="290" y="64" text-anchor="middle" class="dg-label-sm">1 · LA REGOLA</text>
+    <text x="290" y="84" text-anchor="middle" class="dg-mono-sm">permette o rifiuta</text>
+
+    <rect x="426" y="42" width="180" height="58" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2"/>
+    <text x="516" y="64" text-anchor="middle" class="dg-label-sm">2 · L'ISPEZIONE</text>
+    <text x="516" y="84" text-anchor="middle" class="dg-mono-sm">guarda dentro</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.8"><path d="M158 71h38"/><path d="M384 71h38"/></g>
+
+    <rect x="200" y="132" width="180" height="46" rx="7" fill="var(--dg-surface)" stroke="var(--dg-4)" stroke-width="1.4"/>
+    <text x="290" y="152" text-anchor="middle" class="dg-mono-sm">action=deny</text>
+    <text x="290" y="170" text-anchor="middle" class="dg-label-sm">ha deciso la regola</text>
+
+    <rect x="426" y="132" width="180" height="46" rx="7" fill="var(--dg-surface)" stroke="var(--dg-3)" stroke-width="1.4"/>
+    <text x="516" y="152" text-anchor="middle" class="dg-mono-sm">utmaction=block</text>
+    <text x="516" y="170" text-anchor="middle" class="dg-label-sm">ha deciso un motore</text>
+
+    <g stroke="var(--dg-line)" stroke-width="1.3" stroke-dasharray="4 3">
+      <path d="M290 100v30"/><path d="M516 100v30"/></g>
+
+    <text x="350" y="214" text-anchor="middle" class="dg-label-sm">Una regola può <tspan font-weight="700">accettare</tspan> e un motore bloccare lo stesso traffico un istante dopo.</text>
+    <text x="350" y="236" text-anchor="middle" class="dg-label-sm">In quel caso vedrai <tspan font-style="italic">action=accept</tspan> e <tspan font-style="italic">utmaction=block</tspan> sulla stessa riga.</text>
+  </svg>
+  </div>
+  <figcaption>È la distinzione che ti fa risparmiare le ore passate a cercare una regola sbagliata
+  quando il colpevole è un profilo di ispezione — e viceversa.</figcaption>
+</figure>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Due firme da riconoscere a colpo d'occhio
+  </div>
+  <p><b><code>policyid=0</code> con <code>action=deny</code></b> → <em>nessuna regola corrispondeva</em>.
+  Non c'è una regola sbagliata da correggere: <b>manca proprio la regola</b>. Nove volte su dieci
+  perché la <em>coppia di interfacce</em> non è quella che pensavi — il tema della lezione 12.</p>
+  <p style="margin-bottom:0"><b><code>rcvdbyte</code> alto con pochissimi pacchetti inviati dal
+  client</b> → il server ha risposto, il client ha ricevuto e <b>ha chiuso subito</b>. È la firma
+  tipica di un <b>certificato rifiutato dal browser</b>: la connessione si stabilisce, arriva il
+  certificato, il browser non lo accetta e abbandona. Il firewall non c'entra.</p>
+</div>
+
+<h2>Filtrare: dalla finestra e dalla riga di comando</h2>
+
+<p>Nella finestra grafica c'è <em>Add Filter</em> sopra l'elenco: si filtra per indirizzo, porta,
+regola, azione. Ma su un apparato con la finestra lenta, o quando ti serve un risultato da incollare
+in un ticket, la riga di comando è più rapida.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Leggere i log da riga di comando</div>
+<pre><span class="c">── azzera i filtri precedenti: restano impostati! ──</span>
+<span class="p">execute log filter reset</span>
+
+<span class="c">── scegli il registro ──────────────────────────────</span>
+<span class="p">execute log filter category traffic</span>
+
+<span class="c">── restringi ───────────────────────────────────────</span>
+<span class="p">execute log filter field srcip</span> <span class="n">10.10.10.25</span>
+<span class="p">execute log filter field action</span> <span class="s">deny</span>
+
+<span class="c">── quante righe mostrare ───────────────────────────</span>
+<span class="p">execute log filter max-checklines</span> <span class="n">50</span>
+
+<span class="c">── e leggi ─────────────────────────────────────────</span>
+<span class="p">execute log display</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    I filtri restano impostati fra un comando e l'altro
+  </div>
+  <p>È una trappola che incontrerai anche con altri strumenti di FortiOS: il filtro impostato mezz'ora
+  fa <b>è ancora attivo</b>, e i risultati che stai leggendo sono ristretti da una condizione che non
+  ricordi più di aver messo.</p>
+  <p style="margin-bottom:0"><b>Azzera sempre prima di ogni nuova indagine.</b> Conclusioni tratte da
+  un filtro dimenticato sono il modo più subdolo di sbagliare diagnosi, perché tutto sembra coerente.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Genera traffico tu, e leggilo
+  </div>
+  <p>Sul 60D isolato, con il Mac collegato a una porta interna. L'obiettivo è <b>produrre di proposito
+  i vari valori di <code>action</code></b> e riconoscerli.</p>
+  <ol>
+    <li><b>Accendi la registrazione</b> sulle regole esistenti. Senza, non vedrai niente: è il primo
+    motivo per cui un log sembra vuoto.</li>
+    <li><b>Genera traffico permesso:</b> dal Mac, raggiungi qualcosa attraverso il firewall. Cerca la
+    riga corrispondente e leggi <code>policyid</code>, <code>srcintf</code>, <code>dstintf</code>,
+    <code>action</code>.</li>
+    <li><b>Genera traffico rifiutato:</b> prova a raggiungere una porta che nessuna regola permette.
+    Cerca la riga e verifica: <code>action=deny</code>, e <code>policyid</code> — è <code>0</code>?</li>
+    <li><b>Genera un <code>client-rst</code>:</b> apri una connessione e interrompila subito, per
+    esempio chiudendo il terminale a metà di un trasferimento.</li>
+    <li><b>Confronta finestra e comandi:</b> la stessa riga vista in <em>Log &amp; Report → Forward
+    Traffic</em> e con <code>execute log display</code>.</li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Dal Mac, per generare il traffico</div>
+<pre><span class="c"># una porta che dovrebbe essere permessa</span>
+<span class="p">nc -vz 10.10.10.1 443</span>
+
+<span class="c"># una porta che quasi certamente non lo e</span>
+<span class="p">nc -vz 10.10.10.1 3389</span>
+
+<span class="c"># e un ping, per vedere il traffico ICMP nei log</span>
+<span class="p">ping -c 4 10.10.10.1</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Quando sai produrre a comando ciascun valore di
+  <code>action</code> e riconoscerlo nel log, hai risolto il problema da cui siamo partiti.</b> Da
+  qui in poi, davanti a un ticket, non parti più da un'ipotesi: parti da cosa dicono i dati.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: leggere i log",
+  "questions": [
+    { "q": "Un utente non riesce a collegarsi alla VPN. In quale registro cerchi?",
+      "a": [ {"t":"Local Traffic: è traffico diretto al firewall stesso","ok":true},
+             {"t":"Forward Traffic","ok":false},
+             {"t":"Sniffer Traffic","ok":false},
+             {"t":"Security","ok":false} ],
+      "e": "Un tentativo di collegamento alla VPN termina sul firewall, quindi non attraversa niente e non compare in Forward Traffic. Cercarlo lì, non trovarlo e concludere che il traffico non arriva è l'errore che si fa una volta sola. Quando l'utente sarà dentro e proverà a raggiungere un server, <em>allora</em> comparirà in Forward Traffic." },
+
+    { "q": "Vedi <code>action=deny</code> con <code>policyid=0</code>. Cosa significa?",
+      "a": [ {"t":"Nessuna regola corrispondeva: ha deciso il rifiuto implicito","ok":true},
+             {"t":"La regola numero 0 ha bloccato il traffico","ok":false},
+             {"t":"Un motore di ispezione ha bloccato","ok":false},
+             {"t":"Il pacchetto era malformato","ok":false} ],
+      "e": "Non c'è una regola sbagliata da correggere: manca proprio la regola. Nove volte su dieci perché la coppia di interfacce non è quella che si pensava — il traffico entra o esce da un'interfaccia diversa da quella prevista, e nessuna regola copre quella combinazione." },
+
+    { "q": "Qual è la differenza fra <code>action</code> e <code>utmaction</code>?",
+      "a": [ {"t":"action è la decisione della regola, utmaction quella di un motore di ispezione","ok":true},
+             {"t":"action riguarda il traffico in entrata, utmaction quello in uscita","ok":false},
+             {"t":"Sono lo stesso campo con nomi diversi secondo il registro","ok":false},
+             {"t":"utmaction compare solo sul traffico cifrato","ok":false} ],
+      "e": "Sono due punti diversi in cui il traffico può fermarsi, e una riga può avere <code>action=accept</code> e <code>utmaction=block</code> insieme: la regola ha permesso, un motore ha bloccato un istante dopo. Distinguerli evita di passare ore a cercare una regola sbagliata quando il colpevole è un profilo." },
+
+    { "q": "<code>action=client-rst</code>: cosa ti dice?",
+      "a": [ {"t":"È stato il client ad abbandonare la connessione che aveva aperto","ok":true},
+             {"t":"Il firewall ha chiuso la sessione","ok":false},
+             {"t":"Il server non era raggiungibile","ok":false},
+             {"t":"La sessione è scaduta per inattività","ok":false} ],
+      "e": "Sposta l'indagine sul computer o sul browser dell'utente: il firewall ha fatto il suo lavoro. Insieme a <code>server-rst</code>, che indica invece l'altro capo, è uno dei valori che permettono di dimostrare con un dato — non con un'opinione — che il firewall non è la causa." },
+
+    { "q": "<code>rcvdbyte</code> alto e pochissimi pacchetti inviati dal client. Cosa sospetti?",
+      "a": [ {"t":"Il client ha ricevuto la risposta e ha chiuso subito: tipico certificato rifiutato","ok":true},
+             {"t":"Il server è sovraccarico","ok":false},
+             {"t":"C'è perdita di pacchetti","ok":false},
+             {"t":"Il NAT non funziona","ok":false} ],
+      "e": "La connessione si stabilisce, il server manda il certificato, il browser non lo accetta e abbandona senza proseguire. Lo squilibrio fra byte ricevuti e pacchetti inviati è la firma di questo comportamento — e anche qui il firewall non c'entra." },
+
+    { "q": "Perché si azzerano i filtri prima di ogni nuova indagine nei log?",
+      "a": [ {"t":"I filtri restano impostati e restringono i risultati senza che te ne ricordi","ok":true},
+             {"t":"Perché altrimenti il comando restituisce un errore","ok":false},
+             {"t":"Perché consumano memoria","ok":false},
+             {"t":"Perché vengono salvati nella configurazione","ok":false} ],
+      "e": "È il modo più subdolo di sbagliare diagnosi: i risultati sembrano coerenti, ma sono ristretti da una condizione impostata mezz'ora prima e dimenticata. La stessa trappola esiste su altri strumenti di FortiOS, e la cura è sempre la stessa: azzerare prima di ogni nuova prova." },
+
+    { "q": "Apri i log e sono vuoti, pur essendoci traffico. Prima cosa da controllare?",
+      "a": [ {"t":"Se la registrazione è attiva sulle regole","ok":true},
+             {"t":"Se il disco è pieno","ok":false},
+             {"t":"Se il fuso orario è corretto","ok":false},
+             {"t":"Se i profili di ispezione sono agganciati","ok":false} ],
+      "e": "La registrazione non è automatica: una regola senza logging fa passare il traffico senza lasciare traccia, e il registro resta vuoto anche se sta passando di tutto. È il primo motivo per cui un log sembra vuoto, e anche il motivo per cui su una regola nuova conviene sempre accenderla, almeno durante le prove." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

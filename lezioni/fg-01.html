@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cos'è un FortiGate e com'è fatto dentro — NetPath</title>
+<meta name="description" content="Hardware, licenze e servizi in abbonamento: cosa stai amministrando davvero e cosa smette di funzionare quando scade qualcosa.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-01">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Orientarsi</span>
+      </nav>
+      <h1 class="lesson-title">Cos'è un FortiGate e com'è fatto dentro</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 01</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire come è fatto dentro un FortiGate e perché i numeri di copertina ingannano</li>
+        <li>Distinguere FortiOS, FortiCare e FortiGuard e sapere cosa dipende da ciascuno</li>
+        <li>Sapere esattamente cosa smette di funzionare alla scadenza di un abbonamento</li>
+        <li>Leggere il nome di un modello e capire di cosa si tratta</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Un FortiGate è un firewall, ma dire questo non basta. È un computer con
+<strong>circuiti specializzati</strong>, un sistema operativo, e soprattutto <strong>dei servizi in
+abbonamento</strong> senza i quali metà delle funzioni resta accesa in configurazione e spenta nei
+fatti. Questa distinzione è la prima cosa da avere chiara.</p>
+
+<h2>Come è fatto dentro</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="I tre tipi di elaborazione dentro un FortiGate">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Tre strade per un pacchetto, tre velocità diverse</text>
+
+    <g stroke-width="1.8">
+      <rect x="24" y="44" width="200" height="98" rx="10" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="250" y="44" width="200" height="98" rx="10" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="476" y="44" width="200" height="98" rx="10" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="124" y="68" class="dg-label-sm">Circuito di rete</text>
+      <text x="124" y="90" class="dg-mono-sm" fill="var(--dg-text-soft)">inoltro, NAT semplice</text>
+      <text x="124" y="110" class="dg-mono-sm" fill="var(--dg-text-soft)">sessioni consolidate</text>
+      <text x="124" y="132" class="dg-label-sm" fill="var(--dg-1)">velocissimo</text>
+
+      <text x="350" y="68" class="dg-label-sm">Circuito per i contenuti</text>
+      <text x="350" y="90" class="dg-mono-sm" fill="var(--dg-text-soft)">cifratura, confronto</text>
+      <text x="350" y="110" class="dg-mono-sm" fill="var(--dg-text-soft)">con le firme</text>
+      <text x="350" y="132" class="dg-label-sm" fill="var(--dg-2)">veloce</text>
+
+      <text x="576" y="68" class="dg-label-sm">Processore generico</text>
+      <text x="576" y="90" class="dg-mono-sm" fill="var(--dg-text-soft)">tutto il resto: ispezione</text>
+      <text x="576" y="110" class="dg-mono-sm" fill="var(--dg-text-soft)">TLS, filtri, log, gestione</text>
+      <text x="576" y="132" class="dg-label-sm" fill="var(--dg-3)">lento, e si satura</text>
+    </g>
+    <rect x="24" y="166" width="652" height="30" rx="7" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+    <text x="350" y="186" text-anchor="middle" class="dg-label-sm">I numeri di banda sulla scheda tecnica valgono per la <tspan font-weight="700">prima colonna</tspan>.</text>
+    <text x="350" y="222" text-anchor="middle" class="dg-label-sm">Accendere l'ispezione dei contenuti sposta il traffico sulla terza, e il numero crolla di un ordine di grandezza.</text>
+  </svg>
+  </div>
+  <figcaption>È esattamente lo stesso principio che hai visto sul MikroTik, ma qui è più marcato
+  perché le funzioni di ispezione sono il cuore del prodotto.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il casello autostradale
+  </div>
+  <p>Un casello ha tre tipi di corsia. Quella con il <b>telepass</b>: non ti fermi nemmeno, passi a
+  trenta all'ora. Quella con la <b>macchinetta</b>: rallenti, infili la carta, riparti. E quella con
+  <b>l'operatore che ti fa aprire il bagagliaio e guarda dentro</b>.</p>
+  <p>Il gestore dell'autostrada pubblicizza «diecimila auto all'ora». È vero — <b>se passano tutte
+  dal telepass</b>. Il giorno che decidi di controllare il bagagliaio a tutti, quel numero diventa
+  ottocento, e non è che il casello si sia rotto.</p>
+  <p style="margin-bottom:0">Quando leggi «3 Gbps di throughput» su una scheda tecnica, stai leggendo
+  il numero del telepass. Il numero che ti serve davvero è quello <b>con l'ispezione accesa</b>, che
+  sulle schede tecniche c'è ma sta più in basso ed è molto più piccolo.</p>
+</div>
+
+<h2>I tre nomi da non confondere</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Nome</th><th>Cos'è</th><th>Se manca o scade</th></tr></thead>
+    <tbody>
+      <tr><td><b>FortiOS</b></td><td>Il <b>sistema operativo</b>. Lo stesso su tutti i modelli, dal più piccolo al più grande</td>
+          <td>Non scade: è installato sull'apparato</td></tr>
+      <tr><td><b>FortiCare</b></td><td>Il <b>contratto di assistenza</b>: supporto tecnico, sostituzione dell'hardware, accesso agli aggiornamenti dal portale</td>
+          <td>L'apparato continua a funzionare, ma niente assistenza né sostituzione</td></tr>
+      <tr><td><b>FortiGuard</b></td><td>I <b>servizi di sicurezza in abbonamento</b>: firme antivirus e IPS, classificazione dei siti web, filtro DNS, riconoscimento delle applicazioni</td>
+          <td><b>Qui sta il problema.</b> Vedi il riquadro rosso</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un apparato con FortiGuard scaduto sembra attivo e non protegge
+  </div>
+  <p>È il rilievo più importante di tutta questa lezione, e uno dei più frequenti quando prendi in
+  carico un apparato altrui.</p>
+  <ul>
+    <li><b>Antivirus e IPS</b> restano configurati e mantengono le <em>ultime firme scaricate</em>.
+    Continuano a lavorare, ma non conoscono niente di nuovo. Con firme di due anni fa la protezione
+    è sostanzialmente decorativa.</li>
+    <li><b>Il filtro web per categoria smette del tutto.</b> Non è un elenco sull'apparato: è
+    un'interrogazione ai server FortiGuard. Senza abbonamento la classificazione non arriva, e le
+    regole basate sulle categorie non hanno più su cosa decidere.</li>
+    <li><b>Il filtro DNS e il riconoscimento delle applicazioni</b> si degradano allo stesso modo.</li>
+  </ul>
+  <p style="margin-bottom:0"><b>Nella configurazione tutto continua ad apparire acceso.</b> Le regole
+  ci sono, i profili sono agganciati, la casella è spuntata. Per questo è una delle prime cose da
+  verificare su un apparato che non conosci — e lo faremo nella lezione 4.</p>
+</div>
+
+<h2>Leggere il nome di un modello</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Esempio</th><th>Come si legge</th></tr></thead>
+    <tbody>
+      <tr><td><code>FortiGate 60F</code></td><td><b>60</b> = fascia di prestazioni (più alto = più potente) · <b>F</b> = generazione</td></tr>
+      <tr><td><code>FortiGate 40F</code>, <code>60F</code>, <code>80F</code></td><td>Stessa generazione, potenza crescente</td></tr>
+      <tr><td><code>FortiGate 60D</code> → <code>60E</code> → <code>60F</code> → <code>60G</code></td><td>Stessa fascia, generazioni successive. <b>La lettera dice l'età</b></td></tr>
+      <tr><td><code>FortiGate-VM</code></td><td>Versione virtuale, licenziata a numero di processori</td></tr>
+      <tr><td>Suffissi <code>-POE</code>, <code>-3G4G</code>, <code>-WiFi</code></td><td>Varianti con alimentazione sulle porte, modem mobile, radio</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La lettera decide fino a che versione di FortiOS puoi arrivare
+  </div>
+  <p>Ogni generazione ha un tetto. Un apparato della serie <b>D</b> si ferma a FortiOS 6.0 e non
+  vedrà mai il 7.x; un <b>60E</b> non è più fra i modelli supportati dalle versioni più recenti; un
+  <b>60F</b> arriva invece fino alle attuali.</p>
+  <p style="margin-bottom:0"><b>Conta quando compri e quando consigli.</b> Prendere un apparato di
+  due generazioni indietro perché costa poco significa comprare un vicolo cieco: fra un anno non
+  potrai più aggiornarlo, e un firewall che non si aggiorna è un problema di sicurezza, non un
+  risparmio. <b>Il tetto di versione va verificato sul sito del produttore prima dell'acquisto</b>,
+  non dopo.</p>
+</div>
+
+<h2>Due parole che incontrerai subito</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Termine</th><th>Cosa significa</th><th>Quando lo incontri</th></tr></thead>
+    <tbody>
+      <tr><td><b>VDOM</b></td>
+          <td>Partizione logica indipendente: un apparato fisico diviso in più firewall separati, ciascuno con proprie interfacce, regole e oggetti</td>
+          <td>Su apparati che servono più clienti o più ambienti. <b>Se ci sono, ogni comando va dato nel VDOM giusto</b> — errore classico</td></tr>
+      <tr><td><b>HA</b></td>
+          <td>Due apparati in coppia: uno lavora, l'altro è pronto a subentrare</td>
+          <td>Dove la continuità conta. Le modifiche si fanno sul primario e si propagano</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Sul tuo apparato di laboratorio
+  </div>
+  <p>Per imparare userai un <b>FortiGate 60D</b> recuperato in azienda. Va benissimo per lo scopo di
+  questo modulo — la riga di comando di FortiOS è rimasta stabilissima negli anni, quindi quasi tutto
+  ciò che impari lì vale identico sugli apparati di produzione — ma tienilo presente:</p>
+  <ul style="margin-bottom:0">
+    <li>Si ferma a <b>FortiOS 6.0</b>, mentre la produzione gira su versioni 7.x: <b>l'aspetto
+    dell'interfaccia grafica sarà diverso</b>, i concetti no</li>
+    <li>Senza abbonamento FortiGuard attivo, i filtri per categoria non potranno essere provati fino
+    in fondo — li studierai come logica</li>
+    <li><b>Tre regole non negoziabili:</b> mai collegato a Internet, mai su una rete di produzione,
+    e <b>reset di fabbrica prima di usarlo</b> perché potrebbe contenere ancora la configurazione di
+    un cliente</li>
+  </ul>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: cos'è un FortiGate",
+  "questions": [
+    { "q": "Cosa smette di funzionare del tutto alla scadenza dell'abbonamento FortiGuard?",
+      "a": [ {"t":"Il filtro web per categoria, perché è un'interrogazione ai server del produttore","ok":true},
+             {"t":"Le regole firewall","ok":false},
+             {"t":"Il NAT","ok":false},
+             {"t":"Le VPN","ok":false} ],
+      "e": "La classificazione dei siti non è un elenco sull'apparato ma una richiesta in tempo reale: senza abbonamento non arriva risposta e le regole per categoria non hanno più su cosa decidere. Antivirus e IPS invece continuano con le ultime firme scaricate — sempre più vecchie, quindi sempre più inutili. Regole, NAT e VPN non dipendono da FortiGuard." },
+
+    { "q": "Perché i numeri di banda sulle schede tecniche ingannano?",
+      "a": [ {"t":"Valgono per il traffico gestito dai circuiti specializzati, senza ispezione dei contenuti","ok":true},
+             {"t":"Sono misurati in condizioni di laboratorio con cavi speciali","ok":false},
+             {"t":"Si riferiscono al traffico interno e non a quello verso Internet","ok":false},
+             {"t":"Includono anche il traffico di gestione","ok":false} ],
+      "e": "È il casello con il telepass: diecimila auto all'ora, purché nessuno apra il bagagliaio. Appena accendi l'ispezione dei contenuti il pacchetto passa al processore generico e il numero cala di un ordine di grandezza. Il valore utile è quello «con ispezione», che sulle schede c'è ma sta più in basso." },
+
+    { "q": "Cosa indica la lettera nel nome di un modello, per esempio la F di «FortiGate 60F»?",
+      "a": [ {"t":"La generazione, e quindi fino a quale versione di FortiOS potrà arrivare","ok":true},
+             {"t":"La presenza del Wi-Fi","ok":false},
+             {"t":"Il numero di porte","ok":false},
+             {"t":"Il tipo di licenza","ok":false} ],
+      "e": "Il numero indica la fascia di prestazioni, la lettera l'età. E l'età decide il tetto di versione: un apparato serie D si ferma a FortiOS 6.0. Comprare due generazioni indietro perché costa poco significa comprare un vicolo cieco, perché un firewall che non si aggiorna non è un risparmio." },
+
+    { "q": "Cosa distingue FortiCare da FortiGuard?",
+      "a": [ {"t":"FortiCare è l'assistenza e la sostituzione hardware; FortiGuard sono i servizi di sicurezza","ok":true},
+             {"t":"FortiCare è per gli apparati fisici, FortiGuard per quelli virtuali","ok":false},
+             {"t":"Sono due nomi dello stesso contratto","ok":false},
+             {"t":"FortiCare riguarda le VPN, FortiGuard il firewall","ok":false} ],
+      "e": "Sono due abbonamenti distinti e possono scadere in momenti diversi. Senza FortiCare perdi supporto e sostituzione ma l'apparato lavora come prima; senza FortiGuard perdi firme e classificazioni, cioè proprio le funzioni di sicurezza che il cliente pensa di avere." },
+
+    { "q": "Cos'è un VDOM e perché va tenuto presente?",
+      "a": [ {"t":"Una partizione logica indipendente: ogni comando va dato nel VDOM giusto","ok":true},
+             {"t":"Una modalità ad alta disponibilità fra due apparati","ok":false},
+             {"t":"Un tipo di interfaccia virtuale","ok":false},
+             {"t":"Il profilo di ispezione predefinito","ok":false} ],
+      "e": "Un apparato fisico può essere diviso in più firewall separati, ciascuno con proprie interfacce, regole e oggetti. È comodo per servire più clienti o più ambienti, ed è anche una trappola: dare un comando nel VDOM sbagliato significa creare oggetti dove non servono e non trovarli dove li cerchi." },
+
+    { "q": "Perché il FortiGate 60D di laboratorio va tenuto scollegato da Internet?",
+      "a": [ {"t":"È fuori supporto con vulnerabilità note non più corrette","ok":true},
+             {"t":"Perché consumerebbe traffico dell'abbonamento","ok":false},
+             {"t":"Perché scaricherebbe aggiornamenti incompatibili","ok":false},
+             {"t":"Perché il firmware 6.0 non supporta il NAT","ok":false} ],
+      "e": "Un apparato fuori supporto non riceve più correzioni, e le vulnerabilità note restano aperte per sempre: esporlo è uno dei modi più classici in cui un'azienda viene violata. Va tenuto isolato, fuori dalla produzione, e azzerato prima dell'uso perché potrebbe contenere ancora la configurazione di un cliente." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+#id: fg-03
+#title: La riga di comando: config, edit, set, next, end
+#min: 28
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Orientarsi
+#desc: Cinque parole e una struttura ad albero. Dopo questa lezione leggi e scrivi qualsiasi configurazione FortiOS.
+#obj: Scrivere e leggere blocchi di configurazione FortiOS senza copiarli
+#obj: Distinguere le quattro famiglie di comandi e sapere quando serve ciascuna
+#obj: Capire perché show nasconde delle righe, e come vederle
+#obj: Evitare l'errore del contesto sbagliato sugli apparati divisi in partizioni
+---
+<p class="lead">Tutte le configurazioni FortiOS che troverai — nella documentazione, nei forum, nelle
+note di un collega — hanno la stessa forma. È una struttura ad albero con <strong>cinque
+parole</strong>. Imparate quelle, non devi più copiare: leggi e scrivi.</p>
+
+<h2>La forma</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Anatomia di un blocco FortiOS</div>
+<pre><span class="p">config firewall address</span>        <span class="c">← entri nella sezione</span>
+    <span class="p">edit</span> <span class="s">"rete-uffici"</span>         <span class="c">← entri in UNA voce (la crea se non c'è)</span>
+        <span class="p">set subnet</span> <span class="n">10.10.10.0 255.255.255.0</span>
+        <span class="p">set comment</span> <span class="s">"LAN principale"</span>
+    <span class="p">next</span>                       <span class="c">← chiudi la voce, resti nella sezione</span>
+    <span class="p">edit</span> <span class="s">"rete-server"</span>
+        <span class="p">set subnet</span> <span class="n">10.10.20.0 255.255.255.0</span>
+    <span class="p">next</span>
+<span class="p">end</span>                            <span class="c">← chiudi la sezione</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parola</th><th>Cosa fa</th><th>Errore tipico</th></tr></thead>
+    <tbody>
+      <tr><td><code>config</code></td><td>Entra in una sezione</td><td>—</td></tr>
+      <tr><td><code>edit</code></td><td>Entra in una voce. <b>Se non esiste, la crea</b></td><td>Sbagliare il nome e creare una voce nuova senza accorgersene</td></tr>
+      <tr><td><code>set</code></td><td>Assegna un valore a un campo</td><td>—</td></tr>
+      <tr><td><code>next</code></td><td>Chiude la voce, <b>resta nella sezione</b></td><td>Usare <code>end</code> quando si volevano fare più voci</td></tr>
+      <tr><td><code>end</code></td><td>Chiude la sezione e <b>applica</b></td><td>Dimenticarlo: la modifica non viene applicata</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: lo schedario
+  </div>
+  <p><code>config</code> è <b>aprire un cassetto</b> dello schedario. <code>edit</code> è
+  <b>tirare fuori una cartellina</b> — e se quella cartellina non c'è, la segretaria te ne prepara
+  una nuova con quel nome, senza chiederti conferma. <code>set</code> è <b>scrivere su un foglio
+  dentro la cartellina</b>.</p>
+  <p><code>next</code> è <b>rimettere a posto la cartellina</b> tenendo il cassetto aperto, perché
+  ne vuoi prendere un'altra. <code>end</code> è <b>chiudere il cassetto</b>.</p>
+  <p style="margin-bottom:0">Da qui i due errori classici: <b>chiudere il cassetto quando volevi solo
+  cambiare cartellina</b> (usare <code>end</code> al posto di <code>next</code>), e
+  <b>sbagliare a scrivere il nome sulla cartellina</b>, ritrovandosi con una voce nuova vuota accanto
+  a quella che volevi modificare.</p>
+</div>
+
+<h2>Le quattro famiglie di comandi</h2>
+
+<p>Questa distinzione ti fa capire subito cosa aspettarti da un comando che non hai mai visto.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Famiglia</th><th>Serve a</th><th>Esempi</th></tr></thead>
+    <tbody>
+      <tr><td><code>show</code></td><td>Vedere la <b>configurazione</b>: cosa è stato scritto</td>
+          <td><code>show firewall policy</code><br><code>show system interface</code></td></tr>
+      <tr><td><code>get</code></td><td>Vedere lo <b>stato di funzionamento</b>: cosa sta succedendo</td>
+          <td><code>get system status</code><br><code>get router info routing-table all</code></td></tr>
+      <tr><td><code>diagnose</code></td><td><b>Diagnosticare</b>: gli strumenti veri</td>
+          <td><code>diagnose sniffer packet …</code><br><code>diagnose debug flow …</code></td></tr>
+      <tr><td><code>execute</code></td><td><b>Fare</b> qualcosa adesso</td>
+          <td><code>execute ping 8.8.8.8</code><br><code>execute backup config …</code><br><code>execute reboot</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La differenza fra <code>show</code> e <code>get</code>, con un esempio
+  </div>
+  <p><code>show system interface</code> ti dice <b>come è configurata</b> una porta: indirizzo,
+  ruolo, servizi permessi.</p>
+  <p style="margin-bottom:0"><code>get system interface physical</code> ti dice <b>com'è messa
+  adesso</b>: se il cavo è collegato, a che velocità ha negoziato, quanti pacchetti sono passati. La
+  prima è l'intenzione, la seconda la realtà — e quando non coincidono, hai trovato qualcosa.</p>
+</div>
+
+<h2>Perché <code>show</code> nasconde delle righe</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    FortiOS stampa solo i valori diversi da quelli predefiniti
+  </div>
+  <p>È una scelta sensata — rende le configurazioni leggibili — e allo stesso tempo una fonte
+  costante di conclusioni sbagliate.</p>
+  <p><b>Lo scenario:</b> stai verificando una voce e ti aspetti di vedere un certo parametro. Non c'è.
+  Concludi che non è impostato. In realtà <b>è impostato esattamente sul valore predefinito</b>, e
+  FortiOS non lo stampa per non riempire lo schermo.</p>
+  <div class="code" style="margin:12px 0">
+<pre><span class="c">── quello che vedi di solito ───────────────────────</span>
+<span class="p">show webfilter urlfilter</span>
+
+<span class="c">── quello che c'e davvero, valori predefiniti inclusi</span>
+<span class="p">show full-configuration webfilter urlfilter</span>
+</pre>
+  </div>
+  <p style="margin-bottom:0"><b>La regola:</b> quando una configurazione «non ha senso» o manca un
+  parametro che ti aspetti, <b>ripeti con <code>show full-configuration</code> prima di trarre
+  conclusioni</b>. È la differenza fra una diagnosi e un'ipotesi.</p>
+</div>
+
+<h2>Chiedere invece di ricordare</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Il punto interrogativo e il tabulatore</div>
+<pre><span class="c">── quali sezioni ci sono qui? ──────────────────────</span>
+<span class="p">config firewall ?</span>
+
+<span class="c">── quali campi accetta questa voce? ────────────────</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set ?</span>
+
+<span class="c">── quali valori accetta questo campo? ──────────────</span>
+        <span class="p">set action ?</span>
+
+<span class="c">── completamento e abbreviazioni ───────────────────</span>
+<span class="p">con fir pol</span><span class="c">   ≡  config firewall policy</span>
+<span class="c">   funzionano finche non sono ambigue</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    <code>edit 0</code> per creare, il numero esatto per modificare
+  </div>
+  <p>Nelle sezioni numerate — le policy, per esempio — <code>edit 0</code> significa «creane una
+  nuova e assegnale tu il primo identificativo libero». È il modo corretto di aggiungere una regola
+  senza rischiare di sovrascriverne una esistente.</p>
+  <p style="margin-bottom:0">Per modificarne una già presente, invece, serve <b>il suo numero
+  esatto</b>: quello che vedi nella colonna ID della finestra grafica o in <code>show firewall
+  policy</code>. E a differenza di altri sistemi, <b>su FortiOS quel numero è stabile</b>: è
+  l'identificativo della regola, non la sua posizione nell'elenco.</p>
+</div>
+
+<h2>La trappola delle partizioni</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Su un apparato con più VDOM, ogni comando va dato nel contesto giusto
+  </div>
+  <p>Se l'apparato è diviso in partizioni logiche, i comandi dati «a caso» finiscono nel VDOM in cui
+  ti trovi — che spesso non è quello su cui volevi lavorare. Crei oggetti che poi non trovi, o peggio
+  li crei nel firewall di un altro cliente.</p>
+  <div class="code" style="margin:12px 0">
+<pre><span class="c">── entra nella partizione giusta, sempre ───────────</span>
+<span class="p">config vdom</span>
+    <span class="p">edit</span> <span class="s">nome-del-vdom</span>
+        <span class="c">... qui dentro i tuoi comandi ...</span>
+    <span class="p">end</span>
+
+<span class="c">── le impostazioni comuni a tutto l'apparato ───────</span>
+<span class="p">config global</span>
+    <span class="c">... firmware, amministratori, ora ...</span>
+<span class="p">end</span>
+
+<span class="c">── verifica in che modalita e l'apparato ───────────</span>
+<span class="p">get system status</span>
+<span class="c">   il campo delle operazioni virtuali dice se</span>
+<span class="c">   i VDOM sono attivi</span>
+</pre>
+  </div>
+  <p style="margin-bottom:0"><b>Non si annida:</b> <code>config vdom</code> dentro
+  <code>config vdom</code> non funziona. Prima <code>end</code>, poi rientri.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Leggi, poi crea, poi cancella
+  </div>
+  <p>Sul 60D isolato. Prima di iniziare, fai una copia della configurazione — vale qui come su
+  qualsiasi apparato.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Parte 1 — leggere, senza modificare niente</div>
+<pre><span class="p">get system status</span>
+<span class="p">get system performance status</span>
+<span class="p">show system interface</span>
+<span class="p">get system interface physical</span>
+<span class="p">show firewall address</span>
+<span class="p">show firewall policy</span>
+
+<span class="c">── e ora lo stesso, con i valori predefiniti ───────</span>
+<span class="p">show full-configuration firewall address</span>
+<span class="c">   guarda quante righe in piu compaiono</span>
+</pre>
+  </div>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Parte 2 — il ciclo completo su un oggetto innocuo</div>
+<pre><span class="c"># 1. creane due, in un solo blocco</span>
+<span class="p">config firewall address</span>
+    <span class="p">edit</span> <span class="s">"esercizio-fg03-a"</span>
+        <span class="p">set subnet</span> <span class="n">203.0.113.0 255.255.255.0</span>
+        <span class="p">set comment</span> <span class="s">"esercizio, da cancellare"</span>
+    <span class="p">next</span>
+    <span class="p">edit</span> <span class="s">"esercizio-fg03-b"</span>
+        <span class="p">set subnet</span> <span class="n">198.51.100.0 255.255.255.0</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c"># 2. rileggile</span>
+<span class="p">show firewall address esercizio-fg03-a</span>
+
+<span class="c"># 3. modificane una</span>
+<span class="p">config firewall address</span>
+    <span class="p">edit</span> <span class="s">"esercizio-fg03-a"</span>
+        <span class="p">set comment</span> <span class="s">"modificato"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c"># 4. cancellale</span>
+<span class="p">config firewall address</span>
+    <span class="p">delete</span> <span class="s">"esercizio-fg03-a"</span>
+    <span class="p">delete</span> <span class="s">"esercizio-fg03-b"</span>
+<span class="p">end</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>E l'esperimento che fa capire <code>edit</code> meglio di qualsiasi
+  spiegazione:</b> entra in <code>config firewall address</code>, dai <code>edit</code> con un nome
+  scritto male di proposito — per esempio <code>"esercizio-fg03-x"</code> — poi <code>next</code> ed
+  <code>end</code>. Ora dai <code>show firewall address</code>.</p>
+  <p style="margin-bottom:0"><b>C'è una voce nuova, vuota, che non volevi creare.</b> È esattamente
+  quello che succede quando sbagli a digitare il nome di un oggetto esistente credendo di
+  modificarlo. Cancellala, e ricordati di questa sensazione.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la riga di comando FortiOS",
+  "questions": [
+    { "q": "Qual è la differenza fra <code>next</code> e <code>end</code>?",
+      "a": [ {"t":"next chiude la voce e resta nella sezione; end chiude la sezione e applica","ok":true},
+             {"t":"next annulla le modifiche, end le salva","ok":false},
+             {"t":"Sono equivalenti","ok":false},
+             {"t":"next vale per le voci numerate, end per quelle con nome","ok":false} ],
+      "e": "È lo schedario: <code>next</code> rimette a posto la cartellina tenendo il cassetto aperto, perché ne vuoi prendere un'altra; <code>end</code> chiude il cassetto. Usare <code>end</code> quando si volevano fare più voci è uno dei due errori classici del principiante." },
+
+    { "q": "Cosa succede se dai <code>edit</code> con un nome che non esiste?",
+      "a": [ {"t":"FortiOS crea una voce nuova con quel nome, senza chiedere conferma","ok":true},
+             {"t":"Restituisce un errore","ok":false},
+             {"t":"Entra nella voce più simile","ok":false},
+             {"t":"Non fa niente","ok":false} ],
+      "e": "È il secondo errore classico: sbagli a digitare il nome di un oggetto che volevi modificare e ti ritrovi con una voce nuova e vuota accanto a quella vera. L'originale resta intatto, quindi la modifica «non ha effetto» — e si perde tempo a cercare il motivo altrove." },
+
+    { "q": "Un parametro che ti aspetti non compare in <code>show</code>. Cosa significa?",
+      "a": [ {"t":"Probabilmente è impostato sul valore predefinito, che FortiOS non stampa","ok":true},
+             {"t":"Che non è supportato da quel modello","ok":false},
+             {"t":"Che la funzione è disattivata","ok":false},
+             {"t":"Che serve una licenza per vederlo","ok":false} ],
+      "e": "FortiOS stampa solo i valori diversi da quelli predefiniti, per tenere le configurazioni leggibili. La regola pratica: quando una configurazione «non ha senso» o manca un parametro atteso, si ripete con <code>show full-configuration</code> prima di trarre conclusioni." },
+
+    { "q": "Quale famiglia di comandi useresti per vedere a che velocità ha negoziato una porta?",
+      "a": [ {"t":"<code>get</code>, che mostra lo stato di funzionamento","ok":true},
+             {"t":"<code>show</code>, che mostra la configurazione","ok":false},
+             {"t":"<code>execute</code>","ok":false},
+             {"t":"<code>config</code>","ok":false} ],
+      "e": "<code>show</code> dice com'è configurata una porta, cioè l'intenzione; <code>get</code> dice com'è messa adesso — cavo collegato, velocità negoziata, pacchetti passati — cioè la realtà. Quando le due non coincidono, hai trovato qualcosa." },
+
+    { "q": "Su un apparato con più VDOM, qual è il rischio di non entrare nel contesto giusto?",
+      "a": [ {"t":"Creare oggetti nella partizione sbagliata, magari nel firewall di un altro cliente","ok":true},
+             {"t":"Bloccare l'apparato","ok":false},
+             {"t":"Perdere la configurazione","ok":false},
+             {"t":"Invalidare la licenza","ok":false} ],
+      "e": "I comandi finiscono nel VDOM in cui ti trovi, che spesso non è quello su cui volevi lavorare: crei oggetti che poi non trovi, o li crei dove non devono stare. Si entra sempre con <code>config vdom</code> ed <code>edit</code>, e il comando non si annida: prima <code>end</code>, poi si rientra." },
+
+    { "q": "Cosa fa <code>edit 0</code> in una sezione numerata come le policy?",
+      "a": [ {"t":"Crea una voce nuova assegnandole il primo identificativo libero","ok":true},
+             {"t":"Modifica la prima regola dell'elenco","ok":false},
+             {"t":"Cancella tutte le regole","ok":false},
+             {"t":"Mostra la regola predefinita","ok":false} ],
+      "e": "È il modo corretto di aggiungere una regola senza rischiare di sovrascriverne una esistente. Per modificarne una già presente serve invece il suo numero esatto — che su FortiOS è stabile, perché è l'identificativo della regola e non la sua posizione nell'elenco." }
+  ]
+}
+</script>

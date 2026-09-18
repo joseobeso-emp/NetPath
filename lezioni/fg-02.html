@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La mappa della GUI: dove vive ogni cosa — NetPath</title>
+<meta name="description" content="Il menu di FortiOS spiegato una volta per tutte, e la regola che ti fa trovare da solo anche ciò che non hai mai usato.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-02">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Orientarsi</span>
+      </nav>
+      <h1 class="lesson-title">La mappa della GUI: dove vive ogni cosa</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 02</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire il criterio con cui è organizzato il menu di FortiOS</li>
+        <li>Sapere a memoria dove si fa ciascuna delle dieci cose più frequenti</li>
+        <li>Sapere perché a volte un menu semplicemente non c'è</li>
+        <li>Passare dal menu grafico al comando equivalente senza riorientarti</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">«Accedo e non so dove guardare» non è un problema di intelligenza: è che nessuno ti ha
+mai detto <strong>con quale criterio</strong> è organizzato quel menu. Te lo dico in una riga, poi lo
+applichiamo a tutte le cose che fai davvero.</p>
+
+<h2>La regola, in una riga</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la cucina professionale
+  </div>
+  <p>In una cucina di ristorante non c'è il ripiano «carbonara». C'è il ripiano delle <b>pentole</b>,
+  quello degli <b>ingredienti secchi</b>, il <b>frigorifero</b>, il <b>fuoco</b>. Per fare una
+  carbonara giri quattro postazioni.</p>
+  <p>All'inizio sembra scomodo: vorresti tutto il necessario in un posto solo. Ma quella cucina ti
+  permette di preparare <b>qualsiasi</b> piatto, anche uno che non hai mai fatto, perché sai sempre
+  dove stanno le pentole.</p>
+  <p style="margin-bottom:0"><b>FortiOS è organizzato così: per tipo di oggetto, non per obiettivo.</b>
+  Non esiste il menu «pubblica un server». Esistono gli indirizzi, i servizi, gli oggetti di
+  traduzione e le regole — e la pubblicazione si costruisce toccandone quattro in sequenza. Una volta
+  capito questo, smetti di cercare il ripiano «carbonara».</p>
+</div>
+
+<h2>L'albero del menu</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Voce di menu</th><th>Contiene</th><th>Quanto lo userai</th></tr></thead>
+    <tbody>
+      <tr><td><b>Dashboard</b></td><td>Stato dell'apparato, risorse, licenze, sessioni in corso</td><td>Ogni volta che accedi</td></tr>
+      <tr><td><b>Network</b></td><td>Interfacce, DNS, <b>rotte statiche</b>, SD-WAN, protocolli di routing, cattura pacchetti</td><td>Molto</td></tr>
+      <tr><td><b>Policy &amp; Objects</b></td><td><b>Le regole del firewall</b>, e tutti gli oggetti che ci metti dentro: indirizzi, servizi, pianificazioni, <b>VIP</b>, pool di indirizzi</td><td><b>Il menu principale</b></td></tr>
+      <tr><td><b>Security Profiles</b></td><td>I motori di ispezione: antivirus, filtro web, filtro DNS, controllo applicazioni, IPS, <b>ispezione SSL</b></td><td>Molto</td></tr>
+      <tr><td><b>VPN</b></td><td>Tunnel IPsec, portali e impostazioni SSL-VPN</td><td>Spesso</td></tr>
+      <tr><td><b>User &amp; Authentication</b></td><td>Utenti, gruppi, server LDAP e RADIUS, secondo fattore</td><td>Quando c'è la VPN</td></tr>
+      <tr><td><b>Log &amp; Report</b></td><td><b>Tutti i registri</b>, divisi per tipo, e dove vengono mandati</td><td><b>Quanto Policy &amp; Objects</b></td></tr>
+      <tr><td><b>System</b></td><td>Amministratori, firmware, ora, HA, SNMP, certificati, <b>Feature Visibility</b></td><td>Ogni tanto, ma è importante</td></tr>
+      <tr><td><b>Security Fabric</b></td><td>Integrazione con altri apparati Fortinet, mappa della rete</td><td>Raramente all'inizio</td></tr>
+      <tr><td><b>WiFi &amp; Switch Controller</b></td><td>Access point e switch Fortinet gestiti dal firewall</td><td>Solo se ci sono</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Da «cosa voglio fare» a «dove si fa»</h2>
+
+<p>Questa è la tabella da tenere aperta le prime settimane. La colonna di destra mostra
+<strong>tutti</strong> i menu coinvolti, nell'ordine in cui li tocchi.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Voglio…</th><th>Percorso completo</th></tr></thead>
+    <tbody>
+      <tr><td>Vedere se l'apparato sta bene</td><td>Dashboard → Status</td></tr>
+      <tr><td>Vedere le porte e il loro stato</td><td>Network → Interfaces</td></tr>
+      <tr><td>Aggiungere una rotta</td><td>Network → Static Routes</td></tr>
+      <tr><td><b>Permettere un traffico</b></td><td>Policy &amp; Objects → <b>Addresses</b> (se serve un nuovo indirizzo) → <b>Services</b> (se serve una porta nuova) → <b>Firewall Policy</b></td></tr>
+      <tr><td><b>Pubblicare un server</b></td><td>Policy &amp; Objects → <b>Virtual IPs</b> → <b>Services</b> → <b>Firewall Policy</b> (che usa il VIP come destinazione)</td></tr>
+      <tr><td>Bloccare una categoria di siti</td><td>Security Profiles → <b>Web Filter</b> → poi agganciare il profilo a una policy in Firewall Policy</td></tr>
+      <tr><td>Far entrare un utente in VPN</td><td>User &amp; Authentication → <b>User Definition</b> e <b>User Groups</b> → VPN → <b>SSL-VPN Settings</b> e <b>Portals</b> → <b>Firewall Policy</b> dalla VPN alla rete</td></tr>
+      <tr><td><b>Capire perché qualcosa non passa</b></td><td>Log &amp; Report → <b>Forward Traffic</b>, con i filtri</td></tr>
+      <tr><td>Vedere cosa sta passando adesso</td><td>Dashboard → widget delle sessioni, oppure la riga di comando</td></tr>
+      <tr><td>Verificare le licenze</td><td>Dashboard → Status, riquadro delle licenze — <b>e System → FortiGuard</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Guarda la colonna di destra: quasi tutto finisce in «Firewall Policy»
+  </div>
+  <p>Non è un caso ed è il concetto che regge l'intero prodotto: <b>gli oggetti da soli non fanno
+  niente</b>. Un indirizzo, un servizio, un VIP, un profilo di ispezione esistono e basta, finché una
+  <b>policy</b> non li mette in relazione e dice cosa farne.</p>
+  <p style="margin-bottom:0">Da qui l'errore più frequente in assoluto: si crea l'oggetto, si crea il
+  profilo, si verifica che ci siano — e non funziona niente, <b>perché nessuna regola li usa</b>. È un
+  errore così comune che gli dedichiamo un'intera lezione, la 12.</p>
+</div>
+
+<h2>Quando un menu non c'è</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Feature Visibility: il motivo per cui cerchi una voce che non esiste
+  </div>
+  <p>FortiOS <b>nasconde i menu delle funzioni non attive</b>, per non presentare cento voci a chi ne
+  usa dieci. Il risultato è che cerchi «Virtual IPs» o «Policy Routes» o il controllo applicativo, non
+  li trovi, e concludi che il tuo modello non li supporta.</p>
+  <p style="margin-bottom:0"><b>Quasi sempre li supporta, ma la voce è spenta.</b> Si accende da
+  <b>System → Feature Visibility</b>. È la prima cosa da controllare ogni volta che una funzione
+  documentata «non c'è» — e ti risparmia ore di ricerche inutili.</p>
+</div>
+
+<h2>La finestra dei comandi è dentro la GUI</h2>
+
+<p>In alto a destra c'è un pulsante che apre una <strong>console</strong> collegata all'apparato. Non
+serve aprire un programma separato: è lì.</p>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il trucco che ti fa imparare la riga di comando senza studiarla
+  </div>
+  <p>I percorsi del menu grafico e quelli dei comandi <b>si corrispondono quasi sempre</b>:</p>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="c">Policy &amp; Objects → Firewall Policy</span>
+<span class="p">   config firewall policy</span>
+
+<span class="c">Policy &amp; Objects → Addresses</span>
+<span class="p">   config firewall address</span>
+
+<span class="c">Policy &amp; Objects → Virtual IPs</span>
+<span class="p">   config firewall vip</span>
+
+<span class="c">Network → Interfaces</span>
+<span class="p">   config system interface</span>
+
+<span class="c">Network → Static Routes</span>
+<span class="p">   config router static</span>
+
+<span class="c">Security Profiles → Web Filter</span>
+<span class="p">   config webfilter profile</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>L'abitudine da prendere:</b> ogni volta che configuri
+  qualcosa nella finestra grafica, apri la console e dai <code>show</code> sul percorso corrispondente.
+  Vedrai la stessa cosa scritta come comando. Dopo qualche settimana leggerai le configurazioni senza
+  averle studiate a parte — ed è indispensabile, perché <b>tutti gli strumenti di diagnosi seri
+  esistono solo da riga di comando</b>.</p>
+</div>
+
+<h2>Il collegamento con il resto del modulo</h2>
+
+<p>Nella lezione 6 introdurremo la <strong>catena dei sette anelli</strong>, il metodo per collocare
+un guasto. Ogni anello vive in un menu preciso: tienilo d'occhio già da ora.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Anello</th><th>Dove si guarda</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Client e rete locale</td><td>Sul computer dell'utente, non sul firewall</td></tr>
+      <tr><td>2 · Routing e selettori</td><td>Network → Static Routes · VPN → IPsec Tunnels</td></tr>
+      <tr><td>3 · Policy</td><td>Policy &amp; Objects → Firewall Policy</td></tr>
+      <tr><td>4 · Servizio e porta</td><td>Policy &amp; Objects → Services</td></tr>
+      <tr><td>5 · NAT</td><td>Policy &amp; Objects → Virtual IPs, IP Pools, e il NAT dentro la policy</td></tr>
+      <tr><td>6 · Ispezione</td><td>Security Profiles → tutti</td></tr>
+      <tr><td>7 · Destinazione</td><td>Fuori dal firewall: il server, il certificato, il fornitore</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Il giro di ricognizione — solo guardare, non toccare
+  </div>
+  <p>Fallo sul 60D di laboratorio, <b>dopo averlo azzerato</b> e con la sola porta di gestione
+  collegata al Mac. Niente Internet, niente rete di produzione.</p>
+  <ol>
+    <li><b>Dashboard.</b> Trova: modello, versione di FortiOS, tempo di accensione, uso di processore
+    e memoria, <b>stato delle licenze</b>. Annotali.</li>
+    <li><b>Network → Interfaces.</b> Quante porte ci sono, quali sono attive, quali hanno un
+    indirizzo.</li>
+    <li><b>Policy &amp; Objects → Firewall Policy.</b> Quante regole ci sono? Guarda le colonne: da
+    dove a dove, sorgente, destinazione, servizio, azione. <b>È la struttura di ogni regola su
+    qualsiasi FortiGate.</b></li>
+    <li><b>Policy &amp; Objects → Addresses</b> e <b>→ Services.</b> Scorrili: ci sono decine di
+    oggetti predefiniti che non hai creato tu.</li>
+    <li><b>Security Profiles.</b> Guarda quanti profili esistono già e quali sono agganciati a
+    qualcosa.</li>
+    <li><b>Log &amp; Report → Forward Traffic.</b> Anche se c'è poco traffico, guarda le colonne
+    disponibili: sono i campi che impareremo a leggere nella lezione 5.</li>
+    <li><b>System → Feature Visibility.</b> Guarda cosa è acceso e cosa è spento. <b>Non cambiare
+    niente</b>: ti serve solo sapere che questa pagina esiste e dove sta.</li>
+  </ol>
+  <p style="margin-top:12px"><b>Poi l'esercizio che vale doppio.</b> Apri la console dal pulsante in
+  alto a destra e ritrova le stesse cose come comandi:</p>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="p">get system status</span>
+<span class="p">show system interface</span>
+<span class="p">show firewall policy</span>
+<span class="p">show firewall address</span>
+<span class="p">show firewall service custom</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Confronta con quello che avevi appena visto nelle
+  finestre.</b> Sono le stesse informazioni, scritte in un'altra forma. Quando questa corrispondenza
+  ti sarà ovvia, il grosso dell'orientamento è fatto — e la lezione 3 diventa facile.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: orientarsi in FortiOS",
+  "questions": [
+    { "q": "Con quale criterio è organizzato il menu di FortiOS?",
+      "a": [ {"t":"Per tipo di oggetto, non per obiettivo da raggiungere","ok":true},
+             {"t":"Per livello del modello OSI","ok":false},
+             {"t":"Per frequenza d'uso delle funzioni","ok":false},
+             {"t":"Per ordine di configurazione consigliato","ok":false} ],
+      "e": "Come una cucina professionale: c'è il ripiano delle pentole e quello degli ingredienti, non il ripiano «carbonara». Per pubblicare un server giri quattro menu. È scomodo all'inizio e imbattibile dopo, perché sai sempre dove stanno le cose anche per operazioni che non hai mai fatto." },
+
+    { "q": "Hai creato un indirizzo, un servizio e un profilo di ispezione, ma non succede niente. Perché?",
+      "a": [ {"t":"Gli oggetti da soli non fanno nulla: serve una policy che li usi","ok":true},
+             {"t":"Vanno salvati esplicitamente prima di avere effetto","ok":false},
+             {"t":"Manca il riavvio dell'apparato","ok":false},
+             {"t":"Gli oggetti vanno creati in un ordine preciso","ok":false} ],
+      "e": "È il concetto che regge l'intero prodotto, e l'errore più frequente in assoluto. Indirizzi, servizi, VIP e profili esistono e basta: è la <b>policy</b> a metterli in relazione e a dire cosa farne. Non a caso quasi ogni riga della tabella «da cosa voglio fare a dove si fa» finisce in Firewall Policy." },
+
+    { "q": "Cerchi il menu «Virtual IPs» e non lo trovi. Cosa controlli per primo?",
+      "a": [ {"t":"System → Feature Visibility: la voce può essere spenta","ok":true},
+             {"t":"Se il modello supporta i VIP","ok":false},
+             {"t":"Se la licenza è scaduta","ok":false},
+             {"t":"Se sei nel VDOM giusto","ok":false} ],
+      "e": "FortiOS nasconde i menu delle funzioni non attive per non presentare cento voci a chi ne usa dieci. Il risultato è che la voce sembra non esistere e si conclude che il modello non la supporta — quasi sempre a torto. Feature Visibility è la prima verifica ogni volta che una funzione documentata «non c'è»." },
+
+    { "q": "Perché conviene dare i comandi <code>show</code> corrispondenti a ciò che si configura nella finestra grafica?",
+      "a": [ {"t":"Si impara la riga di comando senza studiarla, e gli strumenti di diagnosi esistono solo lì","ok":true},
+             {"t":"Perché la finestra grafica non salva sempre le modifiche","ok":false},
+             {"t":"Perché i comandi sono più veloci da eseguire","ok":false},
+             {"t":"Perché la GUI mostra solo una parte della configurazione","ok":false} ],
+      "e": "I percorsi si corrispondono quasi sempre: Policy & Objects → Firewall Policy è <code>config firewall policy</code>. Vedere la stessa cosa nelle due forme la fa entrare da sola — ed è indispensabile, perché sniffer, debug flow e tabella delle sessioni non hanno equivalente grafico." },
+
+    { "q": "In quale menu si guarda per capire perché un traffico non passa?",
+      "a": [ {"t":"Log &amp; Report → Forward Traffic","ok":true},
+             {"t":"Dashboard → Status","ok":false},
+             {"t":"Network → Interfaces","ok":false},
+             {"t":"Security Fabric","ok":false} ],
+      "e": "Il registro del traffico che attraversa il firewall è dove si legge cosa è stato permesso, cosa rifiutato e da cosa. Gli altri menu dicono come sta l'apparato o com'è configurato, non cosa è successo a un pacchetto specifico." },
+
+    { "q": "Per pubblicare un server verso Internet, quali menu tocchi?",
+      "a": [ {"t":"Virtual IPs, Services e Firewall Policy","ok":true},
+             {"t":"Solo Virtual IPs","ok":false},
+             {"t":"Solo Firewall Policy","ok":false},
+             {"t":"Network → Static Routes e Firewall Policy","ok":false} ],
+      "e": "Il VIP definisce la traduzione dell'indirizzo, l'oggetto servizio definisce quali porte, e la policy mette insieme le due cose autorizzando il traffico. Il VIP da solo non pubblica niente: è un oggetto, e come tutti gli oggetti aspetta che una regola lo usi." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
