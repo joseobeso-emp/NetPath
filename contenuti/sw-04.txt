@@ -1,0 +1,231 @@
+#id: sw-04
+#title: Diagnostica del cavo: trovare il guasto senza scale
+#min: 22
+#level: sw
+#lvname: Modulo Switching
+#chapter: L'apparato e il metodo
+#desc: Lo strumento che ti dice se un cavo è interrotto e a quanti metri. Nessuno lo usa, e risolve da solo una categoria di ticket.
+#obj: Capire come fa uno switch a misurare un cavo che non vede
+#obj: Interpretare ogni possibile esito della prova
+#obj: Collegare il risultato della prova ai sintomi che l'utente ti riferisce
+#obj: Conoscere i limiti dello strumento e cosa non trova
+---
+<p class="lead">C'è una funzione, presente su quasi ogni switch gestito, che dice <strong>se un cavo è
+rotto e a quanti metri dallo switch</strong>. Non richiede di alzarsi dalla sedia. Quasi nessuno la
+usa, e risolve da sola un'intera famiglia di ticket: quelli che cominciano con «la presa in sala
+riunioni non funziona».</p>
+
+<h2>Come fa a saperlo</h2>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'eco nella galleria
+  </div>
+  <p>Sei all'imbocco di una galleria buia e vuoi sapere quanto è lunga. Gridi, e conti i secondi
+  prima che torni l'eco. <b>Sai la velocità del suono, quindi dal tempo ricavi la distanza.</b></p>
+  <p>Lo switch fa esattamente questo, con l'elettricità invece del suono: <b>manda un impulso lungo
+  ogni coppia di fili e ascolta se qualcosa torna indietro</b>. Un cavo sano lo assorbe e non rimanda
+  quasi nulla. Un cavo interrotto rimanda l'impulso dal punto della rottura, come una parete in fondo
+  alla galleria.</p>
+  <p style="margin-bottom:0">Dal tempo di ritorno lo switch calcola <b>a quanti metri</b> sta il
+  problema. Ed è sorprendentemente preciso: nell'ordine del metro.</p>
+</div>
+
+<h2>Il cavo ha quattro coppie, e contano tutte</h2>
+
+<p>Un cavo di rete contiene <strong>quattro coppie di fili intrecciati</strong>. La prova le misura
+<strong>una per una</strong>, e questo è il dettaglio che rende lo strumento davvero utile.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il collegamento con la lezione precedente: «negozia 100 invece di 1000»
+  </div>
+  <p>Un collegamento a <b>1000 Mbit/s usa tutte e quattro le coppie</b>. Uno a <b>100 Mbit/s ne usa
+  due</b>.</p>
+  <p>Quindi se una porta negozia ostinatamente 100 invece di 1000, con entrambi i lati in automatico,
+  <b>la causa più probabile è che due delle quattro coppie non funzionino</b>: il collegamento si
+  stabilisce lo stesso, usando quelle buone, semplicemente più lento.</p>
+  <p style="margin-bottom:0"><b>La prova del cavo te lo dice con certezza</b>, indicando quale coppia
+  è interrotta e a che distanza. È la differenza fra «ho cambiato il cavo e sembra andare meglio» e
+  «la coppia 3 è interrotta a 18 metri, il guasto è nella canalina fra il corridoio e la sala».</p>
+</div>
+
+<h2>Gli esiti, e cosa significano</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Esito</th><th>Cosa ha misurato</th><th>Cosa fare</th></tr></thead>
+    <tbody>
+      <tr><td><b>Normale / OK</b></td><td>L'impulso non è tornato indietro: la coppia è integra</td>
+          <td>Niente. Se il problema persiste, non è il cavo</td></tr>
+      <tr><td><b>Aperto</b><br><span style="font-size:.85em">open</span></td>
+          <td><b>Interruzione:</b> il filo è tagliato o un contatto non tiene</td>
+          <td>La distanza indica dove. Se è pochi centimetri, è il connettore: rifallo</td></tr>
+      <tr><td><b>In corto</b><br><span style="font-size:.85em">short</span></td>
+          <td>Due fili si toccano</td>
+          <td>Quasi sempre un connettore crimpato male, o un cavo schiacciato</td></tr>
+      <tr><td><b>Disadattamento</b><br><span style="font-size:.85em">impedance mismatch</span></td>
+          <td>Qualcosa altera le caratteristiche elettriche: una giunzione, una presa, un tratto di cavo diverso</td>
+          <td>Il punto indicato è dove cambia qualcosa. Spesso è una presa a muro fatta male</td></tr>
+      <tr><td><b>Sconosciuto / non misurabile</b></td>
+          <td>La prova non è riuscita</td>
+          <td>Spesso perché il collegamento è attivo: vedi il riquadro sotto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La prova può interrompere il collegamento
+  </div>
+  <p>Per mandare il proprio impulso, molte implementazioni devono <b>prendere il controllo della
+  porta</b>: il collegamento cade per qualche secondo e poi torna.</p>
+  <p style="margin-bottom:0"><b>Non è una prova innocua.</b> Su una porta che sta lavorando —
+  soprattutto se dietro c'è un server, un centralino o un access point con gente collegata — va fatta
+  sapendo che ci sarà un'interruzione. Su un apparato di un cliente: <b>si avvisa prima</b>, o si
+  aspetta la sera. Su una porta già guasta, invece, non c'è niente da interrompere: usala liberamente.</p>
+</div>
+
+<h2>Cosa NON trova</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Prova superata» non significa «cavo buono»
+  </div>
+  <p>Lo strumento misura continuità e riflessioni. <b>Non è un certificatore di cablaggio</b>, e ci
+  sono guasti reali che non vede:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Coppie invertite o scambiate</b> che comunque stabiliscono il collegamento. Elettricamente
+    i fili sono continui, quindi la prova dice «normale» — ma le prestazioni sono pessime</li>
+    <li><b>Attenuazione al limite:</b> un cavo di 110 metri è troppo lungo per lo standard, però
+    continuo. La prova non protesta, il collegamento fa errori</li>
+    <li><b>Interferenze esterne:</b> un cavo che passa accanto a un tubo di corrente o a un motore è
+    integro, e comunque riceve disturbi</li>
+    <li><b>Intrecci disfatti al connettore:</b> se qualcuno ha srotolato tre centimetri di coppie per
+    crimpare comodo, il cavo è continuo ma a un gigabit perde pacchetti</li>
+    <li><b>Il dispositivo all'altro capo:</b> la prova misura il rame, non chi ci sta attaccato</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0"><b>Quindi:</b> esito «aperto» o «in corto» è una prova
+  quasi certa. Esito «normale» <b>riduce</b> il sospetto sul cavo, non lo elimina — e a quel punto i
+  contatori d'errore della lezione precedente diventano il passo successivo.</p>
+</div>
+
+<h2>Il metodo, quando arriva il ticket</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    «La presa della sala riunioni non funziona»
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Guarda lo stato della porta.</b> C'è collegamento? A che velocità?
+      <br><em>Nessun collegamento</em> → cavo, presa o dispositivo.
+      <br><em>Collegamento a 100 invece di 1000</em> → sospetto forte su due coppie.</li>
+    <li><b>Guarda i contatori d'errore</b> (lezione 3). Se crescono, è fisico.</li>
+    <li><b>Lancia la prova del cavo.</b> Se esce «aperto a 23 metri», hai finito: sai che è rotto e
+    approssimativamente dove.</li>
+    <li><b>Se esce «normale»</b>, il rame probabilmente è a posto: sposta il sospetto sul dispositivo
+    all'altro capo, sulla presa a muro o sul cavo di raccordo della scrivania — che <b>non</b> è stato
+    misurato, perché la prova si ferma dove finisce il tratto fisso.</li>
+  </ol>
+</div>
+
+<h2>La stessa prova, sugli altri apparati</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Apparato</th><th>Come si lancia</th></tr></thead>
+    <tbody>
+      <tr><td><b>Questo switch</b></td><td>Pagina di diagnostica del cavo, nell'interfaccia web</td></tr>
+      <tr><td><b>MikroTik</b></td><td><code>/interface/ethernet/cable-test ether5</code><br><b>Provalo sul tuo hAP ax²: c'è anche lì</b></td></tr>
+      <tr><td><b>Cisco</b></td><td><code>test cable-diagnostics tdr interface Gi1/0/5</code><br>poi <code>show cable-diagnostics tdr interface Gi1/0/5</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Costruisci il tuo riferimento, con tre casi
+  </div>
+  <p>L'obiettivo è vedere con i tuoi occhi come si presenta ciascun esito, così quando lo incontrerai
+  davvero lo riconoscerai subito.</p>
+  <ol>
+    <li><b>Caso «normale»:</b> lancia la prova su una porta con un cavo buono e funzionante. Annota
+    cosa dice per ciascuna delle quattro coppie. <b>Questo è il tuo riferimento.</b></li>
+    <li><b>Caso «aperto»:</b> lancia la prova su una <b>porta libera</b>, senza nessun cavo inserito.
+    Dovrebbe segnalare interruzione a distanza zero o quasi. È il caso più semplice da riconoscere.</li>
+    <li><b>Caso «aperto a distanza»:</b> collega un cavo <b>non connesso all'altro capo</b> — infilalo
+    solo nello switch e lascia l'altro connettore per aria. La prova dovrebbe dirti interruzione a una
+    distanza pari alla lunghezza del cavo. <b>Verifica con il metro:</b> vedrai che ci azzecca.</li>
+  </ol>
+  <p style="margin-top:12px"><b>E la stessa prova sul MikroTik</b>, così hai il confronto fra due
+  marche diverse sullo stesso identico cavo:</p>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Sul MikroTik, via SSH</div>
+<pre><span class="c"># lancia la prova su una porta</span>
+<span class="p">/interface/ethernet/cable-test</span> <span class="s">ether5</span>
+
+<span class="c"># l'output mostra, coppia per coppia, lo stato</span>
+<span class="c"># e la distanza stimata del guasto</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Annota tutto nella tua scheda del laboratorio.</b>
+  Il giorno che un cliente ti dirà «la presa non va», tu avrai già visto come si presenta un cavo
+  interrotto — e invece di mandare qualcuno a controllare, dirai a che metro cercare.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: diagnostica del cavo",
+  "questions": [
+    { "q": "Come fa uno switch a sapere a quanti metri è rotto un cavo?",
+      "a": [ {"t":"Manda un impulso elettrico e misura il tempo di ritorno dell'eco","ok":true},
+             {"t":"Interroga il dispositivo all'altro capo","ok":false},
+             {"t":"Legge un chip presente nel connettore","ok":false},
+             {"t":"Confronta la velocità negoziata con quella attesa","ok":false} ],
+      "e": "È l'eco nella galleria: conoscendo la velocità di propagazione, dal tempo si ricava la distanza. Un cavo sano assorbe l'impulso e non rimanda quasi nulla; un cavo interrotto lo rimanda dal punto della rottura. La precisione è nell'ordine del metro." },
+
+    { "q": "Una porta negozia ostinatamente 100 Mbit/s invece di 1000, con entrambi i lati in automatico. Cosa sospetti?",
+      "a": [ {"t":"Due delle quattro coppie del cavo non funzionano","ok":true},
+             {"t":"Un disaccordo sulla modalità duplex","ok":false},
+             {"t":"La porta dello switch è guasta","ok":false},
+             {"t":"Il cavo è di categoria troppo bassa per il gigabit","ok":false} ],
+      "e": "Un gigabit usa tutte e quattro le coppie, i 100 Mbit/s solo due: con due coppie rotte il collegamento si stabilisce lo stesso, usando quelle buone, semplicemente più lento. La prova del cavo dice quale coppia e a che distanza — e trasforma un'ipotesi in una diagnosi." },
+
+    { "q": "La prova restituisce «normale» su tutte le coppie, ma il problema resta. Cosa concludi?",
+      "a": [ {"t":"Il sospetto sul cavo si riduce ma non si elimina: ci sono guasti che la prova non vede","ok":true},
+             {"t":"Il cavo è certamente a posto","ok":false},
+             {"t":"La prova è stata eseguita male","ok":false},
+             {"t":"Il problema è sicuramente di configurazione","ok":false} ],
+      "e": "Lo strumento misura continuità e riflessioni, non certifica il cablaggio: non vede coppie scambiate che linkano comunque, attenuazione al limite, interferenze esterne, o intrecci disfatti al connettore. Dopo un «normale» il passo successivo sono i contatori d'errore." },
+
+    { "q": "Perché la prova del cavo non va lanciata con leggerezza su una porta in produzione?",
+      "a": [ {"t":"Per misurare deve prendere il controllo della porta: il collegamento cade per qualche secondo","ok":true},
+             {"t":"Perché può danneggiare il cavo","ok":false},
+             {"t":"Perché azzera i contatori della porta","ok":false},
+             {"t":"Perché richiede il riavvio dello switch","ok":false} ],
+      "e": "L'impulso di misura richiede il controllo della porta, quindi il collegamento si interrompe e poi torna. Su una porta dietro cui c'è un server, un centralino o un access point con gente collegata, va avvisato prima o rimandato alla sera. Su una porta già guasta non c'è nulla da interrompere." },
+
+    { "q": "L'esito è «aperto a 0,5 metri». Cosa significa in pratica?",
+      "a": [ {"t":"L'interruzione è al connettore o subito dopo: va rifatta la crimpatura","ok":true},
+             {"t":"Il cavo è troppo corto per essere misurato","ok":false},
+             {"t":"La porta dello switch è guasta","ok":false},
+             {"t":"Il dispositivo all'altro capo è spento","ok":false} ],
+      "e": "La distanza indica dove sta il problema, e mezzo metro è essenzialmente il connettore: un contatto che non tiene, un filo che non arriva in fondo, una crimpatura fatta male. È anche la riparazione più rapida di tutte — e la più frequente." },
+
+    { "q": "La prova dice «normale» sul tratto fisso, ma la postazione non funziona. Cosa non è stato misurato?",
+      "a": [ {"t":"Il cavo di raccordo dalla presa a muro alla scrivania, e il dispositivo","ok":true},
+             {"t":"Le coppie 3 e 4","ok":false},
+             {"t":"La velocità negoziata","ok":false},
+             {"t":"Il connettore lato switch","ok":false} ],
+      "e": "La prova parte dalla porta dello switch e si ferma dove il rame si interrompe — cioè alla presa a muro. Il cavetto fra presa e computer, la presa stessa e il dispositivo restano fuori dalla misura, e sono esattamente i pezzi che si toccano più spesso e che quindi si rompono di più." }
+  ]
+}
+</script>

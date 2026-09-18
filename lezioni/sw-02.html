@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Primo accesso dal Mac, e la rete di sicurezza — NetPath</title>
+<meta name="description" content="Trovarlo, entrarci, salvare la configurazione e sapere come tornare indietro prima di toccare qualsiasi cosa.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="sw-02">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#sw">Modulo Switching</a><span class="sep">/</span>
+        <span>L'apparato e il metodo</span>
+      </nav>
+      <h1 class="lesson-title">Primo accesso dal Mac, e la rete di sicurezza</h1>
+      <div class="lesson-meta">
+        <span class="badge lvsw">Modulo Switching</span>
+        <span class="chip">Lezione 02</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Raggiungere l'interfaccia dello switch da macOS, in entrambi gli scenari</li>
+        <li>Mettere in sicurezza l'accesso amministrativo</li>
+        <li>Salvare la configurazione e saperla ripristinare</li>
+        <li>Conoscere il pulsante di reset PRIMA di configurare le VLAN</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Questo switch non ha una Safe Mode. Non c'è nessun meccanismo che annulli da solo una
+configurazione sbagliata: se ti chiudi fuori, ti sei chiuso fuori. Per questo la lezione sulla rete di
+sicurezza viene <strong>prima</strong> di tutto, come sul MikroTik — ma qui la rete è fatta di due
+cose sole, ed è bene conoscerle entrambe.</p>
+
+<h2>Dove si trova, al primo collegamento</h2>
+
+<p>Lo switch si comporta in due modi diversi a seconda di cosa c'è in rete:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Scenario</th><th>Cosa fa lo switch</th><th>Come lo raggiungi</th></tr></thead>
+    <tbody>
+      <tr><td>C'è un server DHCP in rete<br><span style="font-size:.85em">per esempio il tuo MikroTik</span></td>
+          <td><b>Chiede un indirizzo</b> e lo usa</td>
+          <td>Guardi la lista dei lease sul router e trovi il suo indirizzo</td></tr>
+      <tr><td><b>Non c'è nessun DHCP</b><br><span style="font-size:.85em">Mac collegato direttamente</span></td>
+          <td>Ripiega su <b>192.168.0.1 / 255.255.255.0</b></td>
+          <td>Ti dai un indirizzo nella stessa rete e apri il browser</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Per la prima volta, usa il secondo scenario
+  </div>
+  <p>Collega <b>solo</b> il Mac allo switch, con un cavo, e niente altro. Nessun router, nessun DHCP.
+  Così sai con certezza che l'indirizzo è <code>192.168.0.1</code> e non devi cercarlo.</p>
+  <p style="margin-bottom:0"><b>Nota pratica:</b> se il Mac mini usa la sua unica porta di rete per
+  Internet, ti conviene un <b>adattatore USB-C → Ethernet</b>. Costa poco e per il laboratorio è
+  comodissimo: tieni Internet sul Wi-Fi e la rete di prova sull'adattatore, senza scollegare nulla
+  ogni volta.</p>
+</div>
+
+<h2>Darsi un indirizzo, da macOS</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Dal Terminale — più rapido delle Impostazioni di Sistema</div>
+<pre><span class="c">── 1. come si chiama la tua interfaccia di rete? ───</span>
+<span class="p">networksetup -listallnetworkservices</span>
+<span class="c">   tipicamente "Ethernet", oppure il nome</span>
+<span class="c">   dell'adattatore USB-C che hai collegato</span>
+
+<span class="c">── 2. assegnati un indirizzo fisso nella sua rete ──</span>
+<span class="p">networksetup -setmanual</span> <span class="s">"Ethernet"</span> <span class="n">192.168.0.100 255.255.255.0 192.168.0.1</span>
+
+<span class="c">── 3. verifica ─────────────────────────────────────</span>
+<span class="p">ifconfig en0 | grep inet</span>
+<span class="p">ping -c 3 192.168.0.1</span>
+
+<span class="c">── 4. QUANDO HAI FINITO, torna al DHCP ─────────────</span>
+<span class="p">networksetup -setdhcp</span> <span class="s">"Ethernet"</span>
+</pre>
+</div>
+
+<div class="code" style="margin-top:12px">
+  <div class="code__bar"><span class="dot"></span>Dalla macchina virtuale Windows</div>
+<pre><span class="c">:: interfaccia grafica: Impostazioni → Rete → Ethernet →</span>
+<span class="c">:: Modifica assegnazione IP → Manuale</span>
+
+<span class="c">:: oppure, da PowerShell come amministratore:</span>
+<span class="p">New-NetIPAddress -InterfaceAlias</span> <span class="s">"Ethernet"</span> <span class="p">`</span>
+<span class="p">    -IPAddress</span> <span class="n">192.168.0.100</span> <span class="p">-PrefixLength</span> <span class="n">24</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il punto 4 non è un dettaglio
+  </div>
+  <p>Un indirizzo fisso dimenticato sull'interfaccia è una delle cause più comuni di «da ieri il Mac
+  non naviga più». Te ne accorgi due giorni dopo, quando hai già smesso di pensare allo switch.</p>
+  <p style="margin-bottom:0"><b>Rimettilo in DHCP appena finisci</b>, ogni volta. Ed è esattamente lo
+  stesso errore che troverai sui PC dei clienti: un indirizzo statico messo anni fa da qualcuno per
+  una prova, e mai tolto.</p>
+</div>
+
+<h2>Dentro l'interfaccia: le prime tre cose</h2>
+
+<p>Apri <code>http://192.168.0.1</code>. Le credenziali di fabbrica sono <code>admin</code> e
+<code>admin</code>, e i firmware recenti obbligano a cambiarle al primo accesso.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'interfaccia è in HTTP, non HTTPS
+  </div>
+  <p>Su questa fascia di apparati l'amministrazione viaggia <b>in chiaro</b>: le credenziali passano
+  sulla rete senza cifratura. Su un laboratorio isolato non importa. <b>Su una rete di produzione
+  sì</b>, e molto.</p>
+  <p style="margin-bottom:0">Da qui una regola che vale per tutti gli apparati di questa fascia:
+  l'amministrazione va fatta da un segmento di rete riservato, non dalla rete degli utenti e
+  <b>mai</b> da una rete ospiti. Torneremo su questo nella lezione 14, quando parleremo di cosa dire
+  a un cliente.</p>
+</div>
+
+<p>Appena dentro, tre operazioni, in quest'ordine:</p>
+
+<ol>
+  <li><b>Cambia la password</b> con una vera, e annotala dove annoti le altre.</li>
+  <li><b>Dai un nome all'apparato</b> e, se hai una rete stabile, <b>fissa il suo indirizzo</b>
+  invece di lasciarlo in DHCP: un apparato di gestione che cambia indirizzo è un apparato che
+  prima o poi non trovi più.</li>
+  <li><b>Salva la configurazione su file</b> e portala sul Mac. Cerca la voce di
+  esportazione o backup nel menu di sistema del tuo firmware: la posizione esatta cambia fra le
+  revisioni, la funzione c'è sempre.</li>
+</ol>
+
+<h2>La rete di sicurezza, che qui è fatta di due cose</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>MikroTik</th><th>Questo switch</th></tr></thead>
+    <tbody>
+      <tr><td>Annullamento automatico</td><td><b>Safe Mode</b></td><td><b>Non c'è</b></td></tr>
+      <tr><td>Copia della configurazione</td><td>Backup ed export</td><td><b>File di configurazione da esportare</b></td></tr>
+      <tr><td>Ritorno allo stato di fabbrica</td><td>Comando o pulsante</td><td><b>Pulsante di reset</b></td></tr>
+      <tr><td>Accesso quando l'indirizzo è perso</td><td>Via indirizzo MAC</td><td><b>Solo il reset</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Senza Safe Mode, il momento pericoloso è la configurazione delle VLAN
+  </div>
+  <p>Quando arriverai al capitolo sulle VLAN farai una cosa rischiosa: <b>cambierai l'appartenenza
+  della porta da cui sei collegato</b>. Se sbagli, l'interfaccia di amministrazione finisce in una
+  VLAN in cui tu non sei, e non entri più.</p>
+  <p><b>Non è un guasto e si risolve in un minuto — se sai come.</b> Le due difese:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Esporta la configurazione prima di ogni sessione di modifiche.</b> È l'unica cosa che ti
+    riporta indietro senza ricominciare da capo.</li>
+    <li><b>Individua fisicamente il pulsante di reset adesso</b>, con lo switch in mano, e leggi sul
+    manuale del tuo modello per quanti secondi va tenuto premuto. Cercarlo mentre sei chiuso fuori è
+    il momento sbagliato.</li>
+  </ul>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Primo accesso, messa in sicurezza, e prova del ritorno
+  </div>
+  <ol>
+    <li><b>Collega solo il Mac allo switch.</b> Niente altro.</li>
+    <li><b>Assegnati l'indirizzo fisso</b> con i comandi qui sopra e verifica con il ping.</li>
+    <li><b>Entra</b> su <code>http://192.168.0.1</code> e cambia la password.</li>
+    <li><b>Gira per tutti i menu</b> senza modificare niente. Annota dove hai trovato: le VLAN, il
+    port mirroring, la diagnostica del cavo, le statistiche delle porte, l'esportazione della
+    configurazione e l'aggiornamento del firmware. <b>Questa mappa ti servirà per tutto il
+    modulo</b>, e la posizione delle voci cambia fra i modelli: meglio scoprirla adesso.</li>
+    <li><b>Esporta la configurazione</b> e salvala sul Mac, in una cartella dedicata accanto a
+    quelle del MikroTik.</li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Tieni tutto insieme</div>
+<pre><span class="p">mkdir -p ~/laboratorio/switch-tplink</span>
+<span class="p">ls -l ~/laboratorio/</span>
+<span class="c">   switch-tplink/   ← le copie dello switch</span>
+<span class="c">   mikrotik/        ← quelle del router</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>E infine la prova che conta davvero</b>, quella che quasi nessuno fa:</p>
+  <ol start="6">
+    <li><b>Premi il pulsante di reset</b> e riportalo allo stato di fabbrica.</li>
+    <li><b>Rientra</b> — sarà tornato a <code>192.168.0.1</code> con le credenziali di fabbrica — e
+    <b>ricarica la configurazione che avevi esportato</b>.</li>
+  </ol>
+  <p style="margin-bottom:0">Due minuti, e da adesso sai per certo di poter tornare indietro. È la
+  stessa fiducia che ti sei costruito sul MikroTik con la Safe Mode: senza, si configura con il
+  freno tirato e non si impara niente.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: primo accesso e rete di sicurezza",
+  "questions": [
+    { "q": "Non c'è nessun server DHCP in rete. Su quale indirizzo trovi lo switch?",
+      "a": [ {"t":"192.168.0.1 con maschera 255.255.255.0","ok":true},
+             {"t":"192.168.1.1","ok":false},
+             {"t":"Nessuno: senza DHCP non è raggiungibile","ok":false},
+             {"t":"Un indirizzo casuale, va cercato con una scansione","ok":false} ],
+      "e": "Lo switch prova prima a chiedere un indirizzo; se nessuno risponde ripiega su 192.168.0.1. È il motivo per cui al primo accesso conviene collegare solo il Mac, senza router: sai con certezza dove trovarlo invece di doverlo cercare." },
+
+    { "q": "Qual è la differenza più importante fra questo switch e il MikroTik, dal punto di vista della sicurezza operativa?",
+      "a": [ {"t":"Qui non esiste la Safe Mode: nessun meccanismo annulla da solo una configurazione sbagliata","ok":true},
+             {"t":"Qui non si può esportare la configurazione","ok":false},
+             {"t":"Qui non c'è il pulsante di reset","ok":false},
+             {"t":"Qui non si può cambiare la password","ok":false} ],
+      "e": "Sul MikroTik una modifica che ti disconnette viene annullata da sola. Qui no: se ti chiudi fuori ci resti, e le uniche due difese sono la configurazione esportata prima e il pulsante di reset. Per questo vanno conosciute entrambe prima di toccare le VLAN." },
+
+    { "q": "Perché l'accesso amministrativo a questo switch non va fatto dalla rete degli utenti?",
+      "a": [ {"t":"L'interfaccia viaggia in HTTP: le credenziali passano in chiaro sulla rete","ok":true},
+             {"t":"Perché rallenta il traffico degli utenti","ok":false},
+             {"t":"Perché l'apparato accetta una sola sessione alla volta","ok":false},
+             {"t":"Perché il DHCP degli utenti gli cambierebbe l'indirizzo","ok":false} ],
+      "e": "Su questa fascia di apparati l'amministrazione non è cifrata: chiunque sia sullo stesso segmento e stia ascoltando vede utente e password. Su un laboratorio isolato non importa; su una rete di produzione l'amministrazione va su un segmento riservato, e mai da una rete ospiti." },
+
+    { "q": "Quale operazione va fatta al Mac appena finito di lavorare sullo switch?",
+      "a": [ {"t":"Rimettere l'interfaccia in DHCP","ok":true},
+             {"t":"Cancellare la cache ARP","ok":false},
+             {"t":"Riavviare l'interfaccia di rete","ok":false},
+             {"t":"Nessuna: l'indirizzo fisso non dà problemi","ok":false} ],
+      "e": "Un indirizzo statico dimenticato è una delle cause più comuni di «da ieri non navigo più», e ci si arriva due giorni dopo quando si è già smesso di pensare allo switch. È lo stesso errore che troverai sui PC dei clienti: un indirizzo messo anni fa per una prova e mai tolto." },
+
+    { "q": "Qual è il momento in cui rischi davvero di chiuderti fuori da questo switch?",
+      "a": [ {"t":"Quando cambierai l'appartenenza VLAN della porta da cui sei collegato","ok":true},
+             {"t":"Quando cambi la password amministrativa","ok":false},
+             {"t":"Quando aggiorni il firmware","ok":false},
+             {"t":"Quando attivi il port mirroring","ok":false} ],
+      "e": "Se l'interfaccia di amministrazione finisce in una VLAN in cui tu non sei, l'accesso sparisce — e senza Safe Mode nessuno lo rimette a posto. Non è un guasto e si risolve in un minuto con la configurazione esportata e il pulsante di reset, purché entrambi siano pronti prima." },
+
+    { "q": "Perché conviene provare il reset e il ripristino subito, il primo giorno?",
+      "a": [ {"t":"Per sapere con certezza di poter tornare indietro, e configurare senza il freno tirato","ok":true},
+             {"t":"Perché il reset va fatto prima di ogni configurazione","ok":false},
+             {"t":"Perché altrimenti la configurazione di fabbrica resta bloccata","ok":false},
+             {"t":"Perché il file esportato scade dopo qualche giorno","ok":false} ],
+      "e": "È la stessa logica della Safe Mode sul MikroTik: la fiducia di poter annullare qualsiasi errore è ciò che permette di provare davvero. Chi non ha mai verificato il ritorno configura con prudenza eccessiva, tocca poco e impara lentamente." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

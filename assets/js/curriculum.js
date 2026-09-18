@@ -325,8 +325,41 @@ window.NETPATH_CURRICULUM = [
       { id:"fg-38", t:"Prendere in carico un apparato che non conosci", s:"Il metodo completo: perimetro, inventario, rilievi, priorità e cosa dire al cliente.", m:32, ready:false }
     ]}
   ]
+},
+{
+  id: "sw", n: "SW", key: "sw", label: "Modulo Switching",
+  title: "Switching pratico",
+  subtitle: "Laboratorio da tavolo",
+  blurb: "Uno switch gestito vero sulla scrivania, accanto al MikroTik. Qui i concetti di commutazione smettono di essere disegni: costruisci VLAN, trunk e aggregazioni con due apparati collegati, provochi un loop di proposito e guardi il traffico con Wireshark.",
+  outcome: "Sai progettare e configurare VLAN con tag su qualsiasi switch gestito, costruire un trunk verso un router, catturare traffico con il port mirroring, riconoscere un loop e — soprattutto — sai dire a un cliente quando un apparato non è lo strumento giusto.",
+  hours: "25–35 ore",
+  chapters: [
+    { title: "L'apparato e il metodo", lessons: [
+      { id:"sw-01", t:"Cosa hai in mano: e cosa questo switch non sa fare", s:"Le funzioni reali del TL-SG605E, i suoi limiti dichiarati, e perché conoscerli è già una competenza da senior.", m:22, ready:true },
+      { id:"sw-02", t:"Primo accesso dal Mac, e la rete di sicurezza", s:"Trovarlo, entrarci, salvare la configurazione e sapere come tornare indietro prima di toccare qualsiasi cosa.", m:24, ready:true },
+      { id:"sw-03", t:"Le porte: negoziazione, statistiche, contatori d'errore", s:"Leggere cosa passa davvero da ogni porta, e riconoscere un problema fisico dai numeri prima che diventi un ticket.", m:26, ready:true },
+      { id:"sw-04", t:"Diagnostica del cavo: trovare il guasto senza scale", s:"Lo strumento che ti dice se un cavo è interrotto e a quanti metri. Nessuno lo usa, e risolve da solo una categoria di ticket.", m:22, ready:true }
+    ]},
+    { title: "VLAN, sul serio", lessons: [
+      { id:"sw-05", t:"Le tre modalità VLAN, e quale usare davvero", s:"Port-based, MTU VLAN e 802.1Q: due sono scorciatoie proprietarie, una è lo standard che troverai ovunque.", m:26, ready:false },
+      { id:"sw-06", t:"802.1Q: tag, untag e PVID, con i frame disegnati", s:"Cosa succede a un frame in ogni punto del percorso. Il concetto che vale identico su Cisco, MikroTik e chiunque altro.", m:30, ready:false },
+      { id:"sw-07", t:"Il primo laboratorio: due VLAN e un trunk verso il MikroTik", s:"Due apparati, un cavo, due reti separate. Da qui in poi la teoria delle VLAN diventa una cosa che hai costruito.", m:34, ready:false },
+      { id:"sw-08", t:"Far parlare le VLAN fra loro: router su uno stecco", s:"Le VLAN separano; per farle comunicare serve un router. Con le regole che decidono chi può parlare con chi.", m:30, ready:false },
+      { id:"sw-09", t:"Gli errori di VLAN che fanno tutti, riprodotti di proposito", s:"PVID sbagliato, trunk che non passa il tag, VLAN di gestione dimenticata: li provochi tu, così li riconosci al volo.", m:28, ready:false }
+    ]},
+    { title: "Vedere il traffico", lessons: [
+      { id:"sw-10", t:"Port mirroring: catturare con Wireshark dal Mac", s:"Copiare il traffico di una porta verso il tuo portatile. Lo strumento che trasforma le ipotesi in prove.", m:28, ready:false },
+      { id:"sw-11", t:"Loop e tempeste di broadcast, provocati e risolti", s:"Colleghi due porte fra loro e guardi una rete morire in tre secondi. Poi impari a impedirlo.", m:26, ready:false }
+    ]},
+    { title: "Prestazioni e limiti", lessons: [
+      { id:"sw-12", t:"Aggregare due collegamenti in uno", s:"Raddoppiare la banda fra due apparati, e capire perché non sempre funziona come ci si aspetta.", m:26, ready:false },
+      { id:"sw-13", t:"QoS, limitazione di banda e IGMP snooping", s:"Dare priorità, mettere un tetto, e impedire che un flusso video allaghi tutta la rete.", m:26, ready:false },
+      { id:"sw-14", t:"I limiti dell'apparato, e cosa dire a un cliente", s:"Riconoscere quando uno switch non è lo strumento giusto e saperlo spiegare. È qui che si vede il livello senior.", m:26, ready:false }
+    ]}
+  ]
 }
 ];
+
 
 
 

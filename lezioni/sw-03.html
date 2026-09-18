@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le porte: negoziazione, statistiche, contatori d'errore — NetPath</title>
+<meta name="description" content="Leggere cosa passa davvero da ogni porta, e riconoscere un problema fisico dai numeri prima che diventi un ticket.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="sw-03">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#sw">Modulo Switching</a><span class="sep">/</span>
+        <span>L'apparato e il metodo</span>
+      </nav>
+      <h1 class="lesson-title">Le porte: negoziazione, statistiche, contatori d'errore</h1>
+      <div class="lesson-meta">
+        <span class="badge lvsw">Modulo Switching</span>
+        <span class="chip">Lezione 03</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Capire cosa negoziano due porte quando le colleghi, e cosa succede se non si accordano</li>
+        <li>Leggere i contatori di una porta e sapere cosa significa ciascuna categoria</li>
+        <li>Riconoscere un problema di cablaggio dai numeri, senza toccare un cavo</li>
+        <li>Ritrovare la stessa competenza su qualsiasi apparato di qualsiasi marca</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">I contatori delle porte sono il dato più sottovalutato di tutto il networking. Sono
+lì, su ogni switch, su ogni firewall, su ogni router — e quasi nessuno li guarda. Eppure rispondono
+da soli a una buona metà dei ticket che cominciano con «la rete è lenta».</p>
+
+<h2>Cosa succede quando colleghi un cavo</h2>
+
+<p>Nel primo secondo le due porte <strong>negoziano</strong> due cose, e devono accordarsi su
+entrambe:</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parametro</th><th>Valori</th><th>Se non si accordano</th></tr></thead>
+    <tbody>
+      <tr><td><b>Velocità</b></td><td>10, 100 o 1000 Mbit/s</td>
+          <td>Si scende al valore più basso che entrambe accettano</td></tr>
+      <tr><td><b>Modalità</b></td><td><b>Full duplex</b> (si parla e si ascolta insieme) o <b>half duplex</b> (uno per volta)</td>
+          <td><b>Qui nascono i guai</b> — vedi sotto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il telefono e il ricetrasmettitore
+  </div>
+  <p><b>Full duplex</b> è una telefonata: parlate entrambi insieme e vi sentite. <b>Half duplex</b> è
+  un ricetrasmettitore: uno parla, l'altro aspetta, e alla fine dice «passo».</p>
+  <p>Funzionano entrambi — <b>finché i due sono d'accordo</b>. Il disastro nasce quando uno crede di
+  essere al telefono e l'altro crede di avere il ricetrasmettitore: il primo parla sopra, il secondo
+  interpreta quella voce come un'interferenza, e ogni frase va ripetuta.</p>
+  <p style="margin-bottom:0">Il risultato non è che «non funziona»: è che <b>funziona malissimo</b>.
+  Il collegamento c'è, la spia è verde, e la rete va a un decimo della velocità. È il guasto più
+  frustrante che esista, perché tutto <em>sembra</em> a posto.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Quando succede ancora, oggi
+  </div>
+  <p>Con la negoziazione automatica attiva da entrambe le parti, il problema non si presenta. Si
+  presenta quando <b>qualcuno ha forzato a mano la velocità o la modalità su un lato solo</b>:
+  l'altro lato non ha più nessuno con cui negoziare, tira a indovinare, e quasi sempre sbaglia.</p>
+  <p style="margin-bottom:0"><b>La regola:</b> o si forza da <b>entrambi</b> i lati con gli stessi
+  valori, o si lascia automatico da entrambi. <b>Mai su un lato solo.</b> E quando erediti una rete
+  che «va lenta senza motivo», una delle prime cose da cercare è proprio una porta con i valori
+  forzati.</p>
+</div>
+
+<h2>I contatori, categoria per categoria</h2>
+
+<p>Ogni firmware ne mostra un sottoinsieme e li chiama a modo suo. Le <strong>categorie</strong>
+però sono queste, e il significato non cambia da un apparato all'altro.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Categoria</th><th>Cosa conta</th><th>Se sale, cosa significa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Pacchetti buoni</b><br>trasmessi e ricevuti</td><td>Il traffico normale</td>
+          <td>Niente: è il riferimento rispetto a cui leggere tutto il resto</td></tr>
+      <tr><td><b>Errori di controllo</b><br><span style="font-size:.85em">CRC / FCS</span></td>
+          <td>Frame arrivati <b>danneggiati</b></td>
+          <td><b>Problema fisico:</b> cavo rovinato, connettore fatto male, distanza eccessiva, interferenza, o un transceiver difettoso</td></tr>
+      <tr><td><b>Collisioni</b><br><span style="font-size:.85em">e collisioni tardive</span></td>
+          <td>Due che hanno parlato insieme</td>
+          <td>Su una porta in full duplex <b>non dovrebbero esistere</b>. Se ci sono, sospetta il disaccordo sulla modalità</td></tr>
+      <tr><td><b>Scarti</b><br><span style="font-size:.85em">drop / discard</span></td>
+          <td>Frame buttati via dallo switch</td>
+          <td>Congestione: la porta di uscita è più lenta o più occupata di quella di entrata</td></tr>
+      <tr><td><b>Frame malformati</b><br><span style="font-size:.85em">troppo corti, troppo lunghi, frammenti</span></td>
+          <td>Frame fuori misura</td>
+          <td>Scheda di rete difettosa, o ancora problemi fisici</td></tr>
+      <tr><td><b>Broadcast</b></td><td>Frame diretti a tutti</td>
+          <td>Un valore che cresce in modo anomalo è il segnale di una <b>tempesta</b> (lezione 11)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Come si leggono davvero: il rapporto, non il numero
+  </div>
+  <p>Un contatore d'errore che segna 400 non dice niente da solo. <b>Quattrocento errori su duecento
+  milioni di pacchetti sono irrilevanti</b>; quattrocento su tremila sono un guasto conclamato.</p>
+  <p><b>Quello che conta è la proporzione</b>, e il fatto che <b>cresca</b>. Un contatore fermo da
+  mesi racconta un problema vecchio e magari già risolto; uno che sale mentre guardi ti sta indicando
+  la porta da controllare adesso.</p>
+  <p style="margin-bottom:0"><b>Il metodo:</b> annota il valore, aspetta qualche minuto generando
+  traffico, rileggi. La differenza è il dato. E se il firmware lo consente, <b>azzera i contatori</b>
+  prima di una prova: partire da zero rende tutto più leggibile.</p>
+</div>
+
+<h2>La stessa competenza, su qualsiasi apparato</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Dove</th><th>Come ci arrivi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Questo switch</b></td><td>Pagina delle statistiche delle porte, nell'interfaccia web</td></tr>
+      <tr><td><b>MikroTik</b></td><td><code>/interface/print stats</code> · <code>/interface/ethernet/print</code><br>e in diretta: <code>/interface/print stats interval=1</code></td></tr>
+      <tr><td><b>FortiGate</b></td><td><code>get system interface physical</code><br><code>diagnose hardware deviceinfo nic &lt;porta&gt;</code></td></tr>
+      <tr><td><b>Cisco</b></td><td><code>show interfaces</code> · <code>show interfaces status</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Cambiano i comandi, non le domande: <em>a che velocità e in che modalità ha negoziato? quanti
+errori ci sono rispetto al traffico? stanno crescendo?</em> Impararlo qui significa saperlo fare
+ovunque.</p>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Misura il riferimento, poi genera traffico
+  </div>
+  <ol>
+    <li><b>Collega il Mac a una porta e il MikroTik a un'altra.</b> Entra nell'interfaccia dello
+    switch e trova la pagina delle statistiche.</li>
+    <li><b>Annota il riferimento di partenza:</b> per ogni porta collegata, velocità e modalità
+    negoziate, pacchetti trasmessi e ricevuti, errori. Azzera i contatori se puoi.</li>
+    <li><b>Genera traffico vero</b> fra Mac e MikroTik e rileggi i contatori.</li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Dal Mac — generare e misurare</div>
+<pre><span class="c"># traffico continuo, per vedere i contatori muoversi</span>
+<span class="p">ping -i 0.2 -c 300 192.168.0.1</span>
+
+<span class="c"># un trasferimento vero: copia un file grande</span>
+<span class="c"># sul MikroTik e riportalo indietro</span>
+<span class="p">mkfile 200m /tmp/prova.bin</span>
+<span class="p">scp /tmp/prova.bin admin@192.168.88.1:</span>
+<span class="p">scp admin@192.168.88.1:prova.bin /tmp/ritorno.bin</span>
+
+<span class="c"># e la stessa misura vista dal router</span>
+<span class="c">   sul MikroTik:  /interface/print stats interval=1</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>Le tre domande a cui devi saper rispondere alla fine:</b></p>
+  <ol>
+    <li>Le porte hanno negoziato <b>1000 Mbit/s in full duplex</b>? Se una è a 100, perché?</li>
+    <li>Gli errori sono <b>zero</b>? Con cavi buoni e distanze brevi devono esserlo.</li>
+    <li>I numeri dello switch e quelli del MikroTik <b>raccontano la stessa cosa</b>? Devono: sono
+    due contatori dello stesso traffico, ai due capi dello stesso cavo.</li>
+  </ol>
+  <p style="margin-bottom:0"><b>L'esperimento in più, se hai un cavo vecchio o malmesso in giro:</b>
+  sostituisci il cavo buono con quello dubbio e rifai la prova. Se gli errori cominciano a salire,
+  hai appena visto con i tuoi occhi il legame fra un contatore e un pezzo di rame — ed è esattamente
+  la deduzione che farai un giorno a casa di un cliente, senza avere il cavo in mano.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: porte e contatori",
+  "questions": [
+    { "q": "Una porta è collegata, la spia è verde, ma la rete va lentissima. Cosa sospetti per primo?",
+      "a": [ {"t":"Un disaccordo sulla modalità: uno dei due lati crede di essere in half duplex","ok":true},
+             {"t":"Il cavo staccato","ok":false},
+             {"t":"Un loop di livello 2","ok":false},
+             {"t":"La tabella MAC piena","ok":false} ],
+      "e": "Uno parla sopra all'altro, il secondo interpreta la voce come interferenza e ogni frase va ripetuta. Il collegamento c'è e la spia è verde: è il guasto più frustrante perché tutto <em>sembra</em> a posto. Con un cavo staccato invece non ci sarebbe collegamento affatto." },
+
+    { "q": "Quando si presenta ancora oggi il disaccordo sulla modalità?",
+      "a": [ {"t":"Quando qualcuno ha forzato velocità o modalità su un lato solo","ok":true},
+             {"t":"Quando i due apparati sono di marche diverse","ok":false},
+             {"t":"Quando il cavo supera i 50 metri","ok":false},
+             {"t":"Quando una porta è a 10 Mbit/s","ok":false} ],
+      "e": "Con la negoziazione automatica attiva da entrambe le parti il problema non esiste. Forzando un lato solo, l'altro non ha più nessuno con cui negoziare, tira a indovinare e quasi sempre sbaglia. O si forza da entrambi con gli stessi valori, o si lascia automatico da entrambi." },
+
+    { "q": "Cosa indicano gli errori di controllo (CRC) in crescita su una porta?",
+      "a": [ {"t":"Un problema fisico: cavo, connettore, distanza o interferenza","ok":true},
+             {"t":"Congestione della porta di uscita","ok":false},
+             {"t":"Una tempesta di broadcast","ok":false},
+             {"t":"Un errore di configurazione delle VLAN","ok":false} ],
+      "e": "Sono frame arrivati danneggiati, e il danno è avvenuto sul mezzo fisico: rame rovinato, connettore crimpato male, distanza eccessiva, interferenza, o un transceiver difettoso. La congestione produce invece scarti, e una tempesta si vede sui contatori di broadcast." },
+
+    { "q": "Un contatore d'errore segna 400. È grave?",
+      "a": [ {"t":"Dipende dal rapporto con il traffico totale, e soprattutto se sta crescendo","ok":true},
+             {"t":"Sì, qualsiasi errore è grave","ok":false},
+             {"t":"No, sotto i mille è sempre trascurabile","ok":false},
+             {"t":"Dipende solo dalla velocità della porta","ok":false} ],
+      "e": "Quattrocento errori su duecento milioni di pacchetti sono irrilevanti; quattrocento su tremila sono un guasto conclamato. E un contatore fermo da mesi racconta un problema magari già risolto, mentre uno che sale mentre guardi indica la porta da controllare adesso. Si annota, si aspetta, si rilegge." },
+
+    { "q": "Perché le collisioni su una porta in full duplex sono un segnale d'allarme?",
+      "a": [ {"t":"In full duplex non dovrebbero esistere: se ci sono, i due lati non sono d'accordo sulla modalità","ok":true},
+             {"t":"Perché indicano un cavo troppo lungo","ok":false},
+             {"t":"Perché segnalano una tempesta di broadcast","ok":false},
+             {"t":"Perché la porta è satura","ok":false} ],
+      "e": "La collisione è il fenomeno tipico dell'half duplex, dove si parla uno per volta. In full duplex si trasmette e si riceve insieme e il concetto non si applica: vederne significa che da qualche parte qualcuno sta ancora funzionando all'antica, ed è la firma del disaccordo." },
+
+    { "q": "Su un FortiGate, con quale comando ottieni la stessa informazione della pagina delle statistiche?",
+      "a": [ {"t":"<code>get system interface physical</code>","ok":true},
+             {"t":"<code>show system interface</code>","ok":false},
+             {"t":"<code>execute log display</code>","ok":false},
+             {"t":"<code>config system interface</code>","ok":false} ],
+      "e": "Cambiano i comandi, non le domande: velocità e modalità negoziate, errori rispetto al traffico, andamento. <code>show</code> mostrerebbe la configurazione — cioè l'intenzione — mentre <code>get</code> mostra lo stato reale, che è quello che serve qui." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

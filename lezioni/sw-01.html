@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cosa hai in mano: e cosa questo switch non sa fare — NetPath</title>
+<meta name="description" content="Le funzioni reali del TL-SG605E, i suoi limiti dichiarati, e perché conoscerli è già una competenza da senior.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="sw-01">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#sw">Modulo Switching</a><span class="sep">/</span>
+        <span>L'apparato e il metodo</span>
+      </nav>
+      <h1 class="lesson-title">Cosa hai in mano: e cosa questo switch non sa fare</h1>
+      <div class="lesson-meta">
+        <span class="badge lvsw">Modulo Switching</span>
+        <span class="chip">Lezione 01</span>
+        <span class="chip">22 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Sapere esattamente cosa può e cosa non può fare questo apparato</li>
+        <li>Collocare lo switch nelle tre fasce di mercato e capire cosa cambia fra loro</li>
+        <li>Distinguere ciò che imparerai qui e vale ovunque da ciò che resta da imparare altrove</li>
+        <li>Capire perché questo apparato, insieme al MikroTik, è un laboratorio migliore di quanto sembri</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Il <strong>TP-Link TL-SG605E</strong> costa poche decine di euro e sta in una mano.
+Ed è comunque un ottimo punto di partenza — <em>a patto</em> di sapere fin da subito cosa ti insegna e
+cosa no. Cominciamo proprio da lì, perché è la parte che nessuno scrive sulla scatola.</p>
+
+<h2>Le tre fasce</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Fascia</th><th>Cosa sa fare</th><th>Come si configura</th></tr></thead>
+    <tbody>
+      <tr><td><b>Non gestito</b><br><span style="font-size:.85em">«unmanaged»</span></td>
+          <td>Inoltra i frame e basta. Nessuna configurazione possibile</td><td>Non si configura: si collega</td></tr>
+      <tr><td><b>Smart / Easy Smart</b><br><span style="font-size:.85em">← <b>il tuo</b></span></td>
+          <td><b>VLAN 802.1Q</b>, port mirroring, QoS, aggregazione statica, IGMP snooping, limitazione di banda</td>
+          <td><b>Solo interfaccia web.</b> Niente riga di comando</td></tr>
+      <tr><td><b>Gestito completo</b><br><span style="font-size:.85em">Cisco, gli Omada di TP-Link, FortiSwitch</span></td>
+          <td>Tutto quanto sopra, più <b>STP/RSTP</b>, port security, 802.1X, SNMP, routing fra VLAN, LACP</td>
+          <td><b>Riga di comando</b> completa, oltre all'interfaccia web</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la macchina con il cambio automatico
+  </div>
+  <p>Per imparare a guidare, un'auto con il cambio automatico va benissimo: impari le strade, la
+  precedenza, i parcheggi, il traffico — cioè <b>il 90% di quello che serve</b>. Non impari a usare la
+  frizione.</p>
+  <p>Il giorno che sali su un camion con il cambio manuale non ricominci da zero: ti manca <b>una
+  cosa sola</b>, e tutto il resto lo sai già.</p>
+  <p style="margin-bottom:0">Questo switch è il cambio automatico. Ti insegna <b>le VLAN, i tag, i
+  trunk, il mirroring, i loop</b> — che sono concetti standard e valgono identici su qualsiasi marca.
+  Non ti insegna <b>la riga di comando Cisco</b>, che è la frizione. Quella la imparerai quando avrai
+  l'apparato giusto, e sarà molto più facile perché i concetti li avrai già.</p>
+</div>
+
+<h2>Cosa sa fare: la scheda onesta</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Funzione</th><th>Dettaglio</th><th>Vale anche altrove?</th></tr></thead>
+    <tbody>
+      <tr><td><b>VLAN 802.1Q</b></td><td>Fino a <b>32 VLAN</b> attive insieme, identificativi da 1 a 4094</td>
+          <td><b>Sì, al 100%.</b> È uno standard</td></tr>
+      <tr><td>VLAN per porta e «MTU VLAN»</td><td>Due scorciatoie proprietarie</td><td>No: esistono solo qui</td></tr>
+      <tr><td><b>Port mirroring</b></td><td>Copia il traffico di una porta verso un'altra</td><td><b>Sì.</b> Cambia il nome, non il concetto</td></tr>
+      <tr><td><b>Aggregazione statica</b></td><td>Più cavi come uno solo. <b>Senza negoziazione</b></td>
+          <td>Il concetto sì; il protocollo LACP no</td></tr>
+      <tr><td>IGMP snooping</td><td>v1, v2, v3</td><td>Sì</td></tr>
+      <tr><td>QoS</td><td>Per porta, per etichetta 802.1p, per marcatura DSCP</td><td>Sì</td></tr>
+      <tr><td>Limitazione di banda e controllo delle tempeste</td><td>Per porta</td><td>Sì</td></tr>
+      <tr><td><b>Prevenzione dei loop</b></td><td>Rilevamento base, <b>non</b> è lo spanning tree</td><td>Parzialmente — vedi sotto</td></tr>
+      <tr><td>Diagnostica del cavo</td><td>Dice se un cavo è interrotto, e a quanti metri</td><td>Sì, e nessuno la usa</td></tr>
+      <tr><td>Tabella MAC</td><td>2000 voci</td><td>—</td></tr>
+      <tr><td>Frame grandi</td><td>Fino a 16 KB</td><td>Sì</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Cosa NON sa fare</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    I cinque limiti, e dove li colmerai
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Nessuna riga di comando.</b> Né SSH, né telnet, né console: solo l'interfaccia web. È il
+    limite più grosso, perché sul lavoro la riga di comando <em>è</em> buona parte del mestiere.
+    → <b>Modulo Cisco</b>, quando avrai l'apparato</li>
+    <li><b>Nessuno spanning tree.</b> C'è solo un rilevamento dei loop, che è un'altra cosa: reagisce
+    invece di prevenire, e non costruisce percorsi alternativi. → la teoria è nella
+    <b>lezione 2-06</b>, la pratica servirà hardware gestito</li>
+    <li><b>Nessuna sicurezza sulle porte.</b> Niente port security, niente 802.1X: chiunque infila un
+    cavo entra. → teoria nelle <b>lezioni 2-07 e 3-14</b></li>
+    <li><b>Nessun SNMP.</b> Non si integra in un sistema di monitoraggio. → <b>lezione 2-25</b></li>
+    <li><b>Nessun routing.</b> È puro livello 2: non fa passare il traffico fra VLAN diverse.
+    → <b>e qui c'è la buona notizia, sotto</b></li>
+  </ul>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Insieme al MikroTik diventa un laboratorio serio
+  </div>
+  <p>Da solo questo switch è limitato. <b>Accanto al tuo hAP ax² è un'altra cosa</b>, perché i due si
+  completano esattamente dove ciascuno è carente:</p>
+  <div class="code" style="margin:12px 0">
+<pre><span class="c">   Mac                switch TP-Link              MikroTik</span>
+<span class="c">    │                      │                          │</span>
+<span class="c">    └── porta 1 ────────── VLAN 10 ──┐                │</span>
+<span class="c">        porta 2 ────────── VLAN 20 ──┤                │</span>
+<span class="c">        porta 5 ═════ TRUNK (tag 10,20) ═════════════ ether2</span>
+<span class="c">                                     │                │</span>
+<span class="c">              separa il livello 2    │   instrada fra le VLAN</span>
+<span class="c">                                          e fa da firewall</span>
+</pre>
+  </div>
+  <p style="margin-bottom:0"><b>Lo switch separa, il router collega e filtra.</b> È l'architettura
+  reale di qualsiasi ufficio, in miniatura — e potrai costruirla davvero nella lezione 7 di questo
+  modulo. Non è una simulazione: sono frame etichettati veri su un cavo vero.</p>
+</div>
+
+<h2>Perché conoscere i limiti è già competenza</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La frase che distingue un tecnico da un venditore
+  </div>
+  <p>Un cliente ti chiede uno switch «gestito» per un ufficio da venti persone, e ne ha visto uno da
+  quaranta euro. La risposta da junior è sì o no. La risposta da senior è una domanda:</p>
+  <p><b>«Gestito per fare cosa?»</b></p>
+  <p style="margin-bottom:0">Se serve separare la rete ospiti dal resto, un Easy Smart basta e
+  avanza. Se serve autenticare chi si collega alle prese, o se ci sono collegamenti ridondanti che
+  richiedono lo spanning tree, allora <b>no</b> — e saperlo dire <em>prima</em>, con il motivo, vale
+  più di qualsiasi certificazione. È il tema della lezione 14, l'ultima di questo modulo.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: conoscere l'apparato",
+  "questions": [
+    { "q": "Qual è il limite più significativo di uno switch della fascia Easy Smart, rispetto a uno gestito completo?",
+      "a": [ {"t":"Non ha riga di comando: si configura solo dall'interfaccia web","ok":true},
+             {"t":"Non supporta le VLAN","ok":false},
+             {"t":"Non raggiunge il gigabit","ok":false},
+             {"t":"Non può essere alimentato in modo ridondante","ok":false} ],
+      "e": "Le VLAN 802.1Q ci sono e sono quelle standard, e le porte sono a un gigabit. Manca la riga di comando — che sul lavoro è buona parte del mestiere — insieme a spanning tree, sicurezza sulle porte, 802.1X e SNMP. È il cambio automatico: impari le strade, non la frizione." },
+
+    { "q": "Cosa imparerai su questo switch che vale identico su Cisco o MikroTik?",
+      "a": [ {"t":"Le VLAN 802.1Q: tag, untag, PVID e trunk","ok":true},
+             {"t":"La modalità «MTU VLAN»","ok":false},
+             {"t":"La VLAN per porta di TP-Link","ok":false},
+             {"t":"L'interfaccia web di configurazione","ok":false} ],
+      "e": "802.1Q è uno standard: un frame etichettato è identico su qualsiasi marca, e i concetti di tag, untag e PVID si applicano ovunque senza traduzione. «MTU VLAN» e la VLAN per porta sono invece scorciatoie proprietarie che esistono solo qui." },
+
+    { "q": "Lo switch ha la «prevenzione dei loop». È lo spanning tree?",
+      "a": [ {"t":"No: rileva e reagisce, ma non costruisce percorsi alternativi","ok":true},
+             {"t":"Sì, è lo stesso meccanismo con un altro nome","ok":false},
+             {"t":"Sì, ma solo nella versione rapida","ok":false},
+             {"t":"No, è un filtro sugli indirizzi MAC","ok":false} ],
+      "e": "Lo spanning tree calcola una topologia priva di anelli e tiene pronti percorsi di riserva da attivare se un collegamento cade. Il rilevamento dei loop si limita ad accorgersi del problema e a intervenire sulla porta: è meglio di niente, ma non è ridondanza." },
+
+    { "q": "Perché lo switch, accanto al MikroTik, diventa un laboratorio serio?",
+      "a": [ {"t":"Lo switch separa le VLAN, il router le instrada e le filtra: è l'architettura reale di un ufficio in miniatura","ok":true},
+             {"t":"Perché insieme raddoppiano la banda disponibile","ok":false},
+             {"t":"Perché il MikroTik aggiunge lo spanning tree allo switch","ok":false},
+             {"t":"Perché il MikroTik permette di usare la riga di comando sullo switch","ok":false} ],
+      "e": "I due si completano esattamente dove ciascuno è carente: lo switch è puro livello 2 e non instrada, il router instrada e filtra ma ha poche porte. Insieme costruiscono un trunk con VLAN etichettate vere su un cavo vero — non una simulazione." },
+
+    { "q": "Un cliente vuole uno switch gestito per venti postazioni. Qual è la risposta da senior?",
+      "a": [ {"t":"«Gestito per fare cosa?» — e la scelta dipende dalla risposta","ok":true},
+             {"t":"Sì, un Easy Smart basta per venti postazioni","ok":false},
+             {"t":"No, servono apparati gestiti completi","ok":false},
+             {"t":"Dipende solo dal budget disponibile","ok":false} ],
+      "e": "Per separare una rete ospiti un Easy Smart basta e avanza; per autenticare chi si collega alle prese, o con collegamenti ridondanti che richiedono lo spanning tree, no. Saperlo dire prima e con il motivo vale più di qualsiasi certificazione — ed è il tema dell'ultima lezione del modulo." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
