@@ -1,0 +1,319 @@
+#id: fg-07
+#title: Anelli 1 e 2: client, rete locale, routing e selettori
+#min: 30
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Il metodo diagnostico
+#desc: Sovrapposizioni di indirizzi, proxy sul dispositivo, rotte che puntano dove non c'è nessuno e selettori che non contengono la sorgente.
+#obj: Riconoscere una sovrapposizione di reti e sapere perché non sempre si comporta come ci si aspetta
+#obj: Individuare i proxy e i NAT nascosti che rendono cieco il firewall
+#obj: Leggere una tabella di routing e sapere quale rotta vince
+#obj: Capire il selettore di fase 2, il concetto che spiega metà dei ticket VPN
+---
+<p class="lead">I primi due anelli stanno <strong>prima</strong> del firewall, e sono quelli in cui si
+perde più tempo — perché il firewall non ha niente da mostrarti. Se il pacchetto non arriva, nei log
+non c'è nulla, e l'assenza di prove viene scambiata per assenza di problema.</p>
+
+<h2>Anello 1 · Sovrapposizione di reti</h2>
+
+<p>Due reti fisicamente distinte usano lo <strong>stesso intervallo di indirizzi</strong>. Il computer
+si ritrova con due istruzioni contraddittorie sulla stessa destinazione, e può seguirne una sola.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: due «via Roma 12»
+  </div>
+  <p>Devi consegnare un pacco in <b>via Roma 12</b>. Ma nel tuo paese c'è una via Roma, e anche nel
+  paese dove lavori ce n'è una. Tu hai un indirizzo solo, e due posti che corrispondono.</p>
+  <p style="margin-bottom:0">Consegnerai a quello <b>più vicino</b>, o a quello che il tuo navigatore
+  ha deciso di preferire. E il pacco arriverà davvero — <b>alla persona sbagliata</b>. Non è che «non
+  funziona»: è che funziona verso la destinazione errata, che è molto più difficile da diagnosticare.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il caso tipico, e la firma che lo rivela
+  </div>
+  <p>Un dirigente si collega in VPN da casa. Il collegamento si stabilisce, l'autenticazione riesce,
+  ma il traffico verso i server aziendali non torna. La rete della sede è
+  <code>192.168.0.0/24</code>… <b>e anche il modem di casa sua usa <code>192.168.0.0/24</code></b>.</p>
+  <p style="margin-bottom:0"><b>La firma:</b> «dall'hotspot del telefono funziona». Non è magia —
+  l'hotspot usa un intervallo diverso (tipicamente <code>172.20.10.x</code>), quindi non c'è più
+  ambiguità e l'unica rotta per <code>192.168.0.x</code> è quella spinta dalla VPN.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La sfumatura che quasi tutti sbagliano
+  </div>
+  <p>La sovrapposizione <b>non sempre impedisce al traffico di entrare nel tunnel</b>, e questo
+  confonde parecchio.</p>
+  <p>Con due rotte identiche verso la stessa rete, <b>vince quella con la metrica più bassa</b>. Se
+  prevale la rotta spinta dalla VPN, i pacchetti <b>entrano comunque nel tunnel</b> — e nei log del
+  firewall li vedi arrivare. Chi si aspettava «sul firewall non deve comparire niente» conclude che
+  l'ipotesi è sbagliata, e la scarta.</p>
+  <p style="margin-bottom:0"><b>La conclusione corretta è diversa:</b> vedere traffico nel tunnel
+  <em>riduce</em> il sospetto di sovrapposizione, non lo <em>elimina</em>. È esattamente la differenza
+  fra un'ipotesi indebolita e un'ipotesi esclusa — e confonderle fa perdere giorni.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Le verifiche sul computer dell'utente</div>
+<pre><span class="c">═══ macOS ══════════════════════════════════════════</span>
+<span class="p">ifconfig | grep "inet "</span>
+<span class="c">   quali indirizzi ha, su quante interfacce</span>
+
+<span class="p">netstat -rn -f inet</span>
+<span class="c">   la tabella di routing completa</span>
+
+<span class="p">route -n get 192.168.0.107</span>
+<span class="c">   ← IL COMANDO CHE RISPONDE ALLA DOMANDA:</span>
+<span class="c">   quale interfaccia vince per QUESTA destinazione</span>
+
+<span class="p">scutil --dns | grep nameserver</span>
+<span class="c">   quali risolutori sta usando davvero</span>
+
+<span class="c">═══ Windows ════════════════════════════════════════</span>
+<span class="p">ipconfig /all</span>
+<span class="p">route print -4</span>
+<span class="c">   guarda quale interfaccia vince su 192.168.0.0/24</span>
+<span class="c">   e con che metrica</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Rischio operativo: cambiare la rete di casa mentre sei collegato
+  </div>
+  <p>Il rimedio pulito è spostare la rete del modem dell'utente su un intervallo non usato — per
+  esempio <code>192.168.9.0/24</code>. <b>Ma se lo stai assistendo da remoto, quella modifica fa cadere
+  la sessione con cui lo stai assistendo.</b></p>
+  <p style="margin-bottom:0">Va annunciato <b>prima</b>, spiegando che si disconnetterà e come
+  rientrare. Se il firmware del modem è bloccato dall'operatore, il ripiego è aggiungere <b>rotte
+  permanenti per singolo host</b> sul computer: meno elegante, ma non richiede di toccare il modem.</p>
+</div>
+
+<h2>Anello 1 · I proxy e i NAT che rendono cieco il firewall</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa</th><th>Effetto sul firewall</th><th>Come te ne accorgi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Proxy di anonimizzazione sul dispositivo</b><br><span style="font-size:.85em">alcuni servizi dei sistemi operativi recenti incapsulano il traffico web</span></td>
+          <td><b>Il firewall non legge più il nome del sito.</b> Qualunque elenco di eccezioni scritto sul firewall diventa inefficace</td>
+          <td>Il problema riguarda <b>solo alcuni dispositivi</b>, tipicamente della stessa marca</td></tr>
+      <tr><td><b>NAT su un access point</b></td>
+          <td>Tutto il traffico wireless arriva <b>dall'indirizzo dell'access point</b>: niente identificazione per utente, niente regole per dispositivo</td>
+          <td>Il firewall classifica quell'apparato come «router» invece che come access point</td></tr>
+      <tr><td><b>Indirizzi MAC casuali + concessioni brevi</b></td>
+          <td>L'associazione fra indirizzo e utente diventa inaffidabile</td>
+          <td>Lo stesso indirizzo risulta assegnato a due apparati diversi, o il nome non coincide</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Lo stato intermedio è peggiore di entrambe le scelte
+  </div>
+  <p>Con un proxy di anonimizzazione <b>bloccato a metà</b> — alcuni server raggiungibili e altri no —
+  il dispositivo non ripiega su una modalità pulita: continua a provare, e l'utente vede <b>pagine
+  rotte in modo apparentemente casuale</b>.</p>
+  <p style="margin-bottom:0"><b>Le due soluzioni coerenti</b>, da scegliere consapevolmente:
+  <b>bloccarlo del tutto</b> nel modo documentato dal produttore del sistema operativo — scelta
+  raccomandata se hai un filtro perimetrale, perché altrimenti quel filtro non vede niente — oppure
+  <b>consentirlo interamente</b>, accettando di perdere visibilità su quei dispositivi. Lo stato
+  intermedio non è nessuna delle due: è solo un guasto.</p>
+</div>
+
+<h2>Anello 2 · Il selettore di fase 2</h2>
+
+<p>Questo concetto, da solo, spiega <strong>metà dei ticket VPN</strong> che riceverai. Vale la pena
+leggerlo due volte.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il pullman con la lista dei passeggeri
+  </div>
+  <p>Un tunnel VPN <b>non è un corridoio aperto</b> verso la sede remota. È un pullman con una
+  <b>lista di passeggeri ammessi</b>, concordata in partenza fra i due autisti.</p>
+  <p>Se non sei sulla lista, non sali. E non ti viene detto: <b>non c'è nessuno che ti respinge con un
+  messaggio</b>. Semplicemente il pullman parte senza di te, e tu resti lì ad aspettare senza capire
+  perché.</p>
+  <p style="margin-bottom:0">Quella lista si chiama <b>selettore di fase 2</b>, ed è negoziata fra i
+  due capi. Il traffico che non vi ricade non trova un'associazione di sicurezza che lo trasporti,
+  e <b>viene scartato in silenzio</b>.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il caso che vedrai più spesso
+  </div>
+  <p>Un'utente lavora da casa per la prima volta e deve raggiungere un portale di un fornitore,
+  accessibile solo attraverso un tunnel costruito anni fa. Le crei l'utenza VPN: entra, ma il portale
+  non si apre.</p>
+  <p><b>Il motivo:</b> i client VPN ricevono indirizzi da un intervallo dedicato, che <b>non ricade nel
+  selettore</b> concordato con il fornitore. Creare l'utenza le ha dato <b>il diritto di entrare nella
+  VPN, non il percorso per arrivare al portale</b>. Sono due cose diverse.</p>
+  <p style="margin-bottom:0"><b>Perché dall'ufficio funziona:</b> il computer in sede ha un indirizzo di
+  una rete che, quando il tunnel fu costruito, era stata messa nell'accordo — e c'è una traduzione che
+  lo trasforma nell'unico intervallo che il fornitore accetta di ricevere. <b>«L'utente in VPN» e
+  «l'utente in ufficio» sono, per il firewall, due sorgenti completamente diverse.</b></p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Verificare l'anello 2</div>
+<pre><span class="c">── la tabella di routing completa ──────────────────</span>
+<span class="p">get router info routing-table all</span>
+
+<span class="c">── e per una destinazione precisa: chi vince? ──────</span>
+<span class="p">get router info routing-table details</span> <span class="n">10.160.4.12</span>
+
+<span class="c">── lo stato della negoziazione ─────────────────────</span>
+<span class="p">diagnose vpn ike gateway list name</span> <span class="s">"nome-tunnel"</span>
+
+<span class="c">── ⚠ I SELETTORI REALMENTE NEGOZIATI ───────────────</span>
+<span class="p">diagnose vpn tunnel list name</span> <span class="s">"nome-tunnel"</span>
+<span class="c">   i campi src e dst dell'associazione di sicurezza</span>
+<span class="c">   sono il selettore VERO — non quello che leggi</span>
+<span class="c">   nella finestra grafica, che e quello CONFIGURATO</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Configurato e negoziato non sono la stessa cosa
+  </div>
+  <p>Nella finestra grafica leggi <b>quello che hai chiesto</b>. Nell'output del comando leggi
+  <b>quello su cui le due parti si sono effettivamente accordate</b>.</p>
+  <p style="margin-bottom:0">Se l'altro capo ha una configurazione diversa, il risultato della
+  negoziazione può non coincidere con le tue intenzioni — e tu continueresti a guardare la schermata
+  che ti dà ragione. <b>Nella diagnosi vale solo il negoziato.</b></p>
+</div>
+
+<h2>Anello 2 · Le altre tre forme</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Forma</th><th>Cosa succede</th><th>Come si trova</th></tr></thead>
+    <tbody>
+      <tr><td><b>Rotta senza selettore corrispondente</b></td>
+          <td>Una rotta statica manda una rete dentro un tunnel, ma quella rete <b>non è nel selettore</b>. Il traffico entra e non trova trasporto: <b>quella destinazione non è mai stata raggiungibile</b></td>
+          <td>Confrontare le rotte verso il tunnel con i selettori negoziati</td></tr>
+      <tr><td><b>Salto successivo ricorsivo</b></td>
+          <td>L'indirizzo del prossimo salto ricade in una rete instradata <em>attraverso quello stesso tunnel</em>: il routing gira su sé stesso</td>
+          <td>Guardare l'indirizzo del prossimo salto e chiedersi: per raggiungerlo, da dove passo?</td></tr>
+      <tr><td><b>Rotte orfane e tunnel scambiati</b></td>
+          <td>Le rotte associate a un tunnel puntano in realtà a un tunnel diverso. Residuo di progetti stratificati</td>
+          <td>Incrociare nomi dei tunnel e rotte, uno per uno</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    E la domanda che precede tutte: è questo l'apparato giusto?
+  </div>
+  <p>Capita di ricevere una richiesta del tipo «replicate la regola che c'è già e funziona». Prima di
+  replicarla, <b>verifica che esista davvero su quell'apparato</b>.</p>
+  <p style="margin-bottom:0">Succede che la regola stia su un <b>altro dispositivo</b> del percorso —
+  un firewall in cloud, un apparato di un altro fornitore — e che quello che stai guardando non
+  c'entri nulla con quel traffico. Le tre prove per escluderlo: <b>nessun oggetto che citi quegli
+  indirizzi</b>, <b>nessuna regola con quella sorgente</b>, e — la più definitiva — <b>nessuna policy
+  che esca da quell'interfaccia</b>. Se non esiste nemmeno il percorso, quel traffico non passa di
+  lì, punto.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Riproduci una sovrapposizione, sul tuo laboratorio
+  </div>
+  <p>Con MikroTik e switch puoi ricreare il caso classico e vederlo con i tuoi occhi.</p>
+  <ol>
+    <li><b>Configura sul MikroTik una rete <code>192.168.0.0/24</code></b> e collegaci il Mac.</li>
+    <li><b>Aggiungi al Mac una seconda interfaccia</b> — l'adattatore USB-C, o il Wi-Fi — su una rete
+    che usa anch'essa <code>192.168.0.0/24</code>.</li>
+    <li><b>Ora chiedi al Mac chi vince:</b></li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="p">netstat -rn -f inet | grep 192.168.0</span>
+<span class="p">route -n get 192.168.0.50</span>
+<span class="c">   guarda il campo "interface": e quella che ti aspettavi?</span>
+
+<span class="c"># e la prova definitiva: prova a raggiungere un host</span>
+<span class="c"># che esiste solo su UNA delle due reti</span>
+<span class="p">ping -c 3 192.168.0.50</span>
+</pre>
+  </div>
+  <p style="margin-top:14px;margin-bottom:0"><b>Cosa hai imparato:</b> il computer non ti avvisa del
+  conflitto. Sceglie, e va avanti. È esattamente ciò che succede al dirigente collegato in VPN — con la
+  differenza che lui non sa nemmeno che esiste un conflitto, e ti dirà solo «la VPN non funziona».</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: anelli 1 e 2",
+  "questions": [
+    { "q": "Un utente in VPN non raggiunge i server, ma dall'hotspot del telefono funziona. Cosa sospetti?",
+      "a": [ {"t":"Una sovrapposizione fra la rete di casa sua e quella aziendale","ok":true},
+             {"t":"Un problema di autenticazione","ok":false},
+             {"t":"Un profilo di ispezione che blocca","ok":false},
+             {"t":"Il server di destinazione spento","ok":false} ],
+      "e": "L'hotspot usa un intervallo diverso da quello della rete di casa, quindi sparisce l'ambiguità e l'unica rotta verso quella destinazione è quella spinta dalla VPN. È la firma diagnostica più pulita che esista per questo problema, e costa dieci secondi di prova." },
+
+    { "q": "Con una sovrapposizione, vedi comunque il traffico entrare nel tunnel. Cosa concludi?",
+      "a": [ {"t":"L'ipotesi è indebolita ma non esclusa: con rotte identiche vince quella con metrica più bassa","ok":true},
+             {"t":"L'ipotesi è esclusa: se il traffico entra, non c'è conflitto","ok":false},
+             {"t":"Il tunnel è configurato male","ok":false},
+             {"t":"Il problema è certamente nelle policy","ok":false} ],
+      "e": "Se prevale la rotta spinta dalla VPN, i pacchetti entrano comunque nel tunnel e nei log li vedi. Chi si aspettava «non deve comparire niente» scarta l'ipotesi e perde giorni. Indebolire un'ipotesi e escluderla sono due cose diverse, e confonderle è uno degli errori diagnostici più costosi." },
+
+    { "q": "Cos'è il selettore di fase 2 di un tunnel?",
+      "a": [ {"t":"L'elenco delle reti autorizzate ad attraversarlo, concordato fra i due capi","ok":true},
+             {"t":"L'algoritmo di cifratura negoziato","ok":false},
+             {"t":"L'indirizzo pubblico della controparte","ok":false},
+             {"t":"Il tempo di rinnovo delle chiavi","ok":false} ],
+      "e": "Un tunnel non è un corridoio aperto: è un pullman con la lista dei passeggeri ammessi. Il traffico fuori dalla lista non viene respinto con un messaggio — non trova un'associazione di sicurezza che lo trasporti e viene scartato in silenzio. È il concetto che spiega metà dei ticket VPN." },
+
+    { "q": "Crei l'utenza VPN a un utente, entra, ma non raggiunge la risorsa dietro un tunnel. Perché?",
+      "a": [ {"t":"L'intervallo di indirizzi dei client VPN non ricade nel selettore di quel tunnel","ok":true},
+             {"t":"L'utenza non ha i permessi corretti","ok":false},
+             {"t":"Il tunnel è caduto","ok":false},
+             {"t":"Manca il certificato sul client","ok":false} ],
+      "e": "Creare l'utenza dà il diritto di entrare nella VPN, non il percorso per arrivare alla risorsa: sono due cose diverse. Dall'ufficio funziona perché quel computer ha un indirizzo che era stato messo nell'accordo — «in VPN» e «in ufficio» sono per il firewall due sorgenti completamente diverse." },
+
+    { "q": "Dove leggi il selettore realmente in uso su un tunnel?",
+      "a": [ {"t":"Nei campi src e dst dell'associazione di sicurezza, con il comando di diagnosi del tunnel","ok":true},
+             {"t":"Nella finestra grafica, nella configurazione del tunnel","ok":false},
+             {"t":"Nella tabella di routing","ok":false},
+             {"t":"Nei log del traffico","ok":false} ],
+      "e": "La finestra grafica mostra quello che hai <em>chiesto</em>; il comando mostra quello su cui le due parti si sono <em>accordate</em>. Se l'altro capo ha una configurazione diversa i due non coincidono, e continueresti a guardare la schermata che ti dà ragione. Nella diagnosi vale solo il negoziato." },
+
+    { "q": "Perché un proxy di anonimizzazione bloccato a metà è peggio che lasciarlo passare?",
+      "a": [ {"t":"Il dispositivo non ripiega su una modalità pulita: l'utente vede pagine rotte in modo casuale","ok":true},
+             {"t":"Perché consuma più banda","ok":false},
+             {"t":"Perché rallenta il firewall","ok":false},
+             {"t":"Perché impedisce l'accesso alla VPN","ok":false} ],
+      "e": "Se alcuni server rispondono e altri vengono negati, il dispositivo continua a provare invece di disattivare la funzione. Le due scelte coerenti sono bloccarlo del tutto nel modo documentato — raccomandata se hai un filtro perimetrale, che altrimenti non vede nulla — o consentirlo interamente accettando di perdere visibilità." },
+
+    { "q": "Ti chiedono di «replicare la regola che c'è già e funziona». Cosa fai prima?",
+      "a": [ {"t":"Verifichi che quella regola esista davvero su questo apparato","ok":true},
+             {"t":"La replichi: se funziona, il modello è corretto","ok":false},
+             {"t":"Chiedi al cliente di indicarti la regola esatta","ok":false},
+             {"t":"Crei una regola equivalente più permissiva","ok":false} ],
+      "e": "Capita che la regola stia su un altro dispositivo del percorso e che l'apparato che stai guardando non c'entri con quel traffico. Le tre prove per escluderlo: nessun oggetto che citi quegli indirizzi, nessuna regola con quella sorgente, e soprattutto nessuna policy che esca da quell'interfaccia — se non esiste il percorso, quel traffico non passa di lì." }
+  ]
+}
+</script>

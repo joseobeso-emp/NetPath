@@ -6,3 +6,8 @@ Thumbs.db
 
 # Stato del progetto: resta locale, sincronizzato da OneDrive
 PROGETTO.md
+
+# Laboratorio MikroTik: credenziali, IP e backup reali del dispositivo fisico.
+# Il repository e' pubblico: questa roba non deve MAI finire su GitHub.
+LAB-MIKROTIK.md
+lab-backups/

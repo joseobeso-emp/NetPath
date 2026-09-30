@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La catena dei sette anelli — NetPath</title>
+<meta name="description" content="Quasi ogni ticket è «non riesco a raggiungere X». Il metodo che colloca il guasto invece di provare rimedi a caso.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-06">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Il metodo diagnostico</span>
+      </nav>
+      <h1 class="lesson-title">La catena dei sette anelli</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 06</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Conoscere i sette punti in cui una connessione può rompersi</li>
+        <li>Riconoscere la firma diagnostica di ciascuno</li>
+        <li>Escludere un anello con una prova, non con un'impressione</li>
+        <li>Non farti trascinare dalla diagnosi già formata di chi apre il ticket</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Quasi tutti i ticket di rete che riceverai sono la stessa frase: <strong>«non riesco a
+raggiungere X»</strong>. La differenza fra chiuderlo in venti minuti e trascinarlo per cinque giorni
+non sta nella difficoltà tecnica. Sta nel <strong>collocare subito il guasto</strong> sull'anello
+giusto della catena che va dal computer che chiede al server che risponde.</p>
+
+<h2>La catena</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 200" role="img" aria-label="I sette anelli fra il client e la destinazione">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Sette punti in cui la connessione può interrompersi</text>
+    <g stroke-width="1.6">
+      <rect x="10"  y="46" width="88" height="52" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="108" y="46" width="88" height="52" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="206" y="46" width="88" height="52" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="304" y="46" width="88" height="52" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="402" y="46" width="88" height="52" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+      <rect x="500" y="46" width="88" height="52" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="598" y="46" width="92" height="52" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="54"  y="68">1</text><text x="54"  y="86">client</text>
+      <text x="152" y="68">2</text><text x="152" y="86">routing</text>
+      <text x="250" y="68">3</text><text x="250" y="86">policy</text>
+      <text x="348" y="68">4</text><text x="348" y="86">servizio</text>
+      <text x="446" y="68">5</text><text x="446" y="86">NAT</text>
+      <text x="544" y="68">6</text><text x="544" y="86">ispezione</text>
+      <text x="644" y="68">7</text><text x="644" y="86">destinazione</text>
+    </g>
+    <text x="152" y="130" text-anchor="middle" class="dg-label-sm" fill="var(--dg-1)">fuori dal firewall</text>
+    <text x="348" y="130" text-anchor="middle" class="dg-label-sm" fill="var(--dg-4)">dentro il firewall</text>
+    <text x="544" y="130" text-anchor="middle" class="dg-label-sm" fill="var(--dg-3)">i motori</text>
+    <text x="644" y="130" text-anchor="middle" class="dg-label-sm" fill="var(--dg-5)">non sei tu</text>
+    <text x="350" y="170" text-anchor="middle" class="dg-label-sm">Ogni anello può interrompere la connessione, e <tspan font-weight="700">ognuno lascia una firma diversa</tspan>.</text>
+  </svg>
+  </div>
+  <figcaption>Percorrere la catena in ordine, invece di provare rimedi, è ciò che trasforma la
+  diagnosi da fortuna a mestiere.</figcaption>
+</figure>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Anello</th><th>Cosa può rompersi</th><th>Firma diagnostica</th></tr></thead>
+    <tbody>
+      <tr><td><b>1</b></td><td>Client e rete locale</td>
+          <td>Indirizzo, risolutore DNS, sovrapposizione di reti, proxy sul dispositivo, NAT su un access point</td>
+          <td><b>Funziona da un altro dispositivo o da un'altra rete</b>; sul firewall non compare traffico</td></tr>
+      <tr><td><b>2</b></td><td>Routing e selettori</td>
+          <td>Rotta assente o verso l'interfaccia sbagliata; selettore del tunnel che non contiene la sorgente</td>
+          <td>Il pacchetto parte e sparisce. <b>Nessun errore all'utente</b>, solo una pagina che non carica</td></tr>
+      <tr><td><b>3</b></td><td>Policy</td>
+          <td>Manca la regola per quella coppia di interfacce; zona che non copre il tunnel; restrizione per sorgente</td>
+          <td><b>Rifiuto esplicito nei log</b>, oppure scarto prima dell'autenticazione</td></tr>
+      <tr><td><b>4</b></td><td>Servizio e porta</td>
+          <td>Oggetto servizio troppo stretto: manca una porta</td>
+          <td><b>Alcune funzioni dell'applicativo vanno, altre no</b></td></tr>
+      <tr><td><b>5</b></td><td>NAT</td>
+          <td>Traduzione mancante, o verso un indirizzo che la destinazione non accetta</td>
+          <td>Pacchetti scartati <b>in silenzio</b>, senza errore visibile</td></tr>
+      <tr><td><b>6</b></td><td>Ispezione</td>
+          <td>Filtro web, filtro DNS, motore TLS, antivirus, controllo applicazioni</td>
+          <td><b>Pagina che si carica a metà</b>, blocchi intermittenti, comportamento diverso fra dispositivi</td></tr>
+      <tr><td><b>7</b></td><td>Destinazione</td>
+          <td>Servizio non in ascolto, certificato non valido, limitazione per indirizzo, applicativo in errore</td>
+          <td>Connessione stabilita ma <b>cifratura mai completata</b>; oppure una risposta di errore</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la lettera che non arriva
+  </div>
+  <p>Hai spedito una lettera a un amico e non è arrivata. Dove si è persa?</p>
+  <p>Potresti aver <b>sbagliato l'indirizzo</b> (anello 1). Potresti averla imbucata in una
+  <b>cassetta che non viene più svuotata</b> (anello 2). Le poste potrebbero averla <b>respinta perché
+  senza francobollo</b> (anello 3). Potrebbe essere stata <b>aperta e trattenuta al controllo</b>
+  (anello 6). Oppure è arrivata benissimo e <b>il tuo amico ha traslocato</b> (anello 7).</p>
+  <p style="margin-bottom:0">Sono cinque guasti completamente diversi, e <b>ciascuno lascia una traccia
+  diversa</b>: la lettera tornata indietro, il timbro mancante, la ricevuta di consegna. Il mestiere non
+  è indovinare: è <b>sapere quale traccia cercare</b> e in che ordine.</p>
+</div>
+
+<h2>Il principio che rende il metodo affidabile</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un anello si esclude con una prova, non con un'impressione
+  </div>
+  <p>La tentazione, quando si conosce una configurazione, è di saltare i passaggi: «la regola c'è, da
+  lì passa di sicuro». <b>Quella non è un'esclusione: è una convinzione.</b></p>
+  <p>Un anello si esclude solo con un'<b>evidenza che lo esclude</b>:</p>
+  <ul>
+    <li>un <b>contatore</b> che sale — la regola è stata davvero colpita</li>
+    <li>una <b>riga di log</b> che mostra il traffico arrivato e la decisione presa</li>
+    <li>una <b>cattura</b> che mostra i pacchetti passare</li>
+  </ul>
+  <p style="margin-bottom:0">Senza uno di questi tre, quell'anello resta aperto. Ed è quasi sempre lì
+  che si nasconde il guasto: <b>nell'anello che tutti davano per scontato.</b></p>
+</div>
+
+<h2>Da dove si comincia</h2>
+
+<p>Non si parte sempre dall'anello 1. Si parte da <strong>dove punta la prima evidenza</strong>, e le
+tre domande che seguono la fanno emergere in due minuti.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Domanda all'utente</th><th>Se la risposta è…</th><th>Sposta il sospetto su</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="2"><b>Funziona da un altro dispositivo, sulla stessa rete?</b></td>
+          <td>Sì, dagli altri funziona</td><td><b>Anello 1</b> — è il suo dispositivo</td></tr>
+      <tr><td>No, non funziona a nessuno</td><td>Anelli 2–7</td></tr>
+      <tr><td rowspan="2"><b>Funziona da un'altra rete?</b><br><span style="font-size:.85em">dal telefono in 4G, da casa</span></td>
+          <td>Sì, da fuori funziona</td><td><b>Anelli 2–6</b> — è la rete o il firewall</td></tr>
+      <tr><td>No, non funziona da nessuna parte</td><td><b>Anello 7</b> — probabilmente non sei tu</td></tr>
+      <tr><td rowspan="2"><b>Ha mai funzionato? Da quando non va?</b></td>
+          <td>Non ha mai funzionato</td><td>Configurazione: anelli 2–5</td></tr>
+      <tr><td>Funzionava fino a martedì</td><td><b>Cerca cosa è cambiato martedì</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    «Funziona dal telefono» è la risposta più informativa di tutte
+  </div>
+  <p>Chiedere all'utente di provare <b>dal proprio telefono in rete mobile</b>, disattivando il Wi-Fi,
+  costa dieci secondi e taglia in due l'albero delle possibilità.</p>
+  <p style="margin-bottom:0">Se da lì funziona, il servizio di destinazione è vivo e raggiungibile: il
+  problema è nella rete aziendale o nel firewall. Se non funziona nemmeno da lì, <b>hai appena scoperto
+  che non è un problema tuo</b> — e lo hai scoperto prima di aprire una sola finestra.</p>
+</div>
+
+<h2>La trappola da cui difendersi</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il cliente arriva quasi sempre con una diagnosi già pronta
+  </div>
+  <p>«È un problema di latenza, spostate il collegamento». «Serve mettere in whitelist il mio indirizzo
+  di casa». «Aprite tutte le porte verso quel server».</p>
+  <p>Non lo fa in malafede: ha osservato qualcosa e ha costruito una spiegazione. Il punto è che
+  <b>quella spiegazione è un'ipotesi come le altre, e va validata contro le evidenze prima di agire
+  su di essa</b>.</p>
+  <p style="margin-bottom:0"><b>Agire sulla diagnosi del cliente senza verificarla è il modo più rapido
+  di fare una modifica inutile a un'infrastruttura di produzione</b> — e di restarne responsabile.
+  Succede regolarmente: la richiesta era «aprite la porta X», e la causa vera stava tre anelli più in
+  là. Nelle prossime tre lezioni vedrai esattamente come si verifica ciascun anello.</p>
+</div>
+
+<h2>Il giro completo, in una pagina</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il primo comando per ciascun anello
+  </div>
+  <p>Questa è la tabella da tenere a portata di mano. La colonna di destra non è la diagnosi: è
+  <b>la mossa che restringe il campo nel minor tempo possibile</b>.</p>
+  <div class="table-wrap" style="margin-top:12px">
+    <table>
+      <thead><tr><th>Anello</th><th>Prima mossa</th></tr></thead>
+      <tbody>
+        <tr><td>1 · Client</td><td>Sul PC dell'utente: che indirizzo ha, quale risolutore usa, quale interfaccia vince per quella destinazione</td></tr>
+        <tr><td>2 · Routing</td><td><code>get router info routing-table all</code><br><code>diagnose vpn tunnel list name "…"</code> per i selettori</td></tr>
+        <tr><td>3 · Policy</td><td><code>diagnose firewall iprope lookup …</code><br>e il registro del traffico filtrato sull'indirizzo</td></tr>
+        <tr><td>4 · Servizio</td><td><code>show firewall service custom &lt;oggetto&gt;</code>, confrontato con le porte reali</td></tr>
+        <tr><td>5 · NAT</td><td><code>diagnose sys session list</code> filtrata: cerca la riga della traduzione</td></tr>
+        <tr><td>6 · Ispezione</td><td>Confronto delle azioni fra i profili, e il campo dell'ispezione nei log</td></tr>
+        <tr><td>7 · Destinazione</td><td>Prova da una rete esterna. Se fallisce anche lì, non sei tu</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: la catena diagnostica",
+  "questions": [
+    { "q": "Cosa distingue un ticket chiuso in venti minuti da uno che dura cinque giorni?",
+      "a": [ {"t":"La capacità di collocare subito il guasto sull'anello giusto","ok":true},
+             {"t":"La difficoltà tecnica del problema","ok":false},
+             {"t":"La disponibilità del cliente a fare prove","ok":false},
+             {"t":"L'esperienza con quel particolare modello di apparato","ok":false} ],
+      "e": "I guasti sono quasi sempre gli stessi sette, e nessuno di essi è particolarmente difficile una volta individuato. Quello che fa perdere giorni è cercare nell'anello sbagliato — tipicamente controllando e ricontrollando le regole quando il problema sta nel routing o nella destinazione." },
+
+    { "q": "Cosa significa «escludere un anello con una prova»?",
+      "a": [ {"t":"Servono un contatore che sale, una riga di log o una cattura: non basta sapere che la configurazione c'è","ok":true},
+             {"t":"Bisogna disattivare temporaneamente quell'anello","ok":false},
+             {"t":"Serve la conferma scritta del cliente","ok":false},
+             {"t":"Basta verificare che la configurazione sia corretta","ok":false} ],
+      "e": "«La regola c'è, da lì passa di sicuro» è una convinzione, non un'esclusione. E il guasto si nasconde quasi sempre nell'anello che tutti davano per scontato: per questo serve un'evidenza — un contatore, un log, una cattura — e non una lettura della configurazione." },
+
+    { "q": "«Funziona da un altro dispositivo sulla stessa rete, ma non dal mio PC.» Quale anello?",
+      "a": [ {"t":"L'anello 1: client e rete locale","ok":true},
+             {"t":"L'anello 3: le policy","ok":false},
+             {"t":"L'anello 6: l'ispezione","ok":false},
+             {"t":"L'anello 7: la destinazione","ok":false} ],
+      "e": "Se un altro dispositivo sulla stessa rete ci arriva, tutto ciò che sta a valle — routing, regole, NAT, ispezione, destinazione — sta funzionando. Quello che cambia è il singolo dispositivo: indirizzo, risolutore DNS, un proxy attivo, una rotta locale in conflitto." },
+
+    { "q": "Qual è la firma diagnostica dell'anello 4, quello del servizio e della porta?",
+      "a": [ {"t":"Alcune funzioni dell'applicativo funzionano e altre no","ok":true},
+             {"t":"Non funziona niente del tutto","ok":false},
+             {"t":"La pagina si carica a metà","ok":false},
+             {"t":"Il traffico non compare affatto nei log","ok":false} ],
+      "e": "Un oggetto servizio che copre alcune porte e non altre produce esattamente questo: il portale si apre ma una sezione no, il programma si collega ma il trasferimento file fallisce. «Non funziona niente» punta più su policy o routing; «si carica a metà» è la firma dell'ispezione." },
+
+    { "q": "Perché chiedere all'utente di provare dal telefono in rete mobile è così utile?",
+      "a": [ {"t":"Taglia in due l'albero: se da lì funziona il problema è nella rete o nel firewall, se no non è tuo","ok":true},
+             {"t":"Perché il telefono ha un firewall diverso","ok":false},
+             {"t":"Perché permette di misurare la latenza","ok":false},
+             {"t":"Perché esclude problemi di DNS","ok":false} ],
+      "e": "Costa dieci secondi e fornisce l'informazione più discriminante possibile, prima ancora di aprire una finestra. Se funziona dalla rete mobile, il servizio di destinazione è vivo e raggiungibile; se non funziona nemmeno da lì, hai già scoperto che la causa è fuori dal tuo perimetro." },
+
+    { "q": "Il cliente ti dice qual è secondo lui la causa e cosa fare. Come procedi?",
+      "a": [ {"t":"Tratti la sua spiegazione come un'ipotesi, e la validi contro le evidenze prima di agire","ok":true},
+             {"t":"Applichi quello che chiede: conosce la sua infrastruttura","ok":false},
+             {"t":"La scarti, perché non è un tecnico","ok":false},
+             {"t":"Applichi la modifica e verifichi se risolve","ok":false} ],
+      "e": "Ha osservato qualcosa di reale e ha costruito una spiegazione: l'osservazione è preziosa, la spiegazione va verificata. Agire su una diagnosi non validata è il modo più rapido di fare una modifica inutile su un'infrastruttura di produzione — e di restarne responsabile quando emerge che la causa era altrove." },
+
+    { "q": "Qual è la firma dell'anello 2, routing e selettori?",
+      "a": [ {"t":"Il pacchetto parte e sparisce: nessun errore, solo una pagina che non carica","ok":true},
+             {"t":"Un rifiuto esplicito nei log del firewall","ok":false},
+             {"t":"Il traffico funziona a intermittenza","ok":false},
+             {"t":"La connessione si apre ma la cifratura non si completa","ok":false} ],
+      "e": "Quando una rotta manca o un selettore di tunnel non contiene la sorgente, il pacchetto non viene rifiutato con un messaggio: semplicemente non trova la strada e viene scartato. È il silenzio a caratterizzarlo — mentre un rifiuto esplicito nei log è la firma dell'anello 3, le policy." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

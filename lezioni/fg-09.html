@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anelli 6 e 7: ispezione e destinazione — NetPath</title>
+<meta name="description" content="Quando a bloccare non è la regola ma il motore di ispezione — e quando il problema non è affatto tuo.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-09">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Il metodo diagnostico</span>
+      </nav>
+      <h1 class="lesson-title">Anelli 6 e 7: ispezione e destinazione</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 09</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Riconoscere il blocco di un motore di ispezione e distinguerlo da quello di una regola</li>
+        <li>Capire perché due livelli di filtro possono contraddirsi, e cosa vede l'utente</li>
+        <li>Dimostrare che il firewall è fuori causa, con una prova valida</li>
+        <li>Riconoscere i guasti che stanno oltre il firewall e non dipendono da te</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Gli ultimi due anelli sono quelli che fanno durare i ticket cinque giorni. Il sesto
+perché il blocco arriva da un punto che nessuno guarda; il settimo perché la causa è fuori dal tuo
+perimetro — e per chiuderlo devi <strong>dimostrarlo</strong>, non affermarlo.</p>
+
+<h2>Anello 6 · Il caso più istruttivo: due livelli che si contraddicono</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La stessa categoria, bloccata in un filtro e solo osservata nell'altro
+  </div>
+  <p>Il filtro DNS e il filtro web classificano i siti nelle stesse categorie. Ma sono <b>due profili
+  distinti</b>, e nessuno impedisce che dicano cose opposte sulla stessa categoria.</p>
+  <p><b>Cosa succede quando succede:</b> la <em>risoluzione del nome</em> viene negata dal filtro DNS,
+  mentre la <em>navigazione</em> verso gli stessi host viene consentita dal filtro web e poi fermata
+  più avanti dal motore che gestisce la cifratura.</p>
+  <p style="margin-bottom:0"><b>Cosa vede l'utente:</b> una pagina che <b>si carica a metà</b>, in modo
+  apparentemente casuale — perché dipende da quali risorse della pagina passano da quale percorso.
+  Non è un blocco netto e non è un funzionamento: è la via di mezzo che fa impazzire. È il motivo per
+  cui certi ticket durano una settimana.</p>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La verifica: confronta le azioni categoria per categoria
+  </div>
+  <p>Quando un sintomo è «funziona a metà» o «a volte sì a volte no», <b>metti i due profili uno
+  accanto all'altro</b> e cerca le categorie che hanno azioni diverse.</p>
+  <p style="margin-bottom:0"><b>La regola da adottare:</b> la stessa categoria deve avere la stessa
+  azione nel filtro web e nel filtro DNS. Non è un'ottimizzazione estetica: è ciò che evita
+  comportamenti che nessuno riesce a spiegare.</p>
+</div>
+
+<h2>Anello 6 · <code>allow</code> non è <code>exempt</code></h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'errore classico su qualsiasi ticket di sblocco
+  </div>
+  <p>Ti chiedono di sbloccare un sito. Crei l'elenco delle eccezioni, ci metti il dominio, imposti
+  l'azione <b>«consenti»</b>. E il sito resta bloccato.</p>
+  <p><b>Perché:</b> <code>allow</code> fa passare <em>quella voce dell'elenco</em>, ma il traffico
+  <b>resta soggetto al filtro per categoria</b>. Se il blocco veniva dalla categoria, non hai
+  cambiato niente.</p>
+  <p style="margin-bottom:0"><b>Solo <code>exempt</code> esce dall'ispezione.</b> E c'è una raffinatezza
+  che conviene adottare: invece di esentare <em>tutto</em> — antivirus compreso — si può esentare
+  <b>solo la classificazione e il filtro dei contenuti</b>, lasciando l'antivirus agganciato. Postura
+  migliore a costo zero.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due differenze fra i due filtri che generano eccezioni che non funzionano
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Nel filtro web</b> una voce del tipo <code>*.dominio</code> copre <b>anche il dominio
+    nudo</b>. <b>Nel filtro DNS no:</b> servono due voci, una con l'asterisco e una senza. Metà delle
+    eccezioni «che non funzionano» sono questa.</li>
+    <li><b>Sotto l'ispezione del solo certificato</b>, il firewall legge <b>solo il nome del sito</b>
+    dichiarato in chiaro all'inizio della connessione, <b>non l'indirizzo completo</b>. Qualsiasi voce
+    che contenga un <b>percorso</b> dopo il dominio <b>non corrisponderà mai</b> — ed è anche il motivo
+    per cui, se il blocco fosse su un percorso, non lo vedresti affatto nei log del filtro web.</li>
+  </ul>
+</div>
+
+<h2>Anello 6 · L'antivirus che sembra acceso e non guarda niente</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il rilievo che troverai su molti apparati
+  </div>
+  <p>L'antivirus è configurato per analizzare il traffico web. Ma <b>tutte le regole di uscita usano
+  l'ispezione del solo certificato</b>, che non decifra niente.</p>
+  <p style="margin-bottom:0"><b>Risultato: il contenuto cifrato non viene mai ispezionato.</b> Su una
+  rete che naviga in HTTPS praticamente al 100%, l'antivirus perimetrale <b>non sta analizzando quasi
+  nulla</b> — pur risultando attivo in ogni schermata. Per renderlo efficace serve l'ispezione
+  completa, che è una decisione da prendere con il cliente e da pianificare (l'hai vista nella lezione
+  3-08), non una casella da spuntare.</p>
+</div>
+
+<h2>Anello 7 · Dimostrare che il firewall è fuori causa</h2>
+
+<p>Arrivati qui, l'ipotesi è che il problema sia oltre il firewall. <strong>Va dimostrata</strong>, e
+il modo è escludere completamente l'ispezione per quel traffico e vedere se il sintomo persiste.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La prova di esclusione, fatta bene
+  </div>
+  <ol>
+    <li><b>Crea una regola dedicata</b> verso quella sola destinazione, con <b>nessun profilo di
+    ispezione</b> e servizio aperto.</li>
+    <li><b>Spostala in cima</b>, prima di tutte le altre.</li>
+    <li><b>Azzera le sessioni</b> verso quella destinazione, altrimenti quelle già aperte continuano a
+    seguire la vecchia regola e la prova non vale.</li>
+    <li>Fai riprodurre il problema.</li>
+    <li><b>Leggi il contatore della regola di prova.</b></li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="p">diagnose firewall iprope show</span> <span class="n">100004 27</span>
+<span class="c">   hit count: 4</span>
+<span class="c">   asic_bytes: 550551</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>È questo il punto che rende la prova valida.</b> Un
+  contatore diverso da zero, con byte significativi, dimostra che la regola ha <em>davvero</em>
+  intercettato il traffico. Se il sintomo persiste con l'ispezione completamente esclusa, <b>il
+  firewall è fuori causa — dimostrato</b>. <b>Senza quel contatore, il test non prova niente</b>:
+  potresti aver scritto una regola che nessun pacchetto ha mai toccato.</p>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La regola di prova va rimossa. Sempre, e subito.
+  </div>
+  <p>Una regola che esclude l'ispezione, lasciata attiva dopo il collaudo, è <b>un buco nella postura
+  di sicurezza senza nessuna ragione</b> — e nessuno si ricorderà perché esiste.</p>
+  <p style="margin-bottom:0"><b>La rimozione fa parte del test, non è un'attività successiva.</b>
+  Mettila nella stessa nota in cui scrivi il risultato: «creata alle 17:20, rimossa alle 17:35».</p>
+</div>
+
+<h2>Anello 7 · Le firme dei guasti che non dipendono da te</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Osservazione</th><th>Cosa significa</th></tr></thead>
+    <tbody>
+      <tr><td><b>La connessione si apre, la cifratura non si completa mai</b><br><span style="font-size:.85em">nel dettaglio del browser: tempo di connessione presente, tempo di negoziazione a zero</span></td>
+          <td>Il livello di trasporto funziona, il server non completa la negoziazione. Non è un problema di rete: è il servizio remoto o il suo certificato</td></tr>
+      <tr><td><b>Fallisce da tutti i computer della sede, funziona da qualsiasi altra linea</b></td>
+          <td>Il fattore comune è <b>l'indirizzo pubblico</b>, non i dispositivi</td></tr>
+      <tr><td><b>Fallisce su un nome host e non su un altro, pur essendo lo stesso indirizzo</b></td>
+          <td>La discriminazione avviene <b>a livello applicativo</b>, oltre il firewall</td></tr>
+      <tr><td><b>È intermittente: alle 16:33 risponde, alle 16:52 no</b></td>
+          <td><b>Un limitatore scatta e rilascia; una regola no.</b> L'intermittenza da sola quasi esclude il firewall</td></tr>
+      <tr><td><b>Il browser dice «errore di CORS»</b></td>
+          <td>Spesso è solo il nome che il browser dà a una richiesta preliminare che <b>non è mai arrivata</b>. Non è un problema di CORS</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il limitatore per indirizzo pubblico: un caso che non verrebbe in mente
+  </div>
+  <p>Un portale in cloud smette di funzionare da una sede. Tutte le verifiche sul firewall sono
+  negative. Il quadro finale è questo: <b>fallisce da ogni computer della sede</b> (che escono tutti
+  con lo stesso indirizzo pubblico), <b>funziona da qualunque altra linea</b>, riguarda <b>un solo
+  nome host</b> fra due che puntano allo stesso indirizzo, ed è <b>intermittente</b>.</p>
+  <p style="margin-bottom:0"><b>Combacia con un limitatore di richieste per indirizzo</b> davanti al
+  servizio. La causa plausibile: decine di dispositivi dietro un unico indirizzo pubblico che
+  interrogano ripetutamente la stessa interfaccia applicativa <b>sembrano, visti da fuori, un singolo
+  client che abusa</b>. È il fornitore del servizio a doverlo sbloccare — e senza le prove raccolte
+  lungo la catena non avresti modo di chiederglielo.</p>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La tabella di eliminazione: il documento che chiude il ticket
+  </div>
+  <p>Quando un ticket è lungo, la cosa più utile che puoi produrre è una <b>tabella delle ipotesi</b>:
+  una riga per ciascuna, con lo <b>stato</b> — escluso, e <em>con quale prova</em>.</p>
+  <p style="margin-bottom:0">Serve a tre cose insieme: ti impedisce di rifare due volte la stessa
+  verifica, rende evidente quale ipotesi resta in piedi, e <b>diventa la spiegazione da mandare al
+  cliente o al fornitore</b>. Una segnalazione che elenca cosa è già stato escluso, e come, salta il
+  primo livello di supporto e arriva dove serve.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: ispezione e destinazione",
+  "questions": [
+    { "q": "Una pagina si carica a metà, in modo apparentemente casuale. Cosa sospetti?",
+      "a": [ {"t":"Due livelli di filtro che dicono cose opposte sulla stessa categoria","ok":true},
+             {"t":"Una regola firewall mancante","ok":false},
+             {"t":"Un problema di routing","ok":false},
+             {"t":"Il server di destinazione sovraccarico","ok":false} ],
+      "e": "Filtro DNS e filtro web sono profili distinti e nessuno impedisce che si contraddicano: la risoluzione del nome viene negata da uno mentre la navigazione è consentita dall'altro e poi fermata più avanti. Il risultato non è un blocco netto né un funzionamento, ed è il motivo per cui certi ticket durano una settimana." },
+
+    { "q": "Hai messo un dominio nell'elenco delle eccezioni con azione «consenti», e resta bloccato. Perché?",
+      "a": [ {"t":"«Consenti» fa passare la voce ma il traffico resta soggetto al filtro per categoria","ok":true},
+             {"t":"L'elenco non è stato agganciato al profilo","ok":false},
+             {"t":"Serve riavviare l'apparato","ok":false},
+             {"t":"Il dominio va scritto senza asterisco","ok":false} ],
+      "e": "Se il blocco veniva dalla categoria, «consenti» non cambia niente: solo «esenta» fa uscire il traffico dall'ispezione. Conviene poi esentare solo classificazione e filtro dei contenuti, lasciando l'antivirus agganciato — postura migliore a costo zero." },
+
+    { "q": "Un'eccezione scritta come <code>*.dominio</code> funziona nel filtro web ma non in quello DNS. Perché?",
+      "a": [ {"t":"Nel filtro DNS l'asterisco non copre il dominio nudo: servono due voci","ok":true},
+             {"t":"Il filtro DNS non supporta gli asterischi","ok":false},
+             {"t":"Serve indicare anche l'indirizzo IP","ok":false},
+             {"t":"L'ordine delle voci è invertito","ok":false} ],
+      "e": "Nel filtro web una voce con asterisco copre anche il dominio senza prefisso; nel filtro DNS no. È una differenza piccola e documentata che spiega metà delle eccezioni «che non funzionano»." },
+
+    { "q": "L'antivirus è configurato ma tutte le regole usano l'ispezione del solo certificato. Cosa comporta?",
+      "a": [ {"t":"Il contenuto cifrato non viene mai ispezionato: su una rete tutta HTTPS non analizza quasi nulla","ok":true},
+             {"t":"L'antivirus analizza solo i file di piccole dimensioni","ok":false},
+             {"t":"L'antivirus funziona solo sulla posta","ok":false},
+             {"t":"Nessuna: l'ispezione del certificato è sufficiente","ok":false} ],
+      "e": "L'ispezione del solo certificato non decifra niente: legge il nome del sito e basta. L'antivirus risulta attivo in ogni schermata e non guarda il contenuto. Renderlo efficace richiede l'ispezione completa, che è una decisione da prendere con il cliente e da pianificare." },
+
+    { "q": "Cosa rende valida una prova di esclusione del firewall?",
+      "a": [ {"t":"Il contatore della regola di prova diverso da zero, con byte significativi","ok":true},
+             {"t":"Aver messo la regola in cima all'elenco","ok":false},
+             {"t":"Aver disattivato tutti i profili di ispezione","ok":false},
+             {"t":"La conferma dell'utente che il problema persiste","ok":false} ],
+      "e": "Senza il contatore potresti aver scritto una regola che nessun pacchetto ha mai toccato, e la conclusione non dimostrerebbe nulla. Vanno anche azzerate le sessioni verso quella destinazione, perché quelle già aperte continuerebbero a seguire la regola precedente." },
+
+    { "q": "Il problema è intermittente: alle 16:33 funziona, alle 16:52 no. Cosa suggerisce?",
+      "a": [ {"t":"Un limitatore che scatta e rilascia: l'intermittenza quasi esclude una regola firewall","ok":true},
+             {"t":"Una regola firewall con pianificazione oraria","ok":false},
+             {"t":"Un problema di cablaggio","ok":false},
+             {"t":"Un conflitto di indirizzi","ok":false} ],
+      "e": "Una regola decide sempre allo stesso modo: o blocca o no. Un limitatore di richieste invece scatta quando si supera una soglia e rilascia dopo un po', producendo esattamente questa alternanza. È uno degli indizi più forti che il problema sta oltre il firewall." },
+
+    { "q": "Cosa va fatto della regola creata per la prova di esclusione?",
+      "a": [ {"t":"Rimossa subito: la rimozione fa parte del test","ok":true},
+             {"t":"Disattivata e lasciata lì per prove future","ok":false},
+             {"t":"Lasciata attiva finché il ticket non è chiuso","ok":false},
+             {"t":"Spostata in fondo all'elenco","ok":false} ],
+      "e": "Una regola che esclude l'ispezione è un buco nella postura di sicurezza senza nessuna ragione, e fra un mese nessuno si ricorderà perché esiste. Va rimossa nello stesso momento in cui si annota il risultato — «creata alle 17:20, rimossa alle 17:35»." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

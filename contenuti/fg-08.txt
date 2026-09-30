@@ -1,0 +1,296 @@
+#id: fg-08
+#title: Anelli 3, 4 e 5: policy, servizio, NAT
+#min: 30
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Il metodo diagnostico
+#desc: La coppia di interfacce, l'oggetto servizio troppo stretto, il NAT che manca. Le tre cause più frequenti in assoluto.
+#obj: Padroneggiare il principio della coppia di interfacce, che genera più ticket di tutti
+#obj: Riconoscere una zona che sembra coprire un tunnel e non lo copre
+#obj: Diagnosticare un oggetto servizio sbagliato dal sintomo che produce
+#obj: Capire quando serve una traduzione dell'indirizzo perché la destinazione accetti la sorgente
+---
+<p class="lead">Questi tre anelli stanno dentro il firewall, e insieme spiegano la maggioranza assoluta
+dei ticket. Il primo dei tre contiene il principio più controintuitivo di FortiOS — quello che, da
+solo, genera più segnalazioni di qualsiasi altra cosa.</p>
+
+<h2>Anello 3 · Il principio della coppia di interfacce</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una regola non autorizza un traffico: autorizza un <em>percorso</em>
+  </div>
+  <p>Su FortiOS ogni regola è definita da una <b>coppia</b>: da quale interfaccia entra il traffico e
+  da quale esce. <code>rete-interna → tunnel</code> e <code>vpn-utenti → tunnel</code> <b>sono due
+  coppie distinte</b>, e una regola scritta per la prima <b>non copre</b> la seconda.</p>
+  <p>Se esiste solo la prima, il traffico degli utenti in VPN arriva in fondo all'elenco e incontra il
+  <b>rifiuto implicito</b>. <b>All'utente non compare nessun errore</b>: solo una pagina che non
+  carica.</p>
+  <p style="margin-bottom:0">È il singolo principio che genera più ticket di tutti, ed è il più
+  controintuitivo per chi non ha formazione di rete — perché dall'esterno «il collegamento VPN
+  funziona» e «la regola per quel server c'è» sembrano, messe insieme, sufficienti. <b>Non lo sono.</b></p>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il pass con scritto da dove entri
+  </div>
+  <p>In un edificio con tre ingressi — quello principale, quello del personale e quello del garage —
+  ti danno un pass per andare al terzo piano. Sul pass c'è scritto <b>«ingresso principale → terzo
+  piano»</b>.</p>
+  <p>Un giorno arrivi dal garage. Il pass ce l'hai, il terzo piano è la tua destinazione, ma il
+  guardiano guarda il pass e dice che non vale: <b>non autorizza quel percorso</b>.</p>
+  <p style="margin-bottom:0">Tu protesti che hai il pass per il terzo piano. E hai ragione — ma il
+  pass non autorizza <em>una destinazione</em>: autorizza <em>una tratta</em>. Su FortiOS funziona
+  esattamente così.</p>
+</div>
+
+<h2>Anello 3 · Le zone che sembrano coprire e non coprono</h2>
+
+<p>Una <strong>zona</strong> raggruppa più interfacce per scrivere una regola sola invece di dieci.
+È comodo, finché non genera l'errore più silenzioso di tutti.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una regola costruita su una zona copre solo ciò che è <em>dentro</em> quella zona
+  </div>
+  <p>Immagina una zona chiamata «sedi», che raggruppa i tunnel verso tre filiali. C'è una regola
+  costruita su quella zona, e sembra coprire tutti i tunnel dell'apparato.</p>
+  <p style="margin-bottom:0"><b>Ma un quarto tunnel — quello verso un fornitore, aggiunto due anni
+  dopo — non è mai stato messo nella zona.</b> A colpo d'occhio la configurazione sembra già pronta;
+  non lo è. E la verifica è una sola: <b>aprire la zona e leggere l'elenco dei membri</b>, invece di
+  fidarsi del nome.</p>
+</div>
+
+<h2>Anello 3 · Le restrizioni per sorgente</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il sintomo che vale una diagnosi: «Contacting server» e poi scade
+  </div>
+  <p>Due colleghi in trasferta all'estero non riescono a collegarsi alla VPN. L'errore si ferma su
+  <em>«contatto il server»</em> e poi va in scadenza.</p>
+  <p><b>Quel sintomo significa una cosa precisa: la connessione non si stabilisce affatto.</b> Il
+  traffico viene scartato <b>prima dell'autenticazione</b>. E questo esclude in un colpo solo tutta
+  una famiglia di ipotesi: <b>non sono le credenziali, non è l'autenticazione federata, non è il
+  certificato, non è la licenza</b>. È un blocco di rete.</p>
+  <p style="margin-bottom:0"><b>La regola generalizzabile:</b> se lo stesso errore si presenta a più
+  utenti, <b>da reti diverse</b>, il primo sospetto va alle restrizioni per sorgente sulla policy
+  pubblicata — filtro geografico, elenchi di indirizzi bloccati — e non al programma sul computer
+  dell'utente.</p>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un collaudo dall'Italia non può riprodurre un blocco geografico
+  </div>
+  <p>È il corollario che fa perdere più tempo. Si ricrea l'utenza, si prova dalla sede, funziona
+  benissimo — e si conclude che il problema è del computer dell'utente.</p>
+  <p style="margin-bottom:0"><b>La prova era strutturalmente incapace di riprodurre il guasto.</b>
+  Quando l'utente è all'estero, la mossa giusta è chiedergli <b>indirizzo pubblico e orario esatto</b>
+  del tentativo e cercare il rifiuto nei log: è più rapido, e soprattutto dimostra qualcosa.</p>
+</div>
+
+<h2>Anello 4 · L'oggetto servizio</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Difetto</th><th>Sintomo</th><th>Rischio nel correggerlo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Troppo stretto</b><br>copre due porte, ma l'applicativo ne usa otto</td>
+          <td><b>Alcune funzioni vanno, altre no.</b> Il portale si apre, una sezione no</td>
+          <td>Basso. Si aggiungono le porte mancanti</td></tr>
+      <tr><td><b>Troppo largo</b><br>migliaia di porte «per sicurezza»</td>
+          <td>Nessuno, finché non arriva una scansione dall'esterno</td>
+          <td><b>Alto se l'oggetto è condiviso</b> — vedi il riquadro</td></tr>
+      <tr><td><b>Gruppo cresciuto senza controllo</b><br>decine di porte aggiunte negli anni</td>
+          <td>Di fatto un'uscita quasi libera, senza traccia del perché di ogni porta</td>
+          <td>Va ricostruito osservando il traffico reale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Prima di modificare un oggetto, conta quante regole lo usano
+  </div>
+  <p>Un oggetto servizio può essere referenziato da <b>molte policy</b>, magari di clienti diversi
+  sullo stesso apparato. Restringerlo per risolvere un problema significa <b>modificare il
+  comportamento di tutte</b>.</p>
+  <p style="margin-bottom:0"><b>La regola operativa:</b> conta i riferimenti. Se sono più di uno,
+  <b>non modificare l'originale: clonalo</b>, restringi il clone e applicalo <em>solo</em> alla policy
+  che ti interessa. Costa due minuti e ti evita di rompere qualcosa che non stavi nemmeno guardando.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'assenza che nessuno nota: UDP 443
+  </div>
+  <p>Molti gruppi di servizi contengono TCP 443 e non UDP 443. Conseguenza: il traffico web moderno
+  che viaggia su UDP — il protocollo QUIC — <b>viene scartato dal rifiuto implicito</b>, mentre magari
+  il profilo di ispezione dichiara di lasciarlo passare.</p>
+  <p style="margin-bottom:0"><b>Intento ed effetto divergono</b>, e il risultato sono comportamenti
+  incomprensibili su alcuni siti. Va deciso consapevolmente: <b>o si blocca QUIC in modo esplicito</b>
+  — preferibile, perché forza il ripiego su TCP e mantiene la visibilità — <b>o si ammette UDP 443</b>
+  sapendo che quel traffico esce senza essere ispezionato.</p>
+</div>
+
+<h2>Anello 5 · Il NAT</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Quando la sorgente non è accettabile a destinazione
+  </div>
+  <p>Torniamo all'utente che deve raggiungere il portale di un fornitore attraverso un tunnel. Hai
+  aggiunto la regola per la coppia di interfacce giusta. <b>Non basta ancora.</b></p>
+  <p>Il fornitore, nell'accordo, accetta <b>solo un preciso intervallo di indirizzi</b>. Il traffico
+  dell'utente in VPN arriva con un indirizzo diverso, e viene scartato — <b>in silenzio</b>, con un
+  messaggio interno del tipo «nessun selettore corrispondente», che l'utente non vede mai.</p>
+  <p style="margin-bottom:0"><b>Serve una traduzione della sorgente</b> verso un indirizzo dentro
+  l'intervallo concordato. Senza, la regola c'è, il tunnel è su, e non passa niente.</p>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Una sequenza da riga di comando che costa dieci minuti la prima volta
+  </div>
+  <p>Impostare il pool di traduzione su una policy <b>viene rifiutato</b> se l'opzione di traduzione
+  non è già attiva su quella stessa policy. Non è un errore tuo: è l'ordine in cui FortiOS accetta i
+  comandi.</p>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="c">── PRIMO passaggio: attiva la traduzione ───────────</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">164</span>
+        <span class="p">set nat enable</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── SECONDO passaggio: ora accetta il pool ──────────</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">164</span>
+        <span class="p">set ippool enable</span>
+        <span class="p">set poolname</span> <span class="s">"pool-verso-fornitore"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+  </div>
+</div>
+
+<h2>Anello 5 · La coerenza fra pubblicazione e servizio</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    È il punto in cui le pubblicazioni falliscono più spesso
+  </div>
+  <p>Se l'oggetto di pubblicazione traduce una porta specifica, <b>quella porta e le porte
+  dell'oggetto servizio devono combaciare</b>. Se la pubblicazione riguarda la 5061 ma il servizio
+  contiene solo la 443, <b>la regola non corrisponderà mai</b> — e tu continuerai a guardare una
+  configurazione che, letta pezzo per pezzo, sembra corretta.</p>
+  <p style="margin-bottom:0"><b>E il secondo caso:</b> se due oggetti di pubblicazione condividono lo
+  stesso indirizzo pubblico con intervalli di porte sovrapposti, <b>vince la policy più in alto</b> e
+  la nuova non viene mai raggiunta. Anche qui: tutto sembra a posto, e non funziona.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Lo strumento che risolve l'anello 3 senza generare traffico
+  </div>
+  <p>C'è un comando che ti dice <b>quale regola verrebbe applicata</b> a un flusso ipotetico, senza
+  che nessuno debba provare niente. È il modo più rapido di verificare l'anello 3.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Interrogare la logica delle regole</div>
+<pre><span class="c">── quale policy si applicherebbe a questo flusso? ──</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="p">\</span>
+<span class="c">   &lt;ip-sorgente&gt; &lt;porta-sorg&gt; &lt;ip-dest&gt; &lt;porta-dest&gt; \</span>
+<span class="c">   &lt;protocollo&gt; &lt;interfaccia-di-ingresso&gt;</span>
+
+<span class="c">   esempio: un client VPN verso un server interno</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="n">10.212.134.201 54000</span> <span class="p">\</span>
+<span class="n">    10.10.10.50 443 6</span> <span class="s">ssl.root</span>
+
+<span class="c">   restituisce l'ID della regola che deciderebbe.</span>
+<span class="c">   Se e diverso da quello che ti aspetti, il problema</span>
+<span class="c">   NON e il contenuto della regola: e l'ordine, oppure</span>
+<span class="c">   una regola piu larga che la copre</span>
+
+<span class="c">── e la prova che una regola ha davvero agito ──────</span>
+<span class="p">diagnose firewall iprope show</span> <span class="n">100004 164</span>
+<span class="c">   hit count diverso da zero = quella regola ha</span>
+<span class="c">   intercettato traffico vero. Se e a zero, qualsiasi</span>
+<span class="c">   conclusione basata su di essa non dimostra nulla</span>
+</pre>
+  </div>
+  <p style="margin-top:14px;margin-bottom:0"><b>Questi due comandi sono il cuore del metodo.</b> Il
+  primo esclude o conferma l'anello 3 senza toccare la produzione; il secondo trasforma
+  «dovrebbe funzionare» in «ha funzionato, e questi sono i pacchetti». Sono la differenza fra una
+  diagnosi e un'opinione.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: policy, servizio, NAT",
+  "questions": [
+    { "q": "Esiste la regola «rete interna → tunnel», ma gli utenti in VPN non passano. Perché?",
+      "a": [ {"t":"«vpn-utenti → tunnel» è una coppia di interfacce diversa, e serve una regola sua","ok":true},
+             {"t":"La regola va duplicata per ogni utente","ok":false},
+             {"t":"Il tunnel non supporta più sorgenti","ok":false},
+             {"t":"Manca l'autorizzazione sull'utenza","ok":false} ],
+      "e": "Una regola non autorizza una destinazione: autorizza una tratta. È il pass con scritto «ingresso principale → terzo piano», che non vale se arrivi dal garage. È il principio che genera più ticket di tutti, perché dall'esterno «la VPN funziona» e «la regola c'è» sembrano insieme sufficienti." },
+
+    { "q": "Una policy è costruita su una zona che raggruppa i tunnel. Cosa verifichi?",
+      "a": [ {"t":"Che il tunnel che ti interessa sia effettivamente fra i membri della zona","ok":true},
+             {"t":"Che la zona sia abilitata","ok":false},
+             {"t":"Che i tunnel siano tutti attivi","ok":false},
+             {"t":"Che la zona abbia un indirizzo IP","ok":false} ],
+      "e": "Un tunnel aggiunto anni dopo la creazione della zona può non esserci mai stato inserito. A colpo d'occhio la configurazione sembra pronta e non lo è: la verifica è aprire la zona e leggere l'elenco dei membri, invece di fidarsi del nome." },
+
+    { "q": "L'errore si ferma su «contatto il server» e poi scade. Cosa esclude subito?",
+      "a": [ {"t":"Credenziali, autenticazione federata, certificato e licenza: la connessione non si stabilisce affatto","ok":true},
+             {"t":"Un problema di routing","ok":false},
+             {"t":"Un blocco del filtro web","ok":false},
+             {"t":"Un errore di configurazione del client","ok":false} ],
+      "e": "Il traffico viene scartato prima dell'autenticazione, quindi tutto ciò che riguarda l'autenticazione è fuori causa per definizione. È un blocco di rete — e se lo stesso errore colpisce più utenti da reti diverse, il primo sospetto sono le restrizioni per sorgente sulla policy pubblicata." },
+
+    { "q": "Un collaudo fatto dalla tua sede è passato. Cosa dimostra, se l'utente è all'estero?",
+      "a": [ {"t":"Niente sul suo caso: la prova non poteva riprodurre un blocco geografico","ok":true},
+             {"t":"Che il problema è sul computer dell'utente","ok":false},
+             {"t":"Che la configurazione è corretta","ok":false},
+             {"t":"Che il problema è intermittente","ok":false} ],
+      "e": "La prova era strutturalmente incapace di riprodurre il guasto, quindi il suo esito positivo non esclude nulla. La mossa giusta è chiedere indirizzo pubblico e orario esatto del tentativo e cercare il rifiuto nei log: più rapido, e soprattutto dimostra qualcosa." },
+
+    { "q": "Devi restringere un oggetto servizio troppo largo. Cosa fai prima?",
+      "a": [ {"t":"Conti quante policy lo referenziano: se sono più di una, cloni invece di modificarlo","ok":true},
+             {"t":"Lo modifichi, poi verifichi i log","ok":false},
+             {"t":"Lo disattivi temporaneamente","ok":false},
+             {"t":"Lo sostituisci con uno standard","ok":false} ],
+      "e": "Un oggetto condiviso può essere usato da policy di clienti diversi sullo stesso apparato: restringerlo cambia il comportamento di tutte. Clonare, restringere il clone e applicarlo solo alla policy interessata costa due minuti ed evita di rompere qualcosa che non stavi nemmeno guardando." },
+
+    { "q": "La regola c'è, il tunnel è su, ma il traffico verso il fornitore non passa e nessuno segnala errori. Cosa manca?",
+      "a": [ {"t":"La traduzione della sorgente verso l'intervallo che il fornitore accetta","ok":true},
+             {"t":"Una rotta statica","ok":false},
+             {"t":"Un profilo di ispezione","ok":false},
+             {"t":"L'apertura della porta sul firewall remoto","ok":false} ],
+      "e": "Il fornitore accetta solo un preciso intervallo di indirizzi: il traffico che arriva con un altro viene scartato in silenzio, con un messaggio interno che l'utente non vede mai. Serve tradurre la sorgente verso quell'intervallo — regola e tunnel da soli non bastano." },
+
+    { "q": "A cosa serve <code>diagnose firewall iprope lookup</code>?",
+      "a": [ {"t":"Dice quale regola verrebbe applicata a un flusso ipotetico, senza generare traffico","ok":true},
+             {"t":"Mostra le sessioni attive","ok":false},
+             {"t":"Elenca le regole disabilitate","ok":false},
+             {"t":"Verifica la raggiungibilità di un host","ok":false} ],
+      "e": "È il modo più rapido di verificare l'anello 3 senza toccare la produzione. Se restituisce un ID diverso da quello atteso, il problema non è il contenuto della regola ma l'ordine, o una regola più larga che la copre. Insieme al contatore dei colpi è il cuore del metodo." }
+  ]
+}
+</script>

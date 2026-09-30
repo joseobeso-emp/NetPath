@@ -276,10 +276,10 @@ window.NETPATH_CURRICULUM = [
       { id:"fg-05", t:"Leggere i log: ogni campo, cosa significa", s:"La lezione che risolve «non so interpretare i dati». Campo per campo, con il significato diagnostico di ciascuno.", m:30, ready:true }
     ]},
     { title: "Il metodo diagnostico", lessons: [
-      { id:"fg-06", t:"La catena dei sette anelli", s:"Quasi ogni ticket è «non riesco a raggiungere X». Il metodo che colloca il guasto invece di provare rimedi a caso.", m:28, ready:false },
-      { id:"fg-07", t:"Anelli 1 e 2: client, rete locale, routing e selettori", s:"Sovrapposizioni di indirizzi, proxy sul dispositivo, rotte che puntano dove non c'è nessuno.", m:30, ready:false },
-      { id:"fg-08", t:"Anelli 3, 4 e 5: policy, servizio, NAT", s:"La coppia di interfacce, l'oggetto servizio troppo stretto, il NAT che manca. Le tre cause più frequenti in assoluto.", m:30, ready:false },
-      { id:"fg-09", t:"Anelli 6 e 7: ispezione e destinazione", s:"Quando a bloccare non è la regola ma il motore di ispezione — e quando il problema non è affatto tuo.", m:28, ready:false }
+      { id:"fg-06", t:"La catena dei sette anelli", s:"Quasi ogni ticket è «non riesco a raggiungere X». Il metodo che colloca il guasto invece di provare rimedi a caso.", m:28, ready:true },
+      { id:"fg-07", t:"Anelli 1 e 2: client, rete locale, routing e selettori", s:"Sovrapposizioni di indirizzi, proxy sul dispositivo, rotte che puntano dove non c'è nessuno.", m:30, ready:true },
+      { id:"fg-08", t:"Anelli 3, 4 e 5: policy, servizio, NAT", s:"La coppia di interfacce, l'oggetto servizio troppo stretto, il NAT che manca. Le tre cause più frequenti in assoluto.", m:30, ready:true },
+      { id:"fg-09", t:"Anelli 6 e 7: ispezione e destinazione", s:"Quando a bloccare non è la regola ma il motore di ispezione — e quando il problema non è affatto tuo.", m:28, ready:true }
     ]},
     { title: "Costruire", lessons: [
       { id:"fg-10", t:"Interfacce, zone e VLAN", s:"Come FortiOS vede la rete, e perché una zona che non contiene un tunnel è la trappola più silenziosa.", m:28, ready:false },
