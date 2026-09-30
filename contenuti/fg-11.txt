@@ -1,0 +1,256 @@
+#id: fg-11
+#title: Gli oggetti: indirizzi, servizi, pianificazioni
+#min: 26
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Costruire
+#desc: Le convenzioni di nome che rendono una configurazione manutenibile, e la regola sugli oggetti condivisi.
+#obj: Conoscere ogni tipo di oggetto indirizzo e quando usarlo
+#obj: Costruire oggetti servizio che restano veri nel tempo
+#obj: Usare le pianificazioni per dare accessi che si chiudono da soli
+#obj: Riconoscere e ripulire gli oggetti orfani
+---
+<p class="lead">Gli oggetti sono i mattoni. Da soli non fanno niente — lo hai già visto — ma il modo
+in cui li costruisci decide se fra due anni quella configurazione sarà <strong>manutenibile</strong> o
+se nessuno oserà più toccarla, compreso chi l'ha scritta.</p>
+
+<h2>Gli oggetti indirizzo</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Cosa rappresenta</th><th>Attenzione</th></tr></thead>
+    <tbody>
+      <tr><td><b>Sottorete</b></td><td>Una rete o un singolo host</td><td>Il più usato. Un host si scrive con maschera piena</td></tr>
+      <tr><td><b>Intervallo</b></td><td>Da un indirizzo a un altro</td><td>Comodo per i pool di indirizzi</td></tr>
+      <tr><td><b>Nome di dominio</b></td><td>Il firewall risolve il nome e usa gli indirizzi risultanti</td>
+          <td><b>Ha un difetto sottile — vedi il riquadro</b></td></tr>
+      <tr><td><b>Geografico</b></td><td>Tutti gli indirizzi assegnati a un paese</td>
+          <td>Utile per restringere le pubblicazioni, con i limiti della lezione 17</td></tr>
+      <tr><td><b>Indirizzo fisico</b></td><td>Un dispositivo identificato dal suo indirizzo hardware</td>
+          <td>Funziona solo sullo stesso segmento: oltre il primo router non esiste più</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Gli oggetti a nome di dominio dipendono da chi risolve
+  </div>
+  <p>Un oggetto basato su un nome funziona perché il firewall <b>osserva le risoluzioni DNS che
+  passano da lui</b> e impara quali indirizzi corrispondono a quel nome.</p>
+  <p><b>Il problema:</b> se i client interrogano direttamente un risolutore pubblico e il firewall non
+  vede quelle risposte — oppure le vede cifrate — <b>l'associazione non si costruisce</b>, e l'oggetto
+  resta vuoto o incompleto. La regola che lo usa non corrisponde mai a niente, e nessun messaggio te
+  lo segnala.</p>
+  <p style="margin-bottom:0"><b>Da qui una raccomandazione che vale in generale:</b> se distribuisci
+  risolutori pubblici direttamente ai client, stai rinunciando a più cose di quanto sembri — questi
+  oggetti, il filtro DNS, e la possibilità di risolvere i nomi interni. È una decisione, non un
+  dettaglio.</p>
+</div>
+
+<h2>Gli oggetti servizio</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il nome che descrive la porta diventa falso il giorno dopo
+  </div>
+  <p>Un oggetto chiamato <code>8086-8087</code> è perfettamente descrittivo <b>fino al momento in cui
+  aggiungi la porta 8088</b>. Da lì in poi il nome mente, e mentirà per anni a chiunque lo legga.</p>
+  <p style="margin-bottom:0"><b>Il nome deve dire a cosa serve, non cosa contiene:</b>
+  <code>portale-gestionale-sede</code> resta vero per sempre. Il contenuto lo leggi aprendo l'oggetto;
+  il <em>perché</em>, se non è nel nome e nel commento, è perso.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Un oggetto servizio fatto bene</div>
+<pre><span class="p">config firewall service custom</span>
+    <span class="p">edit</span> <span class="s">"portale-gestionale"</span>
+        <span class="p">set tcp-portrange</span> <span class="n">8080 8083 8085-8089 8091-8092</span>
+        <span class="p">set comment</span> <span class="s">"porte del portale — ticket 1656431"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── e PRIMA di modificarne uno esistente: ───────────</span>
+<span class="p">show firewall policy | grep -B10</span> <span class="s">"nome-oggetto"</span>
+<span class="c">   quante policy lo usano? Se piu di una, CLONA</span>
+</pre>
+</div>
+
+<h2>Le pianificazioni</h2>
+
+<p>Una pianificazione limita una regola a una finestra temporale. Ce ne sono di due tipi, e il secondo
+è molto più utile di quanto si pensi.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Cosa fa</th><th>Uso concreto</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ricorrente</b></td><td>Giorni della settimana e fascia oraria</td>
+          <td>Backup consentiti solo di notte; navigazione libera in pausa pranzo</td></tr>
+      <tr><td><b>Una tantum</b></td><td>Da una data e ora <b>a una data e ora</b></td>
+          <td><b>L'accesso temporaneo a un fornitore</b> — e vedi sotto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    L'accesso che si chiude da solo
+  </div>
+  <p>«Il fornitore deve entrare martedì per l'aggiornamento del gestionale.» Apri la regola. Martedì
+  passa, l'aggiornamento riesce, e <b>quella regola resta lì per sei anni</b> — perché nessuno ha
+  aperto un ticket per chiuderla.</p>
+  <p style="margin-bottom:0">È il modo in cui si accumula il debito che poi trovi sugli apparati altrui.
+  Con una pianificazione <b>una tantum</b>, la regola smette di funzionare da sola alla scadenza.
+  Costa dieci secondi in più e toglie una cosa dalla tua testa — che è il vero guadagno.</p>
+</div>
+
+<h2>Gli oggetti orfani</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un oggetto che nessuno usa racconta sempre qualcosa
+  </div>
+  <p>Trovare un oggetto creato mesi fa e <b>non referenziato da nessuna regola, nessun gruppo, nessun
+  profilo</b> non è solo disordine. Nella maggior parte dei casi significa una cosa precisa:
+  <b>qualcuno ha iniziato un intervento e si è fermato a metà</b>.</p>
+  <p style="margin-bottom:0">L'oggetto esiste, quindi chi l'ha creato era convinto di aver fatto il
+  lavoro. Ma non essendo mai stato agganciato a una regola, <b>quell'intervento non ha mai avuto
+  alcun effetto</b> — e il problema per cui era stato aperto il ticket, se è stato dichiarato
+  risolto, è stato risolto da qualcos'altro. È un indizio che vale la pena seguire.</p>
+</div>
+
+<h2>Le convenzioni che ti consiglio</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Cinque regole che rendono una configurazione leggibile fra due anni
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Il nome dice il ruolo</b>, non il contenuto. <code>server-gestionale</code>, non
+    <code>10-10-10-50</code>.</li>
+    <li><b>Un prefisso coerente</b> raggruppa a colpo d'occhio: <code>srv-</code>,
+    <code>rete-</code>, <code>pub-</code>. L'elenco si ordina da solo in modo utile.</li>
+    <li><b>Il commento contiene il perché e il riferimento</b> — numero di ticket o data. Il «cosa» si
+    legge già nell'oggetto.</li>
+    <li><b>Nessun oggetto senza riferimento:</b> se non è usato da nulla, o lo usi o lo rimuovi.</li>
+    <li><b>Prima di modificare, conta chi lo usa.</b> Se sono più di uno, cloni.</li>
+  </ol>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Costruisci il corredo di oggetti per le due VLAN
+  </div>
+  <div class="code" style="margin:0 0 12px">
+    <div class="code__bar"><span class="dot"></span>Indirizzi, gruppo, servizio, pianificazione</div>
+<pre><span class="p">config firewall address</span>
+    <span class="p">edit</span> <span class="s">"rete-uffici"</span>
+        <span class="p">set subnet</span> <span class="n">10.10.10.0 255.255.255.0</span>
+        <span class="p">set comment</span> <span class="s">"VLAN 10 — postazioni"</span>
+    <span class="p">next</span>
+    <span class="p">edit</span> <span class="s">"rete-ospiti"</span>
+        <span class="p">set subnet</span> <span class="n">10.10.20.0 255.255.255.0</span>
+        <span class="p">set comment</span> <span class="s">"VLAN 20 — ospiti, nessun accesso interno"</span>
+    <span class="p">next</span>
+    <span class="p">edit</span> <span class="s">"srv-gestionale"</span>
+        <span class="p">set subnet</span> <span class="n">10.10.10.50 255.255.255.255</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="p">config firewall addrgrp</span>
+    <span class="p">edit</span> <span class="s">"reti-fidate"</span>
+        <span class="p">set member</span> <span class="s">"rete-uffici"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="p">config firewall service custom</span>
+    <span class="p">edit</span> <span class="s">"gestionale-web"</span>
+        <span class="p">set tcp-portrange</span> <span class="n">8080 8443</span>
+        <span class="p">set comment</span> <span class="s">"portale interno — esercizio fg-11"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── la pianificazione che si chiude da sola ─────────</span>
+<span class="p">config firewall schedule onetime</span>
+    <span class="p">edit</span> <span class="s">"intervento-fornitore"</span>
+        <span class="p">set start</span> <span class="n">09:00 01/10/2026</span>
+        <span class="p">set end</span> <span class="n">18:00 01/10/2026</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+  </div>
+  <p><b>Poi la caccia agli orfani</b>, che è l'esercizio che userai davvero sul lavoro:</p>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="c"># elenca tutti gli oggetti indirizzo</span>
+<span class="p">show firewall address | grep "edit"</span>
+
+<span class="c"># e per ciascuno, cerca chi lo usa</span>
+<span class="p">show firewall policy | grep</span> <span class="s">"nome-oggetto"</span>
+
+<span class="c"># nessun risultato = orfano.</span>
+<span class="c"># Prima di cancellarlo, chiediti PERCHE esiste:</span>
+<span class="c"># spesso e un intervento fermato a meta</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0">Sul 60D appena azzerato troverai decine di oggetti
+  predefiniti non usati: è normale, li mette il produttore. <b>Quelli che contano sono gli oggetti con
+  un nome parlante creato da qualcuno</b> — è lì che si nascondono gli interventi incompiuti.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: gli oggetti",
+  "questions": [
+    { "q": "Perché un oggetto chiamato <code>8086-8087</code> è un cattivo nome?",
+      "a": [ {"t":"Diventa falso appena si aggiunge una porta, e continuerà a mentire per anni","ok":true},
+             {"t":"Perché i nomi non possono contenere numeri","ok":false},
+             {"t":"Perché è troppo corto","ok":false},
+             {"t":"Perché non può essere clonato","ok":false} ],
+      "e": "Il nome deve dire a cosa serve, non cosa contiene: <code>portale-gestionale</code> resta vero per sempre. Il contenuto si legge aprendo l'oggetto; il perché, se non è nel nome e nel commento, è perso." },
+
+    { "q": "Un oggetto basato su un nome di dominio non corrisponde mai a niente. Causa probabile?",
+      "a": [ {"t":"Il firewall non vede le risoluzioni DNS dei client, quindi non impara gli indirizzi","ok":true},
+             {"t":"Il dominio non esiste","ok":false},
+             {"t":"Serve indicare anche la porta","ok":false},
+             {"t":"L'oggetto va aggiornato manualmente","ok":false} ],
+      "e": "Questi oggetti funzionano osservando le risoluzioni che passano dal firewall. Se i client interrogano direttamente un risolutore esterno, o lo fanno in modo cifrato, l'associazione non si costruisce e la regola non corrisponde a nulla — senza nessun messaggio che lo segnali." },
+
+    { "q": "Un fornitore deve accedere solo per un giorno. Come imposti la regola?",
+      "a": [ {"t":"Con una pianificazione una tantum, che la fa scadere da sola","ok":true},
+             {"t":"La crei e apri un promemoria per rimuoverla","ok":false},
+             {"t":"La crei disattivata e la attivi al momento","ok":false},
+             {"t":"Con una pianificazione ricorrente su quel giorno della settimana","ok":false} ],
+      "e": "Una regola temporanea aperta a mano resta lì per anni, perché nessuno apre un ticket per chiuderla: è così che si accumula il debito che poi trovi sugli apparati altrui. Una pianificazione una tantum costa dieci secondi e toglie una cosa dalla tua testa." },
+
+    { "q": "Trovi un oggetto creato mesi fa e non usato da nessuna regola. Cosa racconta?",
+      "a": [ {"t":"Che qualcuno ha iniziato un intervento e si è fermato a metà: quell'intervento non ha mai avuto effetto","ok":true},
+             {"t":"Che è un residuo della configurazione di fabbrica","ok":false},
+             {"t":"Che la regola che lo usava è stata cancellata","ok":false},
+             {"t":"Niente: è solo disordine","ok":false} ],
+      "e": "Chi l'ha creato era convinto di aver fatto il lavoro, ma non avendolo agganciato a nessuna regola l'intervento non ha prodotto alcun effetto. Se il ticket relativo risulta chiuso, il problema è stato risolto da qualcos'altro — ed è un indizio che vale la pena seguire prima di cancellare." },
+
+    { "q": "Cosa fai prima di modificare un oggetto servizio esistente?",
+      "a": [ {"t":"Conti quante policy lo referenziano: se più di una, lo cloni","ok":true},
+             {"t":"Lo disattivi temporaneamente","ok":false},
+             {"t":"Verifichi che non sia di sistema","ok":false},
+             {"t":"Fai un backup e procedi","ok":false} ],
+      "e": "Un oggetto condiviso può essere usato da policy di clienti diversi sullo stesso apparato: modificarlo cambia il comportamento di tutte. Il backup serve comunque, ma non impedisce di rompere qualcosa — clonare sì." },
+
+    { "q": "Perché un oggetto basato sull'indirizzo fisico ha un raggio d'azione limitato?",
+      "a": [ {"t":"Quell'indirizzo esiste solo sul segmento locale: oltre il primo router non c'è più","ok":true},
+             {"t":"Perché cambia a ogni riavvio del dispositivo","ok":false},
+             {"t":"Perché non è supportato nelle policy in uscita","ok":false},
+             {"t":"Perché richiede il DHCP","ok":false} ],
+      "e": "L'indirizzo hardware viene sostituito a ogni salto di routing: il firewall lo vede solo per i dispositivi che stanno sul suo stesso segmento. Per identificare qualcosa oltre un router servono altri criteri — indirizzo IP, utente autenticato, certificato." }
+  ]
+}
+</script>

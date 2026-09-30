@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NAT: SNAT, DNAT e i VIP — NetPath</title>
+<meta name="description" content="Mascherare in uscita, pubblicare in ingresso, e la coerenza fra VIP e oggetto servizio.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-13">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Costruire</span>
+      </nav>
+      <h1 class="lesson-title">NAT: SNAT, DNAT e i VIP</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 13</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Distinguere traduzione della sorgente e della destinazione, e sapere quale serve quando</li>
+        <li>Costruire una pubblicazione corretta e verificarla</li>
+        <li>Riconoscere i tre errori che fanno fallire le pubblicazioni</li>
+        <li>Gestire il caso dei client interni che raggiungono il proprio server dall'indirizzo pubblico</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Il NAT è il punto in cui più configurazioni «corrette a leggerle» non funzionano. Non
+perché sia difficile, ma perché richiede che <strong>tre oggetti diversi combacino</strong> — e se uno
+solo non combacia, non c'è nessun messaggio a dirtelo.</p>
+
+<h2>Le due direzioni</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Traduzione della <b>sorgente</b></th><th>Traduzione della <b>destinazione</b></th></tr></thead>
+    <tbody>
+      <tr><td><b>Riscrive</b></td><td>Da dove <em>parte</em> il pacchetto</td><td>Dove <em>arriva</em></td></tr>
+      <tr><td><b>Serve a</b></td><td>Far uscire una rete interna con un indirizzo che il mondo accetta</td>
+          <td><b>Pubblicare</b> un servizio interno su un indirizzo pubblico</td></tr>
+      <tr><td><b>Su FortiOS</b></td><td>Opzione <code>nat</code> dentro la policy, con o senza pool</td>
+          <td>Un oggetto <b>VIP</b>, usato come <em>destinazione</em> di una policy</td></tr>
+      <tr><td><b>Verso</b></td><td>Dall'interno all'esterno</td><td>Dall'esterno all'interno</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il centralino dell'albergo
+  </div>
+  <p>Un albergo ha <b>un solo numero di telefono</b> e duecento camere.</p>
+  <p>Quando un ospite chiama fuori, il destinatario vede il numero dell'albergo, non quello della
+  camera: è la <b>traduzione della sorgente</b>. Il centralino annota chi ha chiamato, così quando
+  arriva la risposta sa a quale camera girarla.</p>
+  <p style="margin-bottom:0">Quando invece qualcuno da fuori chiama l'albergo e chiede il
+  <b>ristorante</b>, il centralino gira la chiamata alla camera 12, dove c'è il ristorante: è la
+  <b>traduzione della destinazione</b>. E qui sta il punto che fa fallire le pubblicazioni: <b>il
+  centralino deve sapere che «ristorante» corrisponde alla 12</b>, e il portiere all'ingresso deve
+  avere l'ordine di lasciar passare quella richiesta. <b>Due cose distinte, e servono entrambe.</b></p>
+</div>
+
+<h2>Traduzione della sorgente: le due forme</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Con l'indirizzo dell'interfaccia, o con un pool</div>
+<pre><span class="c">── la forma semplice: esce con l'indirizzo ─────────</span>
+<span class="c">   dell'interfaccia di uscita</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">10</span>
+        <span class="p">set nat enable</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── con un pool: quando la destinazione accetta ─────</span>
+<span class="c">   solo certi indirizzi (il caso della lezione 8)</span>
+<span class="p">config firewall ippool</span>
+    <span class="p">edit</span> <span class="s">"pool-verso-fornitore"</span>
+        <span class="p">set type</span> <span class="s">overload</span>
+        <span class="p">set startip</span> <span class="n">10.200.78.10</span>
+        <span class="p">set endip</span> <span class="n">10.200.78.10</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">   e poi, IN DUE PASSAGGI (lezione 8):</span>
+<span class="c">   prima  set nat enable</span>
+<span class="c">   poi    set ippool enable + set poolname</span>
+</pre>
+</div>
+
+<h2>Pubblicare: l'oggetto VIP</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Due modi, con conseguenze diverse</div>
+<pre><span class="c">══ A · TRADUZIONE COMPLETA, senza porte ════════════</span>
+<span class="p">config firewall vip</span>
+    <span class="p">edit</span> <span class="s">"pub-server-web"</span>
+        <span class="p">set extip</span> <span class="n">203.0.113.10</span>
+        <span class="p">set mappedip</span> <span class="n">10.10.30.50</span>
+        <span class="p">set extintf</span> <span class="s">"wan1"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+<span class="c">   TUTTE le porte passano: e la POLICY a decidere</span>
+<span class="c">   quali. Piu semplice, ma la policy deve essere</span>
+<span class="c">   stretta sul servizio</span>
+
+<span class="c">══ B · CON TRADUZIONE DI PORTA ═════════════════════</span>
+<span class="p">config firewall vip</span>
+    <span class="p">edit</span> <span class="s">"pub-server-web-443"</span>
+        <span class="p">set extip</span> <span class="n">203.0.113.10</span>
+        <span class="p">set mappedip</span> <span class="n">10.10.30.50</span>
+        <span class="p">set extintf</span> <span class="s">"wan1"</span>
+        <span class="p">set portforward enable</span>
+        <span class="p">set protocol</span> <span class="s">tcp</span>
+        <span class="p">set extport</span> <span class="n">443</span>
+        <span class="p">set mappedport</span> <span class="n">443</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+<span class="c">   ⚠ da qui in poi la porta del VIP e quelle</span>
+<span class="c">   dell'oggetto servizio DEVONO combaciare</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    I tre errori che fanno fallire le pubblicazioni
+  </div>
+  <p><b>1 · Porta del VIP e oggetto servizio che non combaciano.</b> Il VIP traduce la 5061, la policy
+  usa un servizio che contiene solo la 443: <b>la regola non corrisponderà mai</b>. E leggendo i due
+  oggetti separatamente sembrano entrambi corretti.</p>
+  <p><b>2 · Due VIP sullo stesso indirizzo pubblico con porte sovrapposte.</b> Vince la policy più in
+  alto, e la nuova non viene mai raggiunta. Sintomo: «la pubblicazione vecchia funziona, quella nuova
+  no».</p>
+  <p style="margin-bottom:0"><b>3 · Il VIP creato ma non usato da nessuna policy.</b> Un VIP è un
+  oggetto: da solo non pubblica niente. Va messo come <b>destinazione</b> di una regola che arriva
+  dall'esterno.</p>
+</div>
+
+<h2>Il caso del giro su sé stessi</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Da fuori funziona, dall'ufficio no»
+  </div>
+  <p>Hai pubblicato un server. Da casa si raggiunge benissimo. Dall'ufficio, usando lo <b>stesso nome
+  pubblico</b>, no.</p>
+  <p><b>Il motivo:</b> il client interno manda la richiesta all'indirizzo pubblico, il firewall la
+  traduce e la gira al server — ma il server vede arrivare una richiesta da un indirizzo della <em>sua
+  stessa rete</em> e risponde <b>direttamente</b>, senza ripassare dal firewall. La risposta arriva al
+  client da un indirizzo diverso da quello a cui aveva scritto, e viene scartata.</p>
+  <p style="margin-bottom:0"><b>Le due soluzioni, in ordine di preferenza:</b> far risolvere il nome
+  con l'<b>indirizzo interno</b> per chi sta dentro — è la soluzione pulita, si chiama risoluzione
+  differenziata e l'hai vista nella lezione 1-20; oppure <b>tradurre anche la sorgente</b> sulla
+  regola interna, così il server risponde al firewall invece che al client. La seconda funziona ma
+  nasconde l'indirizzo vero del client nei log del server.</p>
+</div>
+
+<h2>Verificare che il NAT stia facendo il suo lavoro</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La tabella delle sessioni, filtrata</div>
+<pre><span class="c">── ⚠ SEMPRE prima: i filtri restano impostati ──────</span>
+<span class="p">diagnose sys session filter clear</span>
+
+<span class="p">diagnose sys session filter dst</span> <span class="n">203.0.113.10</span>
+<span class="p">diagnose sys session filter dport</span> <span class="n">443</span>
+<span class="p">diagnose sys session list</span>
+
+<span class="c">── cosa cercare nell'output ────────────────────────</span>
+<span class="c">   policy_id=&lt;quella che ti aspetti&gt;</span>
+<span class="c">   hook=dnat act=dnat   → la traduzione in ingresso</span>
+<span class="c">                          sta avvenendo</span>
+<span class="c">   hook=snat act=snat   → quella in uscita</span>
+
+<span class="c">── su apparato diviso in partizioni, obbligatorio: ─</span>
+<span class="p">diagnose sys session filter vd</span> <span class="n">&lt;numero&gt;</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il filtro delle sessioni resta impostato, e inganna
+  </div>
+  <p>È la stessa trappola dei log. Il filtro che hai messo mezz'ora fa <b>è ancora attivo</b>, e i
+  risultati che stai leggendo sono ristretti da una condizione che non ricordi.</p>
+  <p style="margin-bottom:0">Il modo in cui inganna è particolarmente insidioso: <b>tutto sembra
+  coerente</b>. Vedi poche sessioni e concludi che il traffico non passa, quando semplicemente stai
+  guardando attraverso una fessura. <b>Azzera sempre prima di ogni nuova prova.</b></p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Pubblica un servizio, e rompi la pubblicazione di proposito
+  </div>
+  <p>Fai girare un servizio sul Mac — basta un server web improvvisato — e pubblicalo attraverso il
+  firewall.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Sul Mac: un server in una riga</div>
+<pre><span class="p">cd /tmp &amp;&amp; python3 -m http.server 8080</span>
+<span class="c"># resta in ascolto sulla porta 8080</span>
+</pre>
+  </div>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Sul firewall: VIP, servizio, policy</div>
+<pre><span class="p">config firewall vip</span>
+    <span class="p">edit</span> <span class="s">"pub-prova"</span>
+        <span class="p">set extip</span> <span class="n">&lt;indirizzo-della-wan-del-60D&gt;</span>
+        <span class="p">set mappedip</span> <span class="n">&lt;indirizzo-del-Mac&gt;</span>
+        <span class="p">set extintf</span> <span class="s">"wan1"</span>
+        <span class="p">set portforward enable</span>
+        <span class="p">set protocol</span> <span class="s">tcp</span>
+        <span class="p">set extport</span> <span class="n">8080</span>
+        <span class="p">set mappedport</span> <span class="n">8080</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="p">config firewall service custom</span>
+    <span class="p">edit</span> <span class="s">"prova-8080"</span>
+        <span class="p">set tcp-portrange</span> <span class="n">8080</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"pubblicazione di prova"</span>
+        <span class="p">set srcintf</span> <span class="s">"wan1"</span>
+        <span class="p">set dstintf</span> <span class="s">"internal"</span>
+        <span class="p">set srcaddr</span> <span class="s">"all"</span>
+        <span class="p">set dstaddr</span> <span class="s">"pub-prova"</span>     <span class="c"># ← il VIP come DESTINAZIONE</span>
+        <span class="p">set service</span> <span class="s">"prova-8080"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>Verifica che funzioni</b>, poi <b>rompila in tre modi diversi</b> e
+  osserva ogni volta cosa cambia nei log e nelle sessioni:</p>
+  <ol style="margin-bottom:0">
+    <li><b>Cambia la porta dell'oggetto servizio</b> da 8080 a 443, lasciando il VIP com'è. Guarda i
+    log: cosa succede? Quale identificativo di regola compare?</li>
+    <li><b>Rimetti a posto</b>, e togli il VIP dalla destinazione della policy mettendoci
+    <code>all</code>. Funziona ancora? Perché?</li>
+    <li><b>Rimetti a posto</b>, e crea un secondo VIP sullo stesso indirizzo pubblico e la stessa
+    porta, con una policy più in alto. Quale delle due vince?</li>
+  </ol>
+  <p style="margin-top:12px;margin-bottom:0"><b>Cancella tutto alla fine.</b> Ognuno dei tre casi che
+  hai appena provocato lo incontrerai davvero, con la differenza che l'avrà creato qualcun altro e tu
+  dovrai capirlo dai soli sintomi.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: NAT e pubblicazioni",
+  "questions": [
+    { "q": "Cosa serve per pubblicare un servizio interno su un indirizzo pubblico?",
+      "a": [ {"t":"Un VIP usato come destinazione di una policy, e un oggetto servizio coerente","ok":true},
+             {"t":"Solo il VIP","ok":false},
+             {"t":"Solo una policy con NAT attivo","ok":false},
+             {"t":"Una rotta statica verso il server","ok":false} ],
+      "e": "Il VIP è un oggetto: definisce la traduzione e basta. Come tutti gli oggetti aspetta che una regola lo usi — e quella regola deve permettere le porte giuste. Il centralino deve sapere che «ristorante» è la camera 12, <em>e</em> il portiere deve lasciar passare la chiamata." },
+
+    { "q": "Il VIP traduce la porta 5061, l'oggetto servizio contiene solo la 443. Cosa succede?",
+      "a": [ {"t":"La regola non corrisponderà mai, e i due oggetti letti separatamente sembrano corretti","ok":true},
+             {"t":"Il firewall usa la porta del VIP e ignora il servizio","ok":false},
+             {"t":"Il traffico passa su entrambe le porte","ok":false},
+             {"t":"Il VIP viene disattivato automaticamente","ok":false} ],
+      "e": "È il primo dei tre errori classici di pubblicazione, ed è insidioso proprio perché ogni pezzo sembra giusto: si legge il VIP e va bene, si legge il servizio e va bene, ma insieme non combaciano e nessun messaggio lo segnala." },
+
+    { "q": "«Da fuori il server si raggiunge, dall'ufficio no.» Perché?",
+      "a": [ {"t":"Il server risponde direttamente al client interno, senza ripassare dal firewall","ok":true},
+             {"t":"Il firewall blocca il traffico interno verso l'indirizzo pubblico","ok":false},
+             {"t":"Il VIP funziona solo per il traffico esterno","ok":false},
+             {"t":"Manca una rotta statica interna","ok":false} ],
+      "e": "Il server vede arrivare la richiesta da un indirizzo della sua stessa rete e risponde diretto: la risposta arriva al client da un indirizzo diverso da quello a cui aveva scritto, e viene scartata. La soluzione pulita è far risolvere il nome con l'indirizzo interno per chi sta dentro." },
+
+    { "q": "Cosa cerchi nell'output della tabella delle sessioni per confermare una pubblicazione?",
+      "a": [ {"t":"La riga <code>hook=dnat act=dnat</code> e l'identificativo della policy attesa","ok":true},
+             {"t":"Il numero di byte trasferiti","ok":false},
+             {"t":"La durata della sessione","ok":false},
+             {"t":"Il nome del VIP","ok":false} ],
+      "e": "Quella riga dimostra che la traduzione in ingresso sta effettivamente avvenendo, e l'identificativo conferma che a decidere è la regola che pensavi. Byte e durata dicono che c'è traffico, non che il NAT stia funzionando come previsto." },
+
+    { "q": "Perché si azzerano i filtri prima di esaminare le sessioni?",
+      "a": [ {"t":"Restano impostati, e i risultati sembrano coerenti pur essendo ristretti da una condizione dimenticata","ok":true},
+             {"t":"Perché altrimenti il comando restituisce errore","ok":false},
+             {"t":"Perché consumano memoria dell'apparato","ok":false},
+             {"t":"Perché vengono salvati nella configurazione","ok":false} ],
+      "e": "È la parte insidiosa: non vedi un errore, vedi poche sessioni e concludi che il traffico non passa — quando stai solo guardando attraverso una fessura aperta mezz'ora prima. La stessa trappola esiste sui log." },
+
+    { "q": "Quando serve un pool di indirizzi invece del semplice mascheramento?",
+      "a": [ {"t":"Quando la destinazione accetta solo un preciso intervallo di indirizzi sorgente","ok":true},
+             {"t":"Quando ci sono più di cento client interni","ok":false},
+             {"t":"Quando l'interfaccia di uscita ha un indirizzo dinamico","ok":false},
+             {"t":"Quando serve pubblicare più server","ok":false} ],
+      "e": "È il caso del tunnel verso un fornitore che, nell'accordo, accetta solo certi indirizzi: il traffico va tradotto dentro quell'intervallo o viene scartato in silenzio. Il mascheramento semplice userebbe l'indirizzo dell'interfaccia di uscita, che non è nell'accordo." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

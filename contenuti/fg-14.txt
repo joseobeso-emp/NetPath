@@ -1,0 +1,266 @@
+#id: fg-14
+#title: Routing: statiche, distanza, priorità, multi-WAN
+#min: 28
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Costruire
+#desc: Come si decide da dove esce un pacchetto, e come si legge una tabella di routing senza fare ipotesi.
+#obj: Scrivere rotte statiche sapendo cosa fanno distanza e priorità
+#obj: Leggere una tabella di routing e dire quale rotta vincerà
+#obj: Costruire un multi-WAN che si accorga davvero della caduta di una linea
+#obj: Riconoscere il prossimo salto ricorsivo e le rotte senza selettore
+---
+<p class="lead">Il routing su FortiOS ha due parametri che vengono continuamente confusi:
+<strong>distanza</strong> e <strong>priorità</strong>. Capire la differenza è ciò che separa un
+multi-WAN che funziona da uno che sembra funzionare finché non cade una linea.</p>
+
+<h2>Come si sceglie una rotta</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 220" role="img" aria-label="I tre criteri di scelta di una rotta, in ordine">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Tre criteri, applicati in quest'ordine</text>
+    <g stroke-width="1.8">
+      <rect x="30" y="44" width="190" height="66" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="255" y="44" width="190" height="66" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="480" y="44" width="190" height="66" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="125" y="68" class="dg-label-sm">1 · PIÙ SPECIFICA</text>
+      <text x="125" y="90" class="dg-mono-sm" fill="var(--dg-text-soft)">/32 batte /24 batte /0</text>
+      <text x="350" y="68" class="dg-label-sm">2 · DISTANZA</text>
+      <text x="350" y="90" class="dg-mono-sm" fill="var(--dg-text-soft)">quanto ti fidi della fonte</text>
+      <text x="595" y="68" class="dg-label-sm">3 · PRIORITÀ</text>
+      <text x="595" y="90" class="dg-mono-sm" fill="var(--dg-text-soft)">quale preferisci, fra pari</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.6"><path d="M224 77h27"/><path d="M449 77h27"/></g>
+    <rect x="60" y="140" width="580" height="56" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+    <text x="350" y="162" text-anchor="middle" class="dg-label-sm">La <tspan font-weight="700">distanza</tspan> decide quale rotta entra in tabella: le altre restano nascoste.</text>
+    <text x="350" y="182" text-anchor="middle" class="dg-label-sm">La <tspan font-weight="700">priorità</tspan> sceglie fra rotte che sono <tspan font-style="italic">già</tspan> in tabella, con la stessa distanza.</text>
+  </svg>
+  </div>
+  <figcaption>È la distinzione che conta: due rotte con distanza diversa non si bilanciano mai —
+  una semplicemente non esiste finché l'altra è viva.</figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: chiedere la strada
+  </div>
+  <p>Devi andare in un posto e chiedi indicazioni a tre persone: un <b>vigile urbano</b>, un
+  <b>tassista</b> e un <b>passante</b>.</p>
+  <p>La <b>distanza</b> è quanto ti fidi di ciascuno. Se il vigile ti dà un'indicazione, non stai
+  nemmeno a sentire il passante: <b>la sua risposta è come se non esistesse</b>.</p>
+  <p style="margin-bottom:0">La <b>priorità</b> entra in gioco dopo: se <em>due vigili</em> ti danno
+  due strade diverse ma entrambe valide, allora scegli quella che preferisci. <b>Ma se non ti fidi
+  allo stesso modo, non c'è nessuna scelta da fare</b> — e questo spiega perché tanti multi-WAN non
+  bilanciano niente.</p>
+</div>
+
+<h2>Una rotta statica, campo per campo</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Due linee, una principale e una di riserva</div>
+<pre><span class="p">config router static</span>
+    <span class="c">── la principale ───────────────────────────────</span>
+    <span class="p">edit</span> <span class="n">1</span>
+        <span class="p">set dst</span> <span class="n">0.0.0.0 0.0.0.0</span>
+        <span class="p">set gateway</span> <span class="n">203.0.113.1</span>
+        <span class="p">set device</span> <span class="s">"wan1"</span>
+        <span class="p">set distance</span> <span class="n">10</span>
+        <span class="p">set priority</span> <span class="n">1</span>
+        <span class="p">set comment</span> <span class="s">"fibra — principale"</span>
+    <span class="p">next</span>
+    <span class="c">── la riserva: DISTANZA PIU ALTA ───────────────</span>
+    <span class="p">edit</span> <span class="n">2</span>
+        <span class="p">set dst</span> <span class="n">0.0.0.0 0.0.0.0</span>
+        <span class="p">set gateway</span> <span class="n">198.51.100.1</span>
+        <span class="p">set device</span> <span class="s">"wan2"</span>
+        <span class="p">set distance</span> <span class="n">20</span>
+        <span class="p">set comment</span> <span class="s">"radio — riserva"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Riserva o bilanciamento? Lo decidi con la distanza
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Distanze diverse</b> → <b>riserva</b>. La seconda rotta <em>non compare nemmeno in
+    tabella</em> finché la prima è viva. È quello che vuoi nella maggior parte dei casi.</li>
+    <li><b>Stessa distanza, priorità diverse</b> → entrambe in tabella, si usa quella con priorità
+    migliore. Utile per orientare il traffico mantenendo entrambe pronte.</li>
+    <li><b>Stessa distanza, stessa priorità</b> → <b>bilanciamento</b> fra le due. Attenzione: le
+    sessioni si distribuiscono, e questo può creare i problemi di sorgente variabile che hai visto
+    nella lezione 3-05.</li>
+  </ul>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Questo spiega un'osservazione che farai spesso
+  </div>
+  <p>Su un apparato con due tunnel ridondanti verso la stessa sede, uno dei due mostra
+  <b>contatori di trasmissione a zero</b>. Sembra guasto.</p>
+  <p style="margin-bottom:0"><b>Non lo è:</b> è il tunnel di riserva. Le rotte hanno priorità diverse,
+  quindi tutto il traffico esce dal primo e il secondo resta pronto senza trasmettere niente — pur
+  ricevendo i pacchetti di controllo. <b>Zero trasmesso su una via di riserva è lo stato corretto</b>,
+  non un guasto: saperlo ti evita di aprire un ticket a un operatore per niente.</p>
+</div>
+
+<h2>Accorgersi davvero che una linea è caduta</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La rotta resta valida anche quando la linea non porta più da nessuna parte
+  </div>
+  <p>Una rotta statica esiste finché <b>l'interfaccia è attiva</b>. Ma il cavo verso il modem può
+  restare perfettamente attivo mentre la linea dell'operatore è morta: <b>il firewall continua a
+  mandare il traffico da lì</b>, e il passaggio alla riserva non avviene mai.</p>
+  <p style="margin-bottom:0"><b>Serve un controllo attivo</b> che verifichi periodicamente la
+  raggiungibilità di qualcosa <em>oltre</em> il modem e, se fallisce, <b>ritiri la rotta</b>. Senza
+  quello, il multi-WAN funziona solo se qualcuno stacca fisicamente il cavo — cioè quasi mai.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Il controllo che ritira la rotta</div>
+<pre><span class="p">config system link-monitor</span>
+    <span class="p">edit</span> <span class="s">"controllo-wan1"</span>
+        <span class="p">set srcintf</span> <span class="s">"wan1"</span>
+        <span class="p">set server</span> <span class="n">"1.1.1.1" "8.8.8.8"</span>   <span class="c"># due, non uno</span>
+        <span class="p">set protocol</span> <span class="s">ping</span>
+        <span class="p">set interval</span> <span class="n">5</span>
+        <span class="p">set failtime</span> <span class="n">5</span>
+        <span class="p">set recoverytime</span> <span class="n">5</span>
+        <span class="p">set update-static-route enable</span>     <span class="c"># ← la riga che conta</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="p">diagnose sys link-monitor status</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Tre accorgimenti che fanno la differenza
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Due bersagli, non uno.</b> Se l'unico bersaglio va in manutenzione, il firewall conclude
+    che la linea è caduta e passa alla riserva senza motivo.</li>
+    <li><b>Il bersaglio deve stare oltre il modem.</b> Verificare la raggiungibilità del modem stesso
+    non dimostra nulla: il modem risponde anche quando la linea è morta.</li>
+    <li><b>Il ritiro della rotta va abilitato esplicitamente.</b> Un controllo che misura e non agisce
+    produce solo grafici — e nel modulo MikroTik vedrai un caso reale in cui un controllo del genere
+    era configurato male al punto da generare milioni di pacchetti inutili senza toccare il routing.</li>
+  </ul>
+</div>
+
+<h2>Le due trappole del routing</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Trappola</th><th>Cosa succede</th><th>Come si trova</th></tr></thead>
+    <tbody>
+      <tr><td><b>Prossimo salto ricorsivo</b></td>
+          <td>L'indirizzo del prossimo salto ricade in una rete instradata <b>attraverso quella stessa rotta</b>. Il routing gira su sé stesso, e il traffico sparisce — spesso solo dopo un passaggio alla riserva</td>
+          <td>Per ogni rotta chiediti: <b>per raggiungere questo prossimo salto, da dove passo?</b></td></tr>
+      <tr><td><b>Rotta verso un tunnel senza selettore corrispondente</b></td>
+          <td>Il traffico entra nel tunnel e non trova trasporto: <b>quella destinazione non è mai stata raggiungibile</b>, e nessuno se n'è accorto perché forse nessuno la usava</td>
+          <td>Confronta le rotte verso i tunnel con i selettori <b>negoziati</b> (lezione 7)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Leggi la tabella, poi falla cambiare
+  </div>
+  <div class="code" style="margin:0 0 12px">
+    <div class="code__bar"><span class="dot"></span>Leggere</div>
+<pre><span class="c">── tutte le rotte attive ───────────────────────────</span>
+<span class="p">get router info routing-table all</span>
+
+<span class="c">── e la domanda che conta: chi vince per QUESTA</span>
+<span class="c">   destinazione, e perche?</span>
+<span class="p">get router info routing-table details</span> <span class="n">8.8.8.8</span>
+
+<span class="c">── anche le rotte NON attive, quelle nascoste ──────</span>
+<span class="p">get router info routing-table database</span>
+<span class="c">   qui vedi la rotta di riserva che non e in tabella</span>
+<span class="c">   perche ha distanza piu alta: e la conferma visiva</span>
+<span class="c">   di tutto questo capitolo</span>
+</pre>
+  </div>
+  <p><b>Poi l'esperimento</b>, con le due VLAN che hai creato nella lezione 10:</p>
+  <ol>
+    <li><b>Crea due rotte</b> verso la stessa destinazione, su interfacce diverse, con
+    <b>distanze diverse</b>. Guarda il database: <b>una sola è in tabella</b>.</li>
+    <li><b>Portale alla stessa distanza</b> con priorità diverse. Ora ci sono <b>entrambe</b>, e il
+    traffico usa quella con priorità migliore.</li>
+    <li><b>Metti anche la stessa priorità.</b> Ora si bilanciano.</li>
+    <li><b>Disattiva l'interfaccia della rotta preferita</b> e rileggi la tabella: guarda quanto ci
+    mette la sostituzione e cosa succede alle sessioni già aperte.</li>
+  </ol>
+  <p style="margin-bottom:0"><b>Questi quattro passaggi</b>, fatti una volta con gli occhi sulla
+  tabella, valgono più di dieci letture. E il quarto è quello che ti fa capire perché un cambio di
+  linea, in produzione, non è mai completamente trasparente.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: il routing",
+  "questions": [
+    { "q": "Qual è la differenza fra distanza e priorità?",
+      "a": [ {"t":"La distanza decide quale rotta entra in tabella; la priorità sceglie fra rotte già in tabella","ok":true},
+             {"t":"Sono sinonimi con nomi diversi","ok":false},
+             {"t":"La distanza vale per le rotte statiche, la priorità per quelle dinamiche","ok":false},
+             {"t":"La priorità si applica solo al traffico in ingresso","ok":false} ],
+      "e": "Se non ti fidi allo stesso modo di due fonti, non c'è nessuna scelta da fare: la meno affidabile è come se non esistesse. Due rotte con distanza diversa non si bilanciano mai — ed è il motivo per cui molti multi-WAN configurati «per bilanciare» in realtà non bilanciano niente." },
+
+    { "q": "Vuoi una linea di riserva che entri in gioco solo se la principale cade. Come imposti le rotte?",
+      "a": [ {"t":"Stessa destinazione, distanze diverse","ok":true},
+             {"t":"Stessa distanza, priorità diverse","ok":false},
+             {"t":"Stessa distanza e stessa priorità","ok":false},
+             {"t":"Destinazioni diverse su ciascuna interfaccia","ok":false} ],
+      "e": "Con distanze diverse la rotta di riserva non compare nemmeno in tabella finché la principale è viva. Con la stessa distanza e priorità diverse sarebbero entrambe attive, e con tutto uguale si bilancerebbero — che è un comportamento diverso e spesso indesiderato." },
+
+    { "q": "Un tunnel di riserva mostra contatori di trasmissione a zero. È guasto?",
+      "a": [ {"t":"No: è lo stato corretto di una via di riserva, che riceve controlli ma non trasmette traffico","ok":true},
+             {"t":"Sì, il tunnel non è salito","ok":false},
+             {"t":"Sì, manca la rotta","ok":false},
+             {"t":"Dipende dai contatori di ricezione","ok":false} ],
+      "e": "Le rotte hanno priorità diverse, quindi tutto il traffico esce dal primo tunnel e il secondo resta pronto senza trasmettere. Saperlo evita di aprire un ticket a un operatore per un comportamento perfettamente normale." },
+
+    { "q": "La linea dell'operatore è morta ma il cavo verso il modem è attivo. Cosa succede senza controllo attivo?",
+      "a": [ {"t":"La rotta resta valida e il firewall continua a mandare traffico da lì","ok":true},
+             {"t":"Il firewall passa automaticamente alla riserva","ok":false},
+             {"t":"L'interfaccia si disattiva da sola","ok":false},
+             {"t":"Le rotte vengono ricalcolate dopo qualche minuto","ok":false} ],
+      "e": "Una rotta statica esiste finché l'interfaccia è attiva, e l'interfaccia verso il modem resta attiva anche con la linea morta. Senza un controllo che verifichi qualcosa <em>oltre</em> il modem e ritiri la rotta, il passaggio alla riserva non avviene mai." },
+
+    { "q": "Perché il bersaglio del controllo non deve essere il modem stesso?",
+      "a": [ {"t":"Il modem risponde anche quando la linea dell'operatore è morta","ok":true},
+             {"t":"Perché il modem non risponde al ping","ok":false},
+             {"t":"Perché genererebbe troppo traffico","ok":false},
+             {"t":"Perché l'indirizzo del modem cambia","ok":false} ],
+      "e": "Verificare il modem dimostra solo che il cavo funziona, che è esattamente ciò che già sapevi. Il bersaglio deve stare oltre, su Internet — e conviene metterne due, perché con uno solo la sua manutenzione farebbe passare alla riserva senza motivo." },
+
+    { "q": "Cos'è un prossimo salto ricorsivo?",
+      "a": [ {"t":"Il prossimo salto ricade in una rete instradata attraverso quella stessa rotta: il routing gira su sé stesso","ok":true},
+             {"t":"Una rotta che punta a sé stessa come destinazione","ok":false},
+             {"t":"Una rotta appresa da due protocolli diversi","ok":false},
+             {"t":"Un ciclo fra due router","ok":false} ],
+      "e": "Il traffico sparisce, e spesso il problema emerge solo dopo un passaggio alla riserva — quindi mesi dopo la configurazione, quando nessuno collega più le due cose. La verifica è chiedersi, per ogni rotta: per raggiungere questo prossimo salto, da dove passo?" }
+  ]
+}
+</script>

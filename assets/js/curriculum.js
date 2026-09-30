@@ -282,11 +282,11 @@ window.NETPATH_CURRICULUM = [
       { id:"fg-09", t:"Anelli 6 e 7: ispezione e destinazione", s:"Quando a bloccare non è la regola ma il motore di ispezione — e quando il problema non è affatto tuo.", m:28, ready:true }
     ]},
     { title: "Costruire", lessons: [
-      { id:"fg-10", t:"Interfacce, zone e VLAN", s:"Come FortiOS vede la rete, e perché una zona che non contiene un tunnel è la trappola più silenziosa.", m:28, ready:false },
-      { id:"fg-11", t:"Gli oggetti: indirizzi, servizi, pianificazioni", s:"Le convenzioni di nome che rendono una configurazione manutenibile, e la regola sugli oggetti condivisi.", m:26, ready:false },
-      { id:"fg-12", t:"Le policy: coppia di interfacce e deny implicito", s:"Il principio che genera più ticket di tutti, e il più controintuitivo per chi non ha formazione di rete.", m:32, ready:false },
-      { id:"fg-13", t:"NAT: SNAT, DNAT e i VIP", s:"Mascherare in uscita, pubblicare in ingresso, e la coerenza fra VIP e oggetto servizio.", m:30, ready:false },
-      { id:"fg-14", t:"Routing: statiche, distanza, priorità, multi-WAN", s:"Come si decide da dove esce un pacchetto, e come si legge una tabella di routing senza fare ipotesi.", m:28, ready:false }
+      { id:"fg-10", t:"Interfacce, zone e VLAN", s:"Come FortiOS vede la rete, e perché una zona che non contiene un tunnel è la trappola più silenziosa.", m:28, ready:true },
+      { id:"fg-11", t:"Gli oggetti: indirizzi, servizi, pianificazioni", s:"Le convenzioni di nome che rendono una configurazione manutenibile, e la regola sugli oggetti condivisi.", m:26, ready:true },
+      { id:"fg-12", t:"Le policy: coppia di interfacce e deny implicito", s:"Il principio che genera più ticket di tutti, e il più controintuitivo per chi non ha formazione di rete.", m:32, ready:true },
+      { id:"fg-13", t:"NAT: SNAT, DNAT e i VIP", s:"Mascherare in uscita, pubblicare in ingresso, e la coerenza fra VIP e oggetto servizio.", m:30, ready:true },
+      { id:"fg-14", t:"Routing: statiche, distanza, priorità, multi-WAN", s:"Come si decide da dove esce un pacchetto, e come si legge una tabella di routing senza fare ipotesi.", m:28, ready:true }
     ]},
     { title: "Pubblicare servizi", lessons: [
       { id:"fg-15", t:"VIP e port forward fatti bene", s:"La procedura completa, con le sole porte necessarie e il collaudo che dimostra che funziona.", m:28, ready:false },

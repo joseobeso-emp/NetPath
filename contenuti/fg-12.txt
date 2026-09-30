@@ -1,0 +1,275 @@
+#id: fg-12
+#title: Le policy: coppia di interfacce e deny implicito
+#min: 32
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Costruire
+#desc: Il principio che genera più ticket di tutti, e il più controintuitivo per chi non ha formazione di rete.
+#obj: Scrivere una regola completa e sapere cosa fa ogni campo
+#obj: Capire l'ordine di valutazione e riconoscere una regola oscurata
+#obj: Sapere cosa succede al traffico che non corrisponde a nessuna regola
+#obj: Costruire regole che fra due anni si possano ancora capire e manutenere
+---
+<p class="lead">La policy è il cuore di FortiOS: tutto ciò che hai costruito finora — interfacce,
+oggetti, servizi — esiste per finire dentro una regola. Qui vediamo com'è fatta, in che ordine viene
+valutata, e le due cose che rendono il comportamento sorprendente per chi arriva da altri mondi.</p>
+
+<h2>Anatomia di una regola</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Tutti i campi che contano, in una regola sola</div>
+<pre><span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>                                <span class="c"># 0 = creane una nuova</span>
+        <span class="p">set name</span> <span class="s">"uffici -> gestionale"</span>
+        <span class="p">set srcintf</span> <span class="s">"vlan10-uffici"</span>          <span class="c"># ── da dove ENTRA</span>
+        <span class="p">set dstintf</span> <span class="s">"vlan30-server"</span>          <span class="c"># ── da dove ESCE</span>
+        <span class="p">set srcaddr</span> <span class="s">"rete-uffici"</span>
+        <span class="p">set dstaddr</span> <span class="s">"srv-gestionale"</span>
+        <span class="p">set service</span> <span class="s">"gestionale-web"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>                  <span class="c"># ── NON e automatico</span>
+        <span class="p">set comments</span> <span class="s">"accesso al gestionale — ticket 1234"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Campo</th><th>Cosa decide</th><th>Se sbagliato</th></tr></thead>
+    <tbody>
+      <tr><td><code>srcintf</code> · <code>dstintf</code></td><td><b>Il percorso autorizzato</b></td>
+          <td><b>La regola non corrisponde mai.</b> È l'errore numero uno</td></tr>
+      <tr><td><code>srcaddr</code> · <code>dstaddr</code></td><td>Chi, verso cosa</td><td>Nessuna corrispondenza</td></tr>
+      <tr><td><code>service</code></td><td>Quali porte</td><td>Alcune funzioni vanno, altre no (anello 4)</td></tr>
+      <tr><td><code>schedule</code></td><td>Quando</td><td>Funziona a certe ore e non ad altre</td></tr>
+      <tr><td><code>action</code></td><td>Permetti o rifiuta</td><td>—</td></tr>
+      <tr><td><code>nat</code></td><td>Se tradurre la sorgente</td><td>Il traffico parte con un indirizzo che la destinazione non accetta</td></tr>
+      <tr><td><code>logtraffic</code></td><td>Se registrare</td><td><b>Nessuna traccia: diagnosi impossibile a posteriori</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il principio che genera più ticket di tutti</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una regola autorizza una tratta, non una destinazione
+  </div>
+  <p>Lo hai già incontrato nella lezione 8, e qui lo mettiamo in pratica. <code>rete-interna →
+  server</code> e <code>vpn-utenti → server</code> <b>sono due regole diverse</b>, anche se la
+  destinazione, gli indirizzi e il servizio sono identici.</p>
+  <p style="margin-bottom:0">Ogni volta che qualcuno ti dice «ma la regola c'è», la domanda da fare è
+  una sola: <b>«c'è per quella coppia di interfacce?»</b> Nove volte su dieci la risposta è no, e il
+  ticket si chiude in due minuti.</p>
+</div>
+
+<h2>L'ordine, e le regole che nessuno raggiunge</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 230" role="img" aria-label="Valutazione delle policy dall'alto verso il basso e regola oscurata">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Vince la prima che corrisponde</text>
+    <g stroke-width="1.5">
+      <rect x="90" y="40" width="520" height="34" rx="6" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="90" y="82" width="520" height="34" rx="6" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2.2"/>
+      <rect x="90" y="124" width="520" height="34" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-dasharray="5 4"/>
+      <rect x="90" y="170" width="520" height="34" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="2"/>
+    </g>
+    <g class="dg-mono-sm">
+      <text x="106" y="62">#1   uffici → server   porta 8080     accept</text>
+      <text x="106" y="104">#2   uffici → server   TUTTO          accept  ← larga</text>
+      <text x="106" y="146">#3   uffici → server   porta 3389     deny    ← mai raggiunta</text>
+      <text x="106" y="192">     rifiuto implicito — invisibile, sempre in fondo</text>
+    </g>
+    <text x="350" y="222" text-anchor="middle" class="dg-label-sm">La #3 non verrà mai valutata: la #2 corrisponde prima e la decisione è già presa.</text>
+  </svg>
+  </div>
+  <figcaption>Si chiama <b>oscuramento</b>. La regola esiste, sembra corretta, e non ha alcun
+  effetto — e il contatore dei colpi fermo a zero è l'unico indizio.</figcaption>
+</figure>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Come si scopre un oscuramento, senza leggere cento regole
+  </div>
+  <div class="code" style="margin:0 0 10px">
+<pre><span class="c">── quale regola deciderebbe questo flusso? ─────────</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="n">10.10.10.25 54000</span> <span class="p">\</span>
+<span class="n">    10.10.30.50 3389 6</span> <span class="s">vlan10-uffici</span>
+
+<span class="c">   se restituisce 2 invece di 3, hai trovato</span>
+<span class="c">   l'oscuramento senza generare un solo pacchetto</span>
+
+<span class="c">── e le regole mai usate, tutte insieme ────────────</span>
+<span class="p">diagnose firewall iprope show</span> <span class="n">100004 &lt;id&gt;</span>
+<span class="c">   hit count a zero = o e inutile, o e oscurata,</span>
+<span class="c">   o quel traffico non passa da qui</span>
+</pre>
+  </div>
+  <p style="margin-bottom:0"><b>La regola si sposta</b>, non si riscrive: nella finestra grafica si
+  trascina, da riga di comando si usa il comando di spostamento indicando prima o dopo quale
+  identificativo.</p>
+</div>
+
+<h2>Il rifiuto implicito</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    In fondo c'è sempre una regola che non vedi
+  </div>
+  <p>Ciò che non è espressamente permesso è <b>negato</b>. Quella decisione non compare nell'elenco,
+  ma nei log ha una firma inconfondibile: <b>identificativo della regola uguale a zero</b>.</p>
+  <p style="margin-bottom:0">Quando vedi <code>policyid=0</code> con azione di rifiuto, non stai
+  cercando una regola sbagliata: <b>stai cercando una regola che non esiste</b>. È una distinzione che
+  cambia completamente dove guardi — e nove volte su dieci il motivo è la coppia di interfacce.</p>
+</div>
+
+<h2>La registrazione non è automatica</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una regola senza registrazione è traffico invisibile
+  </div>
+  <p>Se <code>logtraffic</code> non è impostato su <em>tutte le sessioni</em>, quel traffico passa
+  <b>senza lasciare alcuna traccia</b>. Il giorno in cui qualcuno chiederà cosa è successo martedì
+  scorso su quella rete, la risposta sarà: non lo sappiamo.</p>
+  <p style="margin-bottom:0">È un rilievo che troverai spesso — intere serie di regole fra reti
+  interne senza registrazione, quindi <b>nessuna visibilità sul traffico fra le VLAN</b>. Su ogni
+  regola che scrivi tu, accendila. Sulle regole esistenti di un cliente, accenderla è una modifica a
+  rischio zero e beneficio immediato: proponila.</p>
+</div>
+
+<h2>La regola scritta bene</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Sei criteri, e valgono su qualsiasi firewall
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>La più stretta possibile:</b> sorgente precisa, destinazione precisa, <b>solo le porte che
+    servono</b>. «Tutto» si scrive in un secondo e si paga per anni.</li>
+    <li><b>Un nome che dice a cosa serve</b>, non cosa fa tecnicamente.</li>
+    <li><b>Un commento con il perché e il riferimento</b> al ticket o alla data.</li>
+    <li><b>Registrazione accesa.</b> Sempre, e almeno durante le prove.</li>
+    <li><b>Nella posizione giusta:</b> le regole specifiche <em>sopra</em> quelle generali.</li>
+    <li><b>Verificata con i contatori</b>, non con «dovrebbe funzionare».</li>
+  </ol>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Crea un oscuramento di proposito, e poi trovalo
+  </div>
+  <p>È l'esercizio che ti fa capire l'ordine meglio di qualsiasi spiegazione: prima lo costruisci,
+  poi lo diagnostichi come faresti su un apparato altrui.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Costruisci</div>
+<pre><span class="c"># 1. una regola larga</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"uffici - tutto"</span>
+        <span class="p">set srcintf</span> <span class="s">"vlan10-uffici"</span>
+        <span class="p">set dstintf</span> <span class="s">"vlan20-ospiti"</span>
+        <span class="p">set srcaddr</span> <span class="s">"all"</span>
+        <span class="p">set dstaddr</span> <span class="s">"all"</span>
+        <span class="p">set service</span> <span class="s">"ALL"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+    <span class="p">next</span>
+
+<span class="c"># 2. e SOTTO, una regola che vorrebbe bloccare qualcosa</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"blocca desktop remoto"</span>
+        <span class="p">set srcintf</span> <span class="s">"vlan10-uffici"</span>
+        <span class="p">set dstintf</span> <span class="s">"vlan20-ospiti"</span>
+        <span class="p">set srcaddr</span> <span class="s">"all"</span>
+        <span class="p">set dstaddr</span> <span class="s">"all"</span>
+        <span class="p">set service</span> <span class="s">"RDP"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">deny</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+  </div>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Diagnostica</div>
+<pre><span class="c"># quale regola decide davvero per il desktop remoto?</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="n">10.10.10.25 54000</span> <span class="p">\</span>
+<span class="n">    10.10.20.50 3389 6</span> <span class="s">vlan10-uffici</span>
+
+<span class="c"># restituisce la regola LARGA, non quella di blocco.</span>
+<span class="c"># La regola di blocco esiste, sembra giusta,</span>
+<span class="c"># e non serve a niente.</span>
+
+<span class="c"># conferma con i contatori</span>
+<span class="p">diagnose firewall iprope show</span> <span class="n">100004 &lt;id-della-regola-deny&gt;</span>
+<span class="c">   hit count: 0</span>
+
+<span class="c"># ora spostala sopra e ripeti il lookup</span>
+</pre>
+  </div>
+  <p style="margin-top:14px;margin-bottom:0"><b>Quando finisci, cancella entrambe le regole.</b> Una
+  regola che permette tutto fra due reti, lasciata lì dopo un esercizio, è esattamente il tipo di
+  debito che nella lezione 4 imparavi a cercare sugli apparati altrui.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: le policy",
+  "questions": [
+    { "q": "«Ma la regola c'è!» Qual è la domanda da fare?",
+      "a": [ {"t":"«C'è per quella coppia di interfacce?»","ok":true},
+             {"t":"«È stata salvata correttamente?»","ok":false},
+             {"t":"«L'oggetto servizio è giusto?»","ok":false},
+             {"t":"«La registrazione è attiva?»","ok":false} ],
+      "e": "Una regola autorizza una tratta, non una destinazione: stessa destinazione, stessi indirizzi, stesso servizio, ma interfaccia di ingresso diversa significa regola diversa. Nove volte su dieci la risposta è no, e il ticket si chiude in due minuti." },
+
+    { "q": "Una regola di blocco esiste, sembra corretta, e non ha effetto. Cosa controlli?",
+      "a": [ {"t":"Se una regola più larga sopra di lei corrisponde prima","ok":true},
+             {"t":"Se l'oggetto servizio è stato salvato","ok":false},
+             {"t":"Se serve riavviare l'apparato","ok":false},
+             {"t":"Se la licenza è attiva","ok":false} ],
+      "e": "Si chiama oscuramento: vince la prima regola che corrisponde, e quella sotto non viene mai valutata. Il contatore dei colpi fermo a zero è l'indizio, e <code>iprope lookup</code> lo dimostra senza generare un solo pacchetto." },
+
+    { "q": "Nei log vedi un rifiuto con identificativo di regola uguale a zero. Cosa significa?",
+      "a": [ {"t":"Ha deciso il rifiuto implicito: nessuna regola corrispondeva","ok":true},
+             {"t":"La regola numero zero ha bloccato","ok":false},
+             {"t":"Il pacchetto era malformato","ok":false},
+             {"t":"Ha bloccato un motore di ispezione","ok":false} ],
+      "e": "Non stai cercando una regola sbagliata: stai cercando una regola che non esiste. È una distinzione che cambia completamente dove guardi — e nove volte su dieci il motivo è la coppia di interfacce." },
+
+    { "q": "Perché una regola senza registrazione attiva è un problema?",
+      "a": [ {"t":"Quel traffico passa senza lasciare traccia: nessuna diagnosi a posteriori","ok":true},
+             {"t":"Rallenta l'elaborazione del firewall","ok":false},
+             {"t":"Non viene applicata correttamente","ok":false},
+             {"t":"Impedisce l'ispezione dei contenuti","ok":false} ],
+      "e": "La registrazione non è automatica. Quando qualcuno chiederà cosa è successo martedì scorso, la risposta sarà «non lo sappiamo». Accenderla su regole esistenti è una modifica a rischio zero e beneficio immediato: si propone al cliente." },
+
+    { "q": "Dove vanno collocate le regole specifiche rispetto a quelle generali?",
+      "a": [ {"t":"Sopra: altrimenti la generale corrisponde prima e la specifica non viene raggiunta","ok":true},
+             {"t":"Sotto, così la generale filtra il grosso del traffico","ok":false},
+             {"t":"L'ordine non conta, vince la più restrittiva","ok":false},
+             {"t":"Dipende dall'interfaccia di ingresso","ok":false} ],
+      "e": "La valutazione è dall'alto verso il basso e si ferma alla prima corrispondenza: non esiste alcuna preferenza per la regola più restrittiva. Una regola specifica sotto una generale è, di fatto, una regola che non esiste." },
+
+    { "q": "Cosa NON va lasciato dietro dopo un esercizio o una prova?",
+      "a": [ {"t":"Una regola che permette tutto fra due reti","ok":true},
+             {"t":"Un oggetto indirizzo inutilizzato","ok":false},
+             {"t":"Un commento con la data","ok":false},
+             {"t":"La registrazione attiva","ok":false} ],
+      "e": "È esattamente il tipo di debito che si impara a cercare sugli apparati altrui: una regola aperta creata per una prova, dimenticata, e di cui fra sei mesi nessuno ricorda il motivo. Gli oggetti inutilizzati sono disordine, una regola aperta è un rischio." }
+  ]
+}
+</script>

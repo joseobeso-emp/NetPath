@@ -1,0 +1,256 @@
+#id: fg-10
+#title: Interfacce, zone e VLAN
+#min: 28
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Costruire
+#desc: Come FortiOS vede la rete, e perché una zona che non contiene un tunnel è la trappola più silenziosa.
+#obj: Riconoscere tutti i tipi di interfaccia di FortiOS e sapere a cosa servono
+#obj: Configurare una sottointerfaccia VLAN e capire cosa comporta
+#obj: Governare quali servizi di amministrazione sono raggiungibili su ogni interfaccia
+#obj: Usare le zone conoscendone il rischio
+---
+<p class="lead">Su FortiOS <strong>tutto è un'interfaccia</strong>. Porte fisiche, VLAN, aggregazioni,
+tunnel VPN, l'accesso remoto degli utenti: per il firewall sono tutti oggetti dello stesso tipo. È il
+punto che, una volta capito, rende ovvie le policy — perché una regola non è altro che «da questa
+interfaccia a quest'altra».</p>
+
+<h2>I tipi che incontrerai</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Cos'è</th><th>Dove lo trovi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Fisica</b></td><td>Una porta vera sull'apparato</td><td>Ovunque</td></tr>
+      <tr><td><b>Sottointerfaccia VLAN</b></td><td>Una rete logica su una porta fisica, distinta da un numero</td>
+          <td>Ogni volta che il firewall instrada fra VLAN</td></tr>
+      <tr><td><b>Aggregazione</b></td><td>Più porte fisiche che lavorano come una sola</td><td>Verso gli switch, per banda o ridondanza</td></tr>
+      <tr><td><b>Switch software</b></td><td>Più porte fisiche unite in un unico segmento dal firewall</td>
+          <td>Sui modelli piccoli, per usare le porte come uno switch</td></tr>
+      <tr><td><b>Tunnel IPsec</b></td><td><b>Un'interfaccia a tutti gli effetti</b>, con un nome</td>
+          <td>Ogni VPN fra sedi. <b>Si usa nelle regole come una porta</b></td></tr>
+      <tr><td><b>Accesso remoto utenti</b></td><td>L'interfaccia virtuale da cui «entrano» i client VPN</td>
+          <td><b>È una sorgente distinta da tutte le altre</b> — ricorda la lezione 8</td></tr>
+      <tr><td><b>Loopback</b></td><td>Un'interfaccia che esiste solo nel software e non cade mai</td>
+          <td>Come sorgente stabile per servizi e monitoraggi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Il tunnel è un'interfaccia: è questo che sblocca la comprensione
+  </div>
+  <p>Finché pensi al tunnel come a «una VPN», le regole restano misteriose. Nel momento in cui lo
+  pensi come <b>una porta in più sull'apparato</b>, tutto si ordina: puoi metterlo in una regola,
+  dargli una rotta, inserirlo in una zona, esattamente come faresti con una porta Ethernet.</p>
+  <p style="margin-bottom:0">E la domanda «perché il traffico non passa nel tunnel?» diventa la stessa
+  domanda che faresti per qualsiasi altra porta: <b>esiste una regola per quella coppia?</b></p>
+</div>
+
+<h2>Il ruolo, e perché la finestra grafica cambia</h2>
+
+<p>A ogni interfaccia si assegna un <strong>ruolo</strong> — interna, esterna, zona demilitarizzata,
+non definito. Non cambia il comportamento del traffico: <strong>cambia quali campi ti mostra la
+finestra grafica</strong>.</p>
+
+<p>È una comodità che confonde chi non lo sa: un'interfaccia marcata come interna non mostra le
+opzioni tipiche di una connessione verso l'operatore, e sembra che l'apparato «non le supporti».
+Se cerchi un campo e non c'è, <strong>controlla il ruolo</strong> prima di concludere altro.</p>
+
+<h2>La riga più importante di ogni interfaccia</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    <code>allowaccess</code> decide chi può parlare con il firewall
+  </div>
+  <p>Su ogni interfaccia si dichiara <b>quali servizi di amministrazione rispondono</b> lì sopra:
+  la finestra grafica, l'accesso a riga di comando, il ping, i protocolli di monitoraggio.</p>
+  <div class="code" style="margin:12px 0">
+<pre><span class="p">config system interface</span>
+    <span class="p">edit</span> <span class="s">"internal"</span>
+        <span class="p">set allowaccess</span> <span class="s">ping https ssh</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── e sull'interfaccia verso l'operatore: ───────────</span>
+<span class="c">   il meno possibile. Idealmente niente, o solo ping</span>
+</pre>
+  </div>
+  <p style="margin-bottom:0"><b>Lasciare l'amministrazione raggiungibile dall'interfaccia esterna è
+  uno dei rilievi più gravi che puoi trovare su un apparato.</b> Significa che la pagina di accesso
+  del firewall è esposta a Internet, e ogni vulnerabilità nota di quella versione diventa
+  immediatamente sfruttabile. Su ogni apparato che prendi in carico, <b>questa è una delle prime
+  righe da guardare</b>.</p>
+</div>
+
+<h2>Le sottointerfacce VLAN</h2>
+
+<p>Si crea una sottointerfaccia <strong>sopra una porta fisica</strong>, indicando il numero della
+VLAN. Da quel momento è un'interfaccia come le altre: ha un indirizzo, può distribuire indirizzi,
+compare nelle regole.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Una VLAN dal principio</div>
+<pre><span class="p">config system interface</span>
+    <span class="p">edit</span> <span class="s">"vlan20-ospiti"</span>
+        <span class="p">set vdom</span> <span class="s">"root"</span>
+        <span class="p">set interface</span> <span class="s">"internal"</span>      <span class="c"># la porta fisica sottostante</span>
+        <span class="p">set vlanid</span> <span class="n">20</span>
+        <span class="p">set mode</span> <span class="s">static</span>
+        <span class="p">set ip</span> <span class="n">10.10.20.1 255.255.255.0</span>
+        <span class="p">set allowaccess</span> <span class="s">ping</span>          <span class="c"># sugli ospiti, niente amministrazione</span>
+        <span class="p">set role</span> <span class="s">lan</span>
+        <span class="p">set description</span> <span class="s">"rete ospiti — ticket 1234"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Perché creare la VLAN non basta
+  </div>
+  <p>Creata la sottointerfaccia, il firewall sa gestire quella VLAN. <b>Ma lo switch a valle deve
+  mandargliela etichettata</b>, sul collegamento fra i due — il trunk.</p>
+  <p style="margin-bottom:0">Se il firewall ha la VLAN 20 e lo switch non la manda etichettata su quel
+  cavo, non arriva niente e sembra un problema del firewall. È il punto in cui i due mondi si toccano,
+  ed è esattamente quello che costruirai a mano nel modulo Switching, lezione 7.</p>
+</div>
+
+<h2>Le zone: comode, e con una trappola</h2>
+
+<p>Una zona raggruppa più interfacce per scrivere una regola sola. Con sei tunnel verso sei filiali,
+una regola su una zona sostituisce sei regole identiche.</p>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il settimo tunnel che nessuno ha messo nella zona
+  </div>
+  <p>La trappola è quella della lezione 8, e vale la pena ripeterla perché è silenziosissima: <b>una
+  regola costruita su una zona copre solo ciò che è dentro quella zona</b>. Un tunnel aggiunto due
+  anni dopo, da un'altra persona, per un altro progetto, non ci è mai entrato.</p>
+  <p>A colpo d'occhio la configurazione sembra già pronta. Non lo è, e non c'è nessun messaggio che
+  te lo dica.</p>
+  <p style="margin-bottom:0"><b>Due accorgimenti:</b> quando crei un tunnel nuovo, <b>chiediti subito
+  se va in una zona esistente</b>; e quando diagnostichi, <b>apri la zona e leggi i membri</b> invece
+  di fidarti del nome.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un'interfaccia dentro una zona non si usa più da sola
+  </div>
+  <p>Una volta che un'interfaccia entra in una zona, <b>le regole si scrivono sulla zona</b>, non più
+  sulla singola interfaccia. Se avevi regole che la citavano direttamente, vanno riviste.</p>
+  <p style="margin-bottom:0">Per questo le zone si progettano <b>all'inizio</b>: aggiungerle a
+  configurazione avviata comporta di ritoccare tutto ciò che già esisteva, ed è il genere di lavoro in
+  cui si rompe qualcosa.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Costruisci due VLAN sul 60D
+  </div>
+  <p>Apparato isolato, configurazione salvata prima di iniziare.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Prima: guarda cosa c'è</div>
+<pre><span class="p">show system interface</span>
+<span class="p">get system interface physical</span>
+<span class="p">show system zone</span>
+
+<span class="c">── e la riga che conta di piu, per ogni interfaccia ─</span>
+<span class="p">show full-configuration system interface | grep -A2 allowaccess</span>
+</pre>
+  </div>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Poi: due VLAN e una zona</div>
+<pre><span class="p">config system interface</span>
+    <span class="p">edit</span> <span class="s">"vlan10-uffici"</span>
+        <span class="p">set interface</span> <span class="s">"internal"</span>
+        <span class="p">set vlanid</span> <span class="n">10</span>
+        <span class="p">set ip</span> <span class="n">10.10.10.1 255.255.255.0</span>
+        <span class="p">set allowaccess</span> <span class="s">ping https ssh</span>
+        <span class="p">set role</span> <span class="s">lan</span>
+    <span class="p">next</span>
+    <span class="p">edit</span> <span class="s">"vlan20-ospiti"</span>
+        <span class="p">set interface</span> <span class="s">"internal"</span>
+        <span class="p">set vlanid</span> <span class="n">20</span>
+        <span class="p">set ip</span> <span class="n">10.10.20.1 255.255.255.0</span>
+        <span class="p">set allowaccess</span> <span class="s">ping</span>
+        <span class="p">set role</span> <span class="s">lan</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── raggruppale, e osserva cosa cambia ──────────────</span>
+<span class="p">config system zone</span>
+    <span class="p">edit</span> <span class="s">"reti-interne"</span>
+        <span class="p">set interface</span> <span class="s">"vlan10-uffici" "vlan20-ospiti"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>Ora la verifica che insegna qualcosa.</b> Prova a creare una regola
+  che usi <code>vlan10-uffici</code> come interfaccia di partenza.</p>
+  <p style="margin-bottom:0"><b>Non te lo lascerà fare:</b> quell'interfaccia adesso appartiene a una
+  zona, e le regole si scrivono sulla zona. È la conseguenza pratica del riquadro qui sopra — molto
+  più chiara vista che letta. Poi rimuovi la zona e nota che le interfacce tornano utilizzabili da
+  sole.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: interfacce, zone e VLAN",
+  "questions": [
+    { "q": "Come vede FortiOS un tunnel IPsec?",
+      "a": [ {"t":"Come un'interfaccia a tutti gli effetti, usabile nelle regole come una porta","ok":true},
+             {"t":"Come un oggetto separato, gestito solo dal menu VPN","ok":false},
+             {"t":"Come una rotta statica particolare","ok":false},
+             {"t":"Come un profilo di sicurezza","ok":false} ],
+      "e": "È il punto che sblocca la comprensione: pensando al tunnel come a una porta in più, puoi metterlo in una regola, dargli una rotta, inserirlo in una zona. E «perché il traffico non passa nel tunnel?» diventa la solita domanda: esiste una regola per quella coppia di interfacce?" },
+
+    { "q": "Cosa controlla <code>allowaccess</code> su un'interfaccia?",
+      "a": [ {"t":"Quali servizi di amministrazione del firewall rispondono su quell'interfaccia","ok":true},
+             {"t":"Quali reti possono attraversare l'interfaccia","ok":false},
+             {"t":"Quali utenti possono autenticarsi","ok":false},
+             {"t":"La velocità di negoziazione","ok":false} ],
+      "e": "Non riguarda il traffico che attraversa il firewall — quello lo governano le policy — ma il traffico diretto <em>al firewall stesso</em>. Lasciare l'amministrazione raggiungibile dall'interfaccia verso Internet è uno dei rilievi più gravi che si possano trovare: espone la pagina di accesso al mondo." },
+
+    { "q": "Hai creato la sottointerfaccia VLAN 20 sul firewall e non arriva traffico. Cosa manca probabilmente?",
+      "a": [ {"t":"Lo switch a valle non manda quella VLAN etichettata sul collegamento","ok":true},
+             {"t":"Manca l'indirizzo IP sull'interfaccia","ok":false},
+             {"t":"La VLAN va abilitata anche a livello globale","ok":false},
+             {"t":"Serve riavviare il firewall","ok":false} ],
+      "e": "Creare la sottointerfaccia dice al firewall come gestire quella VLAN, ma i frame devono arrivargli etichettati dallo switch sul trunk. Se lo switch non la manda, non arriva niente e sembra un problema del firewall: è il punto in cui i due mondi si toccano." },
+
+    { "q": "Perché una regola costruita su una zona può non coprire un tunnel?",
+      "a": [ {"t":"Perché quel tunnel non è mai stato inserito fra i membri della zona","ok":true},
+             {"t":"Perché le zone non supportano i tunnel","ok":false},
+             {"t":"Perché il tunnel era disattivato quando la zona è stata creata","ok":false},
+             {"t":"Perché le zone valgono solo per il traffico in uscita","ok":false} ],
+      "e": "Un tunnel aggiunto anni dopo, da un'altra persona, per un altro progetto, non entra automaticamente in una zona esistente. La configurazione sembra pronta e non c'è nessun messaggio che avverta: la verifica è aprire la zona e leggere i membri." },
+
+    { "q": "Cosa cambia il «ruolo» assegnato a un'interfaccia?",
+      "a": [ {"t":"Quali campi mostra la finestra grafica, non il comportamento del traffico","ok":true},
+             {"t":"La priorità dell'interfaccia nel routing","ok":false},
+             {"t":"Quali policy possono usarla","ok":false},
+             {"t":"Il livello di ispezione applicato","ok":false} ],
+      "e": "È una comodità di presentazione che confonde chi non lo sa: un'interfaccia marcata come interna non mostra le opzioni tipiche di una connessione verso l'operatore, e sembra che l'apparato non le supporti. Se cerchi un campo e non c'è, controlla il ruolo." },
+
+    { "q": "Perché le zone vanno progettate all'inizio e non aggiunte dopo?",
+      "a": [ {"t":"Le interfacce che entrano in una zona non si usano più da sole nelle regole: tutto ciò che le citava va rivisto","ok":true},
+             {"t":"Perché una zona creata dopo non può contenere VLAN","ok":false},
+             {"t":"Perché richiedono un riavvio","ok":false},
+             {"t":"Perché il numero di zone è limitato","ok":false} ],
+      "e": "Da quel momento le regole si scrivono sulla zona, quindi ogni regola che nominava direttamente quelle interfacce va riscritta. È esattamente il genere di lavoro su configurazione avviata in cui si rompe qualcosa senza accorgersene." }
+  ]
+}
+</script>
