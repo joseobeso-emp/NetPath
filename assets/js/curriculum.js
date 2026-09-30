@@ -289,9 +289,9 @@ window.NETPATH_CURRICULUM = [
       { id:"fg-14", t:"Routing: statiche, distanza, priorità, multi-WAN", s:"Come si decide da dove esce un pacchetto, e come si legge una tabella di routing senza fare ipotesi.", m:28, ready:true }
     ]},
     { title: "Pubblicare servizi", lessons: [
-      { id:"fg-15", t:"VIP e port forward fatti bene", s:"La procedura completa, con le sole porte necessarie e il collaudo che dimostra che funziona.", m:28, ready:false },
-      { id:"fg-16", t:"Gli errori di pubblicazione che pagano tutti", s:"Porta del VIP che non combacia col servizio, due VIP sullo stesso indirizzo, regole che nessuno raggiunge.", m:26, ready:false },
-      { id:"fg-17", t:"Restrizioni per sorgente e geolocalizzazione", s:"Chiudere per paese o per indirizzo, e perché il test fatto dalla tua sede non dimostra niente.", m:26, ready:false }
+      { id:"fg-15", t:"VIP e port forward fatti bene", s:"La procedura completa, con le sole porte necessarie e il collaudo che dimostra che funziona.", m:28, ready:true },
+      { id:"fg-16", t:"Gli errori di pubblicazione che pagano tutti", s:"Porta del VIP che non combacia col servizio, due VIP sullo stesso indirizzo, regole che nessuno raggiunge.", m:26, ready:true },
+      { id:"fg-17", t:"Restrizioni per sorgente e geolocalizzazione", s:"Chiudere per paese o per indirizzo, e perché il test fatto dalla tua sede non dimostra niente.", m:26, ready:true }
     ]},
     { title: "VPN", lessons: [
       { id:"fg-18", t:"SSL-VPN: impostazioni, portale, pool, policy", s:"L'accesso remoto degli utenti, e il pezzo che tutti dimenticano: entrare nella VPN non significa arrivare da qualche parte.", m:32, ready:false },

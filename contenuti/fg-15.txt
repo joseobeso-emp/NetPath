@@ -1,0 +1,286 @@
+#id: fg-15
+#title: VIP e port forward fatti bene
+#min: 28
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Pubblicare servizi
+#desc: La procedura completa, con le sole porte necessarie e il collaudo che dimostra che funziona.
+#obj: Seguire una procedura di pubblicazione ripetibile, dal requisito al collaudo
+#obj: Sapere quali porte scoprire prima e come, invece di indovinarle
+#obj: Riconoscere ciò che non va mai pubblicato su Internet
+#obj: Collaudare dall'esterno e documentare quello che hai esposto
+---
+<p class="lead">Pubblicare un servizio è l'operazione più delicata che farai su un firewall: stai
+<strong>aprendo una porta sul mondo</strong>. Non è difficile — è che va fatta con una procedura, e non
+a colpi di «proviamo se così funziona», perché ogni tentativo lasciato lì diventa un'esposizione
+permanente che nessuno ricorderà.</p>
+
+<h2>Prima riga: cosa non si pubblica mai</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'elenco corto, e non negoziabile
+  </div>
+  <ul>
+    <li><b>Desktop remoto</b> direttamente su Internet. È il vettore d'ingresso più sfruttato che
+    esista. Si raggiunge <b>attraverso una VPN</b>, mai pubblicandolo</li>
+    <li><b>Condivisioni di file</b> e i protocolli di rete Windows</li>
+    <li><b>Basi di dati</b> — nessun motore va esposto direttamente</li>
+    <li><b>Interfacce di amministrazione</b> di qualsiasi apparato, firewall compreso</li>
+    <li><b>Protocolli in chiaro</b> dove esiste l'equivalente cifrato</li>
+  </ul>
+  <p style="margin-bottom:0">Quando un cliente o un fornitore chiede una di queste, la risposta non è
+  no e basta: è <b>«questo si raggiunge in VPN, te la configuro»</b>. Offrire l'alternativa nella
+  stessa frase è ciò che trasforma un rifiuto in una soluzione.</p>
+</div>
+
+<h2>La procedura, in otto passi</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Dalla richiesta al collaudo
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Scopri le porte reali</b> — non indovinarle. Vedi il riquadro sotto</li>
+    <li><b>Verifica che il server sia pronto</b>: in ascolto, aggiornato, con un certificato valido se
+    serve</li>
+    <li><b>Crea gli oggetti</b>: indirizzo del server, oggetto servizio con le sole porte necessarie</li>
+    <li><b>Crea il VIP</b>, con traduzione di porta se vuoi limitare già lì</li>
+    <li><b>Crea la policy</b>: dall'interfaccia esterna verso l'interna, con il VIP come
+    <b>destinazione</b>, il servizio stretto, <b>registrazione accesa</b></li>
+    <li><b>Restringi la sorgente</b> se possibile — vedi la lezione 17</li>
+    <li><b>Aggancia l'ispezione</b> adeguata al tipo di servizio</li>
+    <li><b>Collauda dall'esterno</b> e <b>documenta</b></li>
+  </ol>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Passo 1: le porte si scoprono, non si indovinano
+  </div>
+  <p>«Apri tutte le porte verso quel server» è una richiesta che riceverai spesso, e non va eseguita.
+  Ma nemmeno rifiutata e basta: va <b>trasformata</b>.</p>
+  <p><b>Tre modi per scoprire le porte vere</b>, in ordine di affidabilità:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Chiedile al fornitore dell'applicativo</b> per iscritto. Spesso la richiesta si
+    ridimensiona da sola nel momento in cui qualcuno deve metterla nero su bianco</li>
+    <li><b>Osservale nei log</b>: lascia una regola permissiva <em>ma con registrazione attiva</em>
+    per qualche giorno, poi leggi quali porte sono state davvero usate e restringi su quelle</li>
+    <li><b>Guarda cosa è in ascolto sul server</b>, se ci hai accesso</li>
+  </ul>
+</div>
+
+<h2>La pubblicazione completa</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Tutti i pezzi, nell'ordine</div>
+<pre><span class="c">═══ 1 · L'indirizzo del server ═════════════════════</span>
+<span class="p">config firewall address</span>
+    <span class="p">edit</span> <span class="s">"srv-portale"</span>
+        <span class="p">set subnet</span> <span class="n">10.10.30.50 255.255.255.255</span>
+        <span class="p">set comment</span> <span class="s">"portale clienti — ticket 1234"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">═══ 2 · Le SOLE porte che servono ══════════════════</span>
+<span class="p">config firewall service custom</span>
+    <span class="p">edit</span> <span class="s">"portale-clienti"</span>
+        <span class="p">set tcp-portrange</span> <span class="n">443</span>
+        <span class="p">set comment</span> <span class="s">"solo HTTPS — confermato dal fornitore 30/09"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">═══ 3 · La traduzione ══════════════════════════════</span>
+<span class="p">config firewall vip</span>
+    <span class="p">edit</span> <span class="s">"pub-portale"</span>
+        <span class="p">set extip</span> <span class="n">203.0.113.10</span>
+        <span class="p">set mappedip</span> <span class="n">10.10.30.50</span>
+        <span class="p">set extintf</span> <span class="s">"wan1"</span>
+        <span class="p">set portforward enable</span>
+        <span class="p">set protocol</span> <span class="s">tcp</span>
+        <span class="p">set extport</span> <span class="n">443</span>
+        <span class="p">set mappedport</span> <span class="n">443</span>
+        <span class="p">set comment</span> <span class="s">"portale clienti — ticket 1234"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">═══ 4 · La regola che mette tutto insieme ══════════</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"pubblicazione portale clienti"</span>
+        <span class="p">set srcintf</span> <span class="s">"wan1"</span>
+        <span class="p">set dstintf</span> <span class="s">"vlan30-server"</span>
+        <span class="p">set srcaddr</span> <span class="s">"all"</span>
+        <span class="p">set dstaddr</span> <span class="s">"pub-portale"</span>
+        <span class="p">set service</span> <span class="s">"portale-clienti"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+        <span class="p">set comments</span> <span class="s">"ticket 1234 — rivedere entro 09/2027"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La doppia stretta: VIP e servizio
+  </div>
+  <p>Nota che la porta è limitata <b>due volte</b>: nel VIP con la traduzione, e nella policy con
+  l'oggetto servizio. È ridondante e va bene così.</p>
+  <p style="margin-bottom:0">Se un domani qualcuno allarga uno dei due — magari togliendo la
+  traduzione di porta «per semplificare» — <b>l'altro continua a proteggere</b>. È lo stesso principio
+  per cui una porta ha la serratura e il portone ha il citofono.</p>
+</div>
+
+<h2>Il collaudo: dall'esterno, non dall'ufficio</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un collaudo dall'interno non dimostra niente
+  </div>
+  <p>Provare dall'ufficio raggiunge il server per la via interna, non attraverso la pubblicazione.
+  Funzionerà anche se la pubblicazione è completamente sbagliata — o, al contrario, <b>fallirà per il
+  giro su sé stessi</b> della lezione 13 pur essendo tutto corretto.</p>
+  <p style="margin-bottom:0"><b>Si collauda da una rete esterna:</b> il telefono in rete mobile, una
+  linea diversa, o un servizio online che prova la raggiungibilità di una porta.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Il collaudo, dal telefono in tethering o da un'altra linea</div>
+<pre><span class="c">── la porta risponde? ──────────────────────────────</span>
+<span class="p">nc -vz 203.0.113.10 443</span>
+
+<span class="c">── il servizio risponde davvero, e con che certificato?</span>
+<span class="p">curl -vI https://203.0.113.10/</span>
+<span class="p">openssl s_client -connect 203.0.113.10:443 -servername portale.esempio.it</span>
+
+<span class="c">── ⚠ e la verifica che quasi nessuno fa: ───────────</span>
+<span class="c">   le porte che NON dovevano essere aperte</span>
+<span class="p">nc -vz 203.0.113.10 3389</span>
+<span class="p">nc -vz 203.0.113.10 22</span>
+<span class="p">nc -vz 203.0.113.10 445</span>
+<span class="c">   devono TUTTE fallire. Se una risponde, hai</span>
+<span class="c">   pubblicato piu di quanto credevi</span>
+</pre>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    E sul firewall, la conferma con i contatori
+  </div>
+  <div class="code" style="margin:0 0 10px">
+<pre><span class="p">diagnose sys session filter clear</span>
+<span class="p">diagnose sys session filter dst</span> <span class="n">203.0.113.10</span>
+<span class="p">diagnose sys session list</span>
+<span class="c">   cerca: policy_id atteso · hook=dnat act=dnat</span>
+
+<span class="p">diagnose firewall iprope show</span> <span class="n">100004 &lt;id-policy&gt;</span>
+<span class="c">   il contatore deve essere salito durante la prova</span>
+</pre>
+  </div>
+  <p style="margin-bottom:0">Solo quando <b>la prova esterna riesce</b> e <b>il contatore è salito</b>
+  hai dimostrato che la pubblicazione funziona <em>per la via che intendevi</em>. Senza il secondo,
+  potresti aver raggiunto il server per una strada completamente diversa.</p>
+</div>
+
+<h2>Documentare, che è metà del lavoro</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Sette righe per ogni cosa che esponi
+  </div>
+  <p>Ogni pubblicazione è una superficie d'attacco in più. Quello che segue va scritto <b>dove lo
+  trovano anche gli altri</b>, non solo nel commento della regola:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Cosa</b> è pubblicato, e su quale indirizzo e porta pubblici</li>
+    <li><b>Verso quale server</b> interno</li>
+    <li><b>Perché</b> — con il ticket o la richiesta che l'ha motivata</li>
+    <li><b>Chi</b> l'ha chiesta, e chi l'ha autorizzata</li>
+    <li><b>Da dove</b> è raggiungibile: tutto il mondo, o sorgenti limitate</li>
+    <li><b>Quale ispezione</b> è applicata</li>
+    <li><b>Quando rivederla</b> — una data, non «prima o poi»</li>
+  </ul>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Pubblica, collauda, e verifica cosa hai aperto davvero
+  </div>
+  <p>Riprendi il server improvvisato sul Mac della lezione 13, ma stavolta segui <b>tutti gli otto
+  passi</b> e soprattutto fai il collaudo completo.</p>
+  <ol>
+    <li><b>Pubblica</b> il servizio con la procedura completa, porta singola.</li>
+    <li><b>Collauda dal telefono in rete mobile</b> — o da una seconda linea. Deve funzionare.</li>
+    <li><b>Prova le porte che non dovevano essere aperte.</b> Devono fallire tutte.</li>
+    <li><b>Verifica i contatori</b> sul firewall.</li>
+    <li><b>Ora rimuovi la traduzione di porta dal VIP</b>, lasciando la policy stretta sul servizio.
+    Riprova le altre porte: <b>continuano a fallire?</b> Perché?</li>
+    <li><b>Poi allarga anche il servizio a «tutto»</b> e riprova. Adesso cosa risponde? <b>Questo è
+    esattamente ciò che succede quando qualcuno «semplifica» una pubblicazione</b> — e l'hai appena
+    visto succedere a te.</li>
+    <li><b>Rimetti tutto stretto</b>, e poi cancella l'intera pubblicazione.</li>
+  </ol>
+  <p style="margin-top:12px;margin-bottom:0"><b>Il passo 6 è il punto della lezione.</b> Ti mostra
+  cosa significa davvero la doppia stretta, e perché chi trova due limitazioni ridondanti su una
+  pubblicazione non deve toglierne una «perché tanto c'è l'altra».</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: pubblicare un servizio",
+  "questions": [
+    { "q": "Un cliente chiede di pubblicare il desktop remoto su Internet. Cosa rispondi?",
+      "a": [ {"t":"Che si raggiunge attraverso una VPN, e gliela configuri","ok":true},
+             {"t":"Sì, ma limitando la sorgente a certi indirizzi","ok":false},
+             {"t":"Sì, cambiando la porta esterna","ok":false},
+             {"t":"No, e basta","ok":false} ],
+      "e": "È il vettore d'ingresso più sfruttato che esista: né la restrizione per indirizzo né il cambio di porta lo rendono accettabile. Ma «no» e basta lascia il cliente col suo problema: offrire la VPN nella stessa frase trasforma un rifiuto in una soluzione." },
+
+    { "q": "«Aprite tutte le porte verso quel server.» Come procedi?",
+      "a": [ {"t":"Chiedi l'elenco per iscritto al fornitore, oppure osservi nei log quali porte servono davvero","ok":true},
+             {"t":"Apri tutto e poi restringi se emergono problemi","ok":false},
+             {"t":"Rifiuti la richiesta","ok":false},
+             {"t":"Apri le porte più comuni per quel tipo di servizio","ok":false} ],
+      "e": "La richiesta va trasformata, non eseguita né rifiutata. E messa per iscritto si ridimensiona quasi sempre da sola. L'alternativa è lasciare una regola permissiva <em>con registrazione attiva</em> per qualche giorno e poi restringere su ciò che è stato realmente usato." },
+
+    { "q": "Perché collaudare una pubblicazione dall'ufficio non dimostra niente?",
+      "a": [ {"t":"Il traffico raggiunge il server per la via interna, non attraverso la pubblicazione","ok":true},
+             {"t":"Perché il firewall blocca il traffico interno","ok":false},
+             {"t":"Perché i log interni non vengono registrati","ok":false},
+             {"t":"Perché serve autenticarsi","ok":false} ],
+      "e": "Funzionerebbe anche con la pubblicazione completamente sbagliata — oppure fallirebbe per il giro su sé stessi pur essendo tutto corretto. In entrambi i casi la prova non dice nulla sulla pubblicazione. Si collauda da una rete esterna." },
+
+    { "q": "Qual è la verifica di collaudo che quasi nessuno fa?",
+      "a": [ {"t":"Provare le porte che NON dovevano essere aperte, e verificare che falliscano","ok":true},
+             {"t":"Misurare la velocità di risposta","ok":false},
+             {"t":"Verificare il certificato del server","ok":false},
+             {"t":"Controllare la risoluzione del nome","ok":false} ],
+      "e": "Confermare che ciò che doveva funzionare funziona è metà del lavoro. L'altra metà è dimostrare che non hai aperto altro: se il desktop remoto o le condivisioni rispondono su quell'indirizzo pubblico, hai pubblicato più di quanto credevi." },
+
+    { "q": "Perché limitare la porta sia nel VIP sia nell'oggetto servizio, se è ridondante?",
+      "a": [ {"t":"Se un domani qualcuno allarga uno dei due, l'altro continua a proteggere","ok":true},
+             {"t":"Perché il VIP da solo non filtra","ok":false},
+             {"t":"Perché migliora le prestazioni","ok":false},
+             {"t":"Perché è richiesto da FortiOS","ok":false} ],
+      "e": "È il principio della serratura e del citofono. Una «semplificazione» futura che tolga la traduzione di porta dal VIP non aprirebbe nulla, perché la policy resta stretta sul servizio. Chi trova due limitazioni ridondanti non deve toglierne una perché «tanto c'è l'altra»." },
+
+    { "q": "Cosa dimostra il contatore della policy salito durante il collaudo?",
+      "a": [ {"t":"Che il traffico è passato per la via che intendevi, e non per un'altra strada","ok":true},
+             {"t":"Che il server è raggiungibile","ok":false},
+             {"t":"Che l'ispezione è attiva","ok":false},
+             {"t":"Che il certificato è valido","ok":false} ],
+      "e": "La prova esterna riuscita dice che il servizio risponde; il contatore dice che a farlo rispondere è stata proprio quella regola. Senza il secondo potresti aver raggiunto il server per una strada completamente diversa, e la pubblicazione potrebbe essere sbagliata senza che tu lo sappia." }
+  ]
+}
+</script>

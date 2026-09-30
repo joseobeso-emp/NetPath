@@ -1,0 +1,251 @@
+#id: fg-17
+#title: Restrizioni per sorgente e geolocalizzazione
+#min: 26
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: Pubblicare servizi
+#desc: Chiudere per paese o per indirizzo, e perché il test fatto dalla tua sede non dimostra niente.
+#obj: Scegliere fra restrizione per indirizzo e restrizione per paese sapendo cosa costa ciascuna
+#obj: Riconoscere il sintomo di un blocco per sorgente prima di cercare altrove
+#obj: Capire perché un filtro geografico su un accesso già autenticato porta più danni che benefici
+#obj: Porre al cliente la domanda che decide se la strategia è sostenibile
+---
+<p class="lead">Restringere chi può raggiungere un servizio pubblicato è la misura di sicurezza più
+efficace in assoluto: riduce la superficie esposta di ordini di grandezza. Ed è anche quella che
+causa più disservizi inspiegabili — perché <strong>quando blocca, blocca prima che qualsiasi cosa
+lasci traccia utile</strong>.</p>
+
+<h2>Le due forme</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Per indirizzo</th><th>Per paese</th></tr></thead>
+    <tbody>
+      <tr><td><b>Come funziona</b></td><td>Un elenco di indirizzi o reti ammessi</td>
+          <td>Un oggetto geografico: tutti gli indirizzi assegnati a un paese</td></tr>
+      <tr><td><b>Precisione</b></td><td><b>Massima</b></td><td>Approssimativa, e si basa su elenchi che cambiano</td></tr>
+      <tr><td><b>Adatta a</b></td><td>Controparti note: un fornitore, una sede, un partner</td>
+          <td>Ridurre il rumore su un servizio aperto al pubblico</td></tr>
+      <tr><td><b>Fragilità</b></td><td>Se l'indirizzo della controparte cambia, si rompe</td>
+          <td><b>Rompe per chiunque si sposti</b>, e non è prevedibile</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La restrizione per indirizzo è quasi sempre la scelta migliore
+  </div>
+  <p>Quando la controparte è nota — un fornitore che si collega, un'altra sede, un partner — limitare
+  agli indirizzi <b>esatti</b> è enormemente più efficace di qualsiasi filtro per paese. Passa da
+  «tutto Internet» a «cinque indirizzi».</p>
+  <p style="margin-bottom:0"><b>La fragilità è gestibile:</b> chiedi alla controparte di comunicarti
+  in anticipo eventuali cambi di indirizzo, e scrivilo nel commento della regola insieme al contatto.
+  Il giorno che smette di funzionare, saprai subito chi chiamare e perché.</p>
+</div>
+
+<h2>Il sintomo, e cosa esclude</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Si ferma su <em>contatto il server</em> e poi scade»
+  </div>
+  <p>Questo messaggio — o qualsiasi equivalente che indichi che la connessione <b>non si è mai
+  stabilita</b> — è la firma di uno scarto <b>prima dell'autenticazione</b>.</p>
+  <p><b>E questo esclude, in un colpo solo:</b> credenziali sbagliate, autenticazione a più fattori,
+  autenticazione federata, certificati, licenze di accesso remoto, configurazione del programma
+  client. <b>Nessuna di queste può essere la causa</b>, perché nessuna di queste è ancora entrata in
+  gioco.</p>
+  <p style="margin-bottom:0"><b>È un blocco di rete</b>, e su un servizio pubblicato il primo sospetto
+  è la restrizione per sorgente.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il caso che rende il ragionamento inattaccabile
+  </div>
+  <p>Due colleghi in trasferta non riescono a collegarsi. Le informazioni raccolte:</p>
+  <div class="table-wrap" style="margin:12px 0">
+    <table>
+      <thead><tr><th>Utente</th><th>Tipo di linea</th><th>Città</th><th>Operatore</th></tr></thead>
+      <tbody>
+        <tr><td>Primo</td><td>Fissa</td><td>Città A</td><td>Operatore 1</td></tr>
+        <tr><td>Secondo</td><td>Mobile</td><td>Città B</td><td>Operatore 2</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><b>Due reti diverse, due città diverse, due operatori diversi, stesso errore.</b> L'unico elemento
+  in comune è il <b>paese di origine</b>.</p>
+  <p style="margin-bottom:0">Questo, da solo, <b>esclude già</b> la rete locale, il router e
+  l'operatore di entrambi: non possono essere tre cause indipendenti che producono lo stesso identico
+  sintomo nello stesso momento. Il ragionamento è completo <em>prima</em> di aprire il firewall.</p>
+</div>
+
+<h2>La prova che non poteva funzionare</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Ricreare l'utenza e provare dalla sede non dimostra nulla
+  </div>
+  <p>È la reazione istintiva, ed è strutturalmente incapace di riprodurre il guasto: la prova parte da
+  un paese consentito.</p>
+  <p>Funziona benissimo, e si conclude che «il problema è sul computer dell'utente» — mandando la
+  diagnosi nella direzione opposta a quella giusta, con la convinzione di avere una prova.</p>
+  <p style="margin-bottom:0"><b>La mossa corretta costa due minuti:</b> chiedi all'utente
+  <b>l'indirizzo pubblico</b> da cui sta provando e <b>l'orario esatto</b> del tentativo, e cerca il
+  rifiuto nei log del firewall filtrando su quei due dati. È più rapido di ricreare un'utenza, e
+  soprattutto <b>dimostra qualcosa</b>.</p>
+</div>
+
+<h2>La domanda strategica</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Ha senso un filtro per paese su un accesso già autenticato?
+  </div>
+  <p>Sbloccare il paese di turno, ogni volta che qualcuno si sposta, è una toppa: risolve il caso e
+  non previene il prossimo. La domanda vera è se quella misura serva ancora.</p>
+  <p><b>Se l'accesso remoto è già protetto da autenticazione forte</b> — credenziali aziendali più un
+  secondo fattore — <b>il filtro geografico aggiunge poco</b>: chi ha le credenziali e il secondo
+  fattore entra comunque, e chi non li ha non entra nemmeno da un paese consentito. In cambio,
+  <b>crea esattamente questo tipo di disservizio</b>, in modo imprevedibile, a chi viaggia.</p>
+  <p style="margin-bottom:0">Resta invece <b>molto utile su servizi pubblicati senza autenticazione
+  forte</b>, o su portali aperti al pubblico dove riduce sensibilmente il rumore delle scansioni.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La domanda da fare al cliente, che nessuno fa
+  </div>
+  <p><b>«Avete personale o collaboratori che lavorano stabilmente dall'estero, o che viaggiano?»</b></p>
+  <p style="margin-bottom:0">Se la risposta è sì, una lista di pochi paesi consentiti è
+  <b>strutturalmente incompatibile</b> con il modo in cui quell'azienda lavora, e va ripensata — non
+  aggiustata caso per caso ogni volta che qualcuno prende un aereo. Porre questa domanda <em>prima</em>
+  trasforma una serie di ticket ricorrenti in una decisione presa una volta sola.</p>
+</div>
+
+<h2>Le tre opzioni, con i loro costi</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Opzione</th><th>Pro</th><th>Contro</th></tr></thead>
+    <tbody>
+      <tr><td><b>Togliere il filtro geografico dal solo accesso remoto</b>, lasciandolo sugli altri servizi pubblicati</td>
+          <td>Risolve il problema alla radice. L'accesso è già protetto da autenticazione forte</td>
+          <td>Va concordato con chi decide: è un cambio di postura, non una modifica tecnica</td></tr>
+      <tr><td><b>Eccezione sugli indirizzi specifici</b> degli utenti in viaggio</td>
+          <td>Chirurgica</td>
+          <td><b>Fragile:</b> l'indirizzo di una linea mobile o di un albergo cambia in continuazione</td></tr>
+      <tr><td><b>Sbloccare il paese</b></td>
+          <td>Immediata</td>
+          <td><b>Non previene il prossimo caso</b>, con un altro paese. È una misura tampone, e va dichiarata come tale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Restringi la sorgente, e impara a leggere il rifiuto
+  </div>
+  <div class="code" style="margin:0 0 12px">
+    <div class="code__bar"><span class="dot"></span>Restrizione per indirizzo</div>
+<pre><span class="c">── crea l'oggetto delle sorgenti ammesse ───────────</span>
+<span class="p">config firewall address</span>
+    <span class="p">edit</span> <span class="s">"partner-sede-milano"</span>
+        <span class="p">set subnet</span> <span class="n">198.51.100.0 255.255.255.248</span>
+        <span class="p">set comment</span> <span class="s">"referente: Mario — avvisare se cambia"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── e usalo come sorgente della pubblicazione ───────</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">&lt;id&gt;</span>
+        <span class="p">set srcaddr</span> <span class="s">"partner-sede-milano"</span>   <span class="c"># invece di "all"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+  </div>
+  <div class="code" style="margin:0 0 12px">
+    <div class="code__bar"><span class="dot"></span>Restrizione per paese</div>
+<pre><span class="p">config firewall address</span>
+    <span class="p">edit</span> <span class="s">"solo-italia"</span>
+        <span class="p">set type</span> <span class="s">geography</span>
+        <span class="p">set country</span> <span class="s">"IT"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+<span class="c">   ⚠ richiede gli elenchi aggiornati del produttore:</span>
+<span class="c">   senza contratto attivo la classificazione non arriva</span>
+</pre>
+  </div>
+  <p><b>Poi l'esercizio che vale davvero:</b> provoca il rifiuto e imparane la firma.</p>
+  <ol>
+    <li><b>Restringi la sorgente</b> della tua pubblicazione a un indirizzo che <em>non</em> è il tuo.</li>
+    <li><b>Prova dall'esterno.</b> Osserva cosa vede il client: quanto ci mette, che messaggio dà.
+    <b>Nota che non è un errore di autenticazione né un rifiuto esplicito: è un silenzio.</b></li>
+    <li><b>Cerca il rifiuto nei log</b>, filtrando per il tuo indirizzo pubblico e per l'orario —
+    esattamente come faresti con l'utente in trasferta.</li>
+    <li><b>Guarda l'identificativo della regola</b> nella riga di rifiuto: è zero, o è una regola
+    specifica?</li>
+  </ol>
+  <p style="margin-bottom:0"><b>Il punto del passo 2:</b> quando l'utente ti dirà «si blocca e poi
+  dà errore», tu saprai già che aspetto ha quel silenzio — e non perderai un'ora a verificare le sue
+  credenziali.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: restrizioni per sorgente",
+  "questions": [
+    { "q": "Un servizio è raggiungibile solo da un fornitore noto. Quale restrizione scegli?",
+      "a": [ {"t":"Per indirizzo: si passa da «tutto Internet» a pochi indirizzi","ok":true},
+             {"t":"Per paese, che è più stabile","ok":false},
+             {"t":"Nessuna: basta l'autenticazione","ok":false},
+             {"t":"Per paese, aggiungendo poi eccezioni","ok":false} ],
+      "e": "Quando la controparte è nota, la restrizione per indirizzo è enormemente più efficace di qualsiasi filtro geografico. La fragilità — l'indirizzo che cambia — si gestisce chiedendo di essere avvisati e scrivendo il contatto nel commento della regola." },
+
+    { "q": "L'errore si ferma prima che la connessione si stabilisca. Cosa esclude?",
+      "a": [ {"t":"Credenziali, secondo fattore, certificati e licenze: nessuno è ancora entrato in gioco","ok":true},
+             {"t":"Un problema di routing","ok":false},
+             {"t":"Un blocco del filtro web","ok":false},
+             {"t":"Un errore del server di autenticazione","ok":false} ],
+      "e": "Lo scarto avviene prima dell'autenticazione, quindi tutto ciò che riguarda l'autenticazione è fuori causa per definizione. È un blocco di rete, e su un servizio pubblicato il primo sospetto è la restrizione per sorgente." },
+
+    { "q": "Due utenti, due paesi, due operatori, due tipi di linea, stesso errore. Cosa deduci prima ancora di aprire il firewall?",
+      "a": [ {"t":"Rete locale, router e operatore sono esclusi: resta il fattore comune, il paese","ok":true},
+             {"t":"Che il servizio è giù","ok":false},
+             {"t":"Che entrambi hanno il client mal configurato","ok":false},
+             {"t":"Che serve raccogliere altri dati prima di concludere","ok":false} ],
+      "e": "Non possono essere tre cause indipendenti che producono lo stesso identico sintomo nello stesso momento. Il ragionamento è completo prima di toccare il firewall — ed è il tipo di deduzione che fa chiudere un ticket in venti minuti invece che in cinque giorni." },
+
+    { "q": "Perché ricreare l'utenza e provare dalla propria sede è una prova inutile in questo caso?",
+      "a": [ {"t":"Parte da un paese consentito: non può riprodurre un blocco geografico","ok":true},
+             {"t":"Perché l'utenza nuova ha permessi diversi","ok":false},
+             {"t":"Perché il firewall memorizza il primo esito","ok":false},
+             {"t":"Perché serve attendere la propagazione","ok":false} ],
+      "e": "La prova riesce e si conclude che il problema è sul computer dell'utente, mandando la diagnosi nella direzione opposta con la convinzione di avere una dimostrazione. Chiedere indirizzo pubblico e orario e cercare il rifiuto nei log costa due minuti e dimostra qualcosa." },
+
+    { "q": "L'accesso remoto è già protetto da autenticazione forte. Cosa aggiunge il filtro geografico?",
+      "a": [ {"t":"Poco, e in cambio crea disservizi imprevedibili a chi viaggia","ok":true},
+             {"t":"Un livello di sicurezza indispensabile","ok":false},
+             {"t":"Protezione contro le credenziali rubate","ok":false},
+             {"t":"Riduzione del carico sul server di autenticazione","ok":false} ],
+      "e": "Chi ha credenziali e secondo fattore entra comunque, e chi non li ha non entra nemmeno da un paese consentito. Resta invece molto utile su servizi pubblicati <em>senza</em> autenticazione forte, o su portali aperti, dove riduce sensibilmente il rumore delle scansioni." },
+
+    { "q": "Qual è la domanda da porre al cliente prima di impostare una strategia geografica?",
+      "a": [ {"t":"Se ha personale o collaboratori che lavorano dall'estero o viaggiano","ok":true},
+             {"t":"Quanti utenti usano l'accesso remoto","ok":false},
+             {"t":"Se il contratto di sicurezza è attivo","ok":false},
+             {"t":"Quali paesi vuole bloccare","ok":false} ],
+      "e": "Se la risposta è sì, una lista di pochi paesi consentiti è strutturalmente incompatibile con il modo in cui quell'azienda lavora: va ripensata, non aggiustata ogni volta che qualcuno prende un aereo. Porla prima trasforma ticket ricorrenti in una decisione presa una volta sola." }
+  ]
+}
+</script>

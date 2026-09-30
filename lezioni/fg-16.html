@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gli errori di pubblicazione che pagano tutti — NetPath</title>
+<meta name="description" content="Porta del VIP che non combacia col servizio, due VIP sullo stesso indirizzo, oggetti sovradimensionati che raccolgono scansioni.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-16">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>Pubblicare servizi</span>
+      </nav>
+      <h1 class="lesson-title">Gli errori di pubblicazione che pagano tutti</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 16</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Riconoscere dai sintomi quale dei tre errori classici hai davanti</li>
+        <li>Capire cosa arriva davvero su un indirizzo pubblico, in termini di volume</li>
+        <li>Dimensionare un oggetto servizio contando le porte invece di stimarle</li>
+        <li>Costruirti una revisione periodica delle pubblicazioni</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Una pubblicazione sbagliata raramente «non funziona e basta». Di solito funziona a
+metà, o funziona e apre più di quanto credi. Qui vediamo i tre modi in cui fallisce, e soprattutto
+<strong>cosa succede davvero a un indirizzo pubblico</strong> quando ci metti sopra un servizio.</p>
+
+<h2>I tre fallimenti, riconosciuti dal sintomo</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sintomo</th><th>Causa</th><th>Verifica</th></tr></thead>
+    <tbody>
+      <tr><td><b>Non risponde affatto</b>, e nei log non c'è traccia</td>
+          <td>Il VIP non è usato da nessuna policy, o la coppia di interfacce è sbagliata</td>
+          <td><code>iprope lookup</code> sul flusso; contatore della policy a zero</td></tr>
+      <tr><td><b>Non risponde</b>, e nei log c'è un rifiuto con regola zero</td>
+          <td><b>Porta del VIP e oggetto servizio non combaciano</b></td>
+          <td>Confronta i due, numero per numero</td></tr>
+      <tr><td><b>La pubblicazione vecchia funziona, la nuova no</b></td>
+          <td>Due VIP sullo stesso indirizzo con porte sovrapposte: vince la policy più in alto</td>
+          <td>Elenca i VIP per indirizzo esterno e cerca le sovrapposizioni</td></tr>
+      <tr><td><b>Funziona, ma risponde anche altro</b></td>
+          <td>VIP senza traduzione di porta <em>e</em> servizio troppo largo</td>
+          <td>Prova dall'esterno le porte che non dovevano essere aperte</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Cosa arriva davvero su un indirizzo pubblico</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Non è teoria: è traffico misurabile, adesso
+  </div>
+  <p>Un indirizzo pubblico riceve <b>scansioni continue</b>, da infrastrutture automatiche sparse per
+  il mondo, indipendentemente da chi sei e da quanto sei piccolo.</p>
+  <p>Per dare un ordine di grandezza reale: su un apparato in produzione si è misurata una scansione
+  costante di circa <b>quarantamila tentativi al giorno</b> verso una singola porta di telefonia,
+  proveniente da un unico fornitore di hosting. Quella porta era <b>inoltrata a una macchina
+  interna</b> — che peraltro usava un'altra porta, quindi l'inoltro non serviva a niente ed esisteva
+  solo perché l'oggetto servizio era stato scritto largo.</p>
+  <p style="margin-bottom:0"><b>Il punto:</b> ogni porta che pubblichi senza che serva non è
+  «innocua perché nessuno la conosce». È una porta che <b>viene provata migliaia di volte al
+  giorno</b>, da stasera.</p>
+</div>
+
+<h2>Gli oggetti servizio sovradimensionati</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso reale, con i numeri
+  </div>
+  <p>Un oggetto servizio per un sistema di telefonia conteneva, fra le altre cose, un intervallo di
+  <b>25.536 porte UDP</b> dove il produttore ne richiedeva <b>4.001</b>. In più un intervallo di porte
+  TCP che <b>non aveva ragione di esistere</b>, perché il protocollo in questione viaggia solo su UDP.</p>
+  <p><b>Entrambi ricevevano scansioni dall'esterno.</b> Nessuno se n'era mai accorto perché tutto
+  «funzionava»: il servizio andava, e la parte in eccesso non dava fastidio a nessuno — tranne che
+  esisteva.</p>
+  <p style="margin-bottom:0"><b>Come si sarebbe evitato:</b> contando. Se il produttore chiede un
+  intervallo di porte, l'intervallo si scrive con gli estremi esatti, non arrotondando verso l'alto
+  «per stare tranquilli». Quattromila porte sono già tante; venticinquemila sono un'altra cosa.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    E se l'oggetto è condiviso, non lo tocchi: lo cloni
+  </div>
+  <p>Quell'oggetto era referenziato da <b>sei policy diverse</b>, alcune di clienti diversi sullo
+  stesso apparato. Restringerlo per risolvere un caso avrebbe cambiato il comportamento di tutte.</p>
+  <p style="margin-bottom:0"><b>La procedura corretta:</b> conta i riferimenti · se sono più di uno,
+  <b>clona</b> · restringi il clone · applicalo <b>solo</b> alla policy che ti interessa · lascia
+  l'originale intatto. E annota nel commento del clone perché esiste, altrimenti fra un anno sembrerà
+  un duplicato da ripulire.</p>
+</div>
+
+<h2>Lo schema che pesa nell'analisi di un incidente</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due pubblicazioni identiche, e una delle due macchine era stata compromessa
+  </div>
+  <p>Su un apparato si sono trovate due policy praticamente identiche — <b>sorgente aperta a tutti</b>,
+  stesso oggetto servizio sovradimensionato — verso due macchine diverse. Una delle due <b>aveva
+  subito una compromissione qualche settimana prima</b>.</p>
+  <p><b>Non è una prova di causalità</b>, e non va presentata come tale: non sappiamo per quale via sia
+  avvenuta la compromissione. Ma <b>è un elemento che pesa</b> — nell'analisi successiva all'incidente,
+  nella valutazione del rischio residuo, e nel dialogo con chi deve prendere decisioni.</p>
+  <p style="margin-bottom:0"><b>La lezione operativa:</b> quando trovi uno schema di esposizione
+  identico a quello di una macchina che ha avuto problemi, <b>quella è una priorità</b>. Non perché
+  sia dimostrato, ma perché è l'unica informazione utile che hai e ignorarla sarebbe negligente.</p>
+</div>
+
+<h2>Il caso della telefonia: dove guardare</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    «Le chiamate si stabiliscono ma non c'è audio»
+  </div>
+  <p>I firewall hanno motori che <b>riscrivono il contenuto</b> di alcuni protocolli per farli
+  funzionare attraverso il NAT. Per la telefonia questo è spesso necessario — e altrettanto spesso
+  è la causa del problema.</p>
+  <p style="margin-bottom:0"><b>Il sintomo tipico:</b> la chiamata parte, i due si sentono squillare,
+  ma l'audio non passa in una delle due direzioni. È la firma di un motore che sta riscrivendo
+  male, o che interviene su una porta su cui non doveva. <b>È il primo posto dove guardare</b> —
+  prima delle regole, prima del NAT, prima di tutto il resto.</p>
+</div>
+
+<h2>La revisione periodica</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Le cinque domande, due volte l'anno
+  </div>
+  <p>Le pubblicazioni si accumulano e nessuno le toglie mai. Una revisione periodica è l'unico modo
+  per non ritrovarsi, fra tre anni, con dodici esposizioni di cui nessuno sa più niente.</p>
+  <ol style="margin-bottom:0">
+    <li><b>Quante pubblicazioni ci sono?</b> Elencale tutte, con indirizzo e porta</li>
+    <li><b>Servono ancora tutte?</b> Cerca quelle con contatori fermi da mesi</li>
+    <li><b>Le porte sono ancora quelle giuste?</b> O l'applicativo nel frattempo ne usa meno</li>
+    <li><b>Ci sono VIP orfani?</b> Definiti e non usati da nessuna policy</li>
+    <li><b>La sorgente può essere ristretta?</b> Molte pubblicazioni aperte al mondo servono in
+    realtà a poche controparti note</li>
+  </ol>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>I comandi della revisione</div>
+<pre><span class="c">── tutte le pubblicazioni ──────────────────────────</span>
+<span class="p">show firewall vip</span>
+
+<span class="c">── quali sono davvero usate? ───────────────────────</span>
+<span class="p">show firewall policy | grep -i</span> <span class="s">"nome-del-vip"</span>
+<span class="c">   nessun risultato = VIP orfano</span>
+
+<span class="c">── quali ricevono ancora traffico? ─────────────────</span>
+<span class="p">diagnose firewall iprope show</span> <span class="n">100004 &lt;id&gt;</span>
+<span class="c">   contatore fermo da mesi = candidata alla rimozione,</span>
+<span class="c">   dopo aver chiesto conferma</span>
+
+<span class="c">── quante porte espone davvero un oggetto? ─────────</span>
+<span class="p">show firewall service custom</span> <span class="s">"nome-oggetto"</span>
+<span class="c">   CONTALE. Un intervallo scritto in fretta puo</span>
+<span class="c">   nascondere decine di migliaia di porte</span>
+</pre>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Costruisci i tre errori, e riconoscili dal sintomo
+  </div>
+  <p>Riparti dalla pubblicazione della lezione precedente e rompila nei tre modi, <b>senza guardare
+  quale hai scelto</b>: fai i tre casi in ordine casuale e prova a diagnosticarli dai soli sintomi
+  prima di verificare la configurazione.</p>
+  <ol>
+    <li><b>Caso A:</b> cambia la porta dell'oggetto servizio lasciando il VIP com'è.</li>
+    <li><b>Caso B:</b> crea un secondo VIP sullo stesso indirizzo e porta, con una policy più in alto
+    che punta altrove.</li>
+    <li><b>Caso C:</b> togli il VIP dalla destinazione della policy.</li>
+  </ol>
+  <p style="margin-top:12px"><b>Per ciascuno, prima di guardare la configurazione, rispondi:</b></p>
+  <ul>
+    <li>Nei log c'è traccia del tentativo? Con quale identificativo di regola?</li>
+    <li>Il contatore della policy che ti aspetti è salito?</li>
+    <li>Cosa restituisce <code>iprope lookup</code> su quel flusso?</li>
+  </ul>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Poi l'esercizio di conteggio</div>
+<pre><span class="c"># crea un oggetto "scritto in fretta"</span>
+<span class="p">config firewall service custom</span>
+    <span class="p">edit</span> <span class="s">"esempio-largo"</span>
+        <span class="p">set udp-portrange</span> <span class="n">40000-65535</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c"># ora conta: 65535 - 40000 + 1 = 25.536 porte.</span>
+<span class="c"># Se ne servivano 4.001, ne hai aperte sei volte tante.</span>
+<span class="c"># Riscrivilo con gli estremi esatti e ricontalo.</span>
+
+<span class="p">config firewall service custom</span>
+    <span class="p">delete</span> <span class="s">"esempio-largo"</span>
+<span class="p">end</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Prendi l'abitudine di fare quella sottrazione ogni
+  volta.</b> Dieci secondi di aritmetica sono l'unica cosa che separa «ho aperto quello che serviva»
+  da «ho aperto venticinquemila porte e non me ne sono accorto».</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: errori di pubblicazione",
+  "questions": [
+    { "q": "La pubblicazione vecchia funziona, quella nuova no. Cosa cerchi?",
+      "a": [ {"t":"Due VIP sullo stesso indirizzo pubblico con porte sovrapposte","ok":true},
+             {"t":"Un errore nell'oggetto indirizzo del server","ok":false},
+             {"t":"Un problema di routing verso il nuovo server","ok":false},
+             {"t":"Un profilo di ispezione che blocca","ok":false} ],
+      "e": "Vince la policy più in alto e la nuova non viene mai raggiunta. Il sintomo è caratteristico proprio perché la vecchia continua a funzionare benissimo: se fosse un problema di routing o di oggetti, non funzionerebbe nemmeno quella." },
+
+    { "q": "Cosa riceve realmente un indirizzo pubblico su cui hai messo un servizio?",
+      "a": [ {"t":"Scansioni continue e automatiche, nell'ordine delle migliaia di tentativi al giorno","ok":true},
+             {"t":"Solo il traffico dei clienti che conoscono l'indirizzo","ok":false},
+             {"t":"Traffico rilevante solo se l'azienda è grande o nota","ok":false},
+             {"t":"Nulla, finché il nome non viene pubblicato nei DNS","ok":false} ],
+      "e": "Le scansioni sono sistematiche e indipendenti da chi sei: su un apparato reale si sono misurati circa quarantamila tentativi al giorno verso una sola porta. Ogni porta esposta senza necessità viene provata migliaia di volte al giorno, da stasera." },
+
+    { "q": "Un oggetto servizio espone <code>40000-65535</code> in UDP dove ne servivano 4.001. Quante porte in eccesso?",
+      "a": [ {"t":"Oltre ventunmila","ok":true},
+             {"t":"Circa duemila","ok":false},
+             {"t":"Nessuna: l'intervallo è corretto","ok":false},
+             {"t":"Dipende da quante ne usa l'applicativo","ok":false} ],
+      "e": "L'intervallo contiene 25.536 porte; togliendo le 4.001 necessarie restano oltre ventunmila porte aperte senza motivo — e tutte raggiungibili dalle scansioni. È la sottrazione che va fatta ogni volta, e che costa dieci secondi." },
+
+    { "q": "Devi restringere un oggetto servizio usato da sei policy. Come procedi?",
+      "a": [ {"t":"Cloni l'oggetto, restringi il clone e lo applichi solo alla policy interessata","ok":true},
+             {"t":"Lo restringi e verifichi i log delle altre policy","ok":false},
+             {"t":"Crei un secondo oggetto e lo aggiungi a tutte le policy","ok":false},
+             {"t":"Lo lasci com'è e restringi la policy","ok":false} ],
+      "e": "Alcune di quelle policy possono essere di clienti diversi sullo stesso apparato: modificare l'originale cambia il comportamento di tutte, e i danni li scopriresti dai loro ticket. Nel commento del clone va scritto perché esiste, altrimenti fra un anno sembrerà un duplicato da ripulire." },
+
+    { "q": "Trovi una pubblicazione con lo stesso schema di esposizione di una macchina compromessa settimane prima. Come la tratti?",
+      "a": [ {"t":"Come una priorità, senza presentarla come prova di causalità","ok":true},
+             {"t":"Come la causa dimostrata della compromissione","ok":false},
+             {"t":"Come una coincidenza irrilevante","ok":false},
+             {"t":"La rimuovi immediatamente senza avvisare","ok":false} ],
+      "e": "Non sappiamo per quale via sia avvenuta la compromissione, quindi dichiararlo sarebbe scorretto. Ma è l'unica informazione utile che hai sul rischio residuo, e ignorarla sarebbe negligente: pesa nell'analisi post-incidente e nelle decisioni, e va comunicata per quello che è." },
+
+    { "q": "«Le chiamate si stabiliscono ma non passa l'audio.» Primo posto dove guardare?",
+      "a": [ {"t":"I motori che riscrivono il contenuto dei protocolli di telefonia per il NAT","ok":true},
+             {"t":"Le regole firewall","ok":false},
+             {"t":"La tabella di routing","ok":false},
+             {"t":"Il certificato del centralino","ok":false} ],
+      "e": "La segnalazione passa — i due si sentono squillare — quindi regole e routing stanno funzionando. Ciò che manca è il flusso audio, e la causa tipica è un motore che lo riscrive male o interviene su una porta su cui non doveva." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>
