@@ -294,11 +294,11 @@ window.NETPATH_CURRICULUM = [
       { id:"fg-17", t:"Restrizioni per sorgente e geolocalizzazione", s:"Chiudere per paese o per indirizzo, e perché il test fatto dalla tua sede non dimostra niente.", m:26, ready:true }
     ]},
     { title: "VPN", lessons: [
-      { id:"fg-18", t:"SSL-VPN: impostazioni, portale, pool, policy", s:"L'accesso remoto degli utenti, e il pezzo che tutti dimenticano: entrare nella VPN non significa arrivare da qualche parte.", m:32, ready:false },
-      { id:"fg-19", t:"IPsec site-to-site: fase 1, fase 2, selettori", s:"Il tunnel fra due sedi costruito da zero, con i parametri che devono coincidere e quelli che no.", m:34, ready:false },
-      { id:"fg-20", t:"Quando un tunnel non sale", s:"I comandi che dicono esattamente a quale passo si è fermata la negoziazione, e cosa significa ciascun messaggio.", m:30, ready:false },
-      { id:"fg-21", t:"Il tunnel è su ma il traffico non passa", s:"Selettori, rotte, policy e MTU: le quattro cause, in ordine di frequenza, e come si distinguono.", m:30, ready:false },
-      { id:"fg-22", t:"VPN e NAT: quando la sorgente non è accettabile", s:"Il caso in cui devi tradurre l'indirizzo per essere ammesso dall'altra parte, e i pacchetti scartati in silenzio.", m:28, ready:false }
+      { id:"fg-18", t:"SSL-VPN: impostazioni, portale, pool, policy", s:"L'accesso remoto degli utenti, e il pezzo che tutti dimenticano: entrare nella VPN non significa arrivare da qualche parte.", m:32, ready:true },
+      { id:"fg-19", t:"IPsec site-to-site: fase 1, fase 2, selettori", s:"Il tunnel fra due sedi costruito da zero, con i parametri che devono coincidere e quelli che no.", m:34, ready:true },
+      { id:"fg-20", t:"Quando un tunnel non sale", s:"I comandi che dicono esattamente a quale passo si è fermata la negoziazione, e cosa significa ciascun messaggio.", m:30, ready:true },
+      { id:"fg-21", t:"Il tunnel è su ma il traffico non passa", s:"Selettori, rotte, policy e MTU: le quattro cause, in ordine di frequenza, e come si distinguono.", m:30, ready:true },
+      { id:"fg-22", t:"VPN e NAT: quando la sorgente non è accettabile", s:"Il caso in cui devi tradurre l'indirizzo per essere ammesso dall'altra parte, e i pacchetti scartati in silenzio.", m:28, ready:true }
     ]},
     { title: "Ispezione e UTM", lessons: [
       { id:"fg-23", t:"Come funziona l'ispezione: certificato o completa", s:"Le due modalità, cosa vede ciascuna, e perché sceglierne una è una decisione e non un interruttore.", m:30, ready:false },

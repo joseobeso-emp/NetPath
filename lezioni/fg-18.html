@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SSL-VPN: impostazioni, portale, pool, policy — NetPath</title>
+<meta name="description" content="L'accesso remoto degli utenti, e il pezzo che tutti dimenticano: entrare nella VPN non significa arrivare da qualche parte.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-18">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>VPN</span>
+      </nav>
+      <h1 class="lesson-title">SSL-VPN: impostazioni, portale, pool, policy</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 18</span>
+        <span class="chip">32 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Configurare un accesso remoto completo, nell'ordine giusto</li>
+        <li>Capire perché l'utente entra e poi non raggiunge niente</li>
+        <li>Scegliere fra tunnel completo e instradamento selettivo</li>
+        <li>Sapere dove guardare quando l'autenticazione fallisce</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">L'accesso remoto è fatto di <strong>cinque pezzi distinti</strong>, e il quinto è quello
+che quasi tutti dimenticano. I primi quattro fanno entrare l'utente; il quinto è ciò che gli permette
+di <em>arrivare da qualche parte</em>. Sono due cose diverse, e vengono continuamente confuse.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 230" role="img" aria-label="I cinque pezzi dell'accesso remoto, nell'ordine">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Cinque pezzi, e l'ultimo decide tutto</text>
+    <g stroke-width="1.6">
+      <rect x="14"  y="44" width="124" height="56" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="152" y="44" width="124" height="56" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="290" y="44" width="124" height="56" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="428" y="44" width="124" height="56" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="566" y="44" width="120" height="56" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2.4"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="76"  y="68">1 · SETTINGS</text><text x="76"  y="86">porta, pool, cert</text>
+      <text x="214" y="68">2 · PORTALE</text><text x="214" y="86">cosa vede</text>
+      <text x="352" y="68">3 · UTENTI</text><text x="352" y="86">e gruppi</text>
+      <text x="490" y="68">4 · AUTORIZZA</text><text x="490" y="86">chi può entrare</text>
+      <text x="626" y="68">5 · POLICY</text><text x="626" y="86">da ssl.root</text>
+    </g>
+    <text x="350" y="140" text-anchor="middle" class="dg-label-sm" fill="var(--dg-1)">I primi quattro: l'utente <tspan font-weight="700">entra</tspan></text>
+    <text x="350" y="166" text-anchor="middle" class="dg-label-sm" fill="var(--dg-3)">Il quinto: l'utente <tspan font-weight="700">arriva da qualche parte</tspan></text>
+    <rect x="120" y="186" width="460" height="30" rx="6" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="1.5"/>
+    <text x="350" y="206" text-anchor="middle" class="dg-label-sm">Senza il quinto: collegamento riuscito, e poi niente funziona.</text>
+  </svg>
+  </div>
+  <figcaption>«Ho creato l'utenza e non funziona» significa quasi sempre che mancano il quinto pezzo,
+  o le rotte a valle.</figcaption>
+</figure>
+
+<h2>1 · Le impostazioni generali</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Dove ascolta, con quale identità, quali indirizzi distribuisce</div>
+<pre><span class="p">config vpn ssl settings</span>
+    <span class="p">set servercert</span> <span class="s">"certificato-vero"</span>
+    <span class="p">set tunnel-ip-pools</span> <span class="s">"pool-vpn-utenti"</span>
+    <span class="p">set port</span> <span class="n">10443</span>
+    <span class="p">set source-interface</span> <span class="s">"wan1"</span>        <span class="c"># ← vedi riquadro</span>
+    <span class="p">set source-address</span> <span class="s">"all"</span>
+    <span class="p">set default-portal</span> <span class="s">"portale-standard"</span>
+    <span class="p">set dns-server1</span> <span class="n">10.10.10.5</span>          <span class="c"># il DNS interno</span>
+<span class="p">end</span>
+
+<span class="c">── e il pool va creato prima ───────────────────────</span>
+<span class="p">config firewall address</span>
+    <span class="p">edit</span> <span class="s">"pool-vpn-utenti"</span>
+        <span class="p">set type</span> <span class="s">iprange</span>
+        <span class="p">set start-ip</span> <span class="n">10.212.134.200</span>
+        <span class="p">set end-ip</span> <span class="n">10.212.134.250</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due parametri che fanno perdere ore
+  </div>
+  <p><b>La porta non è quella della finestra grafica.</b> Accesso remoto e amministrazione ascoltano
+  su porte diverse, e su un apparato ereditato non c'è nessun motivo per cui debbano essere quelle
+  che immagini. Quando erediti un apparato, <b>leggi le impostazioni prima di dire a un utente dove
+  collegarsi</b>.</p>
+  <p style="margin-bottom:0"><b>L'interfaccia di ascolto deve contenere quella su cui vive l'indirizzo
+  pubblico che gli utenti usano.</b> Su un apparato con due linee, se l'accesso remoto ascolta solo
+  sulla prima, dalla seconda non risponde — e il sintomo è esattamente quello della lezione 17: la
+  connessione non si stabilisce, sembra un blocco per sorgente, e non lo è.</p>
+</div>
+
+<h2>2 · Il portale: cosa l'utente vede e cosa instrada</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Tunnel completo o instradamento selettivo</div>
+<pre><span class="p">config vpn ssl web portal</span>
+    <span class="p">edit</span> <span class="s">"portale-standard"</span>
+        <span class="p">set tunnel-mode enable</span>
+        <span class="p">set ip-pools</span> <span class="s">"pool-vpn-utenti"</span>
+
+        <span class="c">── A · tutto il traffico passa dalla VPN ───────</span>
+        <span class="p">set split-tunneling disable</span>
+
+        <span class="c">── B · solo le reti aziendali ──────────────────</span>
+        <span class="p">set split-tunneling enable</span>
+        <span class="p">set split-tunneling-routing-address</span> <span class="s">"reti-aziendali"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Tunnel completo</th><th>Instradamento selettivo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cosa passa dalla VPN</b></td><td><b>Tutto</b>, Internet compreso</td><td>Solo le reti che elenchi</td></tr>
+      <tr><td><b>Filtri e ispezione aziendali</b></td><td><b>Si applicano anche fuori sede</b></td><td>Non si applicano alla navigazione</td></tr>
+      <tr><td><b>Banda della sede</b></td><td>Consumata da tutta la navigazione dei remoti</td><td>Solo dal traffico aziendale</td></tr>
+      <tr><td><b>Esperienza dell'utente</b></td><td>Videochiamate e streaming passano dalla sede: spesso peggiorano</td><td>Migliore</td></tr>
+      <tr><td><b>Quando sceglierlo</b></td><td>Se la postura di sicurezza deve valere ovunque</td><td><b>Il caso più comune</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'elenco delle reti instradate è una fonte costante di ticket
+  </div>
+  <p>Con l'instradamento selettivo, <b>solo le reti elencate entrano nel tunnel</b>. Il giorno che si
+  aggiunge una VLAN in sede — e nessuno la mette in quell'elenco — gli utenti in VPN <b>non la
+  raggiungono</b>, e sembra un problema di regole.</p>
+  <p style="margin-bottom:0"><b>L'abitudine da prendere:</b> quando crei una rete nuova, chiediti
+  subito se gli utenti remoti devono raggiungerla. Se sì, va aggiunta in <b>due posti</b>: l'elenco
+  delle reti instradate <em>e</em> una policy dedicata.</p>
+</div>
+
+<h2>3 e 4 · Utenti, gruppi, e chi può davvero entrare</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'elenco degli utenti locali non è l'elenco di chi può autenticarsi
+  </div>
+  <p>Un gruppo può includere <b>gruppi remoti</b> — di una directory aziendale o di un server di
+  autenticazione. In quel caso <b>una persona può collegarsi senza comparire da nessuna parte fra gli
+  utenti locali</b>.</p>
+  <p style="margin-bottom:0">È un dettaglio che porta a conclusioni sbagliate: si guarda l'elenco
+  locale, non si trova il nome, e si conclude che l'utenza non esiste o che qualcuno l'ha cancellata.
+  <b>Va sempre controllata la composizione del gruppo, non solo l'elenco degli utenti.</b></p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Utente locale, gruppo, e secondo fattore</div>
+<pre><span class="p">config user local</span>
+    <span class="p">edit</span> <span class="s">"m.rossi"</span>
+        <span class="p">set type</span> <span class="s">password</span>
+        <span class="p">set passwd</span> <span class="s">"..."</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="p">config user group</span>
+    <span class="p">edit</span> <span class="s">"gruppo-vpn"</span>
+        <span class="p">set member</span> <span class="s">"m.rossi"</span>
+        <span class="c"># oppure, con una directory aziendale:</span>
+        <span class="c"># config match / set server-name ... / set group-name ...</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── e l'autorizzazione al portale ───────────────────</span>
+<span class="p">config vpn ssl settings</span>
+    <span class="p">config authentication-rule</span>
+        <span class="p">edit</span> <span class="n">1</span>
+            <span class="p">set groups</span> <span class="s">"gruppo-vpn"</span>
+            <span class="p">set portal</span> <span class="s">"portale-standard"</span>
+        <span class="p">next</span>
+    <span class="p">end</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<h2>5 · Le policy — il pezzo dimenticato</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    L'utente in VPN è una sorgente nuova, per ogni destinazione
+  </div>
+  <p>Gli utenti remoti entrano da un'interfaccia virtuale dedicata. Per <b>ogni</b> destinazione che
+  devono raggiungere serve una regola <b>da quell'interfaccia</b>: verso le reti interne, verso i
+  server, <b>verso ciascun tunnel</b> che devono attraversare.</p>
+  <p style="margin-bottom:0">Le regole che già esistono per la rete dell'ufficio <b>non li coprono</b>,
+  perché la coppia di interfacce è diversa. È il principio della lezione 12, e qui si applica ogni
+  singola volta.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La regola che fa arrivare l'utente da qualche parte</div>
+<pre><span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"VPN utenti -> reti interne"</span>
+        <span class="p">set srcintf</span> <span class="s">"ssl.root"</span>
+        <span class="p">set dstintf</span> <span class="s">"vlan10-uffici"</span>
+        <span class="p">set srcaddr</span> <span class="s">"pool-vpn-utenti"</span>
+        <span class="p">set dstaddr</span> <span class="s">"reti-aziendali"</span>
+        <span class="p">set groups</span> <span class="s">"gruppo-vpn"</span>     <span class="c"># restringe per gruppo</span>
+        <span class="p">set service</span> <span class="s">"ALL"</span>            <span class="c"># da stringere quando sai cosa serve</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Restringere per gruppo, non solo per indirizzo
+  </div>
+  <p>Il campo dei gruppi sulla policy fa sì che quella regola valga <b>solo per chi appartiene a quel
+  gruppo</b>, anche se tutti gli utenti prendono indirizzi dallo stesso intervallo.</p>
+  <p style="margin-bottom:0">È il modo pulito per dare accessi diversi a persone diverse: un gruppo
+  raggiunge tutto, un altro solo un server, un fornitore soltanto la sua applicazione. Senza questo,
+  chiunque entri in VPN arriva ovunque arrivi chiunque altro.</p>
+</div>
+
+<h2>Diagnosticare</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>I comandi, in ordine di utilità</div>
+<pre><span class="c">── chi è collegato adesso, e con che indirizzo ─────</span>
+<span class="p">get vpn ssl monitor</span>
+
+<span class="c">── la configurazione in vigore ─────────────────────</span>
+<span class="p">show vpn ssl settings</span>
+<span class="p">show vpn ssl web portal</span>
+
+<span class="c">── ⚠ i tentativi di autenticazione: LOCAL TRAFFIC ──</span>
+<span class="c">   non Forward Traffic (lezione 5)</span>
+<span class="p">execute log filter reset</span>
+<span class="p">execute log filter category event</span>
+<span class="p">execute log display</span>
+
+<span class="c">── e quando l'utente e dentro ma non arriva: ───────</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="p">\</span>
+<span class="n">    10.212.134.201 54000 10.10.10.50 443 6</span> <span class="s">ssl.root</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due rilievi di postura che troverai spesso
+  </div>
+  <ul style="margin-bottom:0">
+    <li><b>Nessun secondo fattore</b> su un accesso esposto a Internet, protetto dalla sola password.
+    È il rilievo più grave che si possa trovare su un accesso remoto: le credenziali rubate sono il
+    vettore d'ingresso più comune in assoluto, e la password da sola non le ferma. Molti apparati
+    includono alcune licenze di secondo fattore gratuite — <b>il momento più economico per attivarlo
+    è la creazione di un'utenza nuova</b>.</li>
+    <li><b>Certificato autofirmato</b>, che costringe gli utenti ad accettare un avviso di sicurezza a
+    ogni collegamento. Il problema non è estetico: <b>abitua le persone a ignorare gli avvisi sui
+    certificati</b>, che è esattamente ciò che non vuoi.</li>
+  </ul>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Una nota sul futuro
+  </div>
+  <p>Fortinet sta progressivamente spostando l'accesso remoto verso un modello diverso, basato sulla
+  verifica per singola applicazione invece che sul tunnel di rete, e <b>sulle versioni più recenti
+  l'accesso a tunnel non è più disponibile su tutti i modelli</b>.</p>
+  <p style="margin-bottom:0">Per il tuo lavoro oggi questa lezione è quella che ti serve — gli
+  apparati in produzione la usano. Ma quando pianifichi un rinnovo, <b>verifica sulla documentazione
+  del produttore</b> cosa supporta la versione che andrai a installare: è il genere di cosa che si
+  scopre male a migrazione avviata.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Costruiscilo, poi rompilo togliendo il quinto pezzo
+  </div>
+  <ol>
+    <li><b>Configura i cinque pezzi</b> sul 60D, con un utente locale di prova.</li>
+    <li><b>Collegati dal Mac</b> con il programma client, attraverso la porta esterna del firewall.</li>
+    <li><b>Verifica che sei dentro:</b> <code>get vpn ssl monitor</code> deve mostrarti, con
+    l'indirizzo assegnato dal pool.</li>
+    <li><b>Raggiungi una destinazione interna.</b> Funziona.</li>
+    <li><b>Ora disabilita la policy da <code>ssl.root</code></b> e riprova.</li>
+  </ol>
+  <p style="margin-top:12px"><b>Osserva cosa succede al passo 5 — è il cuore della lezione:</b></p>
+  <ul>
+    <li>Il collegamento VPN <b>resta su</b>. L'utente è ancora «dentro»</li>
+    <li>L'indirizzo è ancora assegnato</li>
+    <li><b>Ma niente funziona</b>, e non c'è nessun messaggio d'errore</li>
+    <li>Nei log: rifiuto con <b>identificativo di regola uguale a zero</b></li>
+  </ul>
+  <p style="margin-bottom:0"><b>È esattamente lo scenario che riceverai come ticket:</b> «la VPN si
+  collega ma non funziona niente». Ora sai che significa, con altissima probabilità, che manca la
+  regola per quella coppia di interfacce — e sai anche verificarlo in un comando.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: accesso remoto",
+  "questions": [
+    { "q": "L'utente si collega alla VPN ma non raggiunge niente. Cosa manca quasi sempre?",
+      "a": [ {"t":"La policy dall'interfaccia della VPN verso la destinazione","ok":true},
+             {"t":"L'autorizzazione dell'utenza","ok":false},
+             {"t":"Il certificato sul client","ok":false},
+             {"t":"Una rotta statica verso il pool","ok":false} ],
+      "e": "Entrare nella VPN e arrivare da qualche parte sono due cose diverse. Gli utenti remoti entrano da un'interfaccia dedicata, e per ogni destinazione serve una regola da quella interfaccia: le regole della rete d'ufficio non li coprono, perché la coppia è diversa." },
+
+    { "q": "Su un apparato con due linee, l'accesso remoto non risponde dalla seconda. Perché?",
+      "a": [ {"t":"L'interfaccia di ascolto non include quella su cui vive il secondo indirizzo pubblico","ok":true},
+             {"t":"Serve un secondo certificato","ok":false},
+             {"t":"Il pool di indirizzi è esaurito","ok":false},
+             {"t":"La seconda linea non supporta il traffico cifrato","ok":false} ],
+      "e": "Il servizio ascolta solo dove gli hai detto di ascoltare. Il sintomo è insidioso perché coincide con quello di un blocco per sorgente — la connessione non si stabilisce affatto — e si finisce a cercare restrizioni geografiche che non c'entrano." },
+
+    { "q": "Cerchi un utente nell'elenco locale e non c'è, ma si collega regolarmente. Com'è possibile?",
+      "a": [ {"t":"Il gruppo include un gruppo remoto di una directory aziendale","ok":true},
+             {"t":"L'utente usa un certificato invece della password","ok":false},
+             {"t":"L'elenco locale mostra solo gli utenti connessi","ok":false},
+             {"t":"L'utenza è stata creata in un altro VDOM","ok":false} ],
+      "e": "Con un gruppo remoto una persona può autenticarsi senza comparire fra gli utenti locali. Guardare solo l'elenco locale porta a concludere che l'utenza non esiste o è stata cancellata: va sempre controllata la composizione del gruppo." },
+
+    { "q": "Con l'instradamento selettivo, aggiungi una VLAN in sede. Cosa devi ricordare?",
+      "a": [ {"t":"Va aggiunta sia all'elenco delle reti instradate sia a una policy dedicata","ok":true},
+             {"t":"Basta la policy","ok":false},
+             {"t":"Basta aggiungerla all'elenco delle reti instradate","ok":false},
+             {"t":"Niente: le nuove reti vengono incluse automaticamente","ok":false} ],
+      "e": "Solo le reti elencate entrano nel tunnel, quindi senza l'elenco il traffico non ci arriva nemmeno; e senza policy verrebbe rifiutato una volta arrivato. Servono entrambi, ed è il motivo per cui conviene chiedersi subito, creando una rete, se i remoti devono raggiungerla." },
+
+    { "q": "A cosa serve il campo dei gruppi su una policy dall'interfaccia VPN?",
+      "a": [ {"t":"Fa valere la regola solo per chi appartiene a quel gruppo, pur condividendo lo stesso pool","ok":true},
+             {"t":"Sostituisce l'autenticazione","ok":false},
+             {"t":"Assegna indirizzi diversi a gruppi diversi","ok":false},
+             {"t":"Determina quale portale viene mostrato","ok":false} ],
+      "e": "È il modo pulito per dare accessi diversi a persone diverse: un gruppo raggiunge tutto, un altro un solo server, un fornitore soltanto la sua applicazione. Senza, chiunque entri in VPN arriva ovunque arrivi chiunque altro." },
+
+    { "q": "Perché un certificato autofirmato sull'accesso remoto è un problema, oltre all'estetica?",
+      "a": [ {"t":"Abitua le persone a ignorare gli avvisi sui certificati","ok":true},
+             {"t":"Rende la connessione non cifrata","ok":false},
+             {"t":"Riduce la velocità del tunnel","ok":false},
+             {"t":"Impedisce l'uso del secondo fattore","ok":false} ],
+      "e": "La cifratura funziona lo stesso. Il danno è comportamentale: un utente che ogni giorno clicca «procedi comunque» su un avviso di certificato lo farà anche il giorno in cui l'avviso è vero — ed è esattamente ciò che si vuole evitare." },
+
+    { "q": "Dove cerchi i tentativi di autenticazione falliti alla VPN?",
+      "a": [ {"t":"Nei registri degli eventi e nel traffico locale, non in quello che attraversa il firewall","ok":true},
+             {"t":"Nel traffico che attraversa il firewall","ok":false},
+             {"t":"Nei registri di sicurezza","ok":false},
+             {"t":"Nella tabella delle sessioni","ok":false} ],
+      "e": "Un tentativo di collegamento termina <em>sul</em> firewall, quindi non attraversa nulla. Cercarlo nel traffico che attraversa, non trovarlo e concludere che il traffico non arriva è l'errore classico della lezione 5." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

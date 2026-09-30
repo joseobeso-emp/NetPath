@@ -1,0 +1,297 @@
+#id: fg-19
+#title: IPsec site-to-site: fase 1, fase 2, selettori
+#min: 34
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: VPN
+#desc: Il tunnel fra due sedi costruito da zero, con i parametri che devono coincidere e quelli che no.
+#obj: Capire cosa negoziano le due fasi e in che ordine
+#obj: Sapere quali parametri devono essere identici sui due capi e quali no
+#obj: Costruire un tunnel completo, con rotte e policy
+#obj: Riconoscere gli algoritmi obsoleti e sapere quando vanno cambiati
+---
+<p class="lead">Un tunnel IPsec si costruisce in <strong>due fasi</strong>, e capire cosa fa ciascuna
+è ciò che rende leggibili i messaggi di errore. La prima stabilisce un canale sicuro fra i due
+apparati; la seconda decide <strong>quale traffico</strong> può usarlo.</p>
+
+<h2>Le due fasi</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Le due fasi della negoziazione IPsec">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Prima ci si riconosce, poi si concorda cosa può passare</text>
+
+    <rect x="40" y="44" width="620" height="82" rx="10" fill="var(--dg-2-fill)" stroke="var(--dg-2)" stroke-width="2"/>
+    <text x="350" y="68" text-anchor="middle" class="dg-label-sm">FASE 1 — chi sei, e come parliamo</text>
+    <g class="dg-mono-sm" text-anchor="middle" fill="var(--dg-text-soft)">
+      <text x="350" y="90">indirizzo del peer · autenticazione (chiave condivisa o certificato)</text>
+      <text x="350" y="108">algoritmi di cifratura e di integrità · gruppo di scambio chiavi · durata</text>
+    </g>
+
+    <rect x="40" y="144" width="620" height="82" rx="10" fill="var(--dg-3-fill)" stroke="var(--dg-3)" stroke-width="2"/>
+    <text x="350" y="168" text-anchor="middle" class="dg-label-sm">FASE 2 — quali reti possono attraversare</text>
+    <g class="dg-mono-sm" text-anchor="middle" fill="var(--dg-text-soft)">
+      <text x="350" y="190">I SELETTORI: rete locale ↔ rete remota</text>
+      <text x="350" y="208">algoritmi di trasporto · durata · segretezza in avanti</text>
+    </g>
+
+    <path d="M350 126 L 350 140" stroke="var(--dg-line)" stroke-width="2"/>
+    <path d="M344 140 L 350 148 L 356 140 Z" fill="var(--dg-line)"/>
+  </svg>
+  </div>
+  <figcaption>Se la fase 1 non riesce, la fase 2 non parte nemmeno. È la prima cosa da guardare quando
+  un tunnel non sale: <b>a quale fase si è fermato?</b></figcaption>
+</figure>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la riunione fra due aziende
+  </div>
+  <p><b>Fase 1 — ci si presenta.</b> I due delegati si mostrano il tesserino, verificano di essere chi
+  dicono, e si mettono d'accordo sulla lingua in cui parleranno. Se uno parla solo italiano e l'altro
+  solo tedesco, <b>la riunione non comincia nemmeno</b>.</p>
+  <p><b>Fase 2 — si decide l'ordine del giorno.</b> Ora che si capiscono, stabiliscono <em>di cosa</em>
+  possono parlare: questi tre argomenti sì, tutto il resto no.</p>
+  <p style="margin-bottom:0">Da qui i due errori tipici. «Non si capiscono» → problema di fase 1: il
+  tunnel non sale affatto. «Si capiscono ma quell'argomento non è all'ordine del giorno» → problema
+  di fase 2: <b>il tunnel è su, e il tuo traffico non passa</b>. Due sintomi completamente diversi, e
+  la prossima lezione li smonta entrambi.</p>
+</div>
+
+<h2>Cosa deve coincidere, e cosa no</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Parametro</th><th>Deve coincidere?</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td><b>Indirizzo del peer</b></td><td>Incrociato</td><td>Ciascuno punta all'indirizzo pubblico dell'altro</td></tr>
+      <tr><td><b>Chiave condivisa</b></td><td><b>Identica</b></td><td>Anche uno spazio di troppo la rende diversa</td></tr>
+      <tr><td><b>Versione del protocollo</b></td><td><b>Identica</b></td><td>La più recente è preferibile se entrambi la supportano</td></tr>
+      <tr><td><b>Algoritmi di fase 1</b></td><td>Almeno una proposta in comune</td>
+          <td>Si possono elencare più combinazioni: basta che una coincida</td></tr>
+      <tr><td><b>Gruppo di scambio chiavi</b></td><td><b>Almeno uno in comune</b></td><td>Causa frequentissima di fallimento</td></tr>
+      <tr><td><b>Selettori di fase 2</b></td><td><b>Speculari</b></td>
+          <td>La tua rete locale è la sua remota, e viceversa</td></tr>
+      <tr><td><b>Durate</b></td><td>No, ma conviene</td><td>Durate molto diverse causano rinegoziazioni asimmetriche</td></tr>
+      <tr><td><b>Rotte e policy</b></td><td>No</td><td>Ciascuno configura le proprie</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il tunnel, pezzo per pezzo</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Fase 1</div>
+<pre><span class="p">config vpn ipsec phase1-interface</span>
+    <span class="p">edit</span> <span class="s">"tunnel-filiale"</span>
+        <span class="p">set interface</span> <span class="s">"wan1"</span>
+        <span class="p">set ike-version</span> <span class="n">2</span>
+        <span class="p">set peertype</span> <span class="s">any</span>
+        <span class="p">set remote-gw</span> <span class="n">198.51.100.20</span>
+        <span class="p">set psksecret</span> <span class="s">"..."</span>
+        <span class="p">set proposal</span> <span class="s">aes256-sha256</span>
+        <span class="p">set dhgrp</span> <span class="n">14</span>
+        <span class="p">set dpd</span> <span class="s">on-idle</span>          <span class="c"># ← vedi riquadro</span>
+        <span class="p">set comments</span> <span class="s">"filiale nord — referente: Paolo"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="code" style="margin-top:12px">
+  <div class="code__bar"><span class="dot"></span>Fase 2 — i selettori</div>
+<pre><span class="p">config vpn ipsec phase2-interface</span>
+    <span class="p">edit</span> <span class="s">"tunnel-filiale-p2"</span>
+        <span class="p">set phase1name</span> <span class="s">"tunnel-filiale"</span>
+        <span class="p">set proposal</span> <span class="s">aes256-sha256</span>
+        <span class="p">set src-subnet</span> <span class="n">10.10.0.0 255.255.0.0</span>    <span class="c"># la MIA rete</span>
+        <span class="p">set dst-subnet</span> <span class="n">10.20.0.0 255.255.0.0</span>    <span class="c"># la SUA</span>
+        <span class="p">set auto-negotiate enable</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="code" style="margin-top:12px">
+  <div class="code__bar"><span class="dot"></span>E i due pezzi che tutti dimenticano</div>
+<pre><span class="c">── la rotta verso le reti remote ───────────────────</span>
+<span class="p">config router static</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set dst</span> <span class="n">10.20.0.0 255.255.0.0</span>
+        <span class="p">set device</span> <span class="s">"tunnel-filiale"</span>   <span class="c"># il tunnel È un'interfaccia</span>
+        <span class="p">set comment</span> <span class="s">"reti filiale nord"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">── e le policy: DUE, una per direzione ─────────────</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"sede -> filiale"</span>
+        <span class="p">set srcintf</span> <span class="s">"vlan10-uffici"</span>
+        <span class="p">set dstintf</span> <span class="s">"tunnel-filiale"</span>
+        <span class="p">set srcaddr</span> <span class="s">"rete-sede"</span>
+        <span class="p">set dstaddr</span> <span class="s">"rete-filiale"</span>
+        <span class="p">set service</span> <span class="s">"ALL"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+    <span class="p">next</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"filiale -> sede"</span>
+        <span class="p">set srcintf</span> <span class="s">"tunnel-filiale"</span>
+        <span class="p">set dstintf</span> <span class="s">"vlan10-uffici"</span>
+        <span class="p">set srcaddr</span> <span class="s">"rete-filiale"</span>
+        <span class="p">set dstaddr</span> <span class="s">"rete-sede"</span>
+        <span class="p">set service</span> <span class="s">"ALL"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un tunnel richiede quattro cose, non due
+  </div>
+  <p>Fase 1 e fase 2 <b>fanno salire il tunnel</b> e basta. Perché ci passi traffico servono anche:</p>
+  <ul style="margin-bottom:0">
+    <li><b>La rotta</b> verso le reti remote, con il tunnel come interfaccia di uscita</li>
+    <li><b>Le policy</b>, e <b>due</b>: una per ciascuna direzione. Una sola fa funzionare il traffico
+    in un verso e non nell'altro — e produce sintomi che sembrano casuali</li>
+  </ul>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il rilevamento del peer morto, e perché va acceso
+  </div>
+  <p>Con il rilevamento impostato «su richiesta», i due capi <b>non si scambiano segnali di vita</b>
+  finché non c'è traffico. Se l'altro capo sparisce senza avvisare — si spegne, cambia indirizzo — il
+  tuo apparato <b>continua a considerare il tunnel attivo</b> e a mandarci dentro il traffico, che
+  sparisce.</p>
+  <p style="margin-bottom:0">Su un apparato in produzione si è trovato esattamente questo: contatori
+  di rilevamento a zero in entrambe le direzioni, e nessun controllo di salute sulle rotte del tunnel.
+  <b>Un guasto silenzioso dell'altro capo non avrebbe ritirato la rotta</b>, e il traffico sarebbe
+  continuato a finire in un tunnel morto.</p>
+</div>
+
+<h2>Gli algoritmi obsoleti</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il tunnel che funziona oggi e cadrà definitivamente un giorno
+  </div>
+  <p>Su tunnel costruiti anni fa troverai algoritmi di cifratura e di integrità <b>superati</b>, e
+  gruppi di scambio chiavi troppo deboli per gli standard attuali. Il tunnel funziona: le due parti si
+  accordano su quello che entrambe supportano.</p>
+  <p><b>Il problema è il futuro:</b> il giorno in cui la controparte aggiorna il proprio apparato e
+  smette di offrire quegli algoritmi, <b>il tunnel non sale più</b> — e succede senza preavviso, spesso
+  di notte, dopo una loro manutenzione di cui nessuno ti ha informato.</p>
+  <p style="margin-bottom:0"><b>Cosa fare:</b> annotarlo come rilievo di priorità media, e
+  <b>programmare l'aggiornamento concordato con la controparte</b>. Non si cambia da un lato solo: si
+  fissa una finestra, si aggiungono le proposte nuove <em>accanto</em> alle vecchie su entrambi i capi,
+  si verifica che rinegozi sulle nuove, e solo dopo si tolgono le vecchie.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Un tunnel vero, fra il 60D e il MikroTik
+  </div>
+  <p>Hai due apparati di marche diverse: è il laboratorio ideale, perché ti costringe a far coincidere
+  i parametri invece di copiare la stessa schermata due volte — che è esattamente la situazione reale
+  quando l'altro capo è di un fornitore.</p>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Lo schema del laboratorio</div>
+<pre><span class="c">   rete 10.10.0.0/16          rete 10.20.0.0/16</span>
+<span class="c">        │                            │</span>
+<span class="c">   [ FortiGate 60D ]══ tunnel ══[ MikroTik hAP ax2 ]</span>
+<span class="c">        │                            │</span>
+<span class="c">   le due "sedi" sono due segmenti del tuo laboratorio</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>Procedi così, e annota tutto:</b></p>
+  <ol>
+    <li><b>Scrivi su un foglio i parametri concordati</b> prima di configurare: versione, algoritmi,
+    gruppo, chiave, selettori. <b>È quello che faresti con un fornitore</b>, e ti obbliga a decidere
+    invece di scoprire.</li>
+    <li><b>Configura entrambi i capi</b> secondo il foglio.</li>
+    <li><b>Aggiungi rotte e policy</b> — su entrambi, e in entrambe le direzioni.</li>
+    <li><b>Verifica che salga</b> e che passi traffico.</li>
+  </ol>
+  <div class="code" style="margin:12px 0 0">
+    <div class="code__bar"><span class="dot"></span>Le verifiche sui due apparati</div>
+<pre><span class="c">═══ sul FortiGate ══════════════════════════════════</span>
+<span class="p">get vpn ipsec tunnel summary</span>
+<span class="p">diagnose vpn ike gateway list name</span> <span class="s">"tunnel-filiale"</span>
+<span class="p">diagnose vpn tunnel list name</span> <span class="s">"tunnel-filiale"</span>
+
+<span class="c">═══ sul MikroTik ═══════════════════════════════════</span>
+<span class="p">/ip/ipsec/active-peers/print</span>
+<span class="p">/ip/ipsec/installed-sa/print</span>
+<span class="p">/ip/ipsec/policy/print</span>
+</pre>
+  </div>
+  <p style="margin-top:14px"><b>Poi l'esercizio che insegna di più:</b> cambia <b>un solo parametro</b>
+  su un lato — il gruppo di scambio chiavi, o un algoritmo — e guarda cosa succede.</p>
+  <p style="margin-bottom:0">Vedrai il tunnel smettere di salire, e soprattutto vedrai <b>quale
+  messaggio</b> compare. Quel messaggio è ciò che leggerai davvero quando un fornitore avrà
+  configurato il suo capo in modo diverso dal tuo — ed è il tema della prossima lezione.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: IPsec site-to-site",
+  "questions": [
+    { "q": "Cosa negozia la fase 1 e cosa la fase 2?",
+      "a": [ {"t":"La fase 1 chi sono i due capi e come parleranno; la fase 2 quali reti possono attraversare","ok":true},
+             {"t":"La fase 1 le reti, la fase 2 la cifratura","ok":false},
+             {"t":"La fase 1 il routing, la fase 2 le policy","ok":false},
+             {"t":"Sono due tentativi successivi dello stesso accordo","ok":false} ],
+      "e": "È la riunione fra due aziende: prima ci si mostra il tesserino e si sceglie la lingua, poi si decide l'ordine del giorno. «Non si capiscono» è fase 1 e il tunnel non sale; «quell'argomento non è all'ordine del giorno» è fase 2, e il tunnel è su mentre il traffico non passa." },
+
+    { "q": "Quali parametri devono essere speculari fra i due capi?",
+      "a": [ {"t":"I selettori di fase 2: la tua rete locale è la sua remota","ok":true},
+             {"t":"Le rotte statiche","ok":false},
+             {"t":"Le policy firewall","ok":false},
+             {"t":"Le durate delle associazioni","ok":false} ],
+      "e": "Chiave, versione e algoritmi devono coincidere; i selettori devono essere incrociati. Rotte e policy sono invece configurazione locale: ciascuno scrive le proprie, e non c'è nulla da concordare." },
+
+    { "q": "Il tunnel è su e configurato, ma non passa traffico. Cosa manca probabilmente?",
+      "a": [ {"t":"La rotta verso le reti remote, o una delle due policy","ok":true},
+             {"t":"Un secondo selettore di fase 2","ok":false},
+             {"t":"L'abilitazione del rilevamento del peer","ok":false},
+             {"t":"Un certificato","ok":false} ],
+      "e": "Fase 1 e fase 2 fanno salire il tunnel e basta. Servono anche la rotta, con il tunnel come interfaccia di uscita, e <b>due</b> policy: con una sola il traffico funziona in un verso e non nell'altro, con sintomi che sembrano casuali." },
+
+    { "q": "Perché il rilevamento del peer impostato «su richiesta» è rischioso?",
+      "a": [ {"t":"Senza traffico i due capi non si scambiano segnali di vita: un guasto silenzioso non viene rilevato","ok":true},
+             {"t":"Consuma banda inutilmente","ok":false},
+             {"t":"Impedisce la rinegoziazione delle chiavi","ok":false},
+             {"t":"Rende il tunnel più lento","ok":false} ],
+      "e": "Se l'altro capo sparisce — si spegne, cambia indirizzo — il tuo apparato continua a considerare il tunnel attivo e a mandarci dentro traffico che sparisce. Senza un controllo di salute che ritiri la rotta, il problema non emerge finché qualcuno non se ne lamenta." },
+
+    { "q": "Trovi un tunnel con algoritmi obsoleti che però funziona. Cosa fai?",
+      "a": [ {"t":"Lo annoti come rilievo e programmi l'aggiornamento concordato con la controparte","ok":true},
+             {"t":"Lo aggiorni subito dal tuo lato","ok":false},
+             {"t":"Niente: se funziona non va toccato","ok":false},
+             {"t":"Lo disattivi finché non viene aggiornato","ok":false} ],
+      "e": "Cambiare da un lato solo fa cadere il tunnel. Si fissa una finestra, si aggiungono le proposte nuove <em>accanto</em> alle vecchie su entrambi i capi, si verifica che rinegozi sulle nuove, e solo dopo si tolgono le vecchie. Lasciarlo com'è significa che cadrà senza preavviso il giorno in cui la controparte aggiorna." },
+
+    { "q": "Perché costruire il tunnel di laboratorio fra due apparati di marche diverse è più utile?",
+      "a": [ {"t":"Ti costringe a far coincidere i parametri invece di copiare la stessa schermata due volte","ok":true},
+             {"t":"Perché è l'unico modo di provare IPsec","ok":false},
+             {"t":"Perché le prestazioni sono migliori","ok":false},
+             {"t":"Perché solo così si vedono i selettori","ok":false} ],
+      "e": "È esattamente la situazione reale: l'altro capo è quasi sempre di un altro fornitore, con un'interfaccia diversa e nomi diversi per le stesse cose. Scrivere prima i parametri concordati su un foglio è ciò che faresti davvero, e obbliga a decidere invece di scoprire." }
+  ]
+}
+</script>

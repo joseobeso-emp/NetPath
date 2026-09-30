@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Il tunnel è su ma il traffico non passa — NetPath</title>
+<meta name="description" content="Selettori, rotte, policy e dimensione dei pacchetti: le quattro cause, in ordine di frequenza, e come si distinguono.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-21">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>VPN</span>
+      </nav>
+      <h1 class="lesson-title">Il tunnel è su ma il traffico non passa</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 21</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Escludere le quattro cause in ordine, con una prova per ciascuna</li>
+        <li>Riconoscere il problema di dimensione dei pacchetti dalla sua firma</li>
+        <li>Distinguere «il traffico non entra nel tunnel» da «entra e non torna»</li>
+        <li>Applicare la correzione giusta invece di quella che si trova per prima su Internet</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">È la situazione più frustrante delle VPN: la schermata dice che il tunnel è attivo, i
+contatori di negoziazione sono a posto, e l'utente ti dice che non funziona niente. Le cause sono
+<strong>quattro</strong>, e si escludono in ordine con una prova ciascuna.</p>
+
+<h2>Le quattro cause, in ordine di frequenza</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Causa</th><th>Firma</th><th>Prova</th></tr></thead>
+    <tbody>
+      <tr><td><b>1</b></td><td><b>Selettori</b>: il traffico non ricade nelle reti concordate</td>
+          <td>Il traffico sparisce in silenzio. Contatori del tunnel fermi</td>
+          <td>Confronta i selettori <b>negoziati</b> con gli indirizzi reali</td></tr>
+      <tr><td><b>2</b></td><td><b>Rotta</b> mancante o verso l'interfaccia sbagliata</td>
+          <td>Il traffico non arriva nemmeno al tunnel</td>
+          <td>Interroga la tabella per quella destinazione</td></tr>
+      <tr><td><b>3</b></td><td><b>Policy</b> mancante, in una o in entrambe le direzioni</td>
+          <td>Rifiuto con regola zero, o funziona in un verso solo</td>
+          <td><code>iprope lookup</code> sui due versi</td></tr>
+      <tr><td><b>4</b></td><td><b>Dimensione dei pacchetti</b></td>
+          <td><b>Il ping funziona, i trasferimenti no</b></td>
+          <td>Ping con pacchetti grandi e frammentazione vietata</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Causa 1 · I selettori</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Guarda i selettori <em>negoziati</em>, non quelli configurati
+  </div>
+  <p>La schermata mostra ciò che hai <b>chiesto</b>. Il comando mostra ciò su cui i due capi si sono
+  effettivamente <b>accordati</b>. Se la controparte ha una configurazione diversa, il risultato può
+  non coincidere con le tue intenzioni — e tu continueresti a guardare la schermata che ti dà
+  ragione.</p>
+  <div class="code" style="margin:12px 0 0">
+<pre><span class="p">diagnose vpn tunnel list name</span> <span class="s">"tunnel-filiale"</span>
+<span class="c">   src: 10.10.0.0-10.10.255.255</span>
+<span class="c">   dst: 10.20.0.0-10.20.255.255</span>
+
+<span class="c">   Ora confronta con gli indirizzi VERI del traffico</span>
+<span class="c">   che deve passare. Rientrano entrambi?</span>
+</pre>
+  </div>
+  <p style="margin-top:12px;margin-bottom:0"><b>Il caso classico:</b> gli utenti in accesso remoto
+  prendono indirizzi da un intervallo che <b>non è nei selettori</b>. Dall'ufficio funziona, in VPN no
+  — ed è il caso della lezione 7.</p>
+</div>
+
+<h2>Causa 2 · La rotta</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Chi vince per quella destinazione?</div>
+<pre><span class="p">get router info routing-table details</span> <span class="n">10.20.10.50</span>
+
+<span class="c">── cosa verificare ─────────────────────────────────</span>
+<span class="c">   1. esiste una rotta per quella rete?</span>
+<span class="c">   2. l'interfaccia di uscita e IL TUNNEL?</span>
+<span class="c">   3. non c'e una rotta piu specifica che vince</span>
+<span class="c">      e manda il traffico altrove?</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Rotta presente ma senza selettore corrispondente
+  </div>
+  <p>È il caso più insidioso, perché tutto sembra configurato: c'è la rotta, c'è il tunnel, c'è la
+  policy. <b>Ma la rete che la rotta manda nel tunnel non è fra quelle concordate</b> in fase 2.</p>
+  <p style="margin-bottom:0">Il traffico entra e non trova un'associazione che lo trasporti: <b>quella
+  destinazione non è mai stata raggiungibile</b>, dal giorno in cui è stata configurata. Spesso emerge
+  anni dopo, quando qualcuno prova a usarla per la prima volta — e nel frattempo tutti credevano che
+  funzionasse.</p>
+</div>
+
+<h2>Causa 3 · Le policy, in due direzioni</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una sola policy produce sintomi che sembrano casuali
+  </div>
+  <p>Con la regola solo nel verso «sede → filiale», le connessioni iniziate dalla sede funzionano e
+  quelle iniziate dalla filiale no.</p>
+  <p style="margin-bottom:0">All'utente sembra intermittente — «a volte va, a volte no» — perché
+  dipende da chi inizia. E chi diagnostica prova dal proprio lato, funziona, e conclude che il problema
+  è dall'altra parte. <b>Si verificano sempre entrambi i versi</b>, con due interrogazioni.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Le due interrogazioni</div>
+<pre><span class="c">── verso l'esterno ─────────────────────────────────</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="n">10.10.10.25 54000</span> <span class="p">\</span>
+<span class="n">    10.20.10.50 443 6</span> <span class="s">vlan10-uffici</span>
+
+<span class="c">── e verso l'interno ───────────────────────────────</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="n">10.20.10.50 54000</span> <span class="p">\</span>
+<span class="n">    10.10.10.25 443 6</span> <span class="s">tunnel-filiale</span>
+</pre>
+</div>
+
+<h2>Causa 4 · La dimensione dei pacchetti</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    La firma che la riconosce in trenta secondi
+  </div>
+  <p>Ogni strato di incapsulamento ruba spazio ai dati. Dentro un tunnel lo spazio utile si riduce, e i
+  pacchetti al massimo della dimensione <b>non passano</b>.</p>
+  <ul>
+    <li>✓ <b>Il ping funziona</b> — pacchetti minuscoli</li>
+    <li>✓ <b>La connessione si stabilisce</b> — la pagina inizia a caricare, il login riesce</li>
+    <li>✗ <b>I trasferimenti si bloccano</b>, le pagine restano a metà</li>
+    <li>✗ <b>Succede solo dentro il tunnel</b></li>
+  </ul>
+  <p style="margin-bottom:0"><b>Nessun'altra causa produce questa combinazione.</b> È il tema della
+  lezione 3-19, e qui la ritrovi applicata.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La prova, e la cura</div>
+<pre><span class="c">══ LA PROVA — dal Mac, attraverso il tunnel ════════</span>
+<span class="p">ping -D -s 1472 10.20.10.50</span>    <span class="c"># deve fallire</span>
+<span class="p">ping -D -s 1300 10.20.10.50</span>    <span class="c"># deve funzionare</span>
+<span class="c">   -D vieta la frammentazione</span>
+
+<span class="c">   da Windows:  ping -f -l 1472 10.20.10.50</span>
+
+<span class="c">══ LA CURA — sulla policy che attraversa il tunnel ═</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">&lt;id&gt;</span>
+        <span class="p">set tcp-mss-sender</span> <span class="n">1350</span>
+        <span class="p">set tcp-mss-receiver</span> <span class="n">1350</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La correzione chirurgica contro quella che rompe tutto
+  </div>
+  <p>Cercando questo problema su Internet troverai due tipi di consigli, e la differenza fra loro è
+  enorme.</p>
+  <p><b>Corretto:</b> intervenire <b>sulla singola policy</b> che attraversa il tunnel. Agisce solo su
+  quel traffico, non tocca nessun altro, e si annulla in un comando.</p>
+  <p style="margin-bottom:0"><b>Da non fare senza averne discusso:</b> abbassare la dimensione massima
+  <b>globale</b> dell'interfaccia, o cambiare il protocollo di trasporto dell'accesso remoto. Questi
+  <b>impattano tutti gli utenti</b> — e nel caso dell'accesso remoto <b>obbligano a riscaricare la
+  configurazione su ogni client</b>. Non è una modifica da fare al volo per risolvere il problema di
+  una persona: è una decisione da concordare.</p>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Come si <em>esclude</em> la dimensione dei pacchetti, con un dato
+  </div>
+  <p>Se insieme ai trasferimenti <b>fallisce anche la risoluzione dei nomi</b>, l'ipotesi si indebolisce
+  parecchio: le interrogazioni DNS sono pacchetti da poche decine di byte, e <b>la frammentazione non
+  rompe i pacchetti piccoli</b>.</p>
+  <p style="margin-bottom:0">È un esempio di come si indebolisce un'ipotesi <b>con un'osservazione</b>
+  invece che con un'intuizione — ed è esattamente la disciplina della catena a sette anelli.</p>
+</div>
+
+<h2>Il caso particolare: il collegamento persistente</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    «L'applicazione web mostra una schermata vuota solo in VPN»
+  </div>
+  <p>Molte applicazioni web moderne aprono, dopo il caricamento, un <b>collegamento persistente</b> che
+  resta aperto per ricevere aggiornamenti in tempo reale. È una connessione diversa da quelle normali,
+  e più fragile.</p>
+  <p><b>Se l'autenticazione riesce e i dati iniziali si caricano</b>, il trasporto cifrato funziona: il
+  guasto riguarda <b>specificamente</b> quel collegamento persistente. Le cause tipiche, in ordine:</p>
+  <ul style="margin-bottom:0">
+    <li><b>Dimensione dei pacchetti</b> nel tunnel</li>
+    <li><b>Incapsulamento di trasporto affidabile dentro trasporto affidabile</b>, che degrada le
+    connessioni lunghe</li>
+    <li>Un apparato lungo il percorso, o un <b>timeout di inattività</b>, che chiude la connessione
+    perché la considera inutilizzata</li>
+  </ul>
+  <p style="margin-top:8px;margin-bottom:0"><b>La deduzione che conta:</b> «login riuscito e dati
+  caricati» esclude da sola la latenza, il certificato e il blocco generico — e sposta l'indagine su
+  un pezzo molto più piccolo.</p>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Le quattro cause, provocate una alla volta
+  </div>
+  <p>Con il tunnel fra 60D e MikroTik funzionante, provoca ciascuna causa e <b>osserva quale prova la
+  rivela</b>. Rimetti a posto fra un caso e l'altro.</p>
+  <div class="table-wrap" style="margin:14px 0 0">
+    <table>
+      <thead><tr><th>Provoca</th><th>Prova che lo rivela</th></tr></thead>
+      <tbody>
+        <tr><td>Restringi un selettore su un lato</td><td><code>diagnose vpn tunnel list</code>: i selettori negoziati cambiano</td></tr>
+        <tr><td>Cancella la rotta verso la rete remota</td><td><code>routing-table details</code>: nessuna rotta, o l'interfaccia sbagliata</td></tr>
+        <tr><td>Disabilita la policy di ritorno</td><td><code>iprope lookup</code> sul verso inverso: regola diversa o nessuna</td></tr>
+        <tr><td><b>Imposta 1350 e poi togli</b> l'intervento sulla dimensione</td><td>Il ping piccolo passa, quello grande no</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="code" style="margin:14px 0 0">
+    <div class="code__bar"><span class="dot"></span>Il ciclo di verifica, da ripetere ogni volta</div>
+<pre><span class="c"># 1. il tunnel e ancora su?</span>
+<span class="p">get vpn ipsec tunnel summary</span>
+
+<span class="c"># 2. i selettori negoziati coprono il tuo traffico?</span>
+<span class="p">diagnose vpn tunnel list name</span> <span class="s">"tunnel-filiale"</span>
+
+<span class="c"># 3. la rotta manda dove pensi?</span>
+<span class="p">get router info routing-table details</span> <span class="n">10.20.10.50</span>
+
+<span class="c"># 4. le policy coprono ENTRAMBI i versi?</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="c">... andata ...</span>
+<span class="p">diagnose firewall iprope lookup</span> <span class="c">... ritorno ...</span>
+
+<span class="c"># 5. i pacchetti grandi passano?</span>
+<span class="c">   dal Mac:  ping -D -s 1472 &lt;host-remoto&gt;</span>
+</pre>
+  </div>
+  <p style="margin-top:14px;margin-bottom:0"><b>Questi cinque comandi, in quest'ordine, sono la
+  procedura completa</b> per un tunnel che è su e non passa traffico. Imparali come sequenza: quando
+  arriverà il ticket vero, li darai senza pensarci.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: tunnel su, traffico fermo",
+  "questions": [
+    { "q": "Il ping funziona ma i trasferimenti si bloccano, solo dentro il tunnel. Quale causa?",
+      "a": [ {"t":"La dimensione dei pacchetti: l'incapsulamento riduce lo spazio utile","ok":true},
+             {"t":"Un selettore che non copre il traffico","ok":false},
+             {"t":"Una policy mancante","ok":false},
+             {"t":"Una rotta verso l'interfaccia sbagliata","ok":false} ],
+      "e": "Nessun'altra causa produce questa combinazione: i pacchetti piccoli passano, quelli al massimo della dimensione no. Un selettore mancante o una policy assente fermerebbero tutto, ping compreso." },
+
+    { "q": "Il traffico funziona in un verso e non nell'altro. Cosa cerchi?",
+      "a": [ {"t":"La policy nel verso mancante","ok":true},
+             {"t":"Un secondo selettore di fase 2","ok":false},
+             {"t":"Un problema di dimensione dei pacchetti","ok":false},
+             {"t":"Una rinegoziazione fallita","ok":false} ],
+      "e": "Con la regola in un solo verso, le connessioni iniziate da un lato funzionano e quelle dall'altro no. All'utente sembra intermittente, e chi diagnostica prova dal proprio lato, funziona, e conclude che il problema è dall'altra parte. Si verificano sempre entrambi i versi." },
+
+    { "q": "Dove leggi i selettori realmente in uso?",
+      "a": [ {"t":"Nell'output del comando di diagnosi del tunnel, nei campi di sorgente e destinazione","ok":true},
+             {"t":"Nella configurazione della fase 2","ok":false},
+             {"t":"Nella tabella di routing","ok":false},
+             {"t":"Nei log del traffico","ok":false} ],
+      "e": "La configurazione mostra ciò che hai chiesto, il comando ciò su cui i due capi si sono accordati. Se la controparte ha impostazioni diverse i due non coincidono, e continueresti a guardare la schermata che ti dà ragione." },
+
+    { "q": "Insieme ai trasferimenti fallisce anche la risoluzione dei nomi. Cosa deduci?",
+      "a": [ {"t":"L'ipotesi sulla dimensione dei pacchetti si indebolisce: le interrogazioni DNS sono minuscole","ok":true},
+             {"t":"È confermata: fallisce tutto","ok":false},
+             {"t":"È irrilevante per la diagnosi","ok":false},
+             {"t":"Indica un problema di cifratura","ok":false} ],
+      "e": "La frammentazione rompe i pacchetti grandi, non quelli da poche decine di byte. È un esempio di come si indebolisce un'ipotesi con un'osservazione invece che con un'intuizione — la disciplina della catena a sette anelli." },
+
+    { "q": "Qual è la correzione chirurgica per il problema di dimensione dei pacchetti?",
+      "a": [ {"t":"Intervenire sulla singola policy che attraversa il tunnel","ok":true},
+             {"t":"Abbassare la dimensione massima globale dell'interfaccia","ok":false},
+             {"t":"Cambiare il protocollo di trasporto dell'accesso remoto","ok":false},
+             {"t":"Aumentare la dimensione massima sul client","ok":false} ],
+      "e": "Agisce solo su quel traffico e si annulla in un comando. Le altre due impattano tutti gli utenti, e cambiare il protocollo dell'accesso remoto obbliga a riscaricare la configurazione su ogni client: non sono modifiche da fare al volo per una persona." },
+
+    { "q": "Un'applicazione web mostra schermata vuota solo in VPN, ma login e dati iniziali funzionano. Cosa esclude?",
+      "a": [ {"t":"Latenza, certificato e blocco generico: il trasporto cifrato funziona","ok":true},
+             {"t":"La dimensione dei pacchetti","ok":false},
+             {"t":"Un problema di selettori","ok":false},
+             {"t":"Un timeout di inattività","ok":false} ],
+      "e": "Se l'autenticazione riesce e i dati si caricano, il canale cifrato sta lavorando: il guasto riguarda specificamente il collegamento persistente che l'applicazione apre dopo. Restano in gioco dimensione dei pacchetti, incapsulamento annidato e timeout — che sono proprio le tre cause tipiche." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

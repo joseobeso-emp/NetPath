@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quando un tunnel non sale — NetPath</title>
+<meta name="description" content="I comandi che dicono esattamente a quale passo si è fermata la negoziazione, e cosa significa ciascun messaggio.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="fg-20">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#fg">Modulo Fortinet</a><span class="sep">/</span>
+        <span>VPN</span>
+      </nav>
+      <h1 class="lesson-title">Quando un tunnel non sale</h1>
+      <div class="lesson-meta">
+        <span class="badge lvfg">Modulo Fortinet</span>
+        <span class="chip">Lezione 20</span>
+        <span class="chip">30 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Determinare in trenta secondi a quale fase si è fermata la negoziazione</li>
+        <li>Tradurre i messaggi di errore nella causa reale</li>
+        <li>Usare la traccia di negoziazione senza affogare nell'output</li>
+        <li>Sapere cosa chiedere alla controparte, e come</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Un tunnel che non sale sembra un problema opaco. Non lo è: la negoziazione IPsec è una
+sequenza di passi ben definiti, e l'apparato ti dice <strong>esattamente a quale passo si è
+fermata</strong>. Imparare a leggere quell'informazione trasforma ore di tentativi in cinque minuti.</p>
+
+<h2>Prima domanda: quale fase?</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>I due comandi che rispondono</div>
+<pre><span class="c">── 1. panoramica: quali tunnel esistono e come stanno</span>
+<span class="p">get vpn ipsec tunnel summary</span>
+
+<span class="c">── 2. la fase 1: ci si è riconosciuti? ─────────────</span>
+<span class="p">diagnose vpn ike gateway list name</span> <span class="s">"tunnel-filiale"</span>
+<span class="c">   cerca:  status</span>
+<span class="c">           created / established  → contatori dei tentativi</span>
+<span class="c">           DPD sent/recv          → segnali di vita</span>
+
+<span class="c">── 3. la fase 2: c'e un accordo sul traffico? ──────</span>
+<span class="p">diagnose vpn tunnel list name</span> <span class="s">"tunnel-filiale"</span>
+<span class="c">   cerca:  src / dst  → I SELETTORI NEGOZIATI</span>
+<span class="c">           npkts / nbytes → traffico effettivo</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa vedi</th><th>Dove si è fermato</th><th>Dove guardare</th></tr></thead>
+    <tbody>
+      <tr><td>Nessuna associazione di fase 1</td><td><b>Fase 1 fallita</b></td>
+          <td>Indirizzo del peer, chiave, versione, algoritmi, raggiungibilità</td></tr>
+      <tr><td>Fase 1 stabilita, nessuna associazione di fase 2</td><td><b>Fase 2 fallita</b></td>
+          <td><b>Selettori</b> e algoritmi di fase 2</td></tr>
+      <tr><td>Entrambe stabilite, contatori a zero</td><td>Il tunnel è su</td>
+          <td><b>Non è più un problema di tunnel</b> → lezione 21</td></tr>
+      <tr><td>Fase 1 con molti tentativi e poche riuscite</td><td>Instabilità</td>
+          <td>Perdita di pacchetti sul percorso, o durate molto diverse fra i capi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>I messaggi, tradotti</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Messaggio (o suo equivalente)</th><th>Cosa significa davvero</th></tr></thead>
+    <tbody>
+      <tr><td><b>Nessuna proposta accettata</b><br><span style="font-size:.85em">no proposal chosen</span></td>
+          <td><b>Non avete un algoritmo in comune.</b> È il messaggio più frequente in assoluto. Include il gruppo di scambio chiavi, che viene dimenticato spesso</td></tr>
+      <tr><td><b>Autenticazione fallita</b><br><span style="font-size:.85em">probable pre-shared key mismatch</span></td>
+          <td><b>La chiave non coincide.</b> Attenzione agli spazi finali e ai caratteri che il copia-incolla trasforma</td></tr>
+      <tr><td><b>Peer non identificato</b></td>
+          <td>L'apparato non riconosce chi sta chiamando: indirizzo del peer diverso da quello atteso, oppure la controparte esce da un indirizzo che non ti aspetti</td></tr>
+      <tr><td><b>Nessun selettore corrispondente</b><br><span style="font-size:.85em">no matching IPsec selector</span></td>
+          <td><b>Fase 2:</b> il traffico non ricade nelle reti concordate. Il tunnel può essere su</td></tr>
+      <tr><td><b>Nessuna risposta</b><br><span style="font-size:.85em">retransmit, nessun riscontro</span></td>
+          <td>Le tue proposte partono e non torna niente: <b>non è un problema di parametri</b>, è che i pacchetti non arrivano all'altro capo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    «Nessuna risposta» non si risolve cambiando i parametri
+  </div>
+  <p>È l'errore diagnostico più costoso di questa lezione: si vede il tunnel che non sale e si comincia
+  a provare algoritmi diversi. Ma se <b>dall'altro capo non torna nulla</b>, nessuna combinazione di
+  parametri funzionerà mai — perché le tue proposte non arrivano nemmeno.</p>
+  <p><b>Cosa verificare invece:</b></p>
+  <ul style="margin-bottom:0">
+    <li>L'indirizzo del peer è quello giusto? È cambiato?</li>
+    <li>Il traffico di negoziazione può uscire e rientrare? Qualcuno lo blocca lungo il percorso?</li>
+    <li>La controparte è accesa e configurata?</li>
+    <li><b>La controparte esce dall'indirizzo che tu ti aspetti?</b> Con più linee o dietro una
+    traduzione, l'indirizzo sorgente può non essere quello che ti hanno comunicato</li>
+  </ul>
+</div>
+
+<h2>La traccia di negoziazione</h2>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Va sempre filtrata, e va sempre spenta
+  </div>
+  <p>La traccia della negoziazione è lo strumento definitivo: mostra passo per passo cosa proponi, cosa
+  risponde l'altro, e dove si interrompe. Ma su un apparato con dieci tunnel attivi produce un fiume
+  di righe illeggibile.</p>
+  <p style="margin-bottom:0"><b>Si filtra sempre sull'indirizzo del peer</b>, prima di accenderla. E si
+  <b>spegne sempre</b> quando hai finito: lasciata attiva consuma risorse e, su apparati carichi, può
+  degradare le prestazioni.</p>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La sequenza completa, da imparare a memoria</div>
+<pre><span class="c">── 1. azzera tutto quello che c'era prima ──────────</span>
+<span class="p">diagnose debug reset</span>
+<span class="p">diagnose vpn ike log-filter clear</span>
+
+<span class="c">── 2. filtra sul SOLO peer che ti interessa ────────</span>
+<span class="p">diagnose vpn ike log-filter dst-addr4</span> <span class="n">198.51.100.20</span>
+
+<span class="c">── 3. accendi ──────────────────────────────────────</span>
+<span class="p">diagnose debug application ike -1</span>
+<span class="p">diagnose debug enable</span>
+
+<span class="c">── 4. forza una rinegoziazione ─────────────────────</span>
+<span class="p">diagnose vpn ike gateway clear name</span> <span class="s">"tunnel-filiale"</span>
+<span class="c">   ⚠ su un tunnel IN PRODUZIONE questo lo fa cadere</span>
+
+<span class="c">── 5. guarda scorrere, poi SPEGNI ──────────────────</span>
+<span class="p">diagnose debug disable</span>
+<span class="p">diagnose debug reset</span>
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Cosa cercare nel fiume di righe
+  </div>
+  <p>Non serve capire ogni riga. Serve trovare <b>tre cose</b>:</p>
+  <ol style="margin-bottom:0">
+    <li><b>L'ultimo scambio riuscito</b> — fin dove siete arrivati insieme</li>
+    <li><b>Il primo errore</b> — e il suo testo esatto, che è quello da tradurre con la tabella sopra</li>
+    <li><b>Se l'altro capo ha risposto qualcosa</b>, o se stai parlando da solo — perché questo
+    discrimina fra «parametri sbagliati» e «i pacchetti non arrivano»</li>
+  </ol>
+</div>
+
+<h2>Parlare con la controparte</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un tunnel ha due capi: metà delle informazioni non ce l'hai
+  </div>
+  <p>Quando la negoziazione fallisce e dal tuo lato è tutto coerente, serve l'altro lato. E il modo in
+  cui lo chiedi determina se otterrai una risposta utile o un rimpallo di tre giorni.</p>
+  <p><b>Cosa mandare, in una sola comunicazione:</b></p>
+  <ul>
+    <li><b>Il tuo indirizzo pubblico</b> e quello a cui stai puntando</li>
+    <li><b>I tuoi parametri esatti:</b> versione, algoritmi di entrambe le fasi, gruppo di scambio
+    chiavi, durate</li>
+    <li><b>I tuoi selettori</b>, scritti come reti</li>
+    <li><b>L'errore esatto</b> che vedi, con l'orario</li>
+    <li><b>La domanda precisa:</b> «potete confermare che dal vostro lato i parametri sono questi, e
+    dirmi che errore vedete voi allo stesso orario?»</li>
+  </ul>
+  <p style="margin-bottom:0"><b>Perché funziona:</b> chiedere «non va, potete controllare?» produce un
+  controllo superficiale. Mandare i propri parametri per intero permette all'altro di fare il confronto
+  in due minuti — e spesso la risposta arriva con la differenza già individuata.</p>
+</div>
+
+<h2>La lista di controllo, in ordine</h2>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Dal più probabile al meno probabile
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>L'altro capo risponde?</b> Se no, è raggiungibilità, non parametri</li>
+    <li><b>La chiave condivisa</b> — riscrivila a mano invece di incollarla</li>
+    <li><b>Il gruppo di scambio chiavi</b> — è quello che si dimentica più spesso</li>
+    <li><b>Gli algoritmi di fase 1</b></li>
+    <li><b>La versione del protocollo</b></li>
+    <li><b>Gli algoritmi di fase 2</b></li>
+    <li><b>I selettori</b> — speculari, e attenzione alle maschere</li>
+    <li><b>L'indirizzo del peer</b> — è cambiato senza che nessuno l'abbia comunicato?</li>
+  </ol>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Rompi il tunnel in quattro modi, e riconosci ogni errore
+  </div>
+  <p>Riprendi il tunnel fra 60D e MikroTik della lezione precedente. Per ciascun caso: <b>accendi la
+  traccia filtrata, provoca il guasto, leggi il messaggio, annotalo</b>. Poi rimetti a posto.</p>
+  <div class="table-wrap" style="margin:14px 0 0">
+    <table>
+      <thead><tr><th>Guasto da provocare</th><th>Cosa ti aspetti</th></tr></thead>
+      <tbody>
+        <tr><td><b>1 ·</b> Cambia la chiave condivisa su un lato</td><td>Fallimento in fase 1, autenticazione</td></tr>
+        <tr><td><b>2 ·</b> Cambia il gruppo di scambio chiavi su un lato</td><td>Nessuna proposta accettata</td></tr>
+        <tr><td><b>3 ·</b> Cambia un selettore su un lato</td><td><b>Fase 1 riesce, fase 2 no</b></td></tr>
+        <tr><td><b>4 ·</b> Punta a un indirizzo di peer inesistente</td><td><b>Nessuna risposta</b> — e nessun parametro lo risolverebbe</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:14px;margin-bottom:0"><b>Il caso 3 è il più istruttivo</b>, perché mostra la
+  differenza fra i due livelli: il comando della fase 1 dice che va tutto bene, quello della fase 2
+  non trova niente. E il caso 4 ti fa vedere con i tuoi occhi come si presenta il «sto parlando da
+  solo» — il momento in cui devi smettere di toccare i parametri e cominciare a chiedere dove
+  finiscono i tuoi pacchetti.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: tunnel che non sale",
+  "questions": [
+    { "q": "Il comando della fase 1 mostra un'associazione stabilita, quello della fase 2 non trova nulla. Dove guardi?",
+      "a": [ {"t":"Ai selettori e agli algoritmi di fase 2","ok":true},
+             {"t":"Alla chiave condivisa","ok":false},
+             {"t":"All'indirizzo del peer","ok":false},
+             {"t":"Alle policy firewall","ok":false} ],
+      "e": "La fase 1 riuscita significa che i due capi si sono riconosciuti e si capiscono: chiave, indirizzo, versione e algoritmi di fase 1 sono tutti corretti per definizione. Ciò che resta è l'accordo su quali reti possono passare, e su come trasportarle." },
+
+    { "q": "«Nessuna proposta accettata». Qual è la causa che si dimentica più spesso?",
+      "a": [ {"t":"Il gruppo di scambio chiavi","ok":true},
+             {"t":"La chiave condivisa","ok":false},
+             {"t":"L'indirizzo del peer","ok":false},
+             {"t":"La durata dell'associazione","ok":false} ],
+      "e": "Si confrontano diligentemente cifratura e integrità e si dà per scontato il gruppo, che invece fa parte della proposta a tutti gli effetti: se non ne avete uno in comune, nessuna combinazione di algoritmi verrà accettata. La chiave sbagliata produce invece un errore di autenticazione." },
+
+    { "q": "Le tue proposte partono e non torna niente. Cosa NON devi fare?",
+      "a": [ {"t":"Provare combinazioni diverse di algoritmi","ok":true},
+             {"t":"Verificare l'indirizzo del peer","ok":false},
+             {"t":"Controllare se il traffico di negoziazione può uscire e rientrare","ok":false},
+             {"t":"Chiedere alla controparte se il suo apparato è attivo","ok":false} ],
+      "e": "È l'errore diagnostico più costoso: se i pacchetti non arrivano all'altro capo, nessun parametro funzionerà mai perché non c'è nessuno che li stia valutando. Il problema è di raggiungibilità, e va risolto prima di toccare qualsiasi algoritmo." },
+
+    { "q": "Prima di accendere la traccia della negoziazione, cosa fai sempre?",
+      "a": [ {"t":"La filtri sull'indirizzo del peer che ti interessa","ok":true},
+             {"t":"Disattivi gli altri tunnel","ok":false},
+             {"t":"Aumenti il livello di registrazione dei log","ok":false},
+             {"t":"Fai un backup della configurazione","ok":false} ],
+      "e": "Su un apparato con più tunnel attivi la traccia non filtrata produce un fiume illeggibile in cui il tuo caso si perde. E va sempre spenta alla fine: lasciata attiva consuma risorse e su apparati carichi degrada le prestazioni." },
+
+    { "q": "Cosa mandi alla controparte quando serve il confronto?",
+      "a": [ {"t":"I tuoi parametri completi, i selettori, l'errore esatto con l'orario e una domanda precisa","ok":true},
+             {"t":"Una segnalazione che il tunnel non funziona","ok":false},
+             {"t":"La configurazione completa del tuo apparato","ok":false},
+             {"t":"Solo l'errore che vedi","ok":false} ],
+      "e": "«Non va, potete controllare?» produce un controllo superficiale e un rimpallo di giorni. Mandando i propri parametri per intero l'altro fa il confronto in due minuti, e spesso risponde con la differenza già individuata. La configurazione completa invece non si manda: contiene molto più del necessario." },
+
+    { "q": "Nel primo comando di verifica, cosa distingue un problema di tunnel da uno che tunnel non è?",
+      "a": [ {"t":"Entrambe le fasi stabilite: allora il tunnel è su e il problema è altrove","ok":true},
+             {"t":"I contatori di traffico a zero","ok":false},
+             {"t":"L'assenza di segnali di vita","ok":false},
+             {"t":"Il numero di rinegoziazioni","ok":false} ],
+      "e": "Quando entrambe le fasi sono stabilite, la negoziazione ha funzionato: cercare ancora nei parametri è tempo perso. Il problema si è spostato su rotte, policy, selettori applicati al traffico reale o dimensione dei pacchetti — che è la lezione successiva." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

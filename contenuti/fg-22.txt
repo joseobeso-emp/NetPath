@@ -1,0 +1,275 @@
+#id: fg-22
+#title: VPN e NAT: quando la sorgente non è accettabile
+#min: 28
+#level: fg
+#lvname: Modulo Fortinet
+#chapter: VPN
+#desc: Il caso in cui devi tradurre l'indirizzo per essere ammesso dall'altra parte, e i pacchetti scartati in silenzio.
+#obj: Riconoscere quando serve tradurre la sorgente dentro un tunnel
+#obj: Configurare la traduzione nell'ordine che FortiOS accetta
+#obj: Risolvere il caso delle reti sovrapposte fra due sedi
+#obj: Sapere cosa si perde traducendo, e cosa scrivere nella documentazione
+---
+<p class="lead">Ci sono due situazioni in cui un tunnel perfettamente configurato non trasporta
+niente, e in entrambe la soluzione è la stessa: <strong>tradurre l'indirizzo di partenza</strong>.
+Sono anche i due casi in cui il traffico sparisce senza che nessuno veda un errore.</p>
+
+<h2>Caso 1 · La destinazione accetta solo certi indirizzi</h2>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Il fornitore che ha messo il tuo indirizzo nel proprio accordo
+  </div>
+  <p>Anni fa è stato costruito un tunnel verso un fornitore. Nell'accordo è stato scritto che dalla tua
+  parte arriverà traffico <b>da un preciso intervallo di indirizzi</b>, e il loro apparato è
+  configurato per accettare solo quello.</p>
+  <p>Oggi un utente deve raggiungere quel servizio <b>dall'accesso remoto</b>. Ha l'utenza, ha la
+  regola, il tunnel è su. E non arriva niente.</p>
+  <p style="margin-bottom:0"><b>Perché:</b> il suo indirizzo, assegnato dall'intervallo degli utenti
+  remoti, <b>non è quello concordato</b>. Il tuo stesso firewall lo scarta, con un messaggio interno che
+  significa «per questo traffico non esiste un accordo», e che <b>l'utente non vede mai</b>.</p>
+</div>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 200" role="img" aria-label="Il traffico viene tradotto nell'intervallo concordato prima di entrare nel tunnel">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">La traduzione rende la sorgente accettabile</text>
+
+    <rect x="14" y="52" width="140" height="52" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.6"/>
+    <text x="84" y="74" text-anchor="middle" class="dg-label-sm">utente remoto</text>
+    <text x="84" y="92" text-anchor="middle" class="dg-mono-sm">10.212.134.201</text>
+
+    <rect x="240" y="44" width="180" height="68" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)" stroke-width="2.2"/>
+    <text x="330" y="68" text-anchor="middle" class="dg-label-sm">FIREWALL</text>
+    <text x="330" y="88" text-anchor="middle" class="dg-mono-sm">traduce la sorgente</text>
+    <text x="330" y="104" text-anchor="middle" class="dg-mono-sm">→ 10.200.78.10</text>
+
+    <rect x="506" y="52" width="180" height="52" rx="8" fill="var(--dg-5-fill)" stroke="var(--dg-5)" stroke-width="1.6"/>
+    <text x="596" y="74" text-anchor="middle" class="dg-label-sm">fornitore</text>
+    <text x="596" y="92" text-anchor="middle" class="dg-mono-sm">accetta solo 10.200.78.x</text>
+
+    <path d="M158 78h78" stroke="var(--dg-3)" stroke-width="2.2"/>
+    <path d="M424 78h78" stroke="var(--dg-1)" stroke-width="2.2"/>
+    <text x="197" y="70" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-3)">rifiutato</text>
+    <text x="463" y="70" text-anchor="middle" class="dg-mono-sm" fill="var(--dg-1)">accettato</text>
+
+    <text x="350" y="152" text-anchor="middle" class="dg-label-sm">Senza traduzione il pacchetto non trova un accordo che lo trasporti,</text>
+    <text x="350" y="174" text-anchor="middle" class="dg-label-sm">e <tspan font-weight="700">viene scartato in silenzio</tspan>: nessun errore, né sul firewall né sul client.</text>
+  </svg>
+  </div>
+  <figcaption>Il traffico dell'ufficio funziona perché <b>già oggi</b> viene tradotto in
+  quell'intervallo: «l'utente in VPN» e «l'utente in ufficio» sono due sorgenti diverse.</figcaption>
+</figure>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La configurazione, nell'ordine che FortiOS accetta</div>
+<pre><span class="c">══ 1 · il pool con gli indirizzi concordati ════════</span>
+<span class="p">config firewall ippool</span>
+    <span class="p">edit</span> <span class="s">"pool-fornitore"</span>
+        <span class="p">set type</span> <span class="s">overload</span>
+        <span class="p">set startip</span> <span class="n">10.200.78.10</span>
+        <span class="p">set endip</span> <span class="n">10.200.78.10</span>
+        <span class="p">set comments</span> <span class="s">"intervallo concordato — accordo 2025"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">══ 2 · la regola: PRIMO passaggio ══════════════════</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">0</span>
+        <span class="p">set name</span> <span class="s">"VPN utenti -> portale fornitore"</span>
+        <span class="p">set srcintf</span> <span class="s">"ssl.root"</span>
+        <span class="p">set dstintf</span> <span class="s">"tunnel-fornitore"</span>
+        <span class="p">set srcaddr</span> <span class="s">"pool-vpn-utenti"</span>
+        <span class="p">set dstaddr</span> <span class="s">"portale-fornitore"</span>
+        <span class="p">set groups</span> <span class="s">"gruppo-che-ne-ha-bisogno"</span>
+        <span class="p">set service</span> <span class="s">"HTTP" "HTTPS"</span>
+        <span class="p">set schedule</span> <span class="s">"always"</span>
+        <span class="p">set action</span> <span class="s">accept</span>
+        <span class="p">set logtraffic</span> <span class="s">all</span>
+        <span class="p">set nat enable</span>              <span class="c"># ← prima QUESTO</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+
+<span class="c">══ 3 · SECONDO passaggio: ora accetta il pool ══════</span>
+<span class="p">config firewall policy</span>
+    <span class="p">edit</span> <span class="n">&lt;id-appena-creato&gt;</span>
+        <span class="p">set ippool enable</span>
+        <span class="p">set poolname</span> <span class="s">"pool-fornitore"</span>
+    <span class="p">next</span>
+<span class="p">end</span>
+</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due passaggi, non uno
+  </div>
+  <p>Impostare il pool <b>viene rifiutato</b> se l'opzione di traduzione non è già presente sulla
+  stessa regola. Non è un errore tuo: è l'ordine in cui FortiOS accetta i comandi, e la prima volta
+  costa dieci minuti di confusione.</p>
+  <p style="margin-bottom:0">Dalla finestra grafica il problema non si pone, perché i due campi
+  compaiono insieme. Da riga di comando servono <b>due blocchi consecutivi</b> sulla stessa regola.</p>
+</div>
+
+<h2>Caso 2 · Le due sedi hanno la stessa rete</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Due reti identiche non possono parlarsi
+  </div>
+  <p>Due aziende si fondono, o un cliente acquisisce un fornitore. Entrambe le sedi usano
+  <code>192.168.1.0/24</code>, perché è l'intervallo che mettono quasi tutti i router di fabbrica.</p>
+  <p style="margin-bottom:0"><b>Il tunnel non può funzionare</b>, e non è un problema di configurazione:
+  ogni apparato crede che la rete remota sia la propria, e non manda niente nel tunnel. È la
+  sovrapposizione della lezione 7, alla scala di due sedi intere.</p>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Soluzione</th><th>Come funziona</th><th>Costo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Rinumerare una delle due sedi</b></td><td>Si elimina il conflitto alla radice</td>
+          <td><b>Alto</b>: fermo, indirizzi statici da rifare, stampanti, server. Ma è l'unica pulita</td></tr>
+      <tr><td><b>Tradurre entrambi i lati</b><br><span style="font-size:.85em">ciascuna sede vede l'altra con indirizzi finti</span></td>
+          <td>La sede A vede la B come <code>10.99.1.x</code> e viceversa</td>
+          <td>Medio: funziona, ma <b>ogni riferimento a un indirizzo diventa ambiguo</b></td></tr>
+      <tr><td><b>Tradurre un solo lato</b></td><td>Solo chi inizia le connessioni viene tradotto</td>
+          <td>Basso, ma funziona solo in una direzione</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    La traduzione doppia funziona, e costa cara nel tempo
+  </div>
+  <p>Da quel momento <b>lo stesso server ha due indirizzi</b> a seconda di chi lo guarda. Ogni
+  documentazione, ogni configurazione applicativa, ogni ticket deve specificare <em>da dove</em> si sta
+  guardando.</p>
+  <p style="margin-bottom:0"><b>Se la scegli, documentala in modo ossessivo:</b> una tabella di
+  corrispondenza fra indirizzi reali e tradotti, mantenuta e accessibile. Senza, fra un anno nessuno —
+  compreso te — riuscirà più a diagnosticare niente su quel collegamento.</p>
+</div>
+
+<h2>Cosa si perde traducendo</h2>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Dall'altra parte non sanno più chi è chi
+  </div>
+  <p>Se dieci utenti remoti vengono tradotti tutti sullo stesso indirizzo, <b>il fornitore li vede come
+  una sola macchina</b>. Conseguenze concrete:</p>
+  <ul>
+    <li><b>I loro log non distinguono gli utenti.</b> Se serve capire chi ha fatto cosa, l'informazione
+    non c'è</li>
+    <li><b>Un limitatore di richieste per indirizzo</b> conta dieci utenti come uno: si può superare
+    la soglia senza che nessuno stia abusando di niente — è il caso della lezione 9</li>
+    <li><b>Se il fornitore blocca «l'indirizzo che sta abusando»</b>, blocca tutti insieme</li>
+  </ul>
+  <p style="margin-bottom:0"><b>Mitigazione:</b> se l'intervallo concordato lo consente, usa <b>più
+  indirizzi</b> nel pool invece di uno solo. Non risolve del tutto, ma distribuisce.</p>
+</div>
+
+<h2>Verificare che stia funzionando</h2>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>La prova nella tabella delle sessioni</div>
+<pre><span class="p">diagnose sys session filter clear</span>
+<span class="p">diagnose sys session filter dst</span> <span class="n">10.160.4.12</span>
+<span class="p">diagnose sys session list</span>
+
+<span class="c">── cosa deve comparire ─────────────────────────────</span>
+<span class="c">   hook=snat act=snat</span>
+<span class="c">   e l'indirizzo TRADOTTO, dentro l'intervallo</span>
+<span class="c">   concordato — non quello originale dell'utente</span>
+
+<span class="c">── e il selettore deve accettarlo ──────────────────</span>
+<span class="p">diagnose vpn tunnel list name</span> <span class="s">"tunnel-fornitore"</span>
+<span class="c">   il src negoziato deve contenere l'intervallo</span>
+<span class="c">   del pool, non quello degli utenti remoti</span>
+</pre>
+</div>
+
+<h2>Alla tastiera</h2>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Riproduci il caso completo
+  </div>
+  <p>Con il tunnel fra 60D e MikroTik, simula il fornitore che accetta solo certi indirizzi.</p>
+  <ol>
+    <li><b>Sul MikroTik</b>, restringi il selettore in modo che accetti <b>solo</b>
+    <code>10.200.78.0/24</code> come rete remota.</li>
+    <li><b>Sul FortiGate</b>, lascia il selettore com'era e prova a mandare traffico da un indirizzo
+    diverso. <b>Osserva il silenzio:</b> nessun errore utile da nessuna parte.</li>
+    <li><b>Aggiungi il pool e la traduzione</b>, con i due passaggi.</li>
+    <li><b>Allinea il selettore</b> del FortiGate a <code>10.200.78.0/24</code>.</li>
+    <li><b>Verifica</b> con la tabella delle sessioni e con i selettori negoziati.</li>
+  </ol>
+  <p style="margin-top:12px"><b>Il passo 2 è il punto della lezione.</b> Prima di aggiungere la
+  traduzione, fermati e guarda bene:</p>
+  <ul style="margin-bottom:0">
+    <li>Il tunnel risulta <b>attivo</b></li>
+    <li>La policy ha il contatore che <b>sale</b> — il traffico la attraversa</li>
+    <li>I contatori del tunnel <b>non si muovono</b></li>
+    <li>L'utente non riceve <b>nessun errore</b>, solo attesa</li>
+  </ul>
+  <p style="margin-top:10px;margin-bottom:0"><b>Quella combinazione — regola colpita, tunnel fermo — è
+  la firma di un problema di selettori o di sorgente non accettabile.</b> Vista una volta, la
+  riconoscerai per sempre.</p>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: VPN e traduzione degli indirizzi",
+  "questions": [
+    { "q": "L'utente in VPN non raggiunge il portale del fornitore, ma dall'ufficio si raggiunge. Perché?",
+      "a": [ {"t":"Dall'ufficio il traffico viene già tradotto nell'intervallo concordato, dalla VPN no","ok":true},
+             {"t":"L'utenza VPN non ha i permessi","ok":false},
+             {"t":"Il tunnel è attivo solo per la rete dell'ufficio","ok":false},
+             {"t":"Manca una rotta","ok":false} ],
+      "e": "Il fornitore accetta solo un preciso intervallo di indirizzi, e quello degli utenti remoti non è nell'accordo. «L'utente in VPN» e «l'utente in ufficio» sono due sorgenti completamente diverse, e la seconda è già tradotta da anni." },
+
+    { "q": "Cosa vede l'utente quando la sua sorgente non è accettabile?",
+      "a": [ {"t":"Niente: solo attesa. Il pacchetto viene scartato in silenzio","ok":true},
+             {"t":"Un errore di autenticazione","ok":false},
+             {"t":"Un messaggio di rete non raggiungibile","ok":false},
+             {"t":"La connessione rifiutata","ok":false} ],
+      "e": "Il firewall scarta con un messaggio interno che significa «per questo traffico non esiste un accordo», e che non viene comunicato a nessuno. È proprio il silenzio a rendere questo caso difficile: non c'è un errore da cercare." },
+
+    { "q": "Perché impostare il pool sulla policy viene rifiutato al primo tentativo?",
+      "a": [ {"t":"L'opzione di traduzione deve essere già presente sulla stessa regola: servono due passaggi","ok":true},
+             {"t":"Il pool va creato dopo la policy","ok":false},
+             {"t":"Serve riavviare l'apparato","ok":false},
+             {"t":"Il pool deve contenere almeno due indirizzi","ok":false} ],
+      "e": "È l'ordine in cui FortiOS accetta i comandi, e la prima volta costa dieci minuti di confusione. Dalla finestra grafica non si nota perché i due campi compaiono insieme; da riga di comando servono due blocchi consecutivi sulla stessa regola." },
+
+    { "q": "Due sedi usano entrambe <code>192.168.1.0/24</code>. Qual è la soluzione pulita?",
+      "a": [ {"t":"Rinumerare una delle due sedi","ok":true},
+             {"t":"Tradurre entrambi i lati","ok":false},
+             {"t":"Tradurre un solo lato","ok":false},
+             {"t":"Usare selettori più specifici","ok":false} ],
+      "e": "È l'unica che elimina il conflitto alla radice, e costa: fermo, indirizzi statici da rifare, stampanti e server da riconfigurare. Le traduzioni funzionano ma lasciano un debito permanente — ogni indirizzo diventa ambiguo a seconda di chi guarda." },
+
+    { "q": "Dieci utenti remoti tradotti tutti sullo stesso indirizzo. Quale conseguenza è più insidiosa?",
+      "a": [ {"t":"Un limitatore di richieste per indirizzo li conta come uno solo e può bloccarli tutti","ok":true},
+             {"t":"Le prestazioni peggiorano","ok":false},
+             {"t":"Il tunnel diventa instabile","ok":false},
+             {"t":"Serve un pool più grande per forza","ok":false} ],
+      "e": "Si supera la soglia senza che nessuno stia abusando di niente, e se il fornitore blocca «l'indirizzo che abusa» li blocca tutti insieme. In più i suoi log non distinguono più chi ha fatto cosa. Se l'accordo lo consente, conviene usare più indirizzi nel pool." },
+
+    { "q": "Il contatore della policy sale ma i contatori del tunnel restano fermi. Cosa indica?",
+      "a": [ {"t":"Il traffico attraversa la regola ma non trova un accordo che lo trasporti: selettori o sorgente non accettabile","ok":true},
+             {"t":"Il tunnel è caduto","ok":false},
+             {"t":"Manca la rotta","ok":false},
+             {"t":"Un problema di dimensione dei pacchetti","ok":false} ],
+      "e": "È una firma molto precisa: la regola è stata colpita, quindi policy e routing stanno funzionando, ma il traffico non entra nell'associazione di sicurezza. Se mancasse la rotta il contatore della policy non salirebbe affatto." }
+  ]
+}
+</script>
