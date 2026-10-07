@@ -1,0 +1,395 @@
+#id: l4-06
+#title: Incident, escalation e postmortem
+#min: 24
+#level: 4
+#chapter: Operare come senior
+#desc: Quando non è più un ticket ma un'emergenza: chi coordina, chi chiami e quando, come comunichi mentre tutto è fermo, e come si impara da un disastro senza cercare colpevoli.
+#obj: Riconoscere quando un ticket diventa un incidente maggiore e dichiararlo presto
+#obj: Distribuire i ruoli durante un incidente, anche in una squadra di due persone
+#obj: Fare escalation al momento giusto, verso le persone giuste, con le informazioni giuste
+#obj: Scrivere un postmortem senza colpevoli, con i cinque perché e azioni che si chiudono davvero
+---
+<p class="lead">Alle 8:40 di un lunedì la sede principale di un cliente è ferma: niente posta,
+niente gestionale, niente telefoni. In dieci minuti arrivano sei telefonate, tre mail e un
+messaggio del titolare. In questi momenti la differenza non la fa chi conosce più comandi, ma chi
+mette ordine: chi decide, chi lavora, chi parla con il cliente, chi scrive cosa succede. Questa
+lezione è il protocollo per quei momenti, e per il giorno dopo.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: i vigili del fuoco
+  </div>
+  <p>Quando arrivano i vigili del fuoco a un incendio, non corrono tutti verso le fiamme con un
+  secchio. C'è un caposquadra che <b>non spegne niente</b>: guarda, decide dove mandare chi, parla
+  con la polizia e con i proprietari. Gli altri hanno ognuno un compito. Se il caposquadra prendesse
+  la lancia, nessuno vedrebbe che il fuoco sta girando dietro l'edificio.</p>
+  <p style="margin-bottom:0">E il giorno dopo, quando l'incendio è spento, qualcuno scrive un
+  rapporto: com'è partito, cosa ha funzionato, cosa no. Non per punire chi ha lasciato acceso il
+  fornello, ma perché il prossimo incendio non parta allo stesso modo. Quel rapporto, in informatica,
+  si chiama <b><span class="term" data-term="postmortem">postmortem</span></b>.</p>
+</div>
+
+<h2>Quando un ticket diventa un incidente maggiore</h2>
+
+<p>Un incidente maggiore è un incidente con impatto alto che richiede un modo di lavorare diverso:
+più persone, comunicazione a cadenza fissa, decisioni rapide. I segnali per dichiararlo sono
+pochi e chiari.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Segnale</th><th>Esempio</th></tr></thead>
+    <tbody>
+      <tr><td>Un'intera sede, o un servizio usato da tutti, è fermo</td><td>Firewall della sede principale non risponde; VPN di tutte le filiali giù</td></tr>
+      <tr><td>Arrivano più ticket con lo stesso sintomo in pochi minuti</td><td>Cinque utenti di reparti diversi non aprono il gestionale</td></tr>
+      <tr><td>C'è il sospetto di un attacco</td><td>File cifrati, account che si bloccano a raffica, traffico anomalo in uscita</td></tr>
+      <tr><td>Il problema è una P1 e non si risolve nei primi minuti</td><td>Hai provato le cose ovvie e non hai ancora una pista</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Dichiaralo presto
+  </div>
+  <p style="margin-bottom:0">Dichiarare un incidente maggiore che poi si risolve in dieci minuti costa
+  poco: una mail in più. Non dichiararlo, e scoprire dopo un'ora che tre colleghi stavano lavorando
+  allo stesso guasto senza saperlo, mentre il cliente non riceveva notizie, costa moltissimo. Nel
+  dubbio, si dichiara. Si può sempre declassare.</p>
+</div>
+
+<h2>Le fasi di un incidente</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 230" role="img" aria-label="Le fasi di un incidente: rilevare, dichiarare, contenere, risolvere, verificare, e poi il postmortem. La priorità è ripristinare il servizio, non trovare subito la causa">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Prima si ferma il danno, poi si cerca la causa</text>
+
+    <g stroke-width="1.6">
+      <rect x="10"  y="50" width="105" height="56" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="127" y="50" width="105" height="56" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="244" y="50" width="105" height="56" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="361" y="50" width="105" height="56" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="478" y="50" width="105" height="56" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="595" y="50" width="95"  height="56" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="62"  y="74" class="dg-label-sm">RILEVARE</text>
+      <text x="62"  y="92" class="dg-mono-sm">allarme, telefonata</text>
+      <text x="179" y="74" class="dg-label-sm">DICHIARARE</text>
+      <text x="179" y="92" class="dg-mono-sm">ruoli, cadenza</text>
+      <text x="296" y="74" class="dg-label-sm">CONTENERE</text>
+      <text x="296" y="92" class="dg-mono-sm">rimedio provvisorio</text>
+      <text x="413" y="74" class="dg-label-sm">RISOLVERE</text>
+      <text x="413" y="92" class="dg-mono-sm">la soluzione vera</text>
+      <text x="530" y="74" class="dg-label-sm">VERIFICARE</text>
+      <text x="530" y="92" class="dg-mono-sm">servizio a regime</text>
+      <text x="642" y="74" class="dg-label-sm">POSTMORTEM</text>
+      <text x="642" y="92" class="dg-mono-sm">entro giorni</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="1.7" fill="none">
+      <path d="M115 78 L 125 78"/><path d="M232 78 L 242 78"/><path d="M349 78 L 359 78"/>
+      <path d="M466 78 L 476 78"/><path d="M583 78 L 593 78"/>
+    </g>
+
+    <g stroke="var(--dg-3)" stroke-width="1.6" fill="none">
+      <path d="M10 140 L 583 140"/>
+      <path d="M10 134 L 10 146"/><path d="M583 134 L 583 146"/>
+    </g>
+    <text x="296" y="164" text-anchor="middle" class="dg-label-sm">Comunicazione a cadenza fissa, dalla dichiarazione alla verifica</text>
+    <text x="296" y="182" text-anchor="middle" class="dg-mono-sm">anche quando non c'è niente di nuovo</text>
+    <text x="350" y="216" text-anchor="middle" class="dg-label-sm">Contenere viene prima di risolvere: il cliente deve tornare a lavorare, la causa la cerchi dopo.</text>
+  </svg>
+  </div>
+  <figcaption>Il contenimento è qualsiasi cosa rimetta in piedi il servizio, anche in modo imperfetto:
+  passare sulla linea di riserva, spostare gli utenti sul Wi-Fi, tornare alla configurazione di ieri.</figcaption>
+</figure>
+
+<h2>I ruoli, anche se siete in due</h2>
+
+<p>In un incidente servono quattro ruoli. In un grande fornitore sono quattro persone; in un MSP
+piccolo spesso sono due, e una persona copre due ruoli. Quello che conta è che ogni ruolo
+<b>abbia un nome</b>, detto ad alta voce all'inizio.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Ruolo</th><th>Cosa fa</th><th>Cosa non fa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Coordinatore</b><br><small>incident commander</small></td><td>Decide le priorità, assegna i compiti, decide quando fare escalation e quando tornare indietro</td><td>Non mette le mani sugli apparati: se lo fa, nessuno guarda l'insieme</td></tr>
+      <tr><td><b>Tecnico</b></td><td>Diagnostica e interviene, uno o più, ciascuno su un pezzo preciso</td><td>Non parla con il cliente durante l'intervento: perde il filo e moltiplica le versioni</td></tr>
+      <tr><td><b>Comunicatore</b></td><td>Manda gli aggiornamenti al cliente alla cadenza promessa, risponde alle telefonate</td><td>Non promette tempi che il coordinatore non ha confermato</td></tr>
+      <tr><td><b>Scriba</b></td><td>Scrive il diario: ogni azione, ogni scoperta, con l'ora</td><td>Non interpreta: registra fatti</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    In due: come si dividono
+  </div>
+  <p style="margin-bottom:0">La divisione che funziona meglio in due è: <b>uno coordina, comunica e
+  scrive; l'altro lavora sugli apparati</b>. Il tecnico dice ad alta voce cosa sta per fare («cambio
+  la rotta predefinita verso la linea di riserva»), l'altro lo scrive con l'ora. Se sei da solo,
+  scrivi tu il diario prima di ogni azione, e avvisi il cliente che i prossimi aggiornamenti
+  arriveranno a cadenza fissa.</p>
+</div>
+
+<h3>Il diario dell'incidente</h3>
+
+<p>Il diario è la cosa più preziosa che esce da un incidente. Durante l'emergenza evita di fare
+due volte la stessa prova; dopo, è la base del postmortem. Una riga per evento, con l'ora.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Esempio di diario</div>
+<pre><span class="p">08:41</span>  <span class="o">Prima chiamata: sede principale senza posta e gestionale</span>
+<span class="p">08:47</span>  <span class="o">Dichiarato incidente maggiore. Coordina A, tecnico B</span>
+<span class="p">08:52</span>  <span class="o">Firewall raggiungibile in console. Linea principale giù, riserva su</span>
+<span class="p">08:55</span>  <span class="o">Rilevato: il traffico non passa sulla riserva. Il monitor del link
+       non ha spostato la rotta predefinita</span>
+<span class="p">09:03</span>  <span class="o">B sposta a mano la rotta sulla riserva (CONTENIMENTO)</span>
+<span class="p">09:06</span>  <span class="o">Cliente conferma: posta e gestionale di nuovo raggiungibili</span>
+<span class="p">09:10</span>  <span class="o">Aperta segnalazione all'operatore per la linea principale</span>
+<span class="p">11:40</span>  <span class="o">Operatore: guasto risolto. Linea principale di nuovo su</span>
+<span class="p">11:52</span>  <span class="o">Rotta riportata in automatico, traffico verificato sulla principale</span></pre>
+</div>
+
+<h2>Escalation: chi chiami, quando, con cosa</h2>
+
+<p>Fare escalation non è ammettere di non farcela: è una decisione tecnica, come scegliere una
+rotta. Ce ne sono due tipi, e si fanno per motivi diversi.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Verso chi</th><th>Quando</th></tr></thead>
+    <tbody>
+      <tr><td><b>Funzionale</b></td><td>Chi sa di più: un collega più esperto, il supporto del produttore, l'operatore</td><td>Quando il problema è fuori dalla tua competenza, o non fai progressi da un tempo stabilito</td></tr>
+      <tr><td><b>Gerarchica</b></td><td>Chi decide: il tuo responsabile, il referente del cliente</td><td>Quando serve una decisione che non spetta a te (spegnere un servizio, fare una modifica non autorizzata, spendere), o quando l'impatto cresce</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>La regola più utile è il <b>tempo massimo</b>, deciso <em>prima</em>: «se in 30 minuti non ho
+una pista, chiamo». Deciso prima, perché durante un incidente si è sempre convinti di essere a
+cinque minuti dalla soluzione, e si resta convinti per due ore.</p>
+
+<h3>Cosa preparare prima di chiamare il produttore o l'operatore</h3>
+
+<p>Una segnalazione al supporto del produttore o all'operatore si muove alla velocità delle
+informazioni che le dai. Una segnalazione «il firewall non funziona» riceve come risposta un
+elenco di domande, e perdi un giro. Prepara tutto prima.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Al produttore</th><th>All'operatore</th></tr></thead>
+    <tbody>
+      <tr><td>Modello, numero di serie, versione del firmware</td><td>Codice cliente o codice della linea, indirizzo della sede</td></tr>
+      <tr><td>Contratto di assistenza attivo: senza, spesso il supporto non risponde</td><td>Stato dei LED del modem o della borchia, se l'apparato è suo</td></tr>
+      <tr><td>Cosa succede, da quando, cosa è cambiato prima</td><td>Da quando, e se è totale o a tratti</td></tr>
+      <tr><td>Uscita dei comandi di diagnosi e log del momento (capitolo FG.7 per FortiGate)</td><td>Le prove fatte: ping e traceroute verso il loro primo apparato</td></tr>
+      <tr><td>Impatto: quanti utenti, quale servizio, per decidere la loro priorità</td><td>Un numero di telefono sul posto per il tecnico che uscirà</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Se sospetti un attacco, cambiano le regole
+  </div>
+  <p>Un incidente di sicurezza non si gestisce come un guasto. Le differenze più importanti:</p>
+  <ul>
+    <li><b>Non spegnere e non reinstallare</b> d'impulso: si cancellano le prove. Si isola (si
+    scollega dalla rete, si blocca il traffico), non si distrugge.</li>
+    <li><b>Si avvisa subito chi decide</b>, dal lato del cliente: ci possono essere obblighi di legge
+    con scadenze strette. Per esempio, il GDPR chiede di notificare all'autorità di controllo una
+    violazione di dati personali entro 72 ore da quando se ne viene a conoscenza, salvo che sia
+    improbabile un rischio per le persone; e le organizzazioni che rientrano nella normativa NIS2
+    hanno un preavviso entro 24 ore e una notifica entro 72 ore verso il CSIRT nazionale.</li>
+    <li><b>Queste decisioni non le prende il tecnico</b>: le prende il cliente, con il suo
+    responsabile della protezione dei dati e i suoi consulenti. A notificare è il cliente, titolare
+    dei dati; il fornitore che gestisce i suoi sistemi deve informarlo <b>senza ingiustificato
+    ritardo</b> appena si accorge della violazione. Il tuo compito è avvisare subito, preservare le
+    prove e scrivere il diario.</li>
+  </ul>
+  <p style="margin-bottom:0">Le scadenze e i casi esatti vanno verificati sul testo in vigore e con
+  chi segue la parte legale del cliente: qui servono a ricordarti che il tempo corre dal primo
+  minuto.</p>
+</div>
+
+<h2>La comunicazione durante l'incidente</h2>
+
+<p>Durante un incidente maggiore il cliente riceve aggiornamenti a <b>cadenza fissa</b>, annunciata
+nel primo messaggio: per esempio ogni 30 minuti. La cadenza si rispetta anche quando non c'è niente
+di nuovo, perché per il cliente un aggiornamento mancato vuol dire «hanno smesso di lavorarci».</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Modello di aggiornamento durante un incidente</div>
+<pre><span class="p">STATO</span>        <span class="o">In corso · contenuto · risolto</span>
+<span class="p">IMPATTO</span>      <span class="o">Chi è fermo, cosa funziona già</span>
+<span class="p">COSA SAPPIAMO</span> <span class="o">I fatti accertati, non le ipotesi</span>
+<span class="p">COSA FACCIAMO</span> <span class="o">Il passo in corso</span>
+<span class="p">COSA SERVE</span>   <span class="o">Se il cliente deve fare qualcosa (riavviare, non usare, avvisare)</span>
+<span class="p">PROSSIMO</span>     <span class="o">L'ora del prossimo aggiornamento</span></pre>
+</div>
+
+<p>Mai dare un orario di risoluzione che non sai: «entro mezzogiorno» detto per tranquillizzare
+diventa la cosa che il cliente ricorderà alle 12:01. Si dà l'orario del prossimo aggiornamento,
+quello sì, e si rispetta.</p>
+
+<h2>Il postmortem</h2>
+
+<p>Entro pochi giorni da un incidente maggiore, quando i ricordi sono freschi e il diario è
+completo, si scrive il postmortem. Ha una regola che ne decide l'utilità: è <b>senza colpevoli</b>.
+Se le persone temono di essere punite, nascondono gli errori, e gli errori nascosti si ripetono.
+Il postmortem cerca cosa nel <em>processo</em> ha permesso all'errore di avvenire e di non essere
+visto.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sezione</th><th>Cosa contiene</th></tr></thead>
+    <tbody>
+      <tr><td><b>Sommario</b></td><td>Tre righe: cosa è successo, quanto è durato, chi ne ha risentito</td></tr>
+      <tr><td><b>Impatto</b></td><td>Servizi, utenti, durata. Numeri, non aggettivi</td></tr>
+      <tr><td><b>Cronologia</b></td><td>Dal diario: l'inizio vero (spesso prima della prima chiamata), la rilevazione, il contenimento, la risoluzione</td></tr>
+      <tr><td><b>Causa radice</b></td><td>Trovata con i cinque perché, qui sotto</td></tr>
+      <tr><td><b>Cosa ha funzionato</b></td><td>Da mantenere: la linea di riserva c'era, il diario era completo</td></tr>
+      <tr><td><b>Cosa non ha funzionato</b></td><td>Da cambiare: il monitor del link non controllava la cosa giusta, nessuno riceveva l'allarme</td></tr>
+      <tr><td><b>Azioni</b></td><td>Ognuna con <b>un responsabile e una data</b>. Senza tutti e due, non è un'azione: è un desiderio</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>I cinque perché</h3>
+
+<p>Si parte dal sintomo e si chiede «perché?», poi si chiede «perché?» alla risposta, finché si
+arriva a qualcosa che si può cambiare in un processo. Cinque è un numero indicativo: a volte bastano
+tre domande, a volte ne servono sette.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>I cinque perché, sull'incidente del diario</div>
+<pre><span class="p">1. Perché la sede è rimasta ferma 25 minuti?</span>
+<span class="o">   Perché il traffico non è passato da solo sulla linea di riserva.</span>
+<span class="p">2. Perché non è passato?</span>
+<span class="o">   Perché il monitor del link controllava il gateway dell'operatore,
+   che rispondeva anche con la linea guasta più avanti.</span>
+<span class="p">3. Perché controllava il gateway?</span>
+<span class="o">   Perché era il valore usato nella configurazione di partenza
+   copiata da un'altra installazione.</span>
+<span class="p">4. Perché nessuno se n'è accorto prima?</span>
+<span class="o">   Perché il passaggio alla riserva non era mai stato provato
+   dopo l'installazione.</span>
+<span class="p">5. Perché non era stato provato?</span>
+<span class="o">   Perché la lista di collaudo non prevedeva la prova di failover.</span>
+
+<span class="c"># Causa radice: manca la prova di failover nel collaudo.</span>
+<span class="c"># Non: "il tecnico ha sbagliato il monitor".</span></pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Azione</th><th>Responsabile</th><th>Entro</th></tr></thead>
+    <tbody>
+      <tr><td>Monitor del link puntato su due destinazioni esterne affidabili invece che sul gateway dell'operatore</td><td>Tecnico B</td><td>data precisa</td></tr>
+      <tr><td>Prova di failover aggiunta alla lista di collaudo di ogni firewall con doppia linea</td><td>Coordinatore A</td><td>data precisa</td></tr>
+      <tr><td>Verifica dello stesso errore sugli altri clienti con doppia linea</td><td>Tecnico B</td><td>data precisa</td></tr>
+      <tr><td>Allarme di cambio linea inviato alla casella del supporto</td><td>Tecnico B</td><td>data precisa</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>La terza azione è quella che distingue un postmortem utile: se un errore di processo c'è stato
+una volta, c'è stato <b>ovunque</b> sia stato usato lo stesso processo. Il postmortem di un cliente
+diventa un controllo su tutti.</p>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso tipico: tre tecnici sullo stesso guasto
+  </div>
+  <p>All'apertura degli uffici le tre filiali del <b>Cliente W</b> perdono la VPN verso la sede.
+  Ogni filiale apre il suo ticket, e ogni ticket viene preso da un tecnico diverso. Per quaranta
+  minuti tre persone lavorano sullo stesso guasto: due riavviano i firewall delle filiali, il terzo
+  cambia una impostazione di phase 2 sul firewall della sede. Il cliente riceve tre risposte
+  diverse.</p>
+  <p style="margin-bottom:0">La causa era un certificato scaduto sul firewall della sede, visibile in
+  un minuto nei log della negoziazione. Il guasto si sarebbe risolto in un quarto d'ora se il secondo
+  ticket uguale avesse fatto scattare la dichiarazione di incidente maggiore: un coordinatore avrebbe
+  unito i tre ticket, assegnato un solo tecnico alla sede e fermato i riavvii, che hanno solo
+  aggiunto rumore ai log.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Esercizio: il tuo primo postmortem
+  </div>
+  <ol style="margin-bottom:0">
+    <li>Scegli un guasto che hai vissuto: in un cliente, in ufficio, o nella tua rete di casa.
+    Ricostruisci il diario con le ore, anche approssimative, aiutandoti con mail, chat e log.</li>
+    <li>Scrivi i cinque perché. Se arrivi a «perché qualcuno ha sbagliato», continua a chiedere:
+    perché il processo ha permesso quell'errore senza accorgersene?</li>
+    <li>Scrivi almeno tre azioni, ognuna con un responsabile e una data. Almeno una deve verificare
+    se lo stesso errore esiste altrove.</li>
+    <li>Prepara la scheda per chiamare il supporto del produttore del tuo firewall o router:
+    modello, numero di serie, firmware, stato del contratto. Dove si trovano questi dati nella
+    console? Annotalo ora, non durante il prossimo incidente.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: incidenti, escalation e postmortem",
+  "questions": [
+    { "q": "Arrivano in dieci minuti quattro ticket da reparti diversi: nessuno apre il gestionale. Cosa fai per prima cosa?",
+      "a": [ {"t":"Dichiari un incidente maggiore, unisci i ticket e assegni i ruoli","ok":true},
+             {"t":"Prendi il primo ticket e lavori su quello","ok":false},
+             {"t":"Dividi i quattro ticket tra quattro tecnici","ok":false},
+             {"t":"Aspetti un quinto ticket per essere sicuro","ok":false} ],
+      "e": "Più ticket con lo stesso sintomo in pochi minuti sono il segnale classico di un incidente maggiore. Dichiararlo evita che più persone lavorino allo stesso guasto senza saperlo e che il cliente riceva risposte diverse. Nel dubbio si dichiara: declassare costa poco." },
+
+    { "q": "Durante un incidente, cosa non dovrebbe fare il coordinatore?",
+      "a": [ {"t":"Mettere le mani sugli apparati","ok":true},
+             {"t":"Decidere quando fare escalation","ok":false},
+             {"t":"Assegnare i compiti ai tecnici","ok":false},
+             {"t":"Decidere di tornare alla configurazione precedente","ok":false} ],
+      "e": "Il coordinatore deve vedere l'insieme: cosa stanno facendo tutti, quanto tempo è passato, quando chiamare aiuto. Se entra in console, si concentra su un dettaglio e nessuno guarda più il quadro. È il caposquadra dei vigili del fuoco che non prende la lancia." },
+
+    { "q": "La linea principale è guasta e c'è una linea di riserva che non subentra da sola. Cosa viene prima?",
+      "a": [ {"t":"Spostare a mano il traffico sulla riserva, poi capire perché non è successo da solo","ok":true},
+             {"t":"Capire perché il failover non ha funzionato, poi intervenire","ok":false},
+             {"t":"Aspettare che l'operatore ripari la linea principale","ok":false},
+             {"t":"Riavviare il firewall per forzare il failover","ok":false} ],
+      "e": "Contenere viene prima di risolvere: il cliente deve tornare a lavorare. La causa del mancato failover si cerca dopo, con calma, ed è materia per il postmortem. Il riavvio non è un contenimento: è un salto nel buio che cancella log e sessioni." },
+
+    { "q": "Lavori da 40 minuti a un guasto senza una pista. Avevi deciso un tempo massimo di 30 minuti. Cosa fai?",
+      "a": [ {"t":"Fai escalation adesso: il tempo massimo serve proprio a questo","ok":true},
+             {"t":"Continui, perché sei vicino alla soluzione","ok":false},
+             {"t":"Aspetti un'altra mezz'ora per non disturbare","ok":false},
+             {"t":"Chiudi il ticket e ne apri uno nuovo","ok":false} ],
+      "e": "Il tempo massimo si decide prima proprio perché durante l'incidente ci si sente sempre a cinque minuti dalla soluzione. L'escalation funzionale non è una sconfitta: porta nuove idee e nuove competenze sul problema. Ogni minuto in più è un minuto di cliente fermo." },
+
+    { "q": "Sospetti un attacco: su un server compaiono file cifrati. Qual è il comportamento corretto?",
+      "a": [ {"t":"Isolare il server dalla rete, preservare le prove e avvisare subito chi decide dal lato del cliente","ok":true},
+             {"t":"Spegnere tutto e reinstallare il server da zero","ok":false},
+             {"t":"Ripristinare subito l'ultimo backup sopra il server","ok":false},
+             {"t":"Aspettare di capire l'origine prima di avvisare il cliente","ok":false} ],
+      "e": "In un incidente di sicurezza si isola, non si distrugge: spegnere o reinstallare cancella le prove. E si avvisa subito il cliente, perché possono esserci obblighi di notifica con scadenze di 24 o 72 ore che decorrono da quando se ne viene a conoscenza. Quelle decisioni spettano a lui e ai suoi consulenti, non al tecnico." },
+
+    { "q": "Quale di queste è una causa radice scritta bene in un postmortem?",
+      "a": [ {"t":"«La lista di collaudo non prevedeva la prova di failover»","ok":true},
+             {"t":"«Il tecnico ha configurato male il monitor del link»","ok":false},
+             {"t":"«Guasto della linea dell'operatore»","ok":false},
+             {"t":"«Sfortuna: la linea si è rotta di lunedì mattina»","ok":false} ],
+      "e": "Il postmortem è senza colpevoli: cerca cosa nel processo ha permesso all'errore di avvenire e di restare nascosto. «Il tecnico ha sbagliato» non si può correggere; «manca la prova di failover» sì, e la correzione protegge tutti i clienti. Il guasto dell'operatore è l'innesco, non la causa del disservizio: la riserva doveva subentrare." },
+
+    { "q": "Un'azione del postmortem dice: «Migliorare il monitoraggio delle linee». Cosa le manca?",
+      "a": [ {"t":"Un responsabile, una data e un contenuto preciso","ok":true},
+             {"t":"Niente: è chiara","ok":false},
+             {"t":"L'approvazione del produttore","ok":false},
+             {"t":"Il costo stimato in euro","ok":false} ],
+      "e": "Un'azione senza responsabile e senza data non si chiude mai. E «migliorare il monitoraggio» non dice cosa fare: «monitor puntato su due destinazioni esterne, allarme alla casella del supporto, entro il 15, Tecnico B» sì. Solo così al postmortem successivo si può verificare se è stata fatta." }
+  ]
+}
+</script>

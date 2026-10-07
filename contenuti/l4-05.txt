@@ -1,0 +1,429 @@
+#id: l4-05
+#title: Gestire un ticket: metodo e comunicazione
+#min: 26
+#level: 4
+#chapter: Operare come senior
+#desc: Dal «non va la rete» alla chiusura documentata: come si qualifica, si diagnostica, si comunica e si chiude un ticket in modo che nessuno debba richiamarti.
+#obj: Distinguere incidente, richiesta, problema e modifica, e dare la priorità con impatto e urgenza
+#obj: Trasformare un sintomo vago in una domanda tecnica precisa, con le sette domande di qualifica
+#obj: Raccogliere i dati dal lato dell'utente prima di toccare qualsiasi apparato
+#obj: Scrivere i tre messaggi di un ticket e una nota di chiusura utile tra sei mesi
+---
+<p class="lead">Un junior risolve il problema. Un senior risolve il problema, <em>e</em> il cliente
+sa in ogni momento cosa sta succedendo, <em>e</em> chi apre lo stesso ticket fra sei mesi trova
+scritto cosa era successo e come si era risolto. La tecnica l'hai imparata nei livelli precedenti;
+questa lezione riguarda tutto quello che le sta intorno, che è la parte per cui un cliente ti
+richiama, o cambia fornitore.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il medico di famiglia
+  </div>
+  <p>Vai dal medico e dici «non sto bene». Un buon medico non ti dà subito una medicina. Prima ti
+  fa domande: da quando? dove ti fa male? hai la febbre? hai mangiato qualcosa di strano? Poi ti
+  visita. Poi decide. Poi ti dice cosa hai e cosa fare. Dopo qualche giorno ti chiede se stai
+  meglio. E tutto finisce nella tua cartella clinica, così il prossimo medico sa cosa è già
+  successo.</p>
+  <p style="margin-bottom:0">Un ticket è la stessa cosa. «Non va la rete» è il «non sto bene» del
+  cliente: è vero, ma non dice niente. Il tuo lavoro è fare le domande giuste, guardare prima di
+  toccare, curare una cosa alla volta, controllare che sia guarito e scriverlo nella
+  <b>cartella clinica</b>, cioè nelle note del ticket.</p>
+</div>
+
+<h2>Il ciclo di vita di un ticket</h2>
+
+<p>Ogni ticket, dal più banale al più difficile, passa dalle stesse sette fasi. Saltarne una è
+il modo più comune di sbagliare: il tecnico frettoloso salta dalla prima alla quinta («ho
+riavviato il firewall») e non sa nemmeno se il problema era lì.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Le sette fasi di un ticket: accogliere, qualificare, raccogliere i dati, diagnosticare, risolvere, verificare con l'utente, documentare e chiudere. Dalla verifica si può tornare alla diagnosi">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Sette fasi, sempre nello stesso ordine</text>
+
+    <g stroke-width="1.6">
+      <rect x="10"  y="48" width="150" height="54" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="185" y="48" width="150" height="54" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="360" y="48" width="150" height="54" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="535" y="48" width="155" height="54" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="535" y="150" width="155" height="54" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="360" y="150" width="150" height="54" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="185" y="150" width="150" height="54" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="85"  y="71"  class="dg-label-sm">1 · ACCOGLIERE</text>
+      <text x="85"  y="89"  class="dg-mono-sm">presa in carico</text>
+      <text x="260" y="71"  class="dg-label-sm">2 · QUALIFICARE</text>
+      <text x="260" y="89"  class="dg-mono-sm">tipo e priorità</text>
+      <text x="435" y="71"  class="dg-label-sm">3 · RACCOGLIERE</text>
+      <text x="435" y="89"  class="dg-mono-sm">dati, prima di toccare</text>
+      <text x="612" y="71"  class="dg-label-sm">4 · DIAGNOSTICARE</text>
+      <text x="612" y="89"  class="dg-mono-sm">un'ipotesi per volta</text>
+      <text x="612" y="173" class="dg-label-sm">5 · RISOLVERE</text>
+      <text x="612" y="191" class="dg-mono-sm">una modifica per volta</text>
+      <text x="435" y="173" class="dg-label-sm">6 · VERIFICARE</text>
+      <text x="435" y="191" class="dg-mono-sm">con l'utente</text>
+      <text x="260" y="173" class="dg-label-sm">7 · DOCUMENTARE</text>
+      <text x="260" y="191" class="dg-mono-sm">e chiudere</text>
+    </g>
+
+    <g stroke="var(--dg-line)" stroke-width="1.7" fill="none">
+      <path d="M160 75 L 183 75"/><path d="M335 75 L 358 75"/><path d="M510 75 L 533 75"/>
+      <path d="M612 102 L 612 148"/>
+      <path d="M535 177 L 512 177"/><path d="M360 177 L 337 177"/>
+      <path d="M435 150 C 435 125, 560 125, 580 104" stroke-dasharray="5 4"/>
+    </g>
+    <text x="470" y="128" class="dg-mono-sm">non risolto: si torna alla 4</text>
+    <text x="350" y="236" text-anchor="middle" class="dg-label-sm">La fase 6 la decide l'utente, non tu: «per me è a posto» non chiude un ticket.</text>
+  </svg>
+  </div>
+  <figcaption>Le fasi 1, 2 e 3 sembrano tempo perso. Sono quelle che fanno risparmiare più tempo,
+  perché decidono se la diagnosi parte dal posto giusto.</figcaption>
+</figure>
+
+<h2>Fase 2: che tipo di ticket è</h2>
+
+<p>Non tutto quello che arriva in coda è un guasto. Il vocabolario più diffuso tra chi gestisce
+servizi informatici viene da <b>ITIL</b>, la raccolta di buone pratiche su cui sono costruiti quasi
+tutti i sistemi di ticketing. Non serve conoscerla a memoria, ma queste quattro parole sì, perché
+decidono cosa fai dopo.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tipo</th><th>Cosa vuol dire</th><th>Esempio</th><th>Cosa fai</th></tr></thead>
+    <tbody>
+      <tr><td><b>Incidente</b><br><small>incident</small></td><td>Qualcosa che funzionava ha smesso di funzionare, o funziona peggio</td>
+          <td>«Da stamattina la sede di Verona non vede il gestionale»</td><td>Ripristini il servizio il prima possibile</td></tr>
+      <tr><td><b>Richiesta</b><br><small>service request</small></td><td>Il cliente vuole qualcosa di nuovo o diverso, ma niente è rotto</td>
+          <td>«Ci serve una rete Wi-Fi per gli ospiti»</td><td>Pianifichi, e se serve fai un preventivo</td></tr>
+      <tr><td><b>Problema</b><br><small>problem</small></td><td>La causa di fondo di uno o più incidenti, specie se si ripetono</td>
+          <td>«Ogni lunedì mattina la VPN cade per mezz'ora»</td><td>Cerchi la causa con calma, dopo aver chiuso gli incidenti</td></tr>
+      <tr><td><b>Modifica</b><br><small>change</small></td><td>Un intervento pianificato su un sistema in produzione</td>
+          <td>«Aggiornare il firmware del firewall»</td><td>La fai approvare e la esegui in una finestra concordata (lezione 4-07)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Perché la differenza conta
+  </div>
+  <p style="margin-bottom:0">Un incidente si chiude quando il servizio torna, anche con un rimedio
+  provvisorio. Il problema resta aperto finché non si trova la causa. Se mescoli le due cose, o lasci
+  il cliente senza servizio mentre cerchi la causa perfetta, o chiudi il ticket con il rimedio
+  provvisorio e il guasto torna la settimana dopo. La regola: <b>prima si ripristina, poi si
+  capisce</b>, e il «capire» diventa un ticket di tipo problema, con il suo numero.</p>
+</div>
+
+<h3>La priorità: impatto per urgenza</h3>
+
+<p>La priorità non è «quanto il cliente è arrabbiato», né «quanto è importante chi ha chiamato».
+Si ricava da due domande, entrambe misurabili:</p>
+
+<ul>
+  <li><b>Impatto</b>: quante persone o quanti processi sono fermi? Un utente, un reparto, l'azienda intera?</li>
+  <li><b>Urgenza</b>: quanto in fretta il danno cresce? C'è un modo provvisorio di lavorare, o è tutto fermo?</li>
+</ul>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Impatto ↓ · Urgenza →</th><th>Alta<br><small>nessuna alternativa</small></th><th>Media<br><small>si lavora a fatica</small></th><th>Bassa<br><small>si può aspettare</small></th></tr></thead>
+    <tbody>
+      <tr><td><b>Alto</b> — azienda o sede intera</td><td><b>P1</b> critica</td><td><b>P2</b> alta</td><td><b>P3</b> media</td></tr>
+      <tr><td><b>Medio</b> — un reparto, un servizio</td><td><b>P2</b> alta</td><td><b>P3</b> media</td><td><b>P4</b> bassa</td></tr>
+      <tr><td><b>Basso</b> — una persona</td><td><b>P3</b> media</td><td><b>P4</b> bassa</td><td><b>P4</b> bassa</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Ogni priorità è legata a due tempi: entro quanto si <b>prende in carico</b> e entro quanto si
+<b>risolve</b> o si dà un rimedio. Questi tempi sono scritti nel contratto di assistenza del
+cliente, lo <span class="term" data-term="sla">SLA</span>, e cambiano da cliente a cliente: <b>si leggono nel contratto,
+non si ricordano</b>. Una P1 di un cliente con assistenza in orario d'ufficio non è una P1 di un
+cliente con reperibilità notturna.</p>
+
+<h2>Fase 2, seconda parte: le sette domande</h2>
+
+<p>«Non va la rete» non è un problema tecnico, è un sintomo raccontato da chi non è un tecnico.
+Prima di aprire qualsiasi console, trasformalo in una frase precisa con queste domande. Si
+possono fare al telefono in tre minuti, e cambiano la diagnosi più di qualsiasi comando.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Cosa esattamente</b> non funziona? Cosa stavi facendo?</td>
+          <td>«Internet non va» spesso vuol dire «un sito non si apre». È un altro problema</td></tr>
+      <tr><td>2</td><td><b>Quale messaggio</b> compare? Mi mandi una foto dello schermo?</td>
+          <td>Un errore di certificato, un errore DNS e una pagina che non carica sono tre cause diverse</td></tr>
+      <tr><td>3</td><td><b>Da quando?</b> Ha mai funzionato?</td>
+          <td>Se non ha mai funzionato non è un guasto: è una configurazione mai fatta, o una richiesta</td></tr>
+      <tr><td>4</td><td><b>Cosa è cambiato?</b> Aggiornamenti, traslochi, apparati nuovi, password cambiate?</td>
+          <td>La maggior parte dei guasti segue un cambiamento. Chiedilo sempre, anche a te stesso: chi ha toccato cosa, ieri?</td></tr>
+      <tr><td>5</td><td><b>Chi altro</b> ha lo stesso problema? I colleghi vicini? L'altra sede?</td>
+          <td>Uno solo: guarda il suo PC. Tutti: guarda la rete. È la domanda che dimezza lo spazio di ricerca</td></tr>
+      <tr><td>6</td><td><b>Succede sempre</b>, o a volte? A che ora?</td>
+          <td>Gli intermittenti a orario fisso hanno quasi sempre una causa a orario fisso: backup, aggiornamenti, rinnovi</td></tr>
+      <tr><td>7</td><td><b>Cosa hai già provato?</b></td>
+          <td>Così non rifai le stesse prove, e sai se qualcuno ha già cambiato qualcosa</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Alla fine delle domande devi saper scrivere una frase così: <em>«Da stamattina alle 9, i
+dodici PC dell'ufficio commerciale al primo piano non aprono nessun sito; la posta funziona; al
+piano terra va tutto; venerdì sera è stato sostituito lo switch del primo piano»</em>. Quella frase
+quasi si risolve da sola.</p>
+
+<h2>Fase 3: raccogliere prima di toccare</h2>
+
+<p>Prima di cambiare qualsiasi cosa, fotografa lo stato. Per due motivi: i dati che raccogli ora
+spariscono appena modifichi qualcosa, e senza una fotografia del «prima» non puoi dimostrare che
+il «dopo» è migliore. Dal lato dell'utente bastano pochi comandi, che puoi anche dettare al
+telefono.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>macOS · la fotografia del lato utente</div>
+<pre><span class="c"># indirizzo, maschera, gateway e DNS dell'interfaccia attiva</span>
+<span class="p">networksetup -getinfo Wi-Fi</span>          <span class="c"># o "Ethernet", secondo la connessione</span>
+<span class="p">route -n get default</span>                 <span class="c"># qual è il gateway predefinito</span>
+<span class="p">scutil --dns | grep nameserver</span>       <span class="c"># quali DNS usa davvero</span>
+
+<span class="c"># i quattro tentativi, dal più vicino al più lontano</span>
+<span class="p">ping -c 4</span> <span class="n">&lt;gateway&gt;</span>
+<span class="p">ping -c 4 1.1.1.1</span>
+<span class="p">nslookup</span> <span class="s">www.example.com</span>
+<span class="p">nc -vz</span> <span class="s">www.example.com</span> <span class="n">443</span></pre>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Windows (PC dell'utente) · la stessa fotografia</div>
+<pre><span class="c"># indirizzo, maschera, gateway, DNS e server DHCP</span>
+<span class="p">ipconfig /all</span>
+
+<span class="c"># i quattro tentativi, dal più vicino al più lontano</span>
+<span class="p">ping -n 4</span> <span class="n">&lt;gateway&gt;</span>
+<span class="p">ping -n 4 1.1.1.1</span>
+<span class="p">nslookup</span> <span class="s">www.example.com</span>
+<span class="p">Test-NetConnection</span> <span class="s">www.example.com</span> <span class="p">-Port</span> <span class="n">443</span>   <span class="c"># in PowerShell</span></pre>
+</div>
+
+<p>I quattro tentativi seguono la stessa logica della catena a sette anelli del capitolo FG.2:
+si parte dal più vicino e ci si ferma al <b>primo che fallisce</b>. Gateway non risponde: il
+problema è tra il PC e il primo apparato. Il gateway risponde ma 1.1.1.1 no: il problema è sul
+firewall o verso l'operatore. Gli indirizzi rispondono ma il nome non si risolve: è il DNS. Il nome
+si risolve ma la porta 443 non si apre: è un filtro, o il servizio dall'altra parte.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il ping che fallisce non prova niente da solo
+  </div>
+  <p style="margin-bottom:0">Molti server e molti firewall non rispondono al ping per scelta.
+  Un ping fallito ti dice «qui c'è da guardare», non «qui è rotto». Per questo l'ultimo tentativo
+  prova la porta del servizio vero (443 per un sito, 3389 per un desktop remoto, e così via):
+  è l'unico che riproduce quello che fa l'utente.</p>
+</div>
+
+<h2>Fasi 4 e 5: un'ipotesi e una modifica per volta</h2>
+
+<p>La regola d'oro della diagnosi: <b>cambia una cosa sola, poi verifica</b>. Se cambi tre cose
+insieme e il problema sparisce, non sai quale delle tre l'ha risolto, e non sai se le altre due
+hanno creato un problema nuovo che vedrai domani. E se il problema non sparisce, devi annullare
+tutte e tre.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Il tecnico frettoloso</th><th>Il tecnico senior</th></tr></thead>
+    <tbody>
+      <tr><td>Riavvia il firewall «per vedere se si sistema»</td><td>Guarda prima i log e le sessioni: il riavvio cancella proprio le prove che servono</td></tr>
+      <tr><td>Cambia DNS, gateway e driver insieme</td><td>Cambia il DNS, prova, annota. Poi, se serve, il resto</td></tr>
+      <tr><td>Tiene i passi a mente</td><td>Scrive ogni modifica nelle note del ticket, con l'ora, <b>prima</b> di farla</td></tr>
+      <tr><td>Se non funziona, aggiunge altre modifiche</td><td>Se non funziona, <b>annulla</b> la modifica e passa all'ipotesi successiva</td></tr>
+      <tr><td>Lavora per ore senza dire niente a nessuno</td><td>Si dà un tempo massimo (per esempio 30 minuti senza progressi), poi chiede aiuto: è l'escalation della lezione 4-06</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Un ticket non autorizza a cambiare tutto
+  </div>
+  <p style="margin-bottom:0">Un incidente ti autorizza a ripristinare il servizio, non a riprogettare
+  la rete. Se per risolvere devi fare una modifica che va oltre il ripristino (cambiare una regola
+  che riguarda altri reparti, aggiornare un firmware, toccare un apparato di un altro fornitore),
+  <b>ti fermi e chiedi l'autorizzazione</b> a chi può darla, e la scrivi nel ticket. Se l'apparato
+  è di un altro fornitore o dell'operatore, non si tocca: si apre una segnalazione a loro.</p>
+</div>
+
+<h2>I tre messaggi di ogni ticket</h2>
+
+<p>Il cliente non vede il tuo lavoro: vede i tuoi messaggi. Un ticket risolto in due ore in
+silenzio sembra più lento di uno risolto in tre ore con aggiornamenti regolari. Ogni ticket ha
+almeno tre messaggi, e ognuno ha una forma.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Messaggio</th><th>Quando</th><th>Cosa contiene, sempre</th></tr></thead>
+    <tbody>
+      <tr><td><b>Presa in carico</b></td><td>Subito, entro il tempo dello SLA</td><td>Chi se ne occupa, cosa hai capito del problema (con le tue parole, così il cliente può correggerti), quando ti risentirai</td></tr>
+      <tr><td><b>Aggiornamento</b></td><td>All'ora promessa, <b>anche se non c'è niente di nuovo</b></td><td>Cosa sai, cosa non sai ancora, cosa stai facendo, prossimo aggiornamento</td></tr>
+      <tr><td><b>Chiusura</b></td><td>Dopo la conferma dell'utente</td><td>Cosa era successo, cosa hai fatto, se il cliente deve fare qualcosa, se resta qualcosa di aperto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Esempio · aggiornamento a un referente non tecnico</div>
+<pre><span class="o">Buongiorno Marco,
+ti aggiorno sul problema di connessione del primo piano.
+
+Abbiamo capito che il problema riguarda solo lo switch nuovo
+montato venerdì: il resto della rete funziona. Stiamo
+confrontando la sua configurazione con quella del vecchio.
+
+Nel frattempo i colleghi del primo piano possono lavorare
+collegandosi al Wi-Fi aziendale, che non passa da quello switch.
+
+Ti scrivo di nuovo entro le 11:30, anche se non avremo ancora
+finito.</span></pre>
+</div>
+
+<p>Nota cosa <em>non</em> c'è: niente sigle, niente «abbiamo verificato la configurazione dei
+trunk 802.1Q». Al referente non tecnico servono tre cose: cosa succede, cosa può fare intanto,
+quando avrà notizie. Al referente tecnico del cliente puoi scrivere i dettagli, ma la struttura
+resta la stessa.</p>
+
+<h2>Fase 7: la nota di chiusura</h2>
+
+<p>La nota di chiusura non è per il cliente: è per <b>chi riaprirà lo stesso problema</b>, che
+molto spesso sei tu, tra sei mesi, senza ricordarti niente. Cinque righe, sempre le stesse.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Modello di nota di chiusura</div>
+<pre><span class="p">SINTOMO</span>      <span class="o">Cosa vedeva l'utente, con le sue parole e con le tue</span>
+<span class="p">CAUSA</span>        <span class="o">Cosa era rotto davvero, e come l'hai dimostrato</span>
+<span class="p">SOLUZIONE</span>    <span class="o">Cosa hai cambiato: apparato, menu o comando, valore prima e dopo</span>
+<span class="p">VERIFICA</span>     <span class="o">Come hai controllato che funziona, e chi l'ha confermato</span>
+<span class="p">PREVENZIONE</span>  <span class="o">Cosa evita che si ripeta, o il numero del ticket di tipo problema</span></pre>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Nota inutile</th><th>Nota utile</th></tr></thead>
+    <tbody>
+      <tr><td>«Risolto.»</td><td>«Causa: porta 24 dello switch del primo piano in VLAN 1 invece che trunk verso il firewall. Dimostrato con la tabella MAC: nessun indirizzo delle VLAN 10 e 20 visto sulla porta.»</td></tr>
+      <tr><td>«Sistemata configurazione switch.»</td><td>«Porta 24 impostata come trunk, VLAN 10 e 20 con tag. Configurazione salvata e copiata nella documentazione del cliente.»</td></tr>
+      <tr><td>«Ora funziona.»</td><td>«Verificato con Marco alle 11:10 su tre PC: navigazione e gestionale ok.»</td></tr>
+      <tr><td>—</td><td>«Prevenzione: aggiunta la verifica delle porte trunk alla lista di collaudo per gli switch nuovi.»</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Chi chiude il ticket
+  </div>
+  <p style="margin-bottom:0">Si chiude quando l'utente conferma che funziona. Se l'utente non
+  risponde, non si lascia il ticket aperto per sempre e non lo si chiude di nascosto: si scrive
+  «se non ricevo notizie entro due giorni lavorativi considero il problema risolto e chiudo», e si
+  rispetta quello che si è scritto. Molti sistemi di ticketing lo fanno da soli: verifica che il
+  cliente lo sappia.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso tipico: «internet è lento la mattina»
+  </div>
+  <p>Il <b>Cliente Z</b> apre lo stesso ticket tre volte in un mese: «internet è lentissimo».
+  Ogni volta un tecnico diverso lo prende nel pomeriggio, fa un test di velocità, trova la linea
+  perfetta e chiude con «verificato, nessun problema riscontrato».</p>
+  <p>Il quarto tecnico fa la domanda numero 6: <em>a che ora?</em> Sempre tra le 8:30 e le 9:30.
+  Guarda il grafico del traffico sul firewall in quella fascia: la linea in uscita è piena. La causa
+  è la sincronizzazione verso il cloud del backup notturno di un server, che non finisce prima
+  dell'arrivo delle persone.</p>
+  <p style="margin-bottom:0">Soluzione: limitare la banda del backup in orario d'ufficio, con il
+  consenso di chi gestisce il server. Ma la lezione è un'altra: i primi tre ticket erano chiusi con
+  note che non dicevano né l'ora del sintomo né l'ora della verifica. Con la nota a cinque righe, il
+  secondo tecnico avrebbe visto che il primo aveva verificato nel pomeriggio un problema del mattino.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Esercizio: riscrivi tre ticket
+  </div>
+  <ol style="margin-bottom:0">
+    <li>Prendi tre ticket di rete che hai chiuso nell'ultimo mese. Per ciascuno, classificalo
+    (incidente, richiesta, problema, modifica) e calcola la priorità con la tabella impatto per
+    urgenza. Coincide con quella che aveva?</li>
+    <li>Per ciascuno, scrivi la frase precisa che avresti ottenuto con le sette domande. Quali
+    domande non erano state fatte?</li>
+    <li>Riscrivi la nota di chiusura con il modello a cinque righe. Se non riesci a compilare la riga
+    CAUSA, chiediti se il problema era davvero risolto o solo scomparso.</li>
+    <li>Sul tuo Mac, esegui i quattro tentativi verso un sito qualsiasi, poi scollega il cavo o il
+    Wi-Fi e ripetili. Osserva quale fallisce per primo. Ripeti nella VM Windows con
+    <code>Test-NetConnection</code>.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: gestire un ticket",
+  "questions": [
+    { "q": "Ogni lunedì mattina la VPN di una sede cade per mezz'ora. Hai già chiuso quattro ticket ripristinandola. Cosa apri ora?",
+      "a": [ {"t":"Un ticket di tipo problema, per cercare la causa che fa ripetere gli incidenti","ok":true},
+             {"t":"Un quinto incidente, uguale ai precedenti","ok":false},
+             {"t":"Una richiesta di servizio per una VPN nuova","ok":false},
+             {"t":"Niente: se ogni volta si ripristina, va bene così","ok":false} ],
+      "e": "Gli incidenti si chiudono quando il servizio torna. Quando si ripetono, la causa di fondo è un problema, che va aperto a parte e indagato con calma. Continuare a chiudere incidenti uguali significa curare la febbre senza cercare l'infezione." },
+
+    { "q": "Un solo utente, che può lavorare da un altro PC, non riesce a stampare. Che priorità ha, con la tabella impatto per urgenza?",
+      "a": [ {"t":"Bassa: impatto basso e urgenza bassa, perché c'è un'alternativa","ok":true},
+             {"t":"Critica, se l'utente è il direttore","ok":false},
+             {"t":"Alta, perché la stampa è un servizio essenziale","ok":false},
+             {"t":"Media, sempre, per tutti i problemi di stampa","ok":false} ],
+      "e": "La priorità si ricava da impatto (una persona) e urgenza (esiste un modo di lavorare): P4. Il ruolo di chi chiama non entra nel calcolo. Poi i tempi effettivi li decide lo SLA del cliente: alcuni contratti trattano in modo particolare certi utenti, ed è scritto lì, non deciso al momento." },
+
+    { "q": "Quale delle sette domande dimezza più spesso lo spazio di ricerca?",
+      "a": [ {"t":"«Chi altro ha lo stesso problema?»","ok":true},
+             {"t":"«Hai provato a riavviare?»","ok":false},
+             {"t":"«Che sistema operativo hai?»","ok":false},
+             {"t":"«Quanto è urgente?»","ok":false} ],
+      "e": "Se il problema ce l'ha una persona sola, quasi certamente sta nel suo PC o nella sua porta di rete. Se ce l'hanno tutti, è nella rete o nei servizi condivisi. Una sola risposta esclude metà delle cause possibili." },
+
+    { "q": "Dal PC dell'utente il gateway risponde al ping, 1.1.1.1 risponde, ma nslookup di un sito non restituisce niente. Dove guardi?",
+      "a": [ {"t":"Al DNS: i server configurati sul PC e la loro raggiungibilità","ok":true},
+             {"t":"Al cavo di rete del PC","ok":false},
+             {"t":"Alla linea dell'operatore","ok":false},
+             {"t":"Al certificato del sito","ok":false} ],
+      "e": "I quattro tentativi si leggono fermandosi al primo che fallisce. Gateway e Internet per indirizzo rispondono, quindi cavo, rete locale e linea funzionano. Fallisce la risoluzione dei nomi: è il DNS. Il certificato entra in gioco solo dopo, quando la connessione alla porta 443 si apre." },
+
+    { "q": "Hai fatto una modifica sul firewall per risolvere un ticket, ma il problema resta. Cosa fai?",
+      "a": [ {"t":"Annulli la modifica e passi all'ipotesi successiva","ok":true},
+             {"t":"La lasci e aggiungi un'altra modifica","ok":false},
+             {"t":"Riavvii il firewall per applicarla meglio","ok":false},
+             {"t":"La lasci, tanto non ha fatto danni visibili","ok":false} ],
+      "e": "Una modifica che non risolve è una modifica che cambia la configurazione senza motivo. Se la lasci, le prossime prove partono da uno stato diverso da quello di partenza e la diagnosi si confonde; e a distanza di mesi nessuno saprà perché è lì. Una modifica per volta, e se non serve si annulla." },
+
+    { "q": "Hai promesso un aggiornamento al cliente alle 11:30, ma non hai ancora trovato la causa. Cosa fai alle 11:30?",
+      "a": [ {"t":"Scrivi comunque: cosa sai, cosa non sai, cosa stai facendo, quando ti risenti","ok":true},
+             {"t":"Aspetti di avere la soluzione, per non dare notizie a metà","ok":false},
+             {"t":"Chiami per dire che è quasi risolto","ok":false},
+             {"t":"Non scrivi: il cliente sa che ci stai lavorando","ok":false} ],
+      "e": "Per il cliente il silenzio vuol dire che nessuno se ne occupa. Un aggiornamento senza la soluzione, ma onesto e puntuale, rassicura più di una soluzione arrivata dopo ore di silenzio. «Quasi risolto», se non è vero, ti si ritorce contro al messaggio successivo." },
+
+    { "q": "Quale di queste è una buona riga CAUSA in una nota di chiusura?",
+      "a": [ {"t":"«Porta 24 in VLAN 1 invece che trunk: nessun MAC delle VLAN 10 e 20 visto sulla porta»","ok":true},
+             {"t":"«Problema di rete, risolto»","ok":false},
+             {"t":"«Probabilmente lo switch»","ok":false},
+             {"t":"«L'utente ha confermato che ora funziona»","ok":false} ],
+      "e": "La causa dice cosa era rotto e come l'hai dimostrato. «Probabilmente» vuol dire che non lo sai. La conferma dell'utente va nella riga VERIFICA, non nella CAUSA. Una nota così permette a chi riapre il ticket di partire subito dal punto giusto." }
+  ]
+}
+</script>

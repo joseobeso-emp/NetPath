@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Migrazioni e cutover senza downtime — NetPath</title>
+<meta name="description" content="Come si sostituisce il firewall o la rete di un'azienda in una notte: inventario delle dipendenze, prove prima, runbook al minuto, criteri di go/no-go e un rollback deciso in anticipo.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l4-07">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l4">Livello 4</a><span class="sep">/</span>
+        <span>Operare come senior</span>
+      </nav>
+      <h1 class="lesson-title">Migrazioni e cutover senza downtime</h1>
+      <div class="lesson-meta">
+        <span class="badge lv4">Livello 4</span>
+        <span class="chip">Lezione 07</span>
+        <span class="chip">28 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Fare l'inventario di tutto ciò che dipende dall'apparato da sostituire, comprese le cose che nessuno ricorda</li>
+        <li>Preparare il cutover nei giorni prima: TTL dei DNS, ARP, partner VPN, comunicazione agli utenti</li>
+        <li>Scrivere un runbook con orari, verifiche, punto di non ritorno e criteri di rollback</li>
+        <li>Eseguire le verifiche dopo il cutover da Mac e da Windows, e chiudere la migrazione</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Sostituire un firewall è facile. Sostituirlo in modo che lunedì mattina nessuno
+si accorga che è cambiato qualcosa è un mestiere. Quasi tutti i problemi di un
+<span class="term" data-term="cutover">cutover</span> non vengono dalla configurazione del nuovo
+apparato, ma da quello che faceva il vecchio e che nessuno aveva scritto: la telecamera
+pubblicata nel 2019, la stampante che manda le scansioni via mail, il fornitore che entra in VPN
+una volta al mese. Questa lezione è il metodo per trovarle prima, non lunedì alle nove.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il trasloco
+  </div>
+  <p>Una famiglia trasloca. Se il giorno del trasloco si mette a decidere cosa portare, a cercare
+  gli scatoloni e a scoprire che il divano non passa dalla porta, finisce a mezzanotte con metà delle
+  cose ancora nella casa vecchia. La famiglia che trasloca bene ha fatto tutto prima: l'elenco di ogni
+  stanza, gli scatoloni etichettati, le misure delle porte, il cambio di indirizzo alla posta.</p>
+  <p style="margin-bottom:0">E tiene le chiavi della casa vecchia finché non è sicura che nella nuova
+  funzionino luce, acqua e riscaldamento. Quelle chiavi sono il <b><span class="term" data-term="rollback">rollback</span></b>:
+  la possibilità di tornare indietro se qualcosa va storto. Chi le restituisce il giorno stesso,
+  scommette che andrà tutto bene.</p>
+</div>
+
+<h2>Le fasi di una migrazione</h2>
+
+<p>Il cutover vero, quello notturno, è una piccola parte del lavoro. Il grosso si fa nelle
+settimane prima, e decide se la notte sarà noiosa (come deve essere) o memorabile.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Le fasi di una migrazione nel tempo: preparazione nelle settimane prima, prove in laboratorio, ultimi preparativi il giorno prima, la finestra notturna con il punto di non ritorno, il presidio della mattina dopo e la chiusura">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Il cutover è la parte più breve del lavoro</text>
+
+    <g stroke-width="1.6">
+      <rect x="10"  y="50" width="190" height="56" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="210" y="50" width="120" height="56" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="340" y="50" width="100" height="56" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="450" y="50" width="110" height="56" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="570" y="50" width="120" height="56" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="105" y="74" class="dg-label-sm">PREPARAZIONE</text>
+      <text x="105" y="92" class="dg-mono-sm">inventario, runbook</text>
+      <text x="270" y="74" class="dg-label-sm">PROVE</text>
+      <text x="270" y="92" class="dg-mono-sm">in laboratorio</text>
+      <text x="390" y="74" class="dg-label-sm">VIGILIA</text>
+      <text x="390" y="92" class="dg-mono-sm">TTL, avvisi</text>
+      <text x="505" y="74" class="dg-label-sm">FINESTRA</text>
+      <text x="505" y="92" class="dg-mono-sm">la notte</text>
+      <text x="630" y="74" class="dg-label-sm">PRESIDIO</text>
+      <text x="630" y="92" class="dg-mono-sm">mattina, chiusura</text>
+    </g>
+
+    <g stroke="var(--dg-line)" stroke-width="1.5" fill="none">
+      <path d="M10 140 L 690 140"/>
+    </g>
+    <g class="dg-mono-sm" text-anchor="middle">
+      <text x="105" y="160">settimane prima</text>
+      <text x="270" y="160">1–2 settimane</text>
+      <text x="390" y="160">1–2 giorni</text>
+      <text x="505" y="160">poche ore</text>
+      <text x="630" y="160">giorni dopo</text>
+    </g>
+
+    <g stroke="var(--dg-4)" stroke-width="2" fill="none">
+      <path d="M528 44 L 528 120" stroke-dasharray="4 3"/>
+    </g>
+    <text x="528" y="196" text-anchor="middle" class="dg-label-sm">punto di non ritorno</text>
+    <path d="M528 182 L 528 124" stroke="var(--dg-4)" stroke-width="1.4" fill="none"/>
+    <text x="350" y="232" text-anchor="middle" class="dg-label-sm">Prima del punto di non ritorno si torna indietro in minuti. Dopo, solo andando avanti.</text>
+  </svg>
+  </div>
+  <figcaption>Il punto di non ritorno non è sempre la fine della finestra: è il primo passo che non
+  si può annullare in fretta, per esempio la modifica di un record DNS pubblico o la disattivazione
+  della linea vecchia da parte dell'operatore.</figcaption>
+</figure>
+
+<h2>Preparazione: l'inventario di quello che nessuno ricorda</h2>
+
+<p>Il nuovo apparato deve fare <b>tutto</b> quello che faceva il vecchio, comprese le cose
+dimenticate. Le fonti per scoprirle sono tre, e servono tutte: la configurazione del vecchio
+apparato, il traffico reale che ci passa, e le persone del cliente.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Cosa cercare</th><th>Dove lo trovi</th><th>Cosa si rompe se lo dimentichi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Servizi pubblicati</b> (VIP, port forward)</td><td>Configurazione del vecchio apparato</td><td>Accesso da fuori a telecamere, centralino, gestionale, server di posta</td></tr>
+      <tr><td><b>Indirizzi IP pubblici</b> in uso</td><td>Configurazione, contratto della linea</td><td>Servizi che rispondono su un IP secondario del blocco</td></tr>
+      <tr><td><b>VPN site-to-site</b> e i loro partner</td><td>Configurazione; chi gestisce l'altra parte</td><td>Il partner che ha il vecchio IP o i vecchi parametri: il tunnel non si alza</td></tr>
+      <tr><td><b>Liste di indirizzi autorizzati</b> presso terzi</td><td>Il cliente: banca, fornitori, enti, servizi cloud</td><td>Il servizio esterno che accetta connessioni solo dal vecchio IP pubblico</td></tr>
+      <tr><td><b>Prenotazioni DHCP</b> e indirizzi statici</td><td>Server DHCP, se è il firewall stesso</td><td>Stampanti e apparati che cambiano indirizzo</td></tr>
+      <tr><td><b>Invii di posta</b> da apparati</td><td>Traffico verso le porte di posta in uscita, nei log</td><td>Le scansioni delle multifunzione e gli allarmi che non arrivano più</td></tr>
+      <tr><td><b>Rotte statiche</b> verso altre reti</td><td>Configurazione</td><td>Reti dietro un altro router, che spariscono</td></tr>
+      <tr><td><b>Accessi di gestione</b> esterni</td><td>Configurazione, il cliente</td><td>Il fornitore del centralino o del gestionale che non riesce più a entrare</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Guarda il traffico, non solo la configurazione
+  </div>
+  <p style="margin-bottom:0">Una regola nella configurazione dice cosa è <em>permesso</em>, non cosa
+  è <em>usato</em>. Prima della migrazione, guarda nei log del vecchio apparato quali regole vengono
+  colpite davvero e quali no, su un periodo di almeno qualche settimana: le regole mai colpite si
+  discutono con il cliente (forse si possono togliere), quelle usate e non documentate sono proprio
+  le dipendenze che stavi cercando. Un periodo lungo serve a vedere anche le attività mensili.</p>
+</div>
+
+<h3>La lista delle prove, fatta sul vecchio</h3>
+
+<p>Dall'inventario nasce la <b>lista delle prove</b>: una riga per ogni cosa che deve funzionare dopo
+il cutover, con il modo esatto di verificarla. E qui c'è il passaggio che quasi tutti saltano: la
+lista si esegue <b>prima</b>, sul vecchio apparato. Così sai cosa funzionava davvero. Se dopo il
+cutover una prova fallisce, sai se l'hai rotta tu o se non funzionava già prima.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Prova</th><th>Come</th><th>Prima</th><th>Dopo</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Navigazione da PC della VLAN utenti</td><td>Aprire tre siti, uno con autenticazione</td><td>✔</td><td></td></tr>
+      <tr><td>2</td><td>Gestionale dalla filiale via VPN</td><td>Login da un PC della filiale</td><td>✔</td><td></td></tr>
+      <tr><td>3</td><td>Scansione via mail dalla multifunzione</td><td>Scansione di prova a una casella nota</td><td>✔</td><td></td></tr>
+      <tr><td>4</td><td>Centralino raggiungibile dal fornitore</td><td>Chiamata al fornitore, verifica del suo accesso</td><td>✔</td><td></td></tr>
+      <tr><td>5</td><td>Telecamere da fuori</td><td>App dal telefono in rete mobile, non dal Wi-Fi</td><td>✘ già guasta</td><td></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>La riga 5 vale oro: senza la prova «prima», lunedì il cliente direbbe che le telecamere non vanno
+più da quando avete cambiato il firewall. Con la prova, sai che erano già guaste e lo puoi
+dimostrare, e lo segnali al cliente prima, non dopo.</p>
+
+<h2>Prove in laboratorio</h2>
+
+<p>La configurazione del nuovo apparato si carica e si prova <b>in laboratorio</b>, non la notte
+del cutover. In laboratorio si aggiorna il firmware alla versione scelta nell'LLD, si carica la
+configurazione, si collega un PC su ogni rete e si fa la lista delle prove per tutto quello che si
+può simulare. Quello che resta da provare sul posto deve essere poco, ed elencato.</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Se la configurazione viene «tradotta» da un altro produttore
+  </div>
+  <p style="margin-bottom:0">Esistono strumenti che convertono la configurazione da una marca
+  all'altra. Sono utili per non ribattere centinaia di oggetti, ma il risultato va <b>riletto riga
+  per riga</b>: concetti che non esistono uguali sui due apparati (l'ordine delle regole, il NAT
+  implicito, i profili di sicurezza) vengono tradotti in modo approssimativo o non tradotti. È anche
+  l'occasione per togliere le regole mai usate trovate nell'inventario.</p>
+</div>
+
+<h2>La vigilia: le tre cose che non si possono fare all'ultimo</h2>
+
+<h3>1. Abbassare il TTL dei record DNS</h3>
+
+<p>Se con la migrazione cambiano gli indirizzi pubblici, i record DNS che puntano ai servizi del
+cliente andranno modificati. Ma ogni server DNS nel mondo conserva la risposta vecchia per la durata
+del suo <b>TTL</b>, che spesso è di diverse ore. Se il TTL è di 24 ore e cambi il record la notte
+del cutover, per un giorno una parte di Internet continuerà a cercare il cliente al vecchio
+indirizzo.</p>
+
+<p>La soluzione: abbassare il TTL dei record interessati (per esempio a 300 secondi) <b>con un
+anticipo almeno pari al TTL vecchio</b>. Se il TTL era di 24 ore, lo abbassi almeno 24 ore prima,
+così quando cambi il record tutte le copie in giro scadono in pochi minuti. Dopo la migrazione, il
+TTL si riporta al valore normale.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Controllare il TTL attuale di un record · macOS e Windows</div>
+<pre><span class="c"># macOS: la seconda colonna della risposta è il TTL in secondi</span>
+<span class="p">dig +noall +answer</span> <span class="s">vpn.example.com</span>
+<span class="o">vpn.example.com.   86400   IN   A   203.0.113.10</span>
+
+<span class="c"># Windows (PowerShell): la colonna TTL</span>
+<span class="p">Resolve-DnsName</span> <span class="s">vpn.example.com</span> <span class="p">-Type A</span></pre>
+</div>
+
+<h3>2. Prevedere il problema dell'ARP</h3>
+
+<p>Se il nuovo firewall prende lo <b>stesso indirizzo IP</b> del vecchio sulla linea dell'operatore,
+il router dell'operatore ha ancora in memoria la vecchia associazione tra quell'IP e il MAC del
+vecchio firewall (la sua tabella ARP, lezione del Livello 1). Finché quella voce non scade, manda il
+traffico verso un MAC che non c'è più: la linea sembra morta anche se tutto è configurato bene.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Rimedio</th><th>Come funziona</th><th>Limite</th></tr></thead>
+    <tbody>
+      <tr><td><b>ARP gratuito</b></td><td>Molti apparati, quando l'interfaccia si accende, annunciano da soli «questo IP ora è al mio MAC»</td><td>Non tutti i router lo accettano: non contarci senza averlo visto funzionare</td></tr>
+      <tr><td><b>Riavvio del router dell'operatore</b></td><td>Svuota la sua tabella ARP</td><td>Solo se il router è sul posto e si può riavviare; se è dell'operatore, con il suo accordo</td></tr>
+      <tr><td><b>Chiedere all'operatore</b> di svuotare la cache ARP</td><td>Lo fa lui sul suo apparato</td><td>Va concordato prima, con un contatto raggiungibile di notte</td></tr>
+      <tr><td><b>Stesso MAC sul nuovo firewall</b></td><td>Alcuni apparati permettono di impostare a mano il MAC dell'interfaccia</td><td>Va verificato sul modello; è una soluzione temporanea da documentare</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Lo stesso problema esiste <b>verso l'interno</b>: PC, server e stampanti hanno in memoria il MAC
+del vecchio gateway. Di solito la voce scade da sola in pochi minuti, ma un PC che non naviga dopo il
+cutover, mentre il vicino sì, è quasi sempre questo.</p>
+
+<h3>3. Avvisare chi sta fuori</h3>
+
+<ul>
+  <li><b>I partner VPN</b>, se cambia l'IP pubblico o un parametro: la loro configurazione va
+  cambiata insieme alla tua, quindi serve una persona dall'altra parte, disponibile nella finestra.</li>
+  <li><b>I servizi esterni con liste di indirizzi autorizzati</b>: aggiungere il nuovo IP
+  <em>prima</em>, togliere il vecchio <em>dopo</em>.</li>
+  <li><b>Gli utenti</b>: quando inizia e finisce l'interruzione, cosa devono fare lunedì (spegnere e
+  riaccendere? niente?), a chi telefonare.</li>
+  <li><b>Il cliente</b>: chi è il referente reperibile durante la finestra, che può dire «sì, va
+  bene così» alle 2 di notte.</li>
+</ul>
+
+<h2>Il runbook</h2>
+
+<p>Il <b><span class="term" data-term="runbook">runbook</span></b> è la scaletta della notte. Ogni
+riga ha un orario, un'azione, chi la fa, come si verifica e cosa si fa se la verifica fallisce.
+Durante la finestra non si improvvisa: si legge la riga, si esegue, si verifica, si spunta.
+Alle 3 di notte, stanchi, il cervello sbaglia; il foglio no.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Ora</th><th>Passo</th><th>Chi</th><th>Verifica</th><th>Se fallisce</th></tr></thead>
+    <tbody>
+      <tr><td>21:00</td><td>Go/no-go: tutti presenti, backup fatti, referente raggiungibile</td><td>Coordinatore</td><td>Lista di go/no-go spuntata</td><td>Si rinvia</td></tr>
+      <tr><td>21:10</td><td>Backup finale della configurazione del vecchio firewall</td><td>Tecnico</td><td>File aperto e leggibile</td><td>Si ripete</td></tr>
+      <tr><td>21:20</td><td>Scollegare il vecchio firewall, <b>senza resettarlo</b></td><td>Tecnico</td><td>Cavi etichettati</td><td>—</td></tr>
+      <tr><td>21:30</td><td>Collegare il nuovo firewall, porte come da LLD</td><td>Tecnico</td><td>Link attivi sulle porte attese</td><td>Controllo cavi e porte</td></tr>
+      <tr><td>21:45</td><td>Verifica della linea: ARP, gateway, Internet</td><td>Tecnico</td><td>Ping e risoluzione DNS dal firewall</td><td>Rimedi ARP; se dopo 30 min no: rollback</td></tr>
+      <tr><td>22:15</td><td>Partner VPN cambia il peer</td><td>Partner</td><td>Tunnel su, traffico nei due sensi</td><td>Diagnosi phase 1 e 2 (FG.5)</td></tr>
+      <tr><td>22:45</td><td>Lista delle prove, riga per riga</td><td>Tecnico + referente</td><td>Colonna «Dopo» compilata</td><td>Correzione o rollback secondo i criteri</td></tr>
+      <tr><td><b>23:30</b></td><td><b>Decisione: si resta o si torna indietro</b></td><td>Coordinatore + referente</td><td>Criteri di rollback</td><td><b>Ultimo momento per il rollback</b></td></tr>
+      <tr><td>23:40</td><td>Modifica dei record DNS pubblici</td><td>Tecnico</td><td>Risposta nuova da un DNS esterno</td><td>Punto di non ritorno superato</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Go/no-go e criteri di rollback</h3>
+
+<p>Due decisioni si scrivono <b>prima</b> della finestra, a mente fredda, e si fanno approvare dal
+cliente insieme alla modifica:</p>
+
+<ul>
+  <li><b>Go/no-go</b>: le condizioni per iniziare. Se manca una persona chiave, se il backup non è
+  verificato, se il partner VPN non risponde, non si parte. Rinviare costa una notte; partire senza
+  costa un lunedì.</li>
+  <li><b>Criteri di rollback</b>: le condizioni per tornare indietro, scritte come fatti misurabili,
+  non come sensazioni. Per esempio: «se alle 23:30 le prove 1, 2 e 3 non passano, si torna al vecchio
+  firewall». Senza un criterio scritto, alle 23:30 vince sempre «ancora dieci minuti», e alle 4 si
+  è ancora lì.</li>
+</ul>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Il rollback deve esistere davvero
+  </div>
+  <p style="margin-bottom:0">Un rollback che non è stato preparato è una speranza. Il vecchio
+  apparato resta <b>intatto e pronto da ricollegare</b>, con i cavi etichettati, per almeno qualche
+  giorno dopo il cutover: non si resetta, non si porta via, non si riusa. I record DNS vecchi sono
+  annotati. Il partner VPN sa che potrebbe dover rimettere i parametri vecchi. E la sequenza di
+  rollback è scritta nel runbook come le altre righe, con i suoi tempi: se servono 40 minuti, l'ultimo
+  momento per deciderlo è 40 minuti prima della fine della finestra.</p>
+</div>
+
+<h2>«Senza downtime»: cosa si può promettere</h2>
+
+<p>Il titolo della lezione è una promessa da maneggiare con cura. Sostituire l'unico firewall di
+una sede comporta quasi sempre un'interruzione: l'obiettivo onesto è che cada <b>quando nessuno
+lavora</b> e duri il meno possibile. L'interruzione davvero nulla si ottiene solo in alcuni casi.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Tecnica</th><th>Quando si può usare</th><th>Cosa costa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Finestra notturna</b></td><td>Sempre</td><td>Ore fuori orario; interruzione breve ma reale</td></tr>
+      <tr><td><b>Migrazione per fasi</b></td><td>Quando si possono spostare reti una per volta: prima una VLAN, poi un'altra</td><td>Per un periodo convivono vecchio e nuovo, con rotte tra i due da gestire</td></tr>
+      <tr><td><b>Funzionamento in parallelo</b></td><td>Quando c'è una seconda linea o un secondo IP pubblico per il nuovo apparato</td><td>Più complessità; alla fine un cutover piccolo resta comunque</td></tr>
+      <tr><td><b>Sostituzione di un membro del cluster</b></td><td>Quando c'è già un'alta disponibilità attiva e il produttore supporta l'aggiornamento membro per membro</td><td>Va seguita la procedura del produttore per quel modello e quella versione</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Alla tastiera: le verifiche dopo il cutover</h2>
+
+<p>Da un PC di ogni rete, dopo il cutover, la sequenza è sempre la stessa: svuotare le memorie
+locali che potrebbero ricordare il vecchio mondo, poi provare dal più vicino al più lontano.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>macOS · dopo il cutover</div>
+<pre><span class="c"># svuotare la cache ARP e la cache DNS (chiede la password del Mac)</span>
+<span class="p">sudo arp -a -d</span>
+<span class="p">sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder</span>
+
+<span class="c"># il MAC del gateway ora deve essere quello del nuovo firewall</span>
+<span class="p">arp -a | grep</span> <span class="n">&lt;ip-del-gateway&gt;</span>
+
+<span class="c"># dal più vicino al più lontano</span>
+<span class="p">ping -c 4</span> <span class="n">&lt;ip-del-gateway&gt;</span>
+<span class="p">traceroute -n 1.1.1.1</span>
+<span class="p">nslookup</span> <span class="s">www.example.com</span>
+<span class="p">curl -sI https://www.example.com | head -1</span>
+
+<span class="c"># l'IP pubblico con cui esci: deve essere quello previsto</span>
+<span class="p">curl -s https://ifconfig.me; echo</span></pre>
+</div>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Windows · dopo il cutover (prompt o PowerShell come amministratore)</div>
+<pre><span class="c"># svuotare la cache ARP e la cache DNS</span>
+<span class="p">arp -d *</span>
+<span class="p">ipconfig /flushdns</span>
+
+<span class="c"># il MAC del gateway ora deve essere quello del nuovo firewall</span>
+<span class="p">arp -a</span> <span class="n">&lt;ip-del-gateway&gt;</span>
+
+<span class="c"># dal più vicino al più lontano</span>
+<span class="p">ping -n 4</span> <span class="n">&lt;ip-del-gateway&gt;</span>
+<span class="p">tracert -d 1.1.1.1</span>
+<span class="p">nslookup</span> <span class="s">www.example.com</span>
+<span class="p">curl.exe -sI https://www.example.com</span>
+
+<span class="c"># l'IP pubblico con cui esci</span>
+<span class="p">curl.exe -s https://ifconfig.me</span></pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Su Windows scrivi curl.exe, non curl
+  </div>
+  <p style="margin-bottom:0">In Windows PowerShell 5.1, quella preinstallata, <code>curl</code> è un
+  alias di un altro comando (<code>Invoke-WebRequest</code>) con opzioni diverse: <code>curl -sI</code>
+  dà errore. Scrivendo <code>curl.exe</code> si usa il vero curl, incluso in Windows 10 e 11.
+  Il servizio <code>ifconfig.me</code> è di terzi: va bene per una verifica, ma per una prova
+  ufficiale confronta l'IP con quello visto da un apparato che controlli tu.</p>
+</div>
+
+<h2>Il presidio e la chiusura</h2>
+
+<p>La mattina dopo un cutover, qualcuno è <b>sul posto o immediatamente raggiungibile</b> dall'inizio
+dell'orario di lavoro. Le chiamate arrivano tutte nella prima ora, e spesso sono cose piccole (un PC
+con la cache ARP vecchia, una stampante con l'indirizzo fisso dimenticato) che, risolte in cinque
+minuti, fanno sembrare la migrazione perfetta.</p>
+
+<p>La migrazione si chiude quando:</p>
+
+<ol>
+  <li>la lista delle prove ha la colonna «Dopo» completa, firmata dal referente del cliente;</li>
+  <li>i TTL dei record DNS sono tornati al valore normale;</li>
+  <li>il vecchio IP è stato tolto dalle liste di indirizzi autorizzati presso terzi;</li>
+  <li>la documentazione «as built» riflette quello che c'è davvero, non quello che era nel progetto;</li>
+  <li>il vecchio apparato, dopo il periodo concordato, viene resettato in modo sicuro (può contenere
+  configurazioni e credenziali del cliente) e restituito o smaltito.</li>
+</ol>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso tipico: la notte perfetta e il lunedì della banca
+  </div>
+  <p>Il cutover del firewall del <b>Cliente V</b> va liscio: alle 23 tutte le prove passano, si
+  chiude. Lunedì alle 9 l'amministrazione non riesce a entrare nel portale della banca per i
+  pagamenti. La banca accetta connessioni solo da indirizzi autorizzati, e con il nuovo firewall il
+  cliente esce con un IP pubblico diverso del suo blocco.</p>
+  <p style="margin-bottom:0">Il portale non era in nessuna lista: non c'era una regola per lui nel
+  vecchio firewall, perché è normale traffico in uscita. Nessuno lo aveva pensato come una
+  dipendenza. La domanda che lo avrebbe trovato, da fare al cliente nella fase di inventario:
+  <em>«Ci sono servizi esterni che vi riconoscono dal vostro indirizzo Internet?»</em>. Banche,
+  fornitori di gestionali in cloud ed enti pubblici lo fanno spesso. E la regola più semplice, se si
+  può: <b>il nuovo apparato esce con lo stesso IP pubblico del vecchio</b>.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Esercizio: il runbook della tua rete
+  </div>
+  <p>Immagina di sostituire il router della tua rete di casa o di laboratorio con un apparato
+  nuovo. L'esercizio è tutto su carta e in sola lettura: non si cambia niente.</p>
+  <ol style="margin-bottom:0">
+    <li>Fai l'inventario con la tabella di questa lezione: servizi pubblicati, prenotazioni DHCP,
+    rotte, VPN, apparati che mandano mail o notifiche. Quanti ne avevi dimenticati?</li>
+    <li>Scrivi la lista delle prove, almeno otto righe, ed eseguila <b>adesso</b> sulla rete attuale,
+    compilando la colonna «Prima».</li>
+    <li>Controlla con <code>dig</code> o <code>Resolve-DnsName</code> il TTL di un record di un dominio
+    che usi. Con quanto anticipo dovresti abbassarlo?</li>
+    <li>Scrivi il runbook con orari, verifiche, criterio di rollback e punto di non ritorno. Quanto
+    tempo richiede il rollback? A che ora è l'ultimo momento per deciderlo?</li>
+    <li>Dal Mac, guarda la tua tabella ARP con <code>arp -a</code> e trova il MAC del gateway.
+    È quello che cambierà il giorno della sostituzione.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: migrazioni e cutover",
+  "questions": [
+    { "q": "Perché la lista delle prove si esegue anche sul vecchio apparato, prima del cutover?",
+      "a": [ {"t":"Per sapere cosa funzionava davvero, e distinguere ciò che rompi da ciò che era già guasto","ok":true},
+             {"t":"Per scaldare l'apparato prima di spegnerlo","ok":false},
+             {"t":"Perché il produttore lo richiede per la garanzia","ok":false},
+             {"t":"Non serve: basta eseguirla dopo","ok":false} ],
+      "e": "Senza la prova «prima», ogni cosa che non funziona dopo il cutover sembra colpa della migrazione. Con la prova, sai se l'hai rotta tu o se era già guasta, e puoi dirlo al cliente prima che lo scopra lui." },
+
+    { "q": "Il record DNS del portale VPN ha TTL 86400 secondi e cambierà con la migrazione di sabato notte. Quando abbassi il TTL?",
+      "a": [ {"t":"Almeno 24 ore prima della modifica, cioè entro venerdì notte","ok":true},
+             {"t":"Sabato notte, insieme alla modifica del record","ok":false},
+             {"t":"Lunedì, dopo la migrazione","ok":false},
+             {"t":"Non serve abbassarlo: il DNS si aggiorna subito","ok":false} ],
+      "e": "86400 secondi sono 24 ore. Le copie della risposta vecchia restano valide in giro per tutto il TTL con cui sono state date. Abbassando il TTL almeno 24 ore prima, al momento del cambio tutte le copie in circolazione hanno già il TTL breve e scadono in pochi minuti." },
+
+    { "q": "Dopo aver collegato il nuovo firewall con lo stesso IP del vecchio sulla linea, Internet non funziona, anche se la configurazione è giusta. Qual è la causa più probabile?",
+      "a": [ {"t":"Il router dell'operatore ha ancora in cache ARP il MAC del vecchio firewall","ok":true},
+             {"t":"Il DNS non ha ancora propagato il nuovo indirizzo","ok":false},
+             {"t":"Il nuovo firewall ha bisogno di una licenza per navigare","ok":false},
+             {"t":"La linea è stata disattivata dall'operatore","ok":false} ],
+      "e": "Stesso IP, MAC diverso: il router dell'operatore continua a mandare i pacchetti al MAC vecchio finché la voce ARP non scade o non viene aggiornata. È un classico dei cutover. I rimedi (ARP gratuito, riavvio o svuotamento della cache del router, stesso MAC sul nuovo apparato) vanno previsti e concordati prima." },
+
+    { "q": "Sono le 23:30, il criterio scritto dice di tornare indietro se le prove 1-3 non passano. La prova 2 fallisce, ma pensi di essere vicino alla soluzione. Cosa fai?",
+      "a": [ {"t":"Applichi il criterio: rollback, e riprovi in un'altra finestra","ok":true},
+             {"t":"Ti dai altri dieci minuti, poi altri dieci se serve","ok":false},
+             {"t":"Vai avanti e risolvi la prova 2 lunedì mattina","ok":false},
+             {"t":"Chiedi al cliente cosa preferisce, senza spiegare il criterio","ok":false} ],
+      "e": "I criteri di rollback si scrivono a mente fredda proprio perché nella finestra si è sempre convinti di essere a dieci minuti dalla soluzione. Rinviare costa una notte; restare con un servizio rotto costa un lunedì con il cliente fermo. Il criterio è stato approvato dal cliente: rispettarlo è la cosa professionale." },
+
+    { "q": "Il cutover è riuscito. Cosa fai con il vecchio firewall la mattina dopo?",
+      "a": [ {"t":"Lo lasci intatto e pronto da ricollegare per il periodo concordato","ok":true},
+             {"t":"Lo resetti subito, così non contiene dati del cliente","ok":false},
+             {"t":"Lo porti via per riusarlo in un altro progetto","ok":false},
+             {"t":"Lo lasci acceso e collegato in parallelo al nuovo","ok":false} ],
+      "e": "Alcuni problemi emergono solo dopo giorni: un'attività mensile, un fornitore che entra raramente. Finché il vecchio apparato è intatto, il rollback resta possibile e la sua configurazione si può consultare. Il reset sicuro si fa, ma alla chiusura della migrazione. Lasciarlo collegato in parallelo, invece, crea conflitti di indirizzi." },
+
+    { "q": "Su un PC Windows vuoi controllare le intestazioni HTTP di un sito dopo il cutover. In Windows PowerShell 5.1 quale comando usi?",
+      "a": [ {"t":"curl.exe -sI https://www.example.com","ok":true},
+             {"t":"curl -sI https://www.example.com","ok":false},
+             {"t":"ping -I https://www.example.com","ok":false},
+             {"t":"nslookup -sI www.example.com","ok":false} ],
+      "e": "In Windows PowerShell 5.1 «curl» è un alias di Invoke-WebRequest, che non conosce le opzioni -s e -I. Scrivendo curl.exe si chiama il vero curl, incluso in Windows 10 e 11. Ping e nslookup non parlano HTTP." },
+
+    { "q": "Lunedì l'amministrazione non entra più nel portale della banca, che accetta solo IP autorizzati. Quale domanda, in fase di inventario, l'avrebbe evitato?",
+      "a": [ {"t":"«Ci sono servizi esterni che vi riconoscono dal vostro indirizzo Internet?»","ok":true},
+             {"t":"«Quante regole ha il vecchio firewall?»","ok":false},
+             {"t":"«Che velocità ha la vostra linea?»","ok":false},
+             {"t":"«Usate la VPN?»","ok":false} ],
+      "e": "Il portale della banca è normale traffico in uscita: nel vecchio firewall non c'era nessuna regola dedicata, quindi la configurazione non lo mostrava. Questo tipo di dipendenza si trova solo chiedendo al cliente. E quando possibile la regola più semplice è far uscire il nuovo apparato con lo stesso IP pubblico del vecchio." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

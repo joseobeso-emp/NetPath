@@ -162,9 +162,9 @@ window.NETPATH_CURRICULUM = [
       { id:"l4-04", t:"Capitolato, BOM e preventivo", s:"Tradurre un progetto in una lista di codici prodotto e giornate uomo.", m:24, ready:true }
     ]},
     { title: "Operare come senior", lessons: [
-      { id:"l4-05", t:"Gestire un ticket: metodo e comunicazione", s:"Dal 'non va la rete' alla chiusura documentata. Il pezzo che distingue un senior.", m:26, ready:false },
-      { id:"l4-06", t:"Incident, escalation e postmortem", s:"Chi chiami, quando, cosa scrivi. E come si impara da un disastro.", m:24, ready:false },
-      { id:"l4-07", t:"Migrazioni e cutover senza downtime", s:"Piano, prove, rollback, finestra. Come si cambia il firewall di un'azienda di notte.", m:28, ready:false }
+      { id:"l4-05", t:"Gestire un ticket: metodo e comunicazione", s:"Dal 'non va la rete' alla chiusura documentata. Il pezzo che distingue un senior.", m:26, ready:true },
+      { id:"l4-06", t:"Incident, escalation e postmortem", s:"Chi chiami, quando, cosa scrivi. E come si impara da un disastro.", m:24, ready:true },
+      { id:"l4-07", t:"Migrazioni e cutover senza downtime", s:"Piano, prove, rollback, finestra. Come si cambia il firewall di un'azienda di notte.", m:28, ready:true }
     ]},
     { title: "Vendor deep dive", lessons: [
       { id:"l4-08", t:"Fortinet: FortiGate dalla A alla Z", s:"Architettura, policy, SD-WAN, FortiAnalyzer, CLI utile, diagnose sniffer.", m:40, ready:false },
