@@ -1,0 +1,382 @@
+#id: l4-02
+#title: IP addressing plan su larga scala
+#min: 28
+#level: 4
+#chapter: Progettare per un cliente
+#desc: Un piano di indirizzamento che regge 50 sedi, il cloud, le VPN e dieci anni di crescita, senza rifare tutto ogni volta.
+#obj: Dividere lo spazio 10.0.0.0/8 in blocchi allineati che si riassumono in una rotta sola
+#obj: Assegnare a ogni sede un blocco prevedibile, con la VLAN leggibile nell'indirizzo
+#obj: Riservare spazio per cloud, accesso remoto, acquisizioni e collegamenti di servizio
+#obj: Tenere il piano vivo con un registro degli indirizzi (IPAM)
+---
+<p class="lead">Nella lezione 2-04 hai disegnato lo schema VLAN di una sede: <code>10.42.10.0/24</code>
+per gli uffici, <code>10.42.99.0/24</code> per la gestione, e così via. Funziona benissimo. La
+domanda di questa lezione è: cosa succede quando le sedi diventano cinquanta, arriva Azure,
+duecento persone lavorano in VPN e l'azienda ne compra un'altra? La risposta è che, se il piano
+era fatto bene, <b>non succede niente</b>: aggiungi righe a una tabella. Se era fatto male, rifai la
+rete.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: i codici postali
+  </div>
+  <p>Il codice postale <b>20121</b> non è un numero a caso. La prima cifra dice la zona d'Italia, le
+  successive restringono fino al quartiere. Un postino di Roma che riceve una lettera per «20…» non
+  ha bisogno di sapere dove sia via Manzoni: gli basta sapere che «tutto ciò che comincia con 2 va
+  al centro di smistamento di Milano».</p>
+  <p style="margin-bottom:0">Un buon piano di indirizzamento è uguale. Un router di una filiale non
+  deve conoscere tutte le duecento reti dell'azienda: gli basta una regola, «tutto ciò che comincia
+  con <code>10.</code> va nel tunnel verso la sede». Questo funziona solo se gli indirizzi sono
+  stati assegnati <b>con una logica</b>, come i codici postali. Se invece li hai dati a caso, ogni
+  router deve conoscere ogni singola rete, e ogni sede nuova diventa una modifica su tutti gli
+  apparati.</p>
+</div>
+
+<h2>I cinque principi</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Principio</th><th>Cosa vuol dire</th><th>Cosa succede se lo ignori</th></tr></thead>
+    <tbody>
+      <tr><td><b>Gerarchia</b></td><td>L'indirizzo dice dove sei: prima il tipo di luogo, poi la sede, poi la funzione</td>
+          <td>Per capire cos'è <code>10.37.4.12</code> devi aprire un documento, ogni volta</td></tr>
+      <tr><td><b>Riassumibilità</b></td><td>Ogni blocco si annuncia con <b>una rotta sola</b></td>
+          <td>Tabelle di routing lunghe, una modifica su tutti gli apparati per ogni sede nuova</td></tr>
+      <tr><td><b>Abbondanza</b></td><td>Gli indirizzi privati sono gratis: si assegna largo</td>
+          <td>Il giorno che una subnet si riempie, la cambi, con tutto ciò che ci sta dentro</td></tr>
+      <tr><td><b>Unicità</b></td><td>Nessuna sovrapposizione con le reti che potresti dover raggiungere</td>
+          <td>VPN che non funzionano, peering impossibili, NAT ovunque</td></tr>
+      <tr><td><b>Un registro solo</b></td><td>Esiste un posto, e uno solo, dove sta scritto chi usa cosa</td>
+          <td>Due tecnici assegnano la stessa rete a due sedi diverse</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il trucco che regge tutto: l'allineamento</h2>
+
+<p>«Una rotta sola per blocco» funziona solo se i blocchi sono <b>allineati</b>, cioè se la loro
+dimensione è una potenza di 2 e cominciano su un multiplo di quella dimensione. È lo stesso calcolo
+del subnetting della lezione 1-15, applicato al secondo ottetto invece che al quarto.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Blocco voluto</th><th>Si riassume?</th><th>Perché</th></tr></thead>
+    <tbody>
+      <tr><td><code>10.0.x.x</code> – <code>10.63.x.x</code></td><td>✅ <code>10.0.0.0/10</code></td>
+          <td>64 valori, comincia da 0: multiplo di 64</td></tr>
+      <tr><td><code>10.64.x.x</code> – <code>10.127.x.x</code></td><td>✅ <code>10.64.0.0/10</code></td>
+          <td>64 valori, comincia da 64</td></tr>
+      <tr><td><code>10.16.x.x</code> – <code>10.31.x.x</code></td><td>✅ <code>10.16.0.0/12</code></td>
+          <td>16 valori, comincia da 16</td></tr>
+      <tr><td><code>10.90.x.x</code> – <code>10.99.x.x</code></td><td>❌ servono 3 rotte</td>
+          <td>10 non è una potenza di 2. Diventano <code>10.90.0.0/15</code>, <code>10.92.0.0/14</code>, <code>10.96.0.0/14</code></td></tr>
+      <tr><td><code>10.20.x.x</code> – <code>10.35.x.x</code></td><td>❌ servono 3 rotte</td>
+          <td>16 valori, ma 20 non è multiplo di 16: <code>10.20.0.0/14</code>, <code>10.24.0.0/13</code>, <code>10.32.0.0/14</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    La regola pratica in una riga
+  </div>
+  <p style="margin-bottom:0">Pensa in blocchi da <b>4, 8, 16, 32, 64</b> e falli cominciare da un
+  multiplo della loro dimensione. «Dalla 10.90 alla 10.99» è un intervallo che ha senso per gli
+  esseri umani, e nessuno per i router. «Dalla 10.96 alla 10.111» sembra strano, ma è una rotta
+  sola: <code>10.96.0.0/12</code>.</p>
+</div>
+
+<h2>Un piano completo, pronto da usare</h2>
+
+<p>Ecco uno schema che puoi adottare così com'è per un cliente con molte sedi. Lo spazio
+<code>10.0.0.0/8</code> viene diviso in quattro quarti da <code>/10</code>, ciascuno con un mestiere.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 330" role="img" aria-label="Lo spazio 10.0.0.0/8 diviso in quattro blocchi /10: sedi, cloud e datacenter, accesso remoto e servizi, riserva; sotto, lo zoom su una sede /16 divisa per VLAN">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">10.0.0.0/8 diviso in quattro quarti</text>
+
+    <g stroke-width="1.8">
+      <rect x="10"  y="38" width="168" height="66" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="182" y="38" width="168" height="66" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="354" y="38" width="168" height="66" rx="8" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="526" y="38" width="164" height="66" rx="8" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="94"  y="60" class="dg-label-sm">SEDI</text>
+      <text x="94"  y="78" class="dg-mono-sm">10.0.0.0/10</text>
+      <text x="94"  y="94" class="dg-mono-sm">10.0 – 10.63</text>
+      <text x="266" y="60" class="dg-label-sm">CLOUD E DATACENTER</text>
+      <text x="266" y="78" class="dg-mono-sm">10.64.0.0/10</text>
+      <text x="266" y="94" class="dg-mono-sm">10.64 – 10.127</text>
+      <text x="438" y="60" class="dg-label-sm">ACCESSO REMOTO</text>
+      <text x="438" y="78" class="dg-mono-sm">10.128.0.0/10</text>
+      <text x="438" y="94" class="dg-mono-sm">10.128 – 10.191</text>
+      <text x="608" y="60" class="dg-label-sm">RISERVA</text>
+      <text x="608" y="78" class="dg-mono-sm">10.192.0.0/10</text>
+      <text x="608" y="94" class="dg-mono-sm">10.192 – 10.255</text>
+    </g>
+
+    <g stroke="var(--dg-line)" stroke-width="1.6" fill="none" stroke-dasharray="5 4">
+      <path d="M60 104 L 30 150"/><path d="M128 104 L 670 150"/>
+    </g>
+
+    <rect x="20" y="150" width="660" height="40" rx="8" fill="var(--dg-1-fill)" stroke="var(--dg-1)" stroke-width="1.8"/>
+    <text x="350" y="175" text-anchor="middle" class="dg-label-sm">Una sede = un /16 → per esempio la sede 12 è 10.12.0.0/16, una rotta sola</text>
+
+    <g stroke-width="1.4">
+      <rect x="20"  y="214" width="120" height="50" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="148" y="214" width="120" height="50" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="276" y="214" width="120" height="50" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="404" y="214" width="120" height="50" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="532" y="214" width="148" height="50" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="80"  y="234" class="dg-label-sm">VLAN 10</text><text x="80"  y="252" class="dg-mono-sm">10.12.10.0/24</text>
+      <text x="208" y="234" class="dg-label-sm">VLAN 20</text><text x="208" y="252" class="dg-mono-sm">10.12.20.0/24</text>
+      <text x="336" y="234" class="dg-label-sm">VLAN 40</text><text x="336" y="252" class="dg-mono-sm">10.12.40.0/24</text>
+      <text x="464" y="234" class="dg-label-sm">VLAN 50</text><text x="464" y="252" class="dg-mono-sm">10.12.50.0/24</text>
+      <text x="606" y="234" class="dg-label-sm">VLAN 99</text><text x="606" y="252" class="dg-mono-sm">10.12.99.0/24</text>
+    </g>
+    <text x="350" y="292" text-anchor="middle" class="dg-label-sm">Secondo ottetto = quale sede. Terzo ottetto = quale VLAN.</text>
+    <text x="350" y="312" text-anchor="middle" class="dg-label-sm">Leggi 10.12.40.37 e sai già: sede 12, rete della voce.</text>
+  </svg>
+  </div>
+  <figcaption>Ogni quarto è <b>una rotta sola</b>. Una filiale che deve raggiungere tutto il resto
+  dell'azienda può farlo con <code>10.0.0.0/8</code> verso il tunnel: la sua rete locale, più
+  specifica, vince comunque (lezione 2-08).</figcaption>
+</figure>
+
+<h3>Il dettaglio dei quattro quarti</h3>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Blocco</th><th>Uso</th><th>Come si divide</th></tr></thead>
+    <tbody>
+      <tr><td><code>10.0.0.0/16</code></td><td><b>Infrastruttura</b>: indirizzi dei tunnel, collegamenti punto-punto, loopback degli apparati</td>
+          <td><code>10.0.0.0/24</code> loopback, <code>10.0.1.0/24</code> tunnel e transiti, il resto libero. Nessun utente vive qui</td></tr>
+      <tr><td><code>10.1.0.0/16</code> – <code>10.63.0.0/16</code></td><td><b>Sedi</b>, una per <code>/16</code></td>
+          <td>63 sedi. Il numero della sede è il secondo ottetto, per sempre</td></tr>
+      <tr><td><code>10.64.0.0/12</code> (10.64–10.79)</td><td><b>Azure</b></td>
+          <td>Un <code>/16</code> per regione o per ambiente: hub, produzione, test (lezione 3-18)</td></tr>
+      <tr><td><code>10.80.0.0/12</code> (10.80–10.95)</td><td><b>Altri cloud e datacenter</b></td>
+          <td>Il datacenter del fornitore, un secondo cloud, i server in hosting</td></tr>
+      <tr><td><code>10.128.0.0/16</code></td><td><b>VPN client</b></td>
+          <td>Un <code>/22</code> (1.022 indirizzi) per ogni pool: dipendenti, amministratori, fornitori. Separati, così le regole del firewall li distinguono</td></tr>
+      <tr><td><code>10.129.0.0/16</code></td><td><b>Collegamenti con terzi</b></td>
+          <td>Le reti di NAT verso partner e fornitori quando le loro reti si sovrappongono alle tue</td></tr>
+      <tr><td><code>10.192.0.0/10</code></td><td><b>Riserva</b></td>
+          <td>Non si tocca. Serve il giorno dell'acquisizione</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Le regioni, se servono
+  </div>
+  <p style="margin-bottom:0">Con più di una ventina di sedi divise per area geografica, puoi
+  aggiungere un livello: <code>10.16.0.0/12</code> (sedi 16–31) per il Nord, <code>10.32.0.0/12</code>
+  (32–47) per il Centro, <code>10.48.0.0/12</code> (48–63) per il Sud. Ogni regione diventa una rotta
+  sola verso il suo concentratore. Se non hai una rete regionale, non farlo: la gerarchia che non
+  corrisponde a niente di reale è solo complicazione.</p>
+</div>
+
+<h2>Dentro la sede: quando un /24 non basta</h2>
+
+<p>La regola della lezione 2-04 resta: <b>terzo ottetto = numero di VLAN</b>, una <code>/24</code> per
+VLAN. Una <code>/24</code> contiene 254 indirizzi utili, e per quasi ogni VLAN di quasi ogni sede
+basta. Per la sede centrale di 400 persone con tre dispositivi a testa, no.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Prefisso</th><th>Indirizzi utili</th><th>Terzo ottetto da cui può partire</th><th>Esempio valido</th></tr></thead>
+    <tbody>
+      <tr><td><code>/24</code></td><td>254</td><td>qualsiasi</td><td><code>10.1.10.0/24</code></td></tr>
+      <tr><td><code>/23</code></td><td>510</td><td>pari</td><td><code>10.1.10.0/23</code> (usa 10 e 11)</td></tr>
+      <tr><td><code>/22</code></td><td>1.022</td><td>multiplo di 4</td><td><code>10.1.20.0/22</code> (usa 20–23)</td></tr>
+      <tr><td><code>/21</code></td><td>2.046</td><td>multiplo di 8</td><td><code>10.1.40.0/21</code> (usa 40–47)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Ecco perché le VLAN si numerano a decine (10, 20, 30…) e non 1, 2, 3: lasciano spazio. Se la
+VLAN 10 deve crescere a <code>/23</code>, si prende anche l'ottetto 11, che nessuno usava. Nota però
+che <code>10.1.30.0/22</code> <b>non esiste</b>: 30 non è multiplo di 4. Se sai già che una VLAN sarà
+grande, dalle un numero che cada su un multiplo giusto (20, 40, 80).</p>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Una VLAN più grande non è sempre la risposta
+  </div>
+  <p style="margin-bottom:0">Una <code>/21</code> con duemila dispositivi è un unico dominio di
+  broadcast (lezione 1-11) molto rumoroso. Prima di allargare, chiediti se ha più senso dividere:
+  una VLAN uffici per piano, oppure il Wi-Fi aziendale separato dai PC cablati. Ingrandire è la
+  scelta facile oggi; dividere è quella che regge domani.</p>
+</div>
+
+<h2>Le reti da non usare mai</h2>
+
+<p>L'unicità non riguarda solo le tue reti, ma tutte quelle con cui potresti dover parlare. Alcune
+sovrapposizioni sono quasi certe, e vanno evitate da subito.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Rete</th><th>Con cosa si scontra</th></tr></thead>
+    <tbody>
+      <tr><td><code>192.168.0.0/24</code>, <code>192.168.1.0/24</code></td>
+          <td>Le reti di casa di quasi tutti i router domestici. Chi lavora in VPN da casa non raggiunge le risorse aziendali con lo stesso indirizzo (lezione 1-16)</td></tr>
+      <tr><td><code>10.0.0.0/24</code>, <code>10.0.1.0/24</code></td>
+          <td>Il default di alcuni router domestici e di molti esempi nella documentazione dei cloud. Ecco perché nel piano 10.0.x è solo infrastruttura, che gli utenti non devono raggiungere</td></tr>
+      <tr><td><code>172.17.0.0/16</code></td>
+          <td>La rete interna predefinita di Docker. Un server o un portatile con Docker installato non raggiunge quella rete aziendale</td></tr>
+      <tr><td><code>100.64.0.0/10</code></td>
+          <td>Lo spazio del CGNAT degli operatori. Non è privato: è riservato a loro</td></tr>
+      <tr><td><b>Le reti dei partner</b></td>
+          <td>Il fornitore del gestionale con cui hai una VPN, la capogruppo, il cliente che ti chiede un collegamento. Chiedile e scrivile nel registro <b>prima</b> di assegnare</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso tipico: l'acquisizione
+  </div>
+  <p>Il <b>Cliente X</b> ha sette sedi numerate con cura: <code>10.1.x.x</code>,
+  <code>10.2.x.x</code>… fino a <code>10.7.x.x</code>. Compra un'azienda concorrente, che ha tre sedi.
+  La prima sede dell'azienda acquisita usa <code>10.1.0.0/16</code>. Esattamente la stessa.</p>
+  <p>Le due strade possibili:</p>
+  <ul>
+    <li><b>NAT tra le due reti</b>: si fa in un giorno, funziona subito, e resta per sempre come una
+    trappola per chiunque debba fare diagnosi («perché questo server ha due indirizzi?»).</li>
+    <li><b>Rinumerare l'azienda acquisita</b> dentro la riserva <code>10.192.0.0/10</code>: settimane
+    di lavoro, ma alla fine il piano è di nuovo pulito.</li>
+  </ul>
+  <p style="margin-bottom:0">La scelta giusta è quasi sempre <b>NAT subito, rinumerazione pianificata</b>,
+  con una data. Ed è possibile solo perché la riserva esisteva: se il piano avesse usato tutto lo
+  spazio, non ci sarebbe stato nemmeno dove spostarsi.</p>
+</div>
+
+<h2>IPv6, nello stesso schema</h2>
+
+<p>Se il cliente ha IPv6 dall'operatore (lezione 2-27), riceve tipicamente un <code>/48</code> o un
+<code>/56</code> per sede: <b>verifica sull'offerta dell'operatore</b>, cambia da contratto a
+contratto. Ogni VLAN prende un <code>/64</code>, sempre, e la logica resta la stessa: il numero della
+VLAN si legge nell'indirizzo.</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Stessa logica, in IPv6 (prefisso di documentazione)</div>
+<pre><span class="c"># prefisso della sede ricevuto dall'operatore:  2001:db8:abcd::/48</span>
+<span class="p">2001:db8:abcd:10::/64</span>     <span class="c"># VLAN 10 uffici</span>
+<span class="p">2001:db8:abcd:40::/64</span>     <span class="c"># VLAN 40 voce</span>
+<span class="p">2001:db8:abcd:99::/64</span>     <span class="c"># VLAN 99 gestione</span>
+
+<span class="c"># con un /48 hai 65.536 reti /64 per sede: il quarto blocco è tutto tuo</span>
+
+<span class="c"># con un /56 ne hai 256: le prime due cifre del quarto blocco le decide l'operatore</span>
+<span class="c"># prefisso ricevuto:  2001:db8:abcd:ab00::/56</span>
+<span class="p">2001:db8:abcd:ab10::/64</span>   <span class="c"># VLAN 10: si legge ancora, nelle ultime due cifre</span>
+<span class="p">2001:db8:abcd:ab99::/64</span>   <span class="c"># VLAN 99</span>
+<span class="c"># le cifre sono esadecimali: "10" lo leggi come VLAN 10, ma vale 16.</span>
+<span class="c"># Va bene: conta che sia leggibile e unico. Con un /56 regge VLAN a due cifre.</span>
+</pre>
+</div>
+
+<h2>Il registro: IPAM</h2>
+
+<p>Il piano non è il documento che scrivi il primo giorno. È il <b>registro</b> che tieni aggiornato
+ogni volta che assegni qualcosa. Si chiama <span class="term" data-term="ipam">IPAM</span> (<em>IP Address Management</em>), e può essere un
+foglio di calcolo o uno strumento dedicato.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Strumento</th><th>Quando va bene</th><th>Limite</th></tr></thead>
+    <tbody>
+      <tr><td><b>Foglio di calcolo</b> condiviso</td><td>Fino a una decina di sedi, un solo team</td>
+          <td>Nessun controllo: due persone possono assegnare la stessa rete. Nessuna storia delle modifiche, se non la versione del file</td></tr>
+      <tr><td><b>NetBox</b> (open source)</td><td>Molte sedi, più tecnici, inventario degli apparati insieme agli indirizzi</td>
+          <td>Va installato e mantenuto. È anche la base dell'automazione (lezione 4-13)</td></tr>
+      <tr><td><b>phpIPAM</b> (open source)</td><td>Solo gestione indirizzi, più semplice di NetBox</td>
+          <td>Meno adatto come inventario generale</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Qualunque strumento scegli, ogni riga del registro deve avere almeno: <b>prefisso, sede, VLAN,
+scopo, gateway, intervallo DHCP, chi l'ha assegnata e quando</b>. Il collegamento con la lezione 2-28
+è diretto: il registro è il «piano di indirizzamento» della documentazione, solo che vive invece di
+invecchiare.</p>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Esercizio: il piano di un'azienda con 12 sedi
+  </div>
+  <p>Un cliente ha: una sede centrale di 350 persone, 11 filiali da 10–40 persone ciascuna, un
+  ambiente Azure con hub e due spoke, circa 150 persone che lavorano anche in VPN, e un fornitore
+  del gestionale collegato in VPN che usa <code>10.1.0.0/16</code>.</p>
+  <ol style="margin-bottom:0">
+    <li>Assegna un <code>/16</code> a ogni sede. Che numero dai alla sede centrale, e perché?</li>
+    <li>Nella sede centrale, la VLAN uffici serve per circa 900 dispositivi. Quale prefisso, e con
+    quale numero di VLAN, perché sia allineato?</li>
+    <li>Assegna i blocchi per Azure (hub e due spoke) dentro <code>10.64.0.0/12</code>.</li>
+    <li>Crea due pool VPN separati, dipendenti e amministratori, dentro <code>10.128.0.0/16</code>.</li>
+    <li>Il fornitore usa <code>10.1.0.0/16</code>, che nel tuo piano è una sede. Come risolvi,
+    senza toccare la rete del fornitore?</li>
+    <li>Scrivi la rotta unica che ogni filiale deve avere verso la sede centrale.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: piano di indirizzamento",
+  "questions": [
+    { "q": "Vuoi riservare un blocco per il cloud che si annunci con una rotta sola. Quale scegli?",
+      "a": [ {"t":"Da 10.64.x.x a 10.79.x.x, cioè 10.64.0.0/12","ok":true},
+             {"t":"Da 10.90.x.x a 10.99.x.x","ok":false},
+             {"t":"Da 10.50.x.x a 10.65.x.x","ok":false},
+             {"t":"Da 10.70.x.x a 10.85.x.x","ok":false} ],
+      "e": "Un blocco si riassume in una rotta sola se la sua dimensione è una potenza di 2 e comincia su un multiplo di quella dimensione. 10.64–10.79 sono 16 valori che partono da 64, multiplo di 16. 10.90–10.99 sono 10 valori: servono tre rotte. Gli altri due intervalli sono da 16 ma non partono da un multiplo di 16." },
+
+    { "q": "Una VLAN deve contenere circa 900 dispositivi. Quale di questi prefissi è valido?",
+      "a": [ {"t":"10.1.20.0/22","ok":true},
+             {"t":"10.1.30.0/22","ok":false},
+             {"t":"10.1.10.0/22","ok":false},
+             {"t":"10.1.20.0/23","ok":false} ],
+      "e": "Una /22 contiene 1.022 indirizzi utili e deve partire da un terzo ottetto multiplo di 4. 20 lo è (copre 20–23); 30 e 10 no. Una /23 ha solo 510 indirizzi: troppo poco. Ecco perché conviene dare alle VLAN che cresceranno numeri come 20, 40 o 80." },
+
+    { "q": "Perché nel piano lo spazio 10.0.0.0/16 è usato solo per infrastruttura e non per gli utenti?",
+      "a": [ {"t":"Perché 10.0.0.x e 10.0.1.x si sovrappongono a reti domestiche e di esempio molto diffuse","ok":true},
+             {"t":"Perché 10.0.0.0 non è un indirizzo privato","ok":false},
+             {"t":"Perché i firewall non accettano il secondo ottetto a zero","ok":false},
+             {"t":"Perché è riservato al CGNAT degli operatori","ok":false} ],
+      "e": "10.0.0.0/8 è interamente privato, ma 10.0.0.0/24 è il default di alcuni router domestici e degli esempi di molti cloud. Metterci gli utenti significa avere conflitti con chi lavora in VPN. Gli indirizzi dei tunnel e le loopback degli apparati, invece, non devono essere raggiunti da casa. Il CGNAT è 100.64.0.0/10." },
+
+    { "q": "Un'azienda acquisita usa la stessa rete di una tua sede. Qual è l'approccio più sensato?",
+      "a": [ {"t":"NAT tra le due reti subito, poi rinumerazione pianificata nella riserva","ok":true},
+             {"t":"NAT permanente, così non si tocca niente","ok":false},
+             {"t":"Rinumerare la tua sede per far posto alla loro","ok":false},
+             {"t":"Collegarle comunque: il firewall gestirà la sovrapposizione","ok":false} ],
+      "e": "Il NAT si fa in un giorno e sblocca il lavoro, ma lasciato per sempre diventa una trappola per chi fa diagnosi. La rinumerazione nella riserva riporta il piano pulito. Ed è possibile solo se la riserva esiste: per questo un quarto dello spazio non si tocca. Due reti identiche collegate senza NAT non possono funzionare." },
+
+    { "q": "Perché le VLAN si numerano 10, 20, 30… invece di 1, 2, 3?",
+      "a": [ {"t":"Per lasciare ottetti liberi accanto a ciascuna, così una VLAN può crescere a /23 o /22","ok":true},
+             {"t":"Perché le VLAN da 1 a 9 sono riservate dallo standard","ok":false},
+             {"t":"Perché gli switch economici supportano solo multipli di 10","ok":false},
+             {"t":"Per pura abitudine, non c'è un motivo tecnico","ok":false} ],
+      "e": "Con il terzo ottetto uguale al numero di VLAN, la VLAN 10 ha accanto l'11, il 12 e così via, liberi. Se deve crescere, prende la /23 10–11 senza toccare nessun'altra rete. Solo la VLAN 1 ha un ruolo speciale (è quella di default), non le altre." },
+
+    { "q": "Per un cliente con 30 sedi e quattro tecnici, quale registro degli indirizzi è più adatto?",
+      "a": [ {"t":"Uno strumento IPAM come NetBox, unico per tutti","ok":true},
+             {"t":"Un foglio di calcolo per ciascun tecnico","ok":false},
+             {"t":"La configurazione dei firewall, che contiene già tutte le reti","ok":false},
+             {"t":"Lo schema di rete disegnato all'inizio del progetto","ok":false} ],
+      "e": "Con più persone che assegnano indirizzi serve un registro unico, con storia delle modifiche, che impedisca due assegnazioni uguali. Il foglio di calcolo regge per poche sedi e un solo team. La configurazione degli apparati dice cosa è configurato, non cosa è riservato; lo schema iniziale invecchia il giorno dopo." }
+  ]
+}
+</script>

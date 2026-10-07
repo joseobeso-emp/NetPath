@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raccolta requisiti e sopralluogo — NetPath</title>
+<meta name="description" content="Le 40 domande da fare prima di disegnare qualsiasi rete, e come si conduce un sopralluogo che non lascia sorprese. Con checklist stampabile.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l4-01">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l4">Livello 4</a><span class="sep">/</span>
+        <span>Progettare per un cliente</span>
+      </nav>
+      <h1 class="lesson-title">Raccolta requisiti e sopralluogo</h1>
+      <div class="lesson-meta">
+        <span class="badge lv4">Livello 4</span>
+        <span class="chip">Lezione 01</span>
+        <span class="chip">26 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Separare ciò che il cliente chiede da ciò di cui ha bisogno</li>
+        <li>Condurre un'intervista di raccolta requisiti con 40 domande in 8 aree</li>
+        <li>Fare un sopralluogo che trova i problemi prima che li trovi il cantiere</li>
+        <li>Scrivere un verbale dei requisiti che il cliente firma e che ti protegge</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Fino al Livello 3 hai imparato a costruire. Da qui in poi la domanda cambia: non è più
+«come si configura?», ma «<b>cosa</b> va costruito, e perché?». La maggior parte dei progetti di rete
+che vanno male non falliscono per un errore tecnico: falliscono perché si è costruita, benissimo, la
+cosa sbagliata. Questa lezione è il modo per non farlo.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: l'architetto e la casa
+  </div>
+  <p>Una famiglia va da un architetto e dice: «Vogliamo una casa con tre camere». Un architetto
+  scarso disegna subito tre camere. Uno bravo fa domande: <b>quanti siete?</b> Arriverà un altro
+  figlio? La nonna verrà a vivere con voi? Lavorate da casa? Avete un'auto o due?</p>
+  <p>Alla fine scopre che servono due camere e uno studio, più un garage doppio. La famiglia aveva
+  chiesto «tre camere» perché era l'unico modo che conosceva per dire «abbiamo bisogno di spazio».</p>
+  <p style="margin-bottom:0">Con le reti è identico. Il cliente ti dice «ci serve un firewall nuovo»
+  o «il Wi-Fi non va». Quella è la <b>richiesta</b>. Il tuo lavoro è trovare il <b>bisogno</b>:
+  magari il firewall va benissimo e il problema è che la linea è satura, o il Wi-Fi è perfetto ma
+  ci sono 80 persone in una sala pensata per 20.</p>
+</div>
+
+<h2>Richiesta, bisogno, vincolo</h2>
+
+<p>Tutto quello che il cliente ti dice ricade in una di tre categorie. Imparare a smistarle mentre
+parla è la prima abilità di un progettista.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Categoria</th><th>Cos'è</th><th>Esempio</th><th>Cosa ne fai</th></tr></thead>
+    <tbody>
+      <tr><td><b>Richiesta</b></td><td>La soluzione che il cliente ha già in mente</td>
+          <td>«Vogliamo un firewall più potente»</td>
+          <td>La ascolti, la annoti, <b>non la prendi per buona</b>: chiedi «perché?»</td></tr>
+      <tr><td><b>Bisogno</b></td><td>Il problema o l'obiettivo reale, espresso in termini di lavoro</td>
+          <td>«La videoconferenza con la filiale si blocca tutti i pomeriggi»</td>
+          <td>È quello che il progetto deve risolvere. Va scritto <b>misurabile</b></td></tr>
+      <tr><td><b>Vincolo</b></td><td>Un limite che non puoi spostare</td>
+          <td>«Il budget è 15.000 €», «La produzione non si ferma mai», «Il contratto della linea scade a marzo»</td>
+          <td>Delimita lo spazio delle soluzioni. Va scritto <b>con chi l'ha dichiarato</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    I cinque «perché»
+  </div>
+  <p>Quando senti una richiesta, chiedi «perché?» finché non arrivi a qualcosa che riguarda il
+  lavoro delle persone, non la tecnologia. Di solito bastano tre o quattro passaggi:</p>
+  <ol style="margin-bottom:0">
+    <li>«Vogliamo un firewall più potente.» — <em>Perché?</em></li>
+    <li>«Perché Internet è lento.» — <em>Lento quando, e per fare cosa?</em></li>
+    <li>«Il pomeriggio, quando l'ufficio tecnico carica i disegni sul cloud.» — <em>E cosa succede
+    agli altri in quel momento?</em></li>
+    <li>«Cadono le chiamate dei commerciali.» ← <b>questo è il bisogno</b>: la voce non deve
+    soffrire quando qualcuno carica file grandi. La risposta potrebbe essere QoS, una seconda linea,
+    o una regola di banda. Il firewall nuovo, forse, non serve affatto.</li>
+  </ol>
+</div>
+
+<h2>Requisiti che si possono verificare</h2>
+
+<p>Un requisito scritto male è una promessa che non sai se hai mantenuto. «La rete deve essere
+veloce e affidabile» non è un requisito: è un desiderio. Il test è semplice: <b>alla consegna,
+potrai dimostrare di averlo rispettato?</b></p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Scritto male</th><th>Scritto bene</th></tr></thead>
+    <tbody>
+      <tr><td>«Il Wi-Fi deve coprire tutto l'ufficio»</td>
+          <td>«Segnale ≥ −67 dBm in tutte le aree operative indicate in pianta, con 40 client contemporanei nella sala riunioni»</td></tr>
+      <tr><td>«La rete deve essere sempre disponibile»</td>
+          <td>«Il guasto di un singolo apparato o di una singola linea non deve interrompere l'accesso al gestionale per più di 60 secondi»</td></tr>
+      <tr><td>«Le chiamate devono funzionare bene»</td>
+          <td>«Latenza &lt; 150 ms, jitter &lt; 30 ms e perdita &lt; 1% tra sede e centralino cloud, anche con la linea al 90%»</td></tr>
+      <tr><td>«Serve sicurezza»</td>
+          <td>«Gli ospiti non raggiungono nessun indirizzo interno; le telecamere non raggiungono Internet»</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Nota che le soglie della voce sono quelle della lezione 3-21: non le inventi, le prendi da ciò che
+il servizio richiede davvero. E nota che il requisito di disponibilità dice <em>quale</em> guasto deve
+essere tollerato: «sempre disponibile» non esiste, e prometterlo è il primo passo per un contenzioso.</p>
+
+<h2>Il percorso, dal primo incontro al verbale</h2>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Le fasi della raccolta requisiti: intervista, documentazione esistente, sopralluogo, analisi, verbale firmato, con ritorno all'intervista se emergono lacune">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Dalla richiesta al verbale firmato</text>
+
+    <g stroke-width="1.7">
+      <rect x="10"  y="60" width="120" height="62" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="148" y="60" width="120" height="62" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="286" y="60" width="120" height="62" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="424" y="60" width="120" height="62" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="562" y="60" width="128" height="62" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="70"  y="86" class="dg-label-sm">1. INTERVISTA</text>
+      <text x="70"  y="106" class="dg-mono-sm">le 40 domande</text>
+      <text x="208" y="86" class="dg-label-sm">2. DOCUMENTI</text>
+      <text x="208" y="106" class="dg-mono-sm">piante, contratti</text>
+      <text x="346" y="86" class="dg-label-sm">3. SOPRALLUOGO</text>
+      <text x="346" y="106" class="dg-mono-sm">vedere con gli occhi</text>
+      <text x="484" y="86" class="dg-label-sm">4. ANALISI</text>
+      <text x="484" y="106" class="dg-mono-sm">lacune, rischi</text>
+      <text x="626" y="86" class="dg-label-sm">5. VERBALE</text>
+      <text x="626" y="106" class="dg-mono-sm">firmato dal cliente</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="2" fill="none">
+      <path d="M130 91h16"/><path d="M268 91h16"/><path d="M406 91h16"/><path d="M544 91h16"/>
+      <path d="M484 122 C 484 190, 70 190, 70 124" stroke-dasharray="6 5"/>
+    </g>
+    <text x="277" y="186" text-anchor="middle" class="dg-mono-sm">mancano informazioni? si torna dal cliente, non si suppone</text>
+    <text x="350" y="228" text-anchor="middle" class="dg-label-sm">Il progetto (lezione 4-03) parte solo dopo il punto 5.</text>
+  </svg>
+  </div>
+  <figcaption>La freccia tratteggiata è la più importante: quando nell'analisi scopri un buco, <b>torni
+  a chiedere</b>. Ogni supposizione che fai al posto del cliente è un rischio che ti prendi tu.</figcaption>
+</figure>
+
+<h2>Le 40 domande</h2>
+
+<p>Sono divise in otto aree da cinque. Non devi farle tutte, sempre, nello stesso ordine: un ufficio
+di sei persone non ha bisogno della sezione sulla continuità come un'azienda con tre turni. Ma devi
+<b>averle scorse tutte</b>, e per quelle che salti devi sapere perché le salti. Stampa questa pagina
+(dal browser, <em>File → Stampa</em>: menu, barre e indice spariscono da soli) e portala al primo
+incontro.</p>
+
+<h3>A. Il business</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Che cosa fa l'azienda, e quale attività si ferma se si ferma la rete?</td><td>Stabilisce cosa è critico e cosa no</td></tr>
+      <tr><td>2</td><td>Quanto costa un'ora di fermo, anche a spanne?</td><td>Giustifica (o no) la ridondanza. Se un'ora costa 200 €, una seconda linea da 1.500 €/anno non si ripaga</td></tr>
+      <tr><td>3</td><td>Quali sono gli orari di lavoro reali, turni e fine settimana compresi?</td><td>Decide le finestre di intervento e il livello di supporto</td></tr>
+      <tr><td>4</td><td>Cosa cambierà nei prossimi tre anni: nuove sedi, assunzioni, traslochi, acquisizioni?</td><td>Un progetto si dimensiona sul futuro prevedibile, non sul presente</td></tr>
+      <tr><td>5</td><td>Chi decide, chi paga, chi usa? Sono la stessa persona?</td><td>Il verbale va firmato da chi decide; i requisiti vanno sentiti da chi usa</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>B. Persone e dispositivi</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>6</td><td>Quante persone lavorano in ogni sede, oggi e a regime?</td><td>Base di ogni dimensionamento</td></tr>
+      <tr><td>7</td><td>Quanti dispositivi per persona: PC, telefono, tablet, telefono fisso?</td><td>Oggi sono 2–3 per persona: conta per DHCP, Wi-Fi e porte</td></tr>
+      <tr><td>8</td><td>Quali dispositivi «non umani»: stampanti, telecamere, badge, macchinari, sensori, TV?</td><td>Sono quelli che nessuno ricorda e che rompono il progetto il giorno del cutover</td></tr>
+      <tr><td>9</td><td>Ci sono ospiti, fornitori o consulenti che si collegano?</td><td>Serve una rete ospiti, e magari un accesso per i fornitori</td></tr>
+      <tr><td>10</td><td>Chi lavora da fuori: da casa, in viaggio, dai clienti?</td><td>VPN, accesso remoto, licenze</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>C. Applicazioni e dati</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>11</td><td>Quali applicazioni usate ogni giorno, e dove stanno: in sede, nel cloud, da un fornitore?</td><td>Determina dove va il traffico, e quindi dove serve banda</td></tr>
+      <tr><td>12</td><td>Usate voce o videoconferenza? Centralino in sede o nel cloud?</td><td>La voce cambia tutto: QoS, VLAN dedicata, PoE</td></tr>
+      <tr><td>13</td><td>Ci sono server in sede? Cosa fanno, e c'è un piano per spostarli?</td><td>Un server che va in cloud tra un anno cambia i flussi</td></tr>
+      <tr><td>14</td><td>Come e dove si fanno i backup, e quanto pesano?</td><td>I backup notturni verso il cloud sono spesso il traffico più grande</td></tr>
+      <tr><td>15</td><td>Ci sono applicazioni che parlano con macchinari o sistemi esterni con indirizzi fissi?</td><td>Le «whitelist» dei fornitori: se cambi IP pubblico si rompono</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>D. Connettività</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>16</td><td>Quali linee avete, di che tecnologia, con quale operatore e quale velocità?</td><td>Fotografia di partenza. Chiedi una bolletta: c'è il codice della linea</td></tr>
+      <tr><td>17</td><td>Gli indirizzi pubblici sono statici? Quanti?</td><td>Servono per VPN e servizi pubblicati</td></tr>
+      <tr><td>18</td><td>Quando scadono i contratti delle linee, e chi li gestisce?</td><td>Un cambio di operatore a metà progetto cambia l'IP pubblico</td></tr>
+      <tr><td>19</td><td>Le sedi devono parlarsi fra loro? Con quali servizi?</td><td>VPN site-to-site, SD-WAN, oppure niente</td></tr>
+      <tr><td>20</td><td>C'è un collegamento verso Azure, un datacenter o un altro cloud?</td><td>Piano di indirizzamento e routing devono includerlo (lezione 4-02)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>E. Sicurezza e conformità</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>21</td><td>Ci sono obblighi normativi o di settore: GDPR con dati sanitari, NIS2, certificazioni ISO, audit di un cliente?</td><td>Possono imporre segmentazione, log conservati, autenticazione forte</td></tr>
+      <tr><td>22</td><td>Quali gruppi di dispositivi non devono assolutamente parlarsi?</td><td>Disegna le zone di sicurezza</td></tr>
+      <tr><td>23</td><td>Avete avuto incidenti di sicurezza? Cosa è successo?</td><td>Rivela le vere priorità meglio di qualsiasi questionario</td></tr>
+      <tr><td>24</td><td>Chi deve poter amministrare gli apparati, e da dove?</td><td>Perimetro di gestione: mai da Internet aperto</td></tr>
+      <tr><td>25</td><td>Per quanto tempo devono essere conservati i log, e chi li guarda?</td><td>Dimensiona lo spazio dei log e il servizio di monitoraggio</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>F. Continuità</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>26</td><td>Quale guasto singolo siete disposti a subire senza fermarvi: una linea, un firewall, uno switch?</td><td>Trasforma «sempre disponibile» in un requisito verificabile</td></tr>
+      <tr><td>27</td><td>C'è un gruppo di continuità? Quanto dura? Copre anche gli switch e gli access point?</td><td>Un firewall in HA senza UPS è ridondanza finta</td></tr>
+      <tr><td>28</td><td>In caso di guasto, in quanto tempo deve tornare tutto a funzionare?</td><td>Decide i ricambi a magazzino e il contratto di assistenza</td></tr>
+      <tr><td>29</td><td>Quando si può lavorare sulla rete: sera, sabato, agosto?</td><td>Senza finestre di intervento non si fa nessuna migrazione (lezione 4-07)</td></tr>
+      <tr><td>30</td><td>Avete una configurazione di riserva o un piano B per lavorare senza rete?</td><td>Rivela quanto il cliente sia davvero dipendente</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>G. Ciò che esiste già</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>31</td><td>Esiste uno schema di rete, anche vecchio, anche a mano?</td><td>Anche sbagliato, dice come qualcuno pensava che fosse</td></tr>
+      <tr><td>32</td><td>Quali apparati ci sono, di che marca, con quale contratto di assistenza e fino a quando?</td><td>Cosa si riusa, cosa va sostituito, cosa è fuori supporto</td></tr>
+      <tr><td>33</td><td>Chi gestisce la rete oggi? Ci sono altri fornitori coinvolti?</td><td>L'operatore del centralino, il fornitore del gestionale, l'elettricista: vanno tutti coordinati</td></tr>
+      <tr><td>34</td><td>Avete accesso amministrativo a tutti gli apparati?</td><td>Se le password le ha solo il vecchio fornitore, è il primo problema da risolvere</td></tr>
+      <tr><td>35</td><td>Cosa funziona male oggi, secondo chi lavora?</td><td>Chiedilo agli utenti, non solo al titolare: le risposte sono diverse</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>H. Gestione e futuro</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Domanda</th><th>Perché la fai</th></tr></thead>
+    <tbody>
+      <tr><td>36</td><td>Chi gestirà la rete dopo la consegna: voi, noi, un altro?</td><td>Decide il livello di documentazione e la complessità sostenibile</td></tr>
+      <tr><td>37</td><td>Quale budget è disponibile, separando acquisto e canoni annuali?</td><td>Licenze e assistenza ricorrono ogni anno: vanno dette subito</td></tr>
+      <tr><td>38</td><td>Preferite acquisto, noleggio o servizio gestito?</td><td>Cambia l'offerta, non solo il prezzo</td></tr>
+      <tr><td>39</td><td>Ci sono marche o tecnologie imposte, o escluse?</td><td>Un vincolo da scrivere, con il motivo</td></tr>
+      <tr><td>40</td><td>Entro quando deve essere fatto, e perché proprio entro quella data?</td><td>Il «perché» spesso rivela una scadenza vera (trasloco, contratto) o una falsa urgenza</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Non è un interrogatorio
+  </div>
+  <p>Se leggi le 40 domande in fila al titolare, dopo dieci minuti ti guarda l'orologio. Le domande
+  servono a <b>te</b>, come rete di sicurezza: la conversazione la conduci in modo naturale, partendo
+  da come lavorano («mi racconti una giornata tipo»), e a fine incontro ripassi la lista per vedere
+  cosa è rimasto scoperto.</p>
+  <p style="margin-bottom:0">Le domande tecniche (16–20, 31–34) spesso le fai a un'altra persona: il
+  referente informatico interno, o chi ha installato la rete. Chiedi al titolare chi è e fissa un
+  secondo incontro.</p>
+</div>
+
+<h2>Il sopralluogo</h2>
+
+<p>Nessuna intervista sostituisce il vedere. Le persone descrivono la rete come <em>credono</em> che
+sia; il sopralluogo ti mostra com'è. Si fa sempre, anche per un ufficio piccolo, e si fa con una
+lista.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Dove</th><th>Cosa guardi</th><th>Cosa porti via</th></tr></thead>
+    <tbody>
+      <tr><td><b>Armadio di rete</b></td>
+          <td>Spazio libero (in unità rack), alimentazione, prese libere, UPS, temperatura, polvere, ordine dei cavi, etichette</td>
+          <td>Foto frontale e posteriore, modelli e seriali degli apparati</td></tr>
+      <tr><td><b>Arrivo delle linee</b></td>
+          <td>Dove entra la fibra o il rame, dov'è il modem dell'operatore, quanto dista dall'armadio</td>
+          <td>Foto, codice della linea sull'etichetta dell'operatore</td></tr>
+      <tr><td><b>Cablaggio</b></td>
+          <td>Categoria dei cavi (scritta sulla guaina), presenza di un pannello di permutazione, prese a muro numerate o no</td>
+          <td>Un campione di prese verificato con il tester</td></tr>
+      <tr><td><b>Ambienti</b></td>
+          <td>Pareti (cartongesso, cemento armato, vetro), soffitti, scaffalature metalliche, zone affollate</td>
+          <td>Pianta annotata: è la base del progetto Wi-Fi</td></tr>
+      <tr><td><b>Postazioni</b></td>
+          <td>Quante prese per scrivania, switch «volanti» sotto i tavoli, telefoni che fanno da passante al PC (<span class="term" data-term="poe">PoE</span> compreso: conta i telefoni)</td>
+          <td>Il conteggio reale, che quasi mai coincide con quello dichiarato</td></tr>
+      <tr><td><b>Dispositivi dimenticati</b></td>
+          <td>Telecamere, rilevatori presenze, centrale d'allarme, macchinari collegati, stampanti di reparto</td>
+          <td>L'elenco della domanda 8, completato</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Durante il sopralluogo non si tocca niente
+  </div>
+  <p>Non stacchi cavi «per vedere dove vanno», non entri negli apparati, non riavvii nulla. Sei lì
+  per osservare, e qualsiasi cosa si rompa nelle ore successive verrà attribuita a te.</p>
+  <p style="margin-bottom:0">Se serve una verifica attiva (una scansione della rete, un tester su
+  una presa in uso), la <b>chiedi</b>, la fai fare in un momento concordato, e la scrivi nel
+  verbale. Le foto degli armadi, poi, contengono spesso etichette con password o indirizzi:
+  restano nella documentazione del cliente, non finiscono in una chat o in una presentazione.</p>
+</div>
+
+<h2>Il verbale dei requisiti</h2>
+
+<p>Tutto quello che hai raccolto diventa un documento breve, due o tre pagine, che il cliente
+<b>firma</b>. Non è burocrazia: è ciò che, tra sei mesi, risolve la discussione «ma noi avevamo
+chiesto anche…».</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sezione</th><th>Contenuto</th></tr></thead>
+    <tbody>
+      <tr><td><b>Contesto</b></td><td>Chi è il cliente, sedi, persone, perché si fa il progetto. Mezza pagina</td></tr>
+      <tr><td><b>Requisiti</b></td><td>Elenco numerato (R1, R2…), ciascuno verificabile, con la priorità: <em>indispensabile</em>, <em>importante</em>, <em>gradito</em></td></tr>
+      <tr><td><b>Vincoli</b></td><td>Budget, date, tecnologie imposte, finestre di intervento. Con chi li ha dichiarati</td></tr>
+      <tr><td><b>Fuori perimetro</b></td><td>Cosa <b>non</b> fa parte del progetto. Spesso è la sezione che ti salva</td></tr>
+      <tr><td><b>Ipotesi</b></td><td>Ciò che hai dato per vero senza poterlo verificare («si assume che il cablaggio sia almeno categoria 6»)</td></tr>
+      <tr><td><b>Questioni aperte</b></td><td>Ciò che manca, con chi deve rispondere ed entro quando</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso tipico: le telecamere che nessuno aveva nominato
+  </div>
+  <p>L'<b>Azienda A</b> chiede di sostituire firewall e switch. Intervista fatta, progetto approvato,
+  nuova rete con VLAN separate per uffici, ospiti e telefoni. La notte del cambio tutto funziona.</p>
+  <p>Il mattino dopo chiama la portineria: il videoregistratore non vede più nessuna telecamera.
+  Erano dodici, cablate anni prima da un altro installatore, con indirizzi fissi in una rete che nel
+  nuovo piano era diventata quella dei telefoni.</p>
+  <p style="margin-bottom:0">Nessuno le aveva nominate perché «sono dell'allarme, non della rete».
+  Le avrebbe trovate la domanda 8, o dieci minuti di sopralluogo nel locale della portineria. Da
+  allora la domanda 8 si fa sempre, a voce, <b>e</b> si verifica camminando.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Esercizio: il tuo primo verbale
+  </div>
+  <p>Scegli una rete che conosci bene: casa tua, oppure un ufficio piccolo in cui hai lavorato.</p>
+  <ol style="margin-bottom:0">
+    <li>Fai a te stesso (o al «cliente», se è un ufficio) le 40 domande. Per ogni domanda saltata,
+    scrivi in una riga perché.</li>
+    <li>Fai il sopralluogo con la tabella qui sopra: foto dell'armadio o del punto in cui arriva la
+    linea, conteggio dei dispositivi, pianta disegnata a mano.</li>
+    <li>Scrivi almeno <b>cinque requisiti verificabili</b> (R1–R5), con la priorità.</li>
+    <li>Scrivi almeno <b>due righe di «fuori perimetro»</b> e <b>due ipotesi</b>.</li>
+    <li>Rileggi i requisiti con il test della consegna: per ciascuno, come dimostreresti di averlo
+    rispettato? Se non lo sai, riscrivilo.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: raccolta requisiti",
+  "questions": [
+    { "q": "Il cliente dice: «Ci serve un firewall più potente». Qual è la prima cosa da fare?",
+      "a": [ {"t":"Chiedere perché, finché non emerge il problema concreto che vuole risolvere","ok":true},
+             {"t":"Proporre il modello superiore dello stesso produttore","ok":false},
+             {"t":"Misurare il carico della CPU del firewall attuale e chiudere lì","ok":false},
+             {"t":"Annotare la richiesta come requisito indispensabile","ok":false} ],
+      "e": "«Firewall più potente» è una <b>richiesta</b>, cioè una soluzione che il cliente ha già in mente. Il tuo lavoro è trovare il <b>bisogno</b>: magari la linea è satura nel pomeriggio e cadono le chiamate, e la risposta è QoS o una seconda linea. Misurare la CPU è utile, ma solo dopo aver capito cosa si sta cercando." },
+
+    { "q": "Quale di questi è un requisito scritto bene?",
+      "a": [ {"t":"Il guasto di una singola linea non deve interrompere il gestionale per più di 60 secondi","ok":true},
+             {"t":"La rete deve essere sempre disponibile","ok":false},
+             {"t":"Il Wi-Fi deve essere veloce in tutto l'ufficio","ok":false},
+             {"t":"Serve la massima sicurezza possibile","ok":false} ],
+      "e": "Un requisito è buono se alla consegna puoi dimostrare di averlo rispettato. Il primo dice quale guasto tollerare e con quale tempo massimo: si può provare staccando la linea. «Sempre disponibile» non esiste, e prometterlo apre la strada a un contenzioso." },
+
+    { "q": "Perché la domanda «quanto costa un'ora di fermo?» è così importante?",
+      "a": [ {"t":"Perché giustifica, o esclude, la spesa per la ridondanza","ok":true},
+             {"t":"Perché serve a calcolare il prezzo del contratto di assistenza","ok":false},
+             {"t":"Perché è obbligatoria per la normativa NIS2","ok":false},
+             {"t":"Perché decide la marca degli apparati","ok":false} ],
+      "e": "Se un'ora di fermo costa 200 €, una seconda linea da 1.500 € l'anno difficilmente si ripaga. Se costa 20.000 €, il firewall in HA è un affare. È il numero che trasforma una discussione tecnica in una decisione economica, ed è il cliente a doverlo fornire." },
+
+    { "q": "Durante il sopralluogo trovi un cavo che non sai dove va. Cosa fai?",
+      "a": [ {"t":"Lo annoti e lo fotografi; se serve verificarlo, concordi un momento con il cliente","ok":true},
+             {"t":"Lo stacchi un attimo per vedere chi si lamenta","ok":false},
+             {"t":"Entri nello switch e guardi la tabella MAC di quella porta","ok":false},
+             {"t":"Lo ignori: lo scoprirai durante il cutover","ok":false} ],
+      "e": "Durante il sopralluogo si osserva e basta. Qualsiasi cosa si rompa nelle ore successive verrà attribuita a te. Le verifiche attive, anche innocue come leggere la tabella MAC, si chiedono, si concordano e si scrivono nel verbale. E scoprirlo durante il cutover è esattamente ciò che il sopralluogo serve a evitare." },
+
+    { "q": "A cosa serve la sezione «fuori perimetro» del verbale?",
+      "a": [ {"t":"A scrivere cosa NON fa parte del progetto, per evitare aspettative non concordate","ok":true},
+             {"t":"A elencare i dispositivi che stanno fuori dall'edificio","ok":false},
+             {"t":"A indicare i fornitori esterni da coinvolgere","ok":false},
+             {"t":"A descrivere la rete ospiti","ok":false} ],
+      "e": "È spesso la sezione che ti salva. «Il cablaggio non è incluso», «la configurazione dei telefoni resta a carico del fornitore del centralino»: scritto e firmato, risolve in anticipo la discussione «ma noi pensavamo che…»." },
+
+    { "q": "Nell'analisi ti accorgi che non sai se le filiali devono raggiungere il server della sede. Cosa fai?",
+      "a": [ {"t":"Torni a chiederlo al cliente e lo segni tra le questioni aperte","ok":true},
+             {"t":"Supponi di sì, per sicurezza, e prevedi le VPN","ok":false},
+             {"t":"Supponi di no, perché costa meno","ok":false},
+             {"t":"Lo decidi durante l'installazione","ok":false} ],
+      "e": "Ogni supposizione fatta al posto del cliente è un rischio che ti prendi tu. Il percorso ha una freccia che torna all'intervista apposta: si chiede, e finché la risposta non arriva la domanda sta nel verbale con un responsabile e una data." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capitolato, BOM e preventivo — NetPath</title>
+<meta name="description" content="Tradurre un progetto di rete in una distinta di materiali completa e in una stima di giornate uomo credibile, e rispondere a un capitolato.">
+<meta name="theme-color" content="#0f7d8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1016" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f7d8c'/><g fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'><circle cx='50' cy='26' r='9'/><circle cx='24' cy='74' r='9'/><circle cx='76' cy='74' r='9'/><path d='M50 35v16M43 58L31 67M57 58l12 9'/></g></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script>(function(){try{var t=localStorage.getItem("netpath:theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="lezione" data-root="../" data-lesson="l4-04">
+
+<div class="read-progress" id="np-progress"></div>
+<header id="np-header"></header>
+<div class="scrim" id="np-scrim"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="np-sidebar"></aside>
+
+  <main class="content">
+    <div class="lesson-top">
+      <nav class="crumbs">
+        <a href="../index.html">Home</a><span class="sep">/</span>
+        <a href="../percorso.html#l4">Livello 4</a><span class="sep">/</span>
+        <span>Progettare per un cliente</span>
+      </nav>
+      <h1 class="lesson-title">Capitolato, BOM e preventivo</h1>
+      <div class="lesson-meta">
+        <span class="badge lv4">Livello 4</span>
+        <span class="chip">Lezione 04</span>
+        <span class="chip">24 min di lettura</span>
+      </div>
+    </div>
+
+    <div class="objectives">
+      <h2>Alla fine di questa lezione saprai</h2>
+      <ul>
+        <li>Costruire una BOM completa a partire dall'inventario dell'LLD, senza dimenticare gli accessori</li>
+        <li>Separare costi una tantum e canoni ricorrenti</li>
+        <li>Stimare le giornate uomo per attività, con la stima a tre punti</li>
+        <li>Leggere e scrivere un capitolato tecnico senza vincolarsi a una marca</li>
+      </ul>
+    </div>
+
+    <article class="prose">
+<p class="lead">Un progetto bellissimo che il cliente non può comprare non serve a nessuno. E un
+preventivo che dimentica i moduli in fibra o sottostima le notti di migrazione lo paghi tu, di tasca
+tua. Questa lezione è il ponte tra il progetto (lezione 4-03) e il commerciale: come si trasforma un
+LLD in una lista di righe con un codice, una quantità e un numero di giornate.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: la lista della spesa della ricetta
+  </div>
+  <p>Vuoi cucinare una lasagna per dodici persone. La ricetta (il progetto) dice cosa fare. Ma per
+  andare al supermercato serve un'altra cosa: la <b>lista della spesa</b>, con le quantità esatte.
+  E nella lista non bastano gli ingredienti principali: se dimentichi il sale, la teglia abbastanza
+  grande o la carta da forno, la lasagna non si fa, anche con la carne migliore del mondo.</p>
+  <p style="margin-bottom:0">La <b><span class="term" data-term="bom">BOM</span></b> (<em>Bill of Materials</em>, distinta dei materiali) è la
+  lista della spesa del progetto. Il firewall e gli switch sono la carne e la pasta: nessuno li
+  dimentica. Il preventivo va male per il sale: il modulo in fibra, il cavo di alimentazione con la
+  spina giusta, la licenza del secondo firewall, le staffe per il rack.</p>
+</div>
+
+<h2>Dalla tabella dell'LLD alla BOM</h2>
+
+<p>La BOM non si scrive da zero: si <b>deriva</b> dall'inventario e dallo schema fisico dell'LLD.
+Ogni apparato dell'inventario genera una riga, e ogni collegamento dello schema fisico può generare
+altre righe (moduli, cavi). Così, se il progetto cambia, la BOM cambia con lui.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 270" role="img" aria-label="Dall'LLD alla BOM: inventario e schema fisico generano righe di hardware, abbonamenti, accessori e servizi, che si raggruppano in costi una tantum e canoni annui">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Ogni riga della BOM viene da una riga dell'LLD</text>
+
+    <g stroke-width="1.7">
+      <rect x="10" y="44"  width="150" height="50" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="10" y="114" width="150" height="50" rx="8" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="85" y="66"  class="dg-label-sm">LLD: INVENTARIO</text>
+      <text x="85" y="84"  class="dg-mono-sm">apparati, firmware</text>
+      <text x="85" y="136" class="dg-label-sm">LLD: SCHEMA FISICO</text>
+      <text x="85" y="154" class="dg-mono-sm">porte, moduli, cavi</text>
+    </g>
+
+    <g stroke-width="1.5">
+      <rect x="240" y="36"  width="190" height="36" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="240" y="80"  width="190" height="36" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="240" y="124" width="190" height="36" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="240" y="168" width="190" height="36" rx="7" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+    </g>
+    <g text-anchor="middle" class="dg-label-sm">
+      <text x="335" y="59">Hardware</text>
+      <text x="335" y="103">Abbonamenti e licenze</text>
+      <text x="335" y="147">Accessori</text>
+      <text x="335" y="191">Servizi (giornate)</text>
+    </g>
+
+    <g stroke-width="1.8">
+      <rect x="510" y="50"  width="180" height="56" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="510" y="134" width="180" height="56" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="600" y="74"  class="dg-label-sm">UNA TANTUM</text>
+      <text x="600" y="94"  class="dg-mono-sm">si paga all'acquisto</text>
+      <text x="600" y="158" class="dg-label-sm">RICORRENTE</text>
+      <text x="600" y="178" class="dg-mono-sm">ogni anno, per sempre</text>
+    </g>
+
+    <g stroke="var(--dg-line)" stroke-width="1.7" fill="none">
+      <path d="M160 69 L 238 54"/><path d="M160 69 L 238 98"/>
+      <path d="M160 139 L 238 142"/><path d="M160 139 L 238 186"/>
+      <path d="M430 54 L 508 72"/><path d="M430 98 L 508 158"/>
+      <path d="M430 142 L 508 82"/><path d="M430 186 L 508 92"/>
+    </g>
+    <text x="350" y="240" text-anchor="middle" class="dg-label-sm">Gli abbonamenti finiscono tra i costi ricorrenti: è la riga che il cliente</text>
+    <text x="350" y="258" text-anchor="middle" class="dg-label-sm">deve conoscere subito, perché la ritroverà nel bilancio di ogni anno.</text>
+  </svg>
+  </div>
+  <figcaption>Anche i servizi possono essere ricorrenti (il contratto di assistenza, il monitoraggio):
+  nello schema sono semplificati come una tantum, ma nell'offerta vanno messi dove cadono davvero.</figcaption>
+</figure>
+
+<h2>Le quattro famiglie di righe</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Famiglia</th><th>Cosa contiene</th><th>La trappola tipica</th></tr></thead>
+    <tbody>
+      <tr><td><b>Hardware</b></td><td>Firewall, switch, access point, UPS, server, armadi</td>
+          <td>Scegliere il modello sul datasheet senza confrontarlo con il dimensionamento reale (lezione 3-03): throughput con i servizi di sicurezza attivi, non quello «a vuoto»</td></tr>
+      <tr><td><b>Abbonamenti e licenze</b></td><td>Aggiornamenti delle firme di sicurezza, assistenza del produttore, gestione cloud, licenze per funzioni o per utenti</td>
+          <td>Dimenticare che molti apparati senza abbonamento attivo perdono funzioni o aggiornamenti. E che in alta disponibilità, di norma, <b>anche il secondo apparato</b> va licenziato: verificalo sulle regole del produttore</td></tr>
+      <tr><td><b>Accessori</b></td><td>Moduli SFP, cavi di rete e fibra, cavi di alimentazione, staffe da rack, alimentatori ridondanti, iniettori PoE</td>
+          <td>Moduli SFP di un'altra marca che lo switch rifiuta; alimentatori con la spina sbagliata; access point che arrivano senza staffa</td></tr>
+      <tr><td><b>Servizi</b></td><td>Progettazione, preparazione in laboratorio, installazione, migrazione, collaudo, documentazione, formazione</td>
+          <td>Stimare solo l'installazione e dimenticare tutto quello che sta prima e dopo</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>La BOM, riga per riga</h2>
+
+<p>Ecco come appare una BOM ben fatta. I codici sono <b>di esempio</b>: quelli veri si prendono dal
+listino del distributore o dal configuratore del produttore, sempre, e mai a memoria, perché
+cambiano a ogni rinnovo di gamma.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Codice (esempio)</th><th>Descrizione</th><th>Q.tà</th><th>Tipo</th><th>Da LLD</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>FW-MED-HW</code></td><td>Firewall fascia media</td><td>2</td><td>una tantum</td><td>Inventario, D3 (HA)</td></tr>
+      <tr><td>2</td><td><code>FW-MED-SEC-3Y</code></td><td>Abbonamento sicurezza e assistenza, 3 anni</td><td>2</td><td>ricorrente</td><td>Uno per apparato</td></tr>
+      <tr><td>3</td><td><code>SW-48P-POE</code></td><td>Switch 48 porte PoE+, 4 porte SFP+</td><td>3</td><td>una tantum</td><td>Inventario</td></tr>
+      <tr><td>4</td><td><code>SFP-10G-SR</code></td><td>Modulo 10G multimodale, della stessa marca dello switch</td><td>8</td><td>una tantum</td><td>Schema fisico: 4 collegamenti × 2 lati</td></tr>
+      <tr><td>5</td><td><code>PATCH-OM4-LC-2M</code></td><td>Bretella fibra OM4 LC-LC, 2 m</td><td>4</td><td>una tantum</td><td>Schema fisico</td></tr>
+      <tr><td>6</td><td><code>PWR-C13-IT</code></td><td>Cavo di alimentazione C13 con spina italiana o per presa da rack</td><td>7</td><td>una tantum</td><td>2 FW + 3 SW + 2 di scorta</td></tr>
+      <tr><td>7</td><td><code>AP-WIFI6-IN</code></td><td>Access point da interno, con staffa</td><td>12</td><td>una tantum</td><td>Piano Wi-Fi</td></tr>
+      <tr><td>8</td><td><code>AP-LIC-3Y</code></td><td>Licenza di gestione AP, 3 anni</td><td>12</td><td>ricorrente</td><td>Uno per AP</td></tr>
+      <tr><td>9</td><td><code>UPS-1500-RM</code></td><td>UPS da rack 1500 VA con scheda di rete</td><td>1</td><td>una tantum</td><td>Requisito continuità</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout warn">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Le cinque domande da fare a ogni riga di hardware
+  </div>
+  <ol style="margin-bottom:0">
+    <li><b>Quanto consuma</b>, e il PoE totale degli switch basta per tutti gli access point e i
+    telefoni collegati?</li>
+    <li><b>Come si monta</b>: staffe incluse? Profondità compatibile con l'armadio?</li>
+    <li><b>Come si collega</b>: quali moduli, quali cavi, chi li fornisce?</li>
+    <li><b>Fino a quando è supportato</b>: un modello vicino alla fine vendita può diventare un
+    problema prima che finisca l'ammortamento. La data si cerca sul sito del produttore.</li>
+    <li><b>In quanto tempo arriva</b>: i tempi di consegna dei distributori possono essere di
+    settimane, e decidono la data del cutover più di qualsiasi piano.</li>
+  </ol>
+</div>
+
+<h2>Stimare le giornate uomo</h2>
+
+<p>Le giornate si stimano <b>per attività</b>, mai «a corpo». Una stima a corpo («per una rete così ci
+vogliono dieci giorni») è impossibile da difendere quando il cliente chiede di ridurla, ed è
+impossibile da controllare a fine progetto per capire dove hai sbagliato.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Attività</th><th>Cosa comprende</th><th>Si dimentica perché…</th></tr></thead>
+    <tbody>
+      <tr><td><b>Progettazione</b></td><td>Requisiti, sopralluogo, HLD, LLD, revisioni</td><td>Sembra «prevendita» e non si fattura</td></tr>
+      <tr><td><b>Preparazione in laboratorio</b></td><td>Aggiornare i firmware, caricare le configurazioni, provare prima di andare dal cliente</td><td>Si pensa di farlo sul posto. Sul posto costa il triplo</td></tr>
+      <tr><td><b>Installazione</b></td><td>Montaggio, cablaggio, accensione</td><td>— è l'unica che nessuno dimentica</td></tr>
+      <tr><td><b>Migrazione</b></td><td>La finestra di cutover, spesso notturna o nel fine settimana (lezione 4-07)</td><td>Le ore fuori orario hanno di solito una tariffa diversa, da scrivere nell'offerta</td></tr>
+      <tr><td><b>Collaudo e presidio</b></td><td>Le prove della tabella di tracciabilità, e la presenza il primo giorno lavorativo</td><td>Il primo mattino dopo un cutover è quello in cui arrivano le chiamate</td></tr>
+      <tr><td><b>Documentazione</b></td><td>As-built, consegna delle credenziali al cliente</td><td>«La faccio dopo», e dopo non c'è tempo</td></tr>
+      <tr><td><b>Gestione del progetto</b></td><td>Riunioni, coordinamento con operatori e altri fornitori, avanzamento</td><td>Non produce niente di visibile, ma esiste sempre</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>La stima a tre punti</h3>
+
+<p>Per ogni attività non chiederti «quanto ci vuole?», ma tre cose: quanto ci vuole se va tutto
+liscio (<b>O</b>, ottimistica), quanto ci vuole di solito (<b>M</b>, più probabile), quanto ci vuole
+se va storto quello che di solito va storto (<b>P</b>, pessimistica). Poi si combina:</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Stima a tre punti (PERT)</div>
+<pre><span class="p">stima = (O + 4×M + P) / 6</span>
+
+<span class="c"># esempio: migrazione di una sede</span>
+<span class="c">#   O = 1 notte    tutto funziona al primo colpo</span>
+<span class="c">#   M = 1,5        qualche dispositivo dimenticato da sistemare</span>
+<span class="c">#   P = 3          l'operatore non attiva la linea nuova e si rifà</span>
+<span class="p">stima = (1 + 6 + 3) / 6 = 1,67 giornate</span>
+</pre>
+</div>
+
+<p>Il valore pessimistico pesa poco ma non zero: tira la stima verso l'alto quanto basta per
+coprire gli imprevisti normali. Gli imprevisti <em>non</em> normali (l'operatore che ritarda di un
+mese) non si mettono nella stima: si scrivono tra le ipotesi dell'offerta («si assume che la linea
+sia attiva entro il…»).</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Attività</th><th>O</th><th>M</th><th>P</th><th>Stima</th></tr></thead>
+    <tbody>
+      <tr><td>Progettazione</td><td>2</td><td>3</td><td>5</td><td>3,2</td></tr>
+      <tr><td>Preparazione in laboratorio</td><td>1</td><td>1,5</td><td>3</td><td>1,7</td></tr>
+      <tr><td>Installazione</td><td>1</td><td>2</td><td>3</td><td>2,0</td></tr>
+      <tr><td>Migrazione</td><td>1</td><td>1,5</td><td>3</td><td>1,7</td></tr>
+      <tr><td>Collaudo e presidio</td><td>0,5</td><td>1</td><td>1,5</td><td>1,0</td></tr>
+      <tr><td>Documentazione</td><td>0,5</td><td>1</td><td>2</td><td>1,1</td></tr>
+      <tr><td><b>Subtotale</b></td><td></td><td></td><td></td><td><b>10,7</b></td></tr>
+      <tr><td>Gestione del progetto (~10%)</td><td></td><td></td><td></td><td>1,1</td></tr>
+      <tr><td><b>Totale</b></td><td></td><td></td><td></td><td><b>11,8 → 12 giornate</b></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Confronta la stima con il consuntivo
+  </div>
+  <p style="margin-bottom:0">A fine progetto, segna quante giornate sono servite davvero per ogni
+  attività. Dopo tre o quattro progetti saprai quali attività sottostimi sempre (quasi certamente
+  documentazione e gestione) e di quanto. È l'unico modo per migliorare le stime: la memoria
+  ricorda le giornate andate bene e dimentica le altre.</p>
+</div>
+
+<h2>Il preventivo che il cliente legge</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sezione</th><th>Cosa scrivi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Oggetto</b></td><td>Il richiamo all'HLD approvato, con la versione</td></tr>
+      <tr><td><b>Una tantum</b></td><td>Hardware, accessori, servizi di progetto</td></tr>
+      <tr><td><b>Ricorrente</b></td><td>Abbonamenti e assistenza, <b>all'anno</b>, con la durata e cosa succede alla scadenza</td></tr>
+      <tr><td><b>Esclusioni</b></td><td>Copiate dal «fuori perimetro» del verbale: cablaggio, lavori elettrici, configurazione di sistemi di terzi</td></tr>
+      <tr><td><b>Ipotesi</b></td><td>Ciò da cui dipende il prezzo: «linea attiva entro…», «accesso agli apparati esistenti», «finestre di intervento disponibili»</td></tr>
+      <tr><td><b>Validità</b></td><td>Breve, perché i prezzi dei distributori e i tempi di consegna cambiano</td></tr>
+      <tr><td><b>Tempi</b></td><td>Dalla conferma d'ordine, legati ai tempi di consegna dell'hardware</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Il capitolato</h2>
+
+<p>Il <b>capitolato tecnico</b> è il documento con cui un'organizzazione descrive cosa vuole comprare,
+per ricevere offerte confrontabili. Lo incontrerai in due ruoli.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Ruolo</th><th>Cosa fai</th><th>L'errore da evitare</th></tr></thead>
+    <tbody>
+      <tr><td><b>Lo ricevi</b> (rispondi a una gara o a una richiesta d'offerta)</td>
+          <td>Rispondi <b>punto per punto</b>, nello stesso ordine e con la stessa numerazione, indicando per ciascuno «conforme», «conforme con note» o «non conforme»</td>
+          <td>Mandare la tua offerta standard sperando che vada bene: chi valuta deve poter spuntare ogni requisito, e se non lo trova ti scarta</td></tr>
+      <tr><td><b>Lo scrivi</b> (aiuti un cliente a confrontare più fornitori)</td>
+          <td>Descrivi <b>requisiti</b>, non prodotti: prestazioni minime, funzioni, garanzie, tempi di assistenza</td>
+          <td>Copiare il datasheet di un modello: così il capitolato lo vince un solo produttore, e il confronto è finto</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Negli appalti pubblici la marca non si scrive
+  </div>
+  <p style="margin-bottom:0">Nelle gare della pubblica amministrazione indicare una marca o un modello
+  specifico è di regola vietato, salvo casi motivati e accompagnati dalla formula «o equivalente».
+  Se aiuti un ente a scrivere un capitolato, o rispondi a una gara pubblica, le regole precise sono
+  quelle del Codice dei contratti pubblici in vigore: <b>vanno verificate con chi segue la parte
+  amministrativa</b>, non improvvisate dal tecnico.</p>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso tipico: il modulo da 60 euro che ferma una notte
+  </div>
+  <p>Per la sede del <b>Cliente Y</b> si ordinano due switch nuovi da collegare in fibra al core
+  esistente, di un'altra marca. Nella BOM ci sono quattro moduli SFP, della marca dei nuovi switch.</p>
+  <p>La notte del cutover i moduli funzionano perfettamente negli switch nuovi, ma il core esistente
+  li rifiuta: accetta solo moduli della propria marca. Nessuno ha portato un modulo compatibile.
+  Migrazione rinviata di una settimana, una notte persa, un cliente che chiede perché.</p>
+  <p style="margin-bottom:0">La BOM era stata derivata dall'inventario degli apparati <b>nuovi</b>,
+  ma non dallo schema fisico, che avrebbe mostrato che ogni collegamento ha <b>due lati</b>, e che
+  il secondo lato era un apparato diverso. Per questo la riga dei moduli si compila collegamento per
+  collegamento, lato per lato.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Esercizio: BOM e stima del tuo progetto
+  </div>
+  <p>Riprendi l'LLD dell'esercizio della lezione 4-03.</p>
+  <ol style="margin-bottom:0">
+    <li>Deriva la BOM <b>riga per riga</b> dall'inventario e dallo schema fisico. Per ogni riga,
+    scrivi da quale riga dell'LLD viene.</li>
+    <li>Per ogni apparato, rispondi alle cinque domande: consumo e PoE, montaggio, collegamenti,
+    fine supporto, tempi di consegna. Cerca le risposte vere sul sito del produttore.</li>
+    <li>Separa una tantum e ricorrente. Calcola quanto costerà la rete al cliente <b>nel terzo
+    anno</b>, quando l'hardware è pagato e restano solo i canoni.</li>
+    <li>Stima le giornate con la tabella a tre punti. Poi aggiungi la gestione del progetto.</li>
+    <li>Scrivi almeno tre <b>ipotesi</b> da cui dipende la tua stima.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: BOM e preventivo",
+  "questions": [
+    { "q": "Da dove si ricava la BOM di un progetto?",
+      "a": [ {"t":"Dall'inventario e dallo schema fisico dell'LLD, riga per riga","ok":true},
+             {"t":"Dal listino del distributore, scegliendo i modelli più venduti","ok":false},
+             {"t":"Dall'HLD, che contiene già tutti i codici","ok":false},
+             {"t":"Dall'offerta del progetto precedente più simile","ok":false} ],
+      "e": "La BOM si deriva dall'LLD: ogni apparato dell'inventario genera una riga, ogni collegamento dello schema fisico può generarne altre (moduli, cavi). Così, se il progetto cambia, la BOM cambia con lui. Copiare un'offerta vecchia porta con sé gli errori e le dimenticanze di quella." },
+
+    { "q": "Un collegamento in fibra unisce uno switch nuovo a un core esistente di un'altra marca. Quanti e quali moduli metti in BOM?",
+      "a": [ {"t":"Due: uno compatibile con lo switch nuovo e uno compatibile con il core esistente","ok":true},
+             {"t":"Due, entrambi della marca dello switch nuovo","ok":false},
+             {"t":"Uno, perché il core ha già il suo","ok":false},
+             {"t":"Nessuno: gli switch nuovi li includono sempre","ok":false} ],
+      "e": "Ogni collegamento ha due lati, e molti apparati accettano solo moduli della propria marca o di una lista di compatibilità. La BOM va compilata collegamento per collegamento, lato per lato. Se il core ha già un modulo libero e compatibile, lo verifichi sul posto e lo scrivi: non lo supponi." },
+
+    { "q": "Perché nel preventivo i canoni annuali vanno separati dai costi una tantum?",
+      "a": [ {"t":"Perché il cliente li ritroverà ogni anno, e deve saperlo prima di decidere","ok":true},
+             {"t":"Perché hanno un'aliquota IVA diversa","ok":false},
+             {"t":"Perché i canoni sono sempre facoltativi","ok":false},
+             {"t":"Perché si pagano solo dopo il collaudo","ok":false} ],
+      "e": "Il costo vero di una rete non è quello del primo anno: abbonamenti di sicurezza, assistenza e licenze ricorrono per sempre, e molti apparati senza abbonamento perdono funzioni o aggiornamenti. Dirlo subito evita la sorpresa al primo rinnovo, che è uno dei motivi più comuni per cui un cliente cambia fornitore." },
+
+    { "q": "Per un'attività stimi O = 2, M = 3, P = 7 giornate. Qual è la stima a tre punti?",
+      "a": [ {"t":"3,5 giornate","ok":true},
+             {"t":"4 giornate","ok":false},
+             {"t":"3 giornate","ok":false},
+             {"t":"7 giornate","ok":false} ],
+      "e": "(O + 4×M + P) / 6 = (2 + 12 + 7) / 6 = 21 / 6 = 3,5. La media semplice darebbe 4, perché tratta il caso pessimistico come probabile quanto gli altri; usare il valore più probabile, 3, ignorerebbe del tutto gli imprevisti. La formula pesa il caso tipico quattro volte, senza ignorare il rischio." },
+
+    { "q": "Il cliente ti chiede di aiutarlo a scrivere un capitolato per confrontare tre fornitori. Come descrivi il firewall?",
+      "a": [ {"t":"Con requisiti: prestazioni minime con i servizi attivi, funzioni, tempi di assistenza","ok":true},
+             {"t":"Copiando il datasheet del modello che preferisci","ok":false},
+             {"t":"Indicando marca e modello, così le offerte sono confrontabili","ok":false},
+             {"t":"Lasciando libertà totale ai fornitori, senza requisiti","ok":false} ],
+      "e": "Un capitolato serve a ricevere offerte confrontabili. Se copi un datasheet o indichi un modello, lo vince un solo produttore e il confronto è finto; se non metti requisiti, le offerte non si possono confrontare. Negli appalti pubblici, poi, la marca di regola non si può indicare." },
+
+    { "q": "L'operatore potrebbe attivare la linea nuova con un mese di ritardo. Come lo gestisci nel preventivo?",
+      "a": [ {"t":"Lo scrivi tra le ipotesi: «si assume che la linea sia attiva entro…»","ok":true},
+             {"t":"Aggiungi un mese di giornate alla stima pessimistica","ok":false},
+             {"t":"Non lo scrivi, per non spaventare il cliente","ok":false},
+             {"t":"Raddoppi il prezzo per sicurezza","ok":false} ],
+      "e": "La stima a tre punti copre gli imprevisti normali. Un evento esterno che non dipende da te non va nella stima: va nelle ipotesi, così se succede è chiaro che i tempi e i costi si ridiscutono. Tacerlo significa assorbirlo tu; gonfiare il prezzo significa perdere l'offerta." }
+  ]
+}
+</script>
+
+    </article>
+
+    <div id="np-lesson-foot"></div>
+  </main>
+
+  <aside class="toc-rail" id="np-toc"></aside>
+</div>
+
+<footer id="np-footer"></footer>
+
+<script src="../assets/js/curriculum.js"></script>
+<script src="../assets/js/glossario-data.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

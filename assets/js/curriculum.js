@@ -156,10 +156,10 @@ window.NETPATH_CURRICULUM = [
   hours: "100–140 ore + esperienza sul campo",
   chapters: [
     { title: "Progettare per un cliente", lessons: [
-      { id:"l4-01", t:"Raccolta requisiti e sopralluogo", s:"Le 40 domande da fare prima di disegnare qualsiasi cosa. Checklist stampabile.", m:26, ready:false },
-      { id:"l4-02", t:"IP addressing plan su larga scala", s:"Uno schema che regge 50 sedi e 10 anni, senza rifare tutto ogni volta.", m:28, ready:false },
-      { id:"l4-03", t:"Il documento di progetto (HLD/LLD)", s:"Cosa contiene, come si scrive, come si fa approvare. Con modello completo.", m:30, ready:false },
-      { id:"l4-04", t:"Capitolato, BOM e preventivo", s:"Tradurre un progetto in una lista di codici prodotto e giornate uomo.", m:24, ready:false }
+      { id:"l4-01", t:"Raccolta requisiti e sopralluogo", s:"Le 40 domande da fare prima di disegnare qualsiasi cosa. Checklist stampabile.", m:26, ready:true },
+      { id:"l4-02", t:"IP addressing plan su larga scala", s:"Uno schema che regge 50 sedi e 10 anni, senza rifare tutto ogni volta.", m:28, ready:true },
+      { id:"l4-03", t:"Il documento di progetto (HLD/LLD)", s:"Cosa contiene, come si scrive, come si fa approvare. Con modello completo.", m:30, ready:true },
+      { id:"l4-04", t:"Capitolato, BOM e preventivo", s:"Tradurre un progetto in una lista di codici prodotto e giornate uomo.", m:24, ready:true }
     ]},
     { title: "Operare come senior", lessons: [
       { id:"l4-05", t:"Gestire un ticket: metodo e comunicazione", s:"Dal 'non va la rete' alla chiusura documentata. Il pezzo che distingue un senior.", m:26, ready:false },

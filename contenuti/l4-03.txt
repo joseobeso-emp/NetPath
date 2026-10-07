@@ -1,0 +1,310 @@
+#id: l4-03
+#title: Il documento di progetto (HLD e LLD)
+#min: 30
+#level: 4
+#chapter: Progettare per un cliente
+#desc: Cosa contengono il progetto di alto livello e quello di dettaglio, come si scrivono, come si fanno approvare. Con modello completo.
+#obj: Distinguere HLD, LLD e documentazione as-built, e sapere a chi parla ciascuno
+#obj: Scrivere un HLD che un dirigente legge in dieci minuti e approva
+#obj: Scrivere un LLD con cui un altro tecnico costruisce la rete senza chiamarti
+#obj: Collegare ogni requisito a una scelta di progetto e a una prova di collaudo
+---
+<p class="lead">Hai i requisiti firmati (lezione 4-01) e un piano di indirizzamento (lezione 4-02).
+Adesso devi mettere per iscritto <b>cosa</b> costruirai e <b>come</b>. Non per burocrazia: il
+documento di progetto è il punto in cui gli errori costano un colpo di tastiera invece di una notte
+in sala server. Una rete disegnata male su carta si corregge in cinque minuti. La stessa rete,
+installata, si corregge con un fermo.</p>
+
+<div class="callout feynman">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.9 7.6.3-6 4.6 2.2 7-6.2-4.2L5.8 21 8 14 2 9.2l7.6-.3z"/></svg>
+    Spiegato a un dodicenne: il progetto della casa e il disegno dell'idraulico
+  </div>
+  <p>Quando costruisci una casa ci sono due tipi di disegni. Il primo è quello che l'architetto
+  mostra alla famiglia: la pianta, dove sta la cucina, quante finestre, il colore della facciata. La
+  famiglia lo guarda e dice «sì, la vogliamo così». Non contiene una sola misura dei tubi.</p>
+  <p>Il secondo è per chi costruisce: dove passa ogni tubo, di che diametro, a quale altezza sta ogni
+  presa elettrica. La famiglia non lo capirebbe, e non deve: lo legge l'idraulico.</p>
+  <p style="margin-bottom:0">Il primo è l'<b><span class="term" data-term="hld">HLD</span></b> (<em>High-Level Design</em>, progetto di alto
+  livello): dice <b>cosa</b> e <b>perché</b>, lo legge chi decide. Il secondo è l'<b><span class="term" data-term="lld">LLD</span></b>
+  (<em>Low-Level Design</em>, progetto di dettaglio): dice <b>come, esattamente</b>, lo legge chi
+  costruisce. Mescolarli è l'errore più comune: un dirigente che riceve sessanta pagine di
+  configurazioni non approva niente, un tecnico che riceve tre slide non sa cosa fare.</p>
+</div>
+
+<h2>Tre documenti, tre lettori</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>HLD</th><th>LLD</th><th>As-built</th></tr></thead>
+    <tbody>
+      <tr><td><b>Quando</b></td><td>Prima, per decidere</td><td>Prima, per costruire</td><td>Dopo, per gestire</td></tr>
+      <tr><td><b>Chi lo legge</b></td><td>Titolare, direzione, responsabile IT del cliente</td><td>Il tecnico che installa, il collega che ti sostituisce</td><td>Chi farà assistenza nei prossimi anni</td></tr>
+      <tr><td><b>Risponde a</b></td><td>Cosa facciamo e perché? Cosa costa? Quali rischi?</td><td>Esattamente quale porta, quale indirizzo, quale regola?</td><td>Com'è fatta davvero la rete oggi?</td></tr>
+      <tr><td><b>Lunghezza</b></td><td>5–15 pagine</td><td>Quanto serve: tabelle, non prosa</td><td>Quanto serve</td></tr>
+      <tr><td><b>Si approva?</b></td><td>Sì, con firma del cliente</td><td>Sì, revisione tecnica interna (e del cliente se ha un IT)</td><td>No: si consegna e si mantiene</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>L'as-built è la documentazione della lezione 2-28: nasce copiando l'LLD e correggendolo con quello
+che è successo davvero durante l'installazione. Se l'LLD è fatto bene, l'as-built costa un'ora.</p>
+
+<figure class="diagram">
+  <div class="scroll-x">
+  <svg viewBox="0 0 700 260" role="img" aria-label="Il flusso dei documenti: verbale dei requisiti, HLD approvato dal cliente, LLD revisionato, installazione e collaudo, as-built consegnato; le modifiche dopo l'approvazione passano da una richiesta di modifica">
+    <text x="350" y="20" text-anchor="middle" class="dg-title">Da requisiti a rete consegnata</text>
+
+    <g stroke-width="1.7">
+      <rect x="10"  y="50" width="118" height="64" rx="9" fill="var(--dg-1-fill)" stroke="var(--dg-1)"/>
+      <rect x="148" y="50" width="118" height="64" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="286" y="50" width="118" height="64" rx="9" fill="var(--dg-2-fill)" stroke="var(--dg-2)"/>
+      <rect x="424" y="50" width="118" height="64" rx="9" fill="var(--dg-3-fill)" stroke="var(--dg-3)"/>
+      <rect x="562" y="50" width="128" height="64" rx="9" fill="var(--dg-4-fill)" stroke="var(--dg-4)"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="69"  y="76" class="dg-label-sm">REQUISITI</text>
+      <text x="69"  y="96" class="dg-mono-sm">R1, R2, R3…</text>
+      <text x="207" y="76" class="dg-label-sm">HLD</text>
+      <text x="207" y="96" class="dg-mono-sm">firma del cliente</text>
+      <text x="345" y="76" class="dg-label-sm">LLD</text>
+      <text x="345" y="96" class="dg-mono-sm">revisione tecnica</text>
+      <text x="483" y="76" class="dg-label-sm">INSTALLAZIONE</text>
+      <text x="483" y="96" class="dg-mono-sm">+ collaudo</text>
+      <text x="626" y="76" class="dg-label-sm">AS-BUILT</text>
+      <text x="626" y="96" class="dg-mono-sm">consegnato</text>
+    </g>
+    <g stroke="var(--dg-line)" stroke-width="2" fill="none">
+      <path d="M128 82h18"/><path d="M266 82h18"/><path d="M404 82h18"/><path d="M542 82h18"/>
+      <path d="M483 114 C 483 178, 207 178, 207 116" stroke-dasharray="6 5"/>
+    </g>
+    <text x="345" y="170" text-anchor="middle" class="dg-mono-sm">cambia qualcosa dopo la firma? richiesta di modifica, nuova versione, nuova firma</text>
+    <text x="350" y="214" text-anchor="middle" class="dg-label-sm">Ogni requisito R attraversa tutta la catena:</text>
+    <text x="350" y="236" text-anchor="middle" class="dg-label-sm">una scelta nell'HLD, un dettaglio nell'LLD, una prova nel collaudo.</text>
+  </svg>
+  </div>
+  <figcaption>La freccia tratteggiata impedisce l'errore più costoso: cambiare il progetto in corso
+  d'opera «perché tanto è una piccola cosa», senza che il cliente lo sappia.</figcaption>
+</figure>
+
+<h2>L'HLD: modello completo</h2>
+
+<p>Ecco la struttura. Ogni sezione ha una lunghezza indicativa: se la superi di molto, probabilmente
+stai scrivendo LLD dentro l'HLD.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Sezione</th><th>Cosa contiene</th><th>Quanto</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td><b>Frontespizio e versioni</b></td><td>Titolo, cliente, autore, revisore, tabella delle versioni con data e motivo</td><td>1 pagina</td></tr>
+      <tr><td>1</td><td><b>Sintesi</b></td><td>Il progetto in mezza pagina: cosa si fa, perché, quanto costa, quando. <b>Si scrive per ultima</b>, si legge per prima</td><td>½ pagina</td></tr>
+      <tr><td>2</td><td><b>Situazione attuale</b></td><td>Come è fatta la rete oggi e cosa non va. Uno schema semplice</td><td>1 pagina</td></tr>
+      <tr><td>3</td><td><b>Requisiti e vincoli</b></td><td>Richiamo al verbale: R1…Rn e i vincoli, non riscritti ma citati</td><td>½ pagina</td></tr>
+      <tr><td>4</td><td><b>Architettura proposta</b></td><td>Lo schema logico della nuova rete e una spiegazione in parole: sedi, collegamenti, zone di sicurezza</td><td>2–3 pagine</td></tr>
+      <tr><td>5</td><td><b>Decisioni di progetto</b></td><td>Le scelte importanti, ciascuna con alternative e motivo (vedi sotto)</td><td>1–3 pagine</td></tr>
+      <tr><td>6</td><td><b>Sicurezza</b></td><td>Segmentazione, accessi remoti, gestione, log. Cosa protegge da cosa</td><td>1 pagina</td></tr>
+      <tr><td>7</td><td><b>Continuità</b></td><td>Quali guasti sono tollerati e come. Quali no, detto chiaramente</td><td>½ pagina</td></tr>
+      <tr><td>8</td><td><b>Piano di realizzazione</b></td><td>Fasi, finestre di intervento, chi fa cosa, cosa serve dal cliente</td><td>1 pagina</td></tr>
+      <tr><td>9</td><td><b>Rischi</b></td><td>Cosa può andare storto e come lo mitighi</td><td>½ pagina</td></tr>
+      <tr><td>10</td><td><b>Costi</b></td><td>Richiamo all'offerta (lezione 4-04): una tantum e canoni annui separati</td><td>½ pagina</td></tr>
+      <tr><td>11</td><td><b>Fuori perimetro e ipotesi</b></td><td>Dal verbale, aggiornati</td><td>½ pagina</td></tr>
+      <tr><td>12</td><td><b>Approvazione</b></td><td>Nome, ruolo, data, firma</td><td>poche righe</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Le decisioni di progetto: il cuore dell'HLD</h3>
+
+<p>Ogni scelta importante si scrive nello stesso formato. Serve a far approvare il progetto oggi,
+e serve a te tra tre anni, quando qualcuno chiederà «ma perché è fatto così?».</p>
+
+<div class="code">
+  <div class="code__bar"><span class="dot"></span>Una decisione, scritta per bene</div>
+<pre><span class="n">D3 — Firewall in alta disponibilità attivo-passivo nella sede centrale</span>
+
+<span class="p">Requisiti collegati:</span>  R2 (il guasto di un apparato non ferma il gestionale per più di 60 s)
+<span class="p">Alternative valutate:</span>
+  <span class="s">a)</span> firewall singolo + ricambio a magazzino     → ripristino in 2–4 ore: non rispetta R2
+  <span class="s">b)</span> HA attivo-passivo                          → commutazione in pochi secondi
+  <span class="s">c)</span> HA attivo-attivo                           → nessun vantaggio a questo volume, più complesso
+<span class="p">Scelta:</span>               b)
+<span class="p">Conseguenze:</span>          secondo apparato e relative licenze (vedi offerta);
+                      due cavi di sincronizzazione dedicati; UPS che copra entrambi
+<span class="p">Decisa da:</span>            progettista, approvata con l'HLD v1.0
+</pre>
+</div>
+
+<div class="callout tip">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+    Scrivi sempre almeno un'alternativa scartata
+  </div>
+  <p style="margin-bottom:0">Una decisione senza alternative sembra un'imposizione, e il cliente
+  tende a contestarla. Una decisione con le alternative e il motivo dello scarto mostra che hai
+  ragionato, e spesso chiude la discussione prima che inizi. Se la soluzione più economica non
+  rispetta un requisito, scriverlo accanto al requisito è il modo più onesto di spiegare un costo.</p>
+</div>
+
+<h2>L'LLD: tabelle, non prosa</h2>
+
+<p>Il test di un buon LLD è uno solo: <b>un altro tecnico competente deve poter costruire la rete
+senza telefonarti</b>. Ciò significa che ogni valore che va digitato in un apparato deve stare
+scritto da qualche parte. Quasi tutto si esprime in tabelle.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Sezione dell'LLD</th><th>Cosa contiene, concretamente</th></tr></thead>
+    <tbody>
+      <tr><td><b>Inventario</b></td><td>Ogni apparato: modello, nome (secondo il naming della lezione 2-28), posizione nel rack, versione di firmware prevista</td></tr>
+      <tr><td><b>Schema fisico</b></td><td>Quale porta va a quale porta, con quale cavo o modulo. Una riga per collegamento</td></tr>
+      <tr><td><b>VLAN e indirizzamento</b></td><td>Dal registro IPAM (lezione 4-02): VLAN, prefisso, gateway, DHCP, riservazioni</td></tr>
+      <tr><td><b>Assegnazione porte</b></td><td>Per ogni switch: porta, VLAN nativa, VLAN etichettate, PoE sì/no, descrizione</td></tr>
+      <tr><td><b>Routing</b></td><td>Rotte statiche, protocolli dinamici, parametri dei tunnel: tutto quello che serve per scriverli</td></tr>
+      <tr><td><b>Policy di sicurezza</b></td><td>La matrice di comunicazione (lezione 2-04) tradotta in regole: sorgente, destinazione, servizio, azione, log, ordine</td></tr>
+      <tr><td><b>NAT e servizi pubblicati</b></td><td>Ogni traduzione, con il motivo</td></tr>
+      <tr><td><b>Servizi di rete</b></td><td>DNS, NTP, syslog, SNMP, RADIUS: indirizzi e parametri</td></tr>
+      <tr><td><b>Gestione</b></td><td>Da dove si amministra, con quali protocolli, dove vanno i backup delle configurazioni</td></tr>
+      <tr><td><b>Piano di collaudo</b></td><td>Le prove da fare alla consegna, una per requisito (vedi sotto)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout danger">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    Nell'LLD non vanno le password
+  </div>
+  <p style="margin-bottom:0">Il documento verrà mandato via email, stampato, salvato su cartelle
+  condivise. Le chiavi precondivise delle VPN, le password degli amministratori, i segreti RADIUS
+  stanno nel gestore di password, e nell'LLD c'è scritto <b>dove</b> trovarle («chiave PSK: voce
+  <em>Tunnel sede–filiale 3</em> nel gestore credenziali del cliente»). È la stessa regola della
+  lezione 2-28, e vale doppio qui, perché l'LLD circola prima che la rete esista.</p>
+</div>
+
+<h2>La tracciabilità: requisito → scelta → prova</h2>
+
+<p>È la tabella che trasforma un progetto in un contratto verificabile. Ogni requisito del verbale
+deve comparire almeno una volta in ogni colonna. Un requisito senza prova di collaudo è un
+requisito che nessuno controllerà; una scelta senza requisito è un costo che il cliente può
+contestare.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Requisito</th><th>Dove nell'HLD</th><th>Dove nell'LLD</th><th>Prova di collaudo</th><th>Esito</th></tr></thead>
+    <tbody>
+      <tr><td><b>R2</b> guasto di un apparato &lt; 60 s</td><td>D3, §7</td><td>Configurazione HA, §Routing</td>
+          <td>Spegnere il firewall attivo durante un ping continuo verso il gestionale; contare i pacchetti persi</td><td>☐</td></tr>
+      <tr><td><b>R4</b> gli ospiti non raggiungono la rete interna</td><td>§6</td><td>Policy 30–34</td>
+          <td>Da un portatile sulla rete ospiti: ping e connessione verso 3 indirizzi interni, tutti falliti; Internet funziona</td><td>☐</td></tr>
+      <tr><td><b>R7</b> voce: jitter &lt; 30 ms con linea al 90%</td><td>D5, §4</td><td>QoS, §Policy</td>
+          <td>Saturare la linea con iperf3, misurare una chiamata di prova (lezione 3-21)</td><td>☐</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Il giorno della consegna questa tabella si stampa, si fanno le prove davanti al cliente, si
+spunta la colonna «Esito». Firmata, è il verbale di collaudo: il punto da cui il progetto è chiuso e
+comincia l'assistenza.</p>
+
+<h2>Farlo approvare</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Passo</th><th>Cosa fai</th><th>Perché</th></tr></thead>
+    <tbody>
+      <tr><td><b>1. Revisione interna</b></td><td>Un collega legge HLD e LLD prima che li veda il cliente</td>
+          <td>Quattro occhi trovano gli errori che due non vedono, specialmente nelle tabelle</td></tr>
+      <tr><td><b>2. Presentazione</b></td><td>L'HLD si presenta in una riunione, non si manda solo per email</td>
+          <td>Un documento mandato e basta non viene letto. In riunione emergono le obiezioni, ora che costano poco</td></tr>
+      <tr><td><b>3. Versione aggiornata</b></td><td>Le osservazioni diventano la v1.1, con la tabella delle versioni che dice cosa è cambiato</td>
+          <td>Il cliente vede che è stato ascoltato</td></tr>
+      <tr><td><b>4. Firma</b></td><td>La firma va su una versione precisa: «HLD v1.1 del 14/10»</td>
+          <td>Da qui ogni modifica è una richiesta di modifica, con impatto su tempi e costi</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout real">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    Un caso tipico: «una piccola aggiunta»
+  </div>
+  <p>Durante l'installazione nell'<b>Azienda B</b>, il responsabile chiede al tecnico di «aggiungere
+  al volo» una rete Wi-Fi per i fornitori, con accesso a una cartella condivisa. Cinque minuti, e il
+  tecnico la fa.</p>
+  <p>Tre mesi dopo, durante una verifica di sicurezza, quella rete risulta collegata alla zona dei
+  server, senza autenticazione individuale. Nessun documento la cita, nessuna decisione la
+  giustifica. Il cliente chiede perché il fornitore che ha progettato la rete abbia lasciato un
+  accesso del genere.</p>
+  <p style="margin-bottom:0">La modifica in sé non era sbagliata: andava solo fatta come tutte le
+  altre, con una riga nella tabella delle versioni, una decisione scritta e una regola nell'LLD. Fatta
+  così, quel giorno sarebbe costata un quarto d'ora in più, e avrebbe fatto emergere subito il
+  problema della cartella condivisa.</p>
+</div>
+
+<div class="callout lab">
+  <div class="callout__head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 4l3 3-3 3M7 14l-3 3 3 3"/></svg>
+    Esercizio: HLD e LLD del tuo laboratorio
+  </div>
+  <p>Prendi il verbale scritto nell'esercizio della lezione 4-01 (oppure, se non l'hai fatto, la
+  rete del tuo laboratorio con il MikroTik hAP ax²).</p>
+  <ol style="margin-bottom:0">
+    <li>Scrivi un <b>HLD di massimo 5 pagine</b> con le sezioni 0–12. La sintesi per ultima.</li>
+    <li>Scrivi <b>almeno tre decisioni</b> nel formato D1–D3, ciascuna con un'alternativa scartata.</li>
+    <li>Scrivi l'<b>LLD in tabelle</b>: inventario, VLAN e indirizzi, assegnazione porte, regole del
+    firewall. Nessuna password: solo dove trovarle.</li>
+    <li>Compila la <b>tabella di tracciabilità</b>: ogni requisito con la sua prova di collaudo.</li>
+    <li>Fai leggere l'LLD a qualcuno e chiedigli: «potresti costruirla senza chiamarmi?». Ogni
+    domanda che ti fa è una riga mancante.</li>
+  </ol>
+</div>
+
+<script type="application/json" data-quiz>
+{
+  "title": "Verifica: HLD e LLD",
+  "questions": [
+    { "q": "Il titolare del cliente deve decidere se approvare il progetto. Quale documento gli dai?",
+      "a": [ {"t":"L'HLD: cosa si fa, perché, quanto costa, quali rischi","ok":true},
+             {"t":"L'LLD completo, così vede che è tutto pensato","ok":false},
+             {"t":"L'as-built della rete attuale","ok":false},
+             {"t":"L'esportazione della configurazione del firewall","ok":false} ],
+      "e": "L'HLD parla a chi decide: cosa e perché, in 5–15 pagine. Sessanta pagine di tabelle di porte e regole non aiutano a decidere, e spesso fanno rinviare l'approvazione. L'LLD è per chi costruisce, l'as-built per chi gestisce dopo." },
+
+    { "q": "Qual è il test per capire se un LLD è completo?",
+      "a": [ {"t":"Un altro tecnico competente riesce a costruire la rete senza chiamarti","ok":true},
+             {"t":"Supera le 50 pagine","ok":false},
+             {"t":"Il cliente l'ha firmato","ok":false},
+             {"t":"Contiene tutte le password necessarie","ok":false} ],
+      "e": "L'LLD esiste perché la rete si possa costruire senza dipendere dalla memoria di una persona. Ogni valore da digitare negli apparati deve stare scritto. La lunghezza non dice niente, e le password non ci vanno mai: si scrive dove trovarle nel gestore credenziali." },
+
+    { "q": "Perché ogni decisione di progetto deve riportare almeno un'alternativa scartata?",
+      "a": [ {"t":"Mostra il ragionamento, e spiega un costo collegandolo al requisito che l'alternativa non rispettava","ok":true},
+             {"t":"Perché il cliente deve poter scegliere sempre tra più opzioni","ok":false},
+             {"t":"Per allungare il documento e renderlo più autorevole","ok":false},
+             {"t":"È obbligatorio per legge nei progetti IT","ok":false} ],
+      "e": "Una decisione senza alternative sembra un'imposizione e viene contestata. «Firewall singolo: ripristino in 2–4 ore, non rispetta R2» spiega da solo perché ne servono due. E tra tre anni, chi chiederà «perché è fatto così?» troverà la risposta scritta." },
+
+    { "q": "Nella tabella di tracciabilità trovi un requisito senza alcuna prova di collaudo. Cosa significa?",
+      "a": [ {"t":"Che alla consegna nessuno verificherà se è stato rispettato: va aggiunta una prova","ok":true},
+             {"t":"Che il requisito era poco importante","ok":false},
+             {"t":"Che va spostato nella sezione «fuori perimetro»","ok":false},
+             {"t":"Niente: le prove servono solo per i requisiti di sicurezza","ok":false} ],
+      "e": "Ogni requisito deve attraversare tutta la catena: una scelta nell'HLD, un dettaglio nell'LLD, una prova nel collaudo. Senza prova, il requisito non verrà mai controllato, e l'eventuale problema emergerà quando ormai il progetto è chiuso." },
+
+    { "q": "Durante l'installazione il cliente chiede una modifica «piccola», non prevista. Come la gestisci?",
+      "a": [ {"t":"La registri come richiesta di modifica: nuova versione, decisione scritta, riga nell'LLD","ok":true},
+             {"t":"La fai subito, tanto sono cinque minuti","ok":false},
+             {"t":"La rifiuti: il progetto è firmato","ok":false},
+             {"t":"La fai e la aggiungi solo all'as-built","ok":false} ],
+      "e": "La modifica può essere giustissima: va solo fatta passando dal progetto. Un quarto d'ora per scriverla evita che diventi un accesso non documentato che emerge mesi dopo in una verifica di sicurezza, e spesso fa vedere subito un problema che a voce non si era notato." },
+
+    { "q": "Perché l'HLD va presentato in una riunione e non solo mandato via email?",
+      "a": [ {"t":"Perché in riunione emergono le obiezioni ora, quando correggere costa poco","ok":true},
+             {"t":"Perché un documento via email non ha valore legale","ok":false},
+             {"t":"Perché il cliente non deve ricevere copie del progetto","ok":false},
+             {"t":"Perché le riunioni sono fatturabili","ok":false} ],
+      "e": "Un documento mandato e basta spesso non viene letto, e le obiezioni arrivano a lavori iniziati. Presentato, genera domande subito: diventano la versione 1.1, e la firma arriva su un progetto che il cliente ha davvero capito." }
+  ]
+}
+</script>
